@@ -1,13 +1,9 @@
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Globe } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const Navigation = () => {
-  const [language, setLanguage] = useState<'ko' | 'en'>('ko');
-
-  const toggleLanguage = () => {
-    setLanguage(prev => prev === 'ko' ? 'en' : 'ko');
-  };
+  const { language, toggleLanguage } = useLanguage();
 
   const menuItems = {
     ko: ['소개', '주요 역할', '가격 정보', '대관 예약'],

@@ -1,6 +1,35 @@
 import { MapPin, Clock, Mail, MessageCircle } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const Footer = () => {
+  const { language } = useLanguage();
+
+  const content = {
+    ko: {
+      description: '서울 최초의 비트코인 전용 복합문화공간으로, 비트코인의 가치와 기술을 체험하고 배울 수 있는 새로운 문화공간입니다.',
+      descriptionEn: "Seoul's first Bitcoin-dedicated cultural complex where you can experience and learn about Bitcoin's value and technology.",
+      contact: '연락처',
+      services: '서비스',
+      address: '서울시 마포구 신촌로2안길 30 2층',
+      hours: '10:00 - 18:00 (화-일)',
+      email: 'bitcoincenter.seoul@gmail.com',
+      kakao: '카카오톡: @bitcoinseoul',
+      serviceList: ['전시', '체험', '교육', '공간 대관', '라운지', '갤러리', '판매', '코워킹'],
+      copyright: '© 2024 Bitcoin Center Seoul. All rights reserved.'
+    },
+    en: {
+      description: "Seoul's first Bitcoin-dedicated cultural complex where you can experience and learn about Bitcoin's value and technology.",
+      descriptionEn: '서울 최초의 비트코인 전용 복합문화공간으로, 비트코인의 가치와 기술을 체험하고 배울 수 있는 새로운 문화공간입니다.',
+      contact: 'Contact',
+      services: 'Services',
+      address: '30, Sinchon-ro 2an-gil, Mapo-gu, Seoul, 2nd Floor',
+      hours: '10:00 - 18:00 (Tue-Sun)',
+      email: 'bitcoincenter.seoul@gmail.com',
+      kakao: 'KakaoTalk: @bitcoinseoul',
+      serviceList: ['Exhibition', 'Experience', 'Education', 'Space Rental', 'Lounge', 'Gallery', 'Retail', 'Coworking'],
+      copyright: '© 2024 Bitcoin Center Seoul. All rights reserved.'
+    }
+  };
   return (
     <footer className="bg-card border-t border-border py-16">
       <div className="container mx-auto px-6">
@@ -16,39 +45,39 @@ const Footer = () => {
               </span>
             </div>
             <p className="text-muted-foreground leading-relaxed mb-6">
-              서울 최초의 비트코인 전용 복합문화공간으로, 비트코인의 가치와 기술을 체험하고 배울 수 있는 새로운 문화공간입니다.
+              {content[language].description}
             </p>
             <p className="text-sm text-muted-foreground">
-              Seoul's first Bitcoin-dedicated cultural complex where you can experience and learn about Bitcoin's value and technology.
+              {content[language].descriptionEn}
             </p>
           </div>
 
           {/* Contact Info */}
           <div>
-            <h3 className="text-lg font-semibold text-foreground mb-4">연락처</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-4">{content[language].contact}</h3>
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
                 <MapPin className="w-4 h-4 text-bitcoin mt-1 flex-shrink-0" />
                 <span className="text-sm text-muted-foreground">
-                  서울시 마포구 신촌로2안길 30 2층
+                  {content[language].address}
                 </span>
               </li>
               <li className="flex items-start gap-3">
                 <Clock className="w-4 h-4 text-bitcoin mt-1 flex-shrink-0" />
                 <span className="text-sm text-muted-foreground">
-                  10:00 - 18:00 (화-일)
+                  {content[language].hours}
                 </span>
               </li>
               <li className="flex items-start gap-3">
                 <Mail className="w-4 h-4 text-bitcoin mt-1 flex-shrink-0" />
                 <span className="text-sm text-muted-foreground">
-                  bitcoincenter.seoul@gmail.com
+                  {content[language].email}
                 </span>
               </li>
               <li className="flex items-start gap-3">
                 <MessageCircle className="w-4 h-4 text-bitcoin mt-1 flex-shrink-0" />
                 <span className="text-sm text-muted-foreground">
-                  카카오톡: @bitcoinseoul
+                  {content[language].kakao}
                 </span>
               </li>
             </ul>
@@ -56,9 +85,9 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-lg font-semibold text-foreground mb-4">서비스</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-4">{content[language].services}</h3>
             <ul className="space-y-2">
-              {['전시', '체험', '교육', '공간 대관', '라운지', '갤러리', '판매', '코워킹'].map((service) => (
+              {content[language].serviceList.map((service) => (
                 <li key={service}>
                   <span className="text-sm text-muted-foreground hover:text-bitcoin transition-colors cursor-pointer">
                     {service}
@@ -71,7 +100,7 @@ const Footer = () => {
 
         <div className="border-t border-border mt-12 pt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            © 2024 Bitcoin Center Seoul. All rights reserved.
+            {content[language].copyright}
           </p>
         </div>
       </div>

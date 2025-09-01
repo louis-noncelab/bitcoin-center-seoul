@@ -1,87 +1,174 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check, Coffee, Users, Wifi, Monitor, HelpCircle } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const PricingSection = () => {
-  const pricingPlans = [
-    {
-      title: '입장료',
-      titleEn: 'Admission',
-      price: '3,000 sats',
-      priceKrw: '5,000 KRW',
-      icon: Coffee,
-      features: [
-        'Free Coffee (각종 음료 포함)',
-        'Up to 3 Hour',
-        '모든 전시 및 체험 이용 가능',
-        '라운지 및 갤러리 자유 이용'
-      ],
-      isPopular: false
+  const { language } = useLanguage();
+
+  const content = {
+    ko: {
+      title: '가격 정보',
+      subtitle: '다양한 요금제로 비트코인 센터 서울을 자유롭게 이용하세요.',
+      popular: '인기',
+      pricing: [
+        {
+          title: '입장료',
+          titleEn: 'Admission',
+          price: '3,000 sats',
+          priceKrw: '5,000 KRW',
+          icon: Coffee,
+          features: [
+            'Free Coffee (각종 음료 포함)',
+            'Up to 3 Hour',
+            '모든 전시 및 체험 이용 가능',
+            '라운지 및 갤러리 자유 이용'
+          ],
+          isPopular: false,
+          buttonText: '예약하기'
+        },
+        {
+          title: '행사 대관',
+          titleEn: 'Event Rental',
+          price: '200,000 sats',
+          priceKrw: '300,000 KRW / Hour',
+          icon: Users,
+          features: [
+            'Wifi',
+            'Up to 25 person',
+            'Free Coffee',
+            'Projector and Screen',
+            '전용 행사 공간',
+            '음향 시설 제공'
+          ],
+          isPopular: true,
+          buttonText: '예약하기'
+        },
+        {
+          title: '코워킹 스페이스',
+          titleEn: 'Coworking Space',
+          price: '300,000 sats',
+          priceKrw: '500,000 KRW / month',
+          icon: Monitor,
+          features: [
+            '1 Desk / Chair',
+            'Free Coffee',
+            'Private Partition',
+            '24/7 Access',
+            '회의실 이용 가능',
+            '네트워킹 이벤트 참여'
+          ],
+          isPopular: false,
+          buttonText: '예약하기'
+        },
+        {
+          title: '상담',
+          titleEn: 'Consultation',
+          price: '100,000 sats',
+          priceKrw: '200,000 KRW / Hour',
+          icon: HelpCircle,
+          features: [
+            '셀프커스터디 상담',
+            '비트코인 관련 상담',
+            '1:1 전문 상담',
+            '하드웨어 월렛 설정',
+            '보안 가이드 제공',
+            '투자 전략 조언'
+          ],
+          isPopular: false,
+          buttonText: '상담 신청'
+        }
+      ]
     },
-    {
-      title: '행사 대관',
-      titleEn: 'Event Rental',
-      price: '200,000 sats',
-      priceKrw: '300,000 KRW / Hour',
-      icon: Users,
-      features: [
-        'Wifi',
-        'Up to 25 person',
-        'Free Coffee',
-        'Projector and Screen',
-        '전용 행사 공간',
-        '음향 시설 제공'
-      ],
-      isPopular: true
-    },
-    {
-      title: '코워킹 스페이스',
-      titleEn: 'Coworking Space',
-      price: '300,000 sats',
-      priceKrw: '500,000 KRW / month',
-      icon: Monitor,
-      features: [
-        '1 Desk / Chair',
-        'Free Coffee',
-        'Private Partition',
-        '24/7 Access',
-        '회의실 이용 가능',
-        '네트워킹 이벤트 참여'
-      ],
-      isPopular: false
-    },
-    {
-      title: '상담',
-      titleEn: 'Consultation',
-      price: '100,000 sats',
-      priceKrw: '200,000 KRW / Hour',
-      icon: HelpCircle,
-      features: [
-        '셀프커스터디 상담',
-        '비트코인 관련 상담',
-        '1:1 전문 상담',
-        '하드웨어 월렛 설정',
-        '보안 가이드 제공',
-        '투자 전략 조언'
-      ],
-      isPopular: false
+    en: {
+      title: 'Pricing',
+      subtitle: 'Enjoy Bitcoin Center Seoul freely with various pricing plans.',
+      popular: 'Popular',
+      pricing: [
+        {
+          title: 'Admission',
+          titleEn: '입장료',
+          price: '3,000 sats',
+          priceKrw: '5,000 KRW',
+          icon: Coffee,
+          features: [
+            'Free Coffee (various beverages included)',
+            'Up to 3 hours',
+            'Access to all exhibitions and experiences',
+            'Free access to lounge and gallery'
+          ],
+          isPopular: false,
+          buttonText: 'Book Now'
+        },
+        {
+          title: 'Event Rental',
+          titleEn: '행사 대관',
+          price: '200,000 sats',
+          priceKrw: '300,000 KRW / Hour',
+          icon: Users,
+          features: [
+            'Wifi',
+            'Up to 25 people',
+            'Free Coffee',
+            'Projector and Screen',
+            'Dedicated event space',
+            'Audio equipment provided'
+          ],
+          isPopular: true,
+          buttonText: 'Book Now'
+        },
+        {
+          title: 'Coworking Space',
+          titleEn: '코워킹 스페이스',
+          price: '300,000 sats',
+          priceKrw: '500,000 KRW / month',
+          icon: Monitor,
+          features: [
+            '1 Desk / Chair',
+            'Free Coffee',
+            'Private Partition',
+            '24/7 Access',
+            'Meeting room access',
+            'Networking events participation'
+          ],
+          isPopular: false,
+          buttonText: 'Book Now'
+        },
+        {
+          title: 'Consultation',
+          titleEn: '상담',
+          price: '100,000 sats',
+          priceKrw: '200,000 KRW / Hour',
+          icon: HelpCircle,
+          features: [
+            'Self-custody consultation',
+            'Bitcoin-related consultation',
+            '1:1 expert consultation',
+            'Hardware wallet setup',
+            'Security guide provided',
+            'Investment strategy advice'
+          ],
+          isPopular: false,
+          buttonText: 'Book Consultation'
+        }
+      ]
     }
-  ];
+  };
 
   return (
     <section id="pricing" className="py-20 bg-card">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-foreground to-bitcoin bg-clip-text text-transparent">
-            가격 정보
+            {content[language].title}
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            다양한 요금제로 비트코인 센터 서울을 자유롭게 이용하세요.
+            {content[language].subtitle}
           </p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {pricingPlans.map((plan, index) => (
+          {content[language].pricing.map((plan, index) => (
             <Card 
               key={index}
               className={`relative bg-background border-border shadow-lg hover:shadow-xl transition-all duration-300 ${
@@ -91,7 +178,7 @@ const PricingSection = () => {
               {plan.isPopular && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                   <span className="bg-gradient-to-r from-bitcoin to-bitcoin-dark text-bitcoin-foreground text-xs font-semibold px-3 py-1 rounded-full">
-                    인기
+                    {content[language].popular}
                   </span>
                 </div>
               )}
@@ -133,7 +220,7 @@ const PricingSection = () => {
                   variant={plan.isPopular ? 'default' : 'outline'}
                   onClick={() => document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' })}
                 >
-                  {plan.title === '상담' ? '상담 신청' : '예약하기'}
+                  {plan.buttonText}
                 </Button>
               </CardContent>
             </Card>
