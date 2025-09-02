@@ -8,10 +8,10 @@ const AboutSection = () => {
   const content = {
     ko: {
       title: '소개',
-      subtitle: '비트코인의 가치와 기술을 체험하고 배울 수 있는 서울의 새로운 문화공간입니다.',
+      subtitle: '비트코인의 가치와 기술을 체험하고 배울 수 있는 공간입니다.',
       location: '위치',
       locationAddress: '서울시 마포구 신촌로2안길 30 2층',
-      locationSubtext: '지하철 6호선 상수역 도보 5분',
+      locationSubtext: '지하철 홍대입구역 6번출구 도보 3분',
       hours: '운영시간',
       hoursDetail: '10:00 - 18:00\n화요일 - 일요일\n(월요일 휴무)',
       contact: '문의',
@@ -19,10 +19,10 @@ const AboutSection = () => {
     },
     en: {
       title: 'About',
-      subtitle: 'A new cultural space in Seoul where you can experience and learn about the value and technology of Bitcoin.',
+      subtitle: 'A space in Seoul where you can experience and learn about the value and technology of Bitcoin.',
       location: 'Location',
       locationAddress: '30, Sinchon-ro 2an-gil, Mapo-gu, Seoul, 2nd Floor',
-      locationSubtext: '5 min walk from Sangsu Station (Line 6)',
+      locationSubtext: '3 min walk from Hongik University Station (Exit 6)',
       hours: 'Business Hours',
       hoursDetail: '10:00 - 18:00\nTuesday - Sunday\n(Closed on Mondays)',
       contact: 'Contact',
@@ -53,6 +53,28 @@ const AboutSection = () => {
                 <br />
                 <span className="text-sm">{content[language].locationSubtext}</span>
               </p>
+              
+              {/* 지도 링크 버튼들 */}
+              <div className="flex flex-col sm:flex-row gap-2 justify-center mt-4">
+                <a 
+                  href="https://maps.google.com/?q=신촌로2안길+30"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-bitcoin bg-bitcoin/10 border border-bitcoin/20 rounded-lg hover:bg-bitcoin/20 hover:border-bitcoin/30 transition-all duration-200"
+                >
+                  <MapPin className="w-4 h-4 mr-2" />
+                  {language === 'ko' ? '구글 지도' : 'Google Maps'}
+                </a>
+                <a 
+                  href="https://map.kakao.com/link/search/신촌로2안길30"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-yellow-600 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100 hover:border-yellow-300 transition-all duration-200"
+                >
+                  <MapPin className="w-4 h-4 mr-2" />
+                  {language === 'ko' ? '카카오맵' : 'KakaoMap'}
+                </a>
+              </div>
             </CardContent>
           </Card>
 

@@ -1,30 +1,38 @@
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { MapPin, Clock } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import Logo from './Logo';
 
 const HeroSection = () => {
   const { language } = useLanguage();
 
   const content = {
     ko: {
-      title: 'Bitcoin Center Seoul',
-      subtitle: '서울 최초의 비트코인 전용 복합문화공간',
-      subtitleEn: "Seoul's First Bitcoin-Dedicated Cultural Complex",
+      subtitle: '비트코이너를 위한 공간',
       address: '서울시 마포구 신촌로2안길 30 2층',
       hours: '10:00 - 18:00 (화-일)',
-      bookButton: '예약하기',
       learnButton: '자세히 보기'
     },
     en: {
-      title: 'Bitcoin Center Seoul',
-      subtitle: "Seoul's First Bitcoin-Dedicated Cultural Complex",
-      subtitleEn: '서울 최초의 비트코인 전용 복합문화공간',
+      subtitle: "A space for Bitcoiners",
       address: '30, Sinchon-ro 2an-gil, Mapo-gu, Seoul, 2nd Floor',
       hours: '10:00 - 18:00 (Tue-Sun)',
-      bookButton: 'Book Now',
       learnButton: 'Learn More'
     }
   };
+
+  // 순환하는 메인 이미지
+  const [mainImageIndex, setMainImageIndex] = React.useState(0);
+  const mainImages = ['/images/main1.png', '/images/main2.png', '/images/main3.png'];
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setMainImageIndex((prevIndex) => (prevIndex + 1) % mainImages.length);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
   return (
     <section className="min-h-screen bg-gradient-to-br from-background via-background to-card flex items-center justify-center relative overflow-hidden">
       {/* Background Pattern */}
@@ -32,14 +40,29 @@ const HeroSection = () => {
       
       <div className="container mx-auto px-6 py-20 text-center relative z-10">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-foreground via-bitcoin to-bitcoin-light bg-clip-text text-transparent leading-tight">
-            {content[language].title}
-          </h1>
+          {/* 순환하는 메인 이미지 */}
+          <div className="text-center mb-2">
+            <img 
+              src={mainImages[mainImageIndex]} 
+              alt={`Main ${mainImageIndex + 1}`}
+              className="mx-auto max-w-full h-auto transition-opacity duration-1000"
+              style={{ maxHeight: '300px' }}
+            />
+          </div>
+          
+          {/* 로고 추가 */}
+          <div className="flex justify-center mb-4">
+            <img 
+              src="/images/logo_kr.png" 
+              alt="Bitcoin Center Seoul" 
+              className="h-24 w-auto mx-auto"
+              style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}
+            />
+          </div>
           
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed">
             {content[language].subtitle}
             <br />
-            <span className="text-lg">{content[language].subtitleEn}</span>
           </p>
 
           <div className="flex flex-col md:flex-row items-center justify-center gap-8 mb-12">
@@ -53,14 +76,7 @@ const HeroSection = () => {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg"
-              className="bg-gradient-to-r from-bitcoin to-bitcoin-dark hover:from-bitcoin-dark hover:to-bitcoin text-bitcoin-foreground shadow-lg hover:shadow-xl transition-all duration-300"
-              onClick={() => document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' })}
-            >
-              {content[language].bookButton}
-            </Button>
+          <div className="flex justify-center">
             <Button 
               variant="outline" 
               size="lg"

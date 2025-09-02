@@ -1,13 +1,14 @@
 import { MapPin, Clock, Mail, MessageCircle } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import Logo from './Logo';
 
 const Footer = () => {
   const { language } = useLanguage();
 
   const content = {
     ko: {
-      description: '서울 최초의 비트코인 전용 복합문화공간으로, 비트코인의 가치와 기술을 체험하고 배울 수 있는 새로운 문화공간입니다.',
-      descriptionEn: "Seoul's first Bitcoin-dedicated cultural complex where you can experience and learn about Bitcoin's value and technology.",
+      description: '비트코이너를 위한 공간',
+      descriptionEn: "A Space for Bitcoiners.",
       contact: '연락처',
       services: '서비스',
       address: '서울시 마포구 신촌로2안길 30 2층',
@@ -18,8 +19,8 @@ const Footer = () => {
       copyright: '© 2024 Bitcoin Center Seoul. All rights reserved.'
     },
     en: {
-      description: "Seoul's first Bitcoin-dedicated cultural complex where you can experience and learn about Bitcoin's value and technology.",
-      descriptionEn: '서울 최초의 비트코인 전용 복합문화공간으로, 비트코인의 가치와 기술을 체험하고 배울 수 있는 새로운 문화공간입니다.',
+      description: "A Space for Bitcoiners.",
+      descriptionEn: '비트코이너를 위한 공간',
       contact: 'Contact',
       services: 'Services',
       address: '30, Sinchon-ro 2an-gil, Mapo-gu, Seoul, 2nd Floor',
@@ -36,13 +37,8 @@ const Footer = () => {
         <div className="grid md:grid-cols-4 gap-8">
           {/* Logo and Description */}
           <div className="md:col-span-2">
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-r from-bitcoin to-bitcoin-dark rounded-lg flex items-center justify-center">
-                <span className="text-bitcoin-foreground font-bold text-sm">₿</span>
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-bitcoin to-bitcoin-light bg-clip-text text-transparent">
-                Bitcoin Center Seoul
-              </span>
+            <div className="mb-6">
+              <Logo size="md" />
             </div>
             <p className="text-muted-foreground leading-relaxed mb-6">
               {content[language].description}
@@ -61,6 +57,26 @@ const Footer = () => {
                 <span className="text-sm text-muted-foreground">
                   {content[language].address}
                 </span>
+              </li>
+              <li className="flex flex-col gap-2 mt-3">
+                <a 
+                  href="https://maps.google.com/?q=서울시+마포구+신촌로2안길+30+2층"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center text-xs text-bitcoin hover:text-bitcoin-dark transition-colors"
+                >
+                  <MapPin className="w-3 h-3 mr-1" />
+                  {language === 'ko' ? '구글 지도' : 'Google Maps'}
+                </a>
+                <a 
+                  href="https://map.kakao.com/link/search/비트코인센터서울"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center text-xs text-yellow-600 hover:text-yellow-700 transition-colors"
+                >
+                  <MapPin className="w-3 h-3 mr-1" />
+                  {language === 'ko' ? '카카오맵' : 'KakaoMap'}
+                </a>
               </li>
               <li className="flex items-start gap-3">
                 <Clock className="w-4 h-4 text-bitcoin mt-1 flex-shrink-0" />

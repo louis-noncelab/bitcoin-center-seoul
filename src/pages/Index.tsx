@@ -3,7 +3,6 @@ import HeroSection from '@/components/HeroSection';
 import AboutSection from '@/components/AboutSection';
 import ServicesSection from '@/components/ServicesSection';
 import PricingSection from '@/components/PricingSection';
-import BookingSection from '@/components/BookingSection';
 import Footer from '@/components/Footer';
 
 const Index = () => {
@@ -11,11 +10,10 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
       <HeroSection />
-      <AboutSection />
-      <ServicesSection />
-      <PricingSection />
-      <BookingSection />
-      <Footer />
+              <AboutSection />
+        <ServicesSection />
+        <PricingSection />
+        <Footer />
     </div>
   );
 };

@@ -19,8 +19,8 @@ const PricingSection = () => {
           priceKrw: '5,000 KRW',
           icon: Coffee,
           features: [
-            'Free Coffee (각종 음료 포함)',
-            'Up to 3 Hour',
+            '무료 커피 (각종 음료 포함)',
+            '최대 3 시간',
             '모든 전시 및 체험 이용 가능',
             '라운지 및 갤러리 자유 이용'
           ],
@@ -34,15 +34,15 @@ const PricingSection = () => {
           priceKrw: '300,000 KRW / Hour',
           icon: Users,
           features: [
-            'Wifi',
-            'Up to 25 person',
-            'Free Coffee',
-            'Projector and Screen',
+            '와이파이',
+            '최대 25인',
+            '무료 커피',
+            '프로젝터와 스크린',
             '전용 행사 공간',
             '음향 시설 제공'
           ],
           isPopular: true,
-          buttonText: '예약하기'
+          buttonText: '문의하기'
         },
         {
           title: '코워킹 스페이스',
@@ -51,10 +51,10 @@ const PricingSection = () => {
           priceKrw: '500,000 KRW / month',
           icon: Monitor,
           features: [
-            '1 Desk / Chair',
-            'Free Coffee',
-            'Private Partition',
-            '24/7 Access',
+            '1개의 사무용 책상과 의자',
+            '무료 커피',
+            '개인 파티션',
+            '24/5 사용 가능',
             '회의실 이용 가능',
             '네트워킹 이벤트 참여'
           ],
@@ -72,8 +72,7 @@ const PricingSection = () => {
             '비트코인 관련 상담',
             '1:1 전문 상담',
             '하드웨어 월렛 설정',
-            '보안 가이드 제공',
-            '투자 전략 조언'
+            '보안 가이드 제공'
           ],
           isPopular: false,
           buttonText: '상담 신청'
@@ -115,7 +114,7 @@ const PricingSection = () => {
             'Audio equipment provided'
           ],
           isPopular: true,
-          buttonText: 'Book Now'
+          buttonText: 'Contact Us'
         },
         {
           title: 'Coworking Space',
@@ -127,7 +126,7 @@ const PricingSection = () => {
             '1 Desk / Chair',
             'Free Coffee',
             'Private Partition',
-            '24/7 Access',
+            '24/5 Access',
             'Meeting room access',
             'Networking events participation'
           ],
@@ -145,8 +144,7 @@ const PricingSection = () => {
             'Bitcoin-related consultation',
             '1:1 expert consultation',
             'Hardware wallet setup',
-            'Security guide provided',
-            'Investment strategy advice'
+            'Security guide provided'
           ],
           isPopular: false,
           buttonText: 'Book Consultation'
