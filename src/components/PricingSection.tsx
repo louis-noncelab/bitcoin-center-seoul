@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Coffee, Users, Wifi, Monitor, HelpCircle } from 'lucide-react';
+import { Check, Coffee, Users } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const PricingSection = () => {
@@ -43,39 +43,6 @@ const PricingSection = () => {
           ],
           isPopular: true,
           buttonText: '문의하기'
-        },
-        {
-          title: '코워킹 스페이스',
-          titleEn: 'Coworking Space',
-          price: '300,000 sats',
-          priceKrw: '500,000 KRW / month',
-          icon: Monitor,
-          features: [
-            '1개의 사무용 책상과 의자',
-            '무료 커피',
-            '개인 파티션',
-            '24/5 사용 가능',
-            '회의실 이용 가능',
-            '네트워킹 이벤트 참여'
-          ],
-          isPopular: false,
-          buttonText: '예약하기'
-        },
-        {
-          title: '상담',
-          titleEn: 'Consultation',
-          price: '100,000 sats',
-          priceKrw: '200,000 KRW / Hour',
-          icon: HelpCircle,
-          features: [
-            '셀프커스터디 상담',
-            '비트코인 관련 상담',
-            '1:1 전문 상담',
-            '하드웨어 월렛 설정',
-            '보안 가이드 제공'
-          ],
-          isPopular: false,
-          buttonText: '상담 신청'
         }
       ]
     },
@@ -115,42 +82,21 @@ const PricingSection = () => {
           ],
           isPopular: true,
           buttonText: 'Contact Us'
-        },
-        {
-          title: 'Coworking Space',
-          titleEn: '코워킹 스페이스',
-          price: '300,000 sats',
-          priceKrw: '500,000 KRW / month',
-          icon: Monitor,
-          features: [
-            '1 Desk / Chair',
-            'Free Coffee',
-            'Private Partition',
-            '24/5 Access',
-            'Meeting room access',
-            'Networking events participation'
-          ],
-          isPopular: false,
-          buttonText: 'Book Now'
-        },
-        {
-          title: 'Consultation',
-          titleEn: '상담',
-          price: '100,000 sats',
-          priceKrw: '200,000 KRW / Hour',
-          icon: HelpCircle,
-          features: [
-            'Self-custody consultation',
-            'Bitcoin-related consultation',
-            '1:1 expert consultation',
-            'Hardware wallet setup',
-            'Security guide provided'
-          ],
-          isPopular: false,
-          buttonText: 'Book Consultation'
         }
       ]
     }
+  };
+
+  const handleContact = () => {
+    const subject = language === 'ko' 
+      ? encodeURIComponent('행사 대관 문의')
+      : encodeURIComponent('Event Space Inquiry');
+    
+    const body = language === 'ko'
+      ? encodeURIComponent(`안녕하세요,\n\n비트코인 센터 서울 행사 대관에 대해 문의드립니다.\n\n행사 일정:\n행사 내용:\n참석 인원:\n기타 요청사항:\n\n연락처:\n\n감사합니다.`)
+      : encodeURIComponent(`Hello,\n\nI would like to inquire about event space rental at Bitcoin Center Seoul.\n\nEvent Date:\nEvent Details:\nNumber of Attendees:\nOther Requirements:\n\nContact Information:\n\nThank you.`);
+    
+    window.open(`mailto:hello@noncelab.com?subject=${subject}&body=${body}`, '_blank');
   };
 
   return (
@@ -165,7 +111,7 @@ const PricingSection = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {content[language].pricing.map((plan, index) => (
             <Card 
               key={index}
@@ -209,17 +155,15 @@ const PricingSection = () => {
                   ))}
                 </ul>
                 
-                <Button 
-                  className={`w-full ${
-                    plan.isPopular
-                      ? 'bg-gradient-to-r from-bitcoin to-bitcoin-dark hover:from-bitcoin-dark hover:to-bitcoin text-bitcoin-foreground'
-                      : 'border-bitcoin text-bitcoin hover:bg-bitcoin hover:text-bitcoin-foreground'
-                  }`}
-                  variant={plan.isPopular ? 'default' : 'outline'}
-                  onClick={() => document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' })}
-                >
-                  {plan.buttonText}
-                </Button>
+                {/* 행사 대관에만 문의하기 버튼 표시 */}
+                {plan.isPopular && (
+                  <Button 
+                    className="w-full bg-gradient-to-r from-bitcoin to-bitcoin-dark hover:from-bitcoin-dark hover:to-bitcoin text-bitcoin-foreground"
+                    onClick={handleContact}
+                  >
+                    {language === 'ko' ? '대관 문의하기' : 'Inquire for Rental'}
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ))}

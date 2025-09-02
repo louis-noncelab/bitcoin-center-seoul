@@ -24,12 +24,23 @@ const HeroSection = () => {
 
   // 순환하는 메인 이미지
   const [mainImageIndex, setMainImageIndex] = React.useState(0);
+  const [isVisible, setIsVisible] = React.useState(true);
   const mainImages = ['/images/main1.png', '/images/main2.png', '/images/main3.png'];
 
   React.useEffect(() => {
     const interval = setInterval(() => {
-      setMainImageIndex((prevIndex) => (prevIndex + 1) % mainImages.length);
-    }, 5000);
+      // 이미지 페이드아웃
+      setIsVisible(false);
+      
+      // 1초 후 다음 이미지로 변경
+      setTimeout(() => {
+        setMainImageIndex((prevIndex) => (prevIndex + 1) % mainImages.length);
+        // 1초 후 이미지 페이드인
+        setTimeout(() => {
+          setIsVisible(true);
+        }, 1000);
+      }, 1000);
+    }, 8000);
 
     return () => clearInterval(interval);
   }, []);
@@ -41,11 +52,22 @@ const HeroSection = () => {
       <div className="container mx-auto px-6 py-20 text-center relative z-10">
         <div className="max-w-4xl mx-auto">
           {/* 순환하는 메인 이미지 */}
-          <div className="text-center mb-2">
+          <div className="text-center mb-2 relative">
+            {/* 배경 이미지 (main0) */}
             <img 
+              src="/images/main0.png" 
+              alt="Background Main"
+              className="mx-auto max-w-full h-auto absolute inset-0 opacity-100"
+              style={{ maxHeight: '298px' }}
+            />
+            {/* 순환하는 메인 이미지들 */}
+            <img 
+              key={mainImageIndex}
               src={mainImages[mainImageIndex]} 
               alt={`Main ${mainImageIndex + 1}`}
-              className="mx-auto max-w-full h-auto transition-opacity duration-1000"
+              className={`mx-auto max-w-full h-auto transition-all duration-1000 ease-in-out relative z-10 ${
+                isVisible ? 'opacity-100' : 'opacity-0'
+              }`}
               style={{ maxHeight: '300px' }}
             />
           </div>

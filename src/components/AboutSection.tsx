@@ -15,7 +15,7 @@ const AboutSection = () => {
       hours: '운영시간',
       hoursDetail: '10:00 - 18:00\n화요일 - 일요일\n(월요일 휴무)',
       contact: '문의',
-      contactDetail: '예약 및 문의\nbitcoincenter.seoul@gmail.com\n카카오톡: @bitcoinseoul'
+      contactDetail: '예약 및 문의\nhello@noncelab.com\n+82-2-702-1718'
     },
     en: {
       title: 'About',
@@ -26,7 +26,7 @@ const AboutSection = () => {
       hours: 'Business Hours',
       hoursDetail: '10:00 - 18:00\nTuesday - Sunday\n(Closed on Mondays)',
       contact: 'Contact',
-      contactDetail: 'Reservations & Inquiries\nbitcoincenter.seoul@gmail.com\nKakaoTalk: @bitcoinseoul'
+      contactDetail: 'Reservations & Inquiries\nhello@noncelab.com\n+82-2-702-1718'
     }
   };
   return (
@@ -64,15 +64,6 @@ const AboutSection = () => {
                 >
                   <MapPin className="w-4 h-4 mr-2" />
                   {language === 'ko' ? '구글 지도' : 'Google Maps'}
-                </a>
-                <a 
-                  href="https://map.kakao.com/link/search/신촌로2안길30"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-yellow-600 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100 hover:border-yellow-300 transition-all duration-200"
-                >
-                  <MapPin className="w-4 h-4 mr-2" />
-                  {language === 'ko' ? '카카오맵' : 'KakaoMap'}
                 </a>
               </div>
             </CardContent>
