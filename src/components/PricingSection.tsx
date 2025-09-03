@@ -9,14 +9,14 @@ const PricingSection = () => {
   const content = {
     ko: {
       title: '가격 정보',
-      subtitle: '다양한 요금제로 비트코인 센터 서울을 자유롭게 이용하세요.',
+      subtitle: '비트코인 결제를 통해 비트코인 센터 서울을 이용하세요.',
       popular: '인기',
       pricing: [
         {
           title: '입장료',
           titleEn: 'Admission',
           price: '3,000 sats',
-          priceKrw: 'KRW : +20%',
+          priceKrw: '원화 결제시 +20%',
           icon: Coffee,
           features: [
             '무료 커피 (각종 음료 포함)',
@@ -31,7 +31,7 @@ const PricingSection = () => {
           title: '행사 대관',
           titleEn: 'Event Rental',
           price: '200,000 sats',
-          priceKrw: 'KRW : +20%',
+          priceKrw: '원화 결제시 +20%',
           icon: Users,
           features: [
             '와이파이',
@@ -47,15 +47,15 @@ const PricingSection = () => {
       ]
     },
     en: {
-      title: 'Pricing',
-      subtitle: 'Enjoy Bitcoin Center Seoul freely with various pricing plans.',
+      title: 'Price',
+      subtitle: 'Use Bitcoin Center Seoul through Bitcoin payments.',
       popular: 'Popular',
       pricing: [
         {
           title: 'Admission',
           titleEn: '입장료',
           price: '3,000 sats',
-          priceKrw: 'KRW : +20%',
+          priceKrw: '+20% in KRW',
           icon: Coffee,
           features: [
             'Free Coffee (various beverages included)',
@@ -70,7 +70,7 @@ const PricingSection = () => {
           title: 'Event Rental',
           titleEn: '행사 대관',
           price: '200,000 sats',
-          priceKrw: 'KRW : +20%',
+          priceKrw: '+20% in KRW',
           icon: Users,
           features: [
             'Wifi',
@@ -115,7 +115,7 @@ const PricingSection = () => {
           {content[language].pricing.map((plan, index) => (
             <Card 
               key={index}
-              className={`relative bg-background border-border shadow-lg hover:shadow-xl transition-all duration-300 ${
+              className={`relative bg-background border-border shadow-lg hover:shadow-xl transition-all duration-300 p-2 ${
                 plan.isPopular ? 'border-bitcoin ring-2 ring-bitcoin/20' : 'hover:border-bitcoin/50'
               }`}
             >
@@ -127,7 +127,7 @@ const PricingSection = () => {
                 </div>
               )}
               
-              <CardHeader className="text-center pb-4">
+              <CardHeader className="text-center pb-6">
                 <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
                   plan.isPopular 
                     ? 'bg-gradient-to-r from-bitcoin to-bitcoin-dark' 
@@ -137,15 +137,15 @@ const PricingSection = () => {
                     plan.isPopular ? 'text-bitcoin-foreground' : 'text-bitcoin'
                   }`} />
                 </div>
-                <CardTitle className="text-xl font-bold text-foreground">{plan.title}</CardTitle>
-                <p className="text-sm text-muted-foreground">{plan.titleEn}</p>
+                <CardTitle className="text-xl font-bold text-foreground leading-relaxed overflow-visible pb-3">{plan.title}</CardTitle>
+                <p className="text-sm text-muted-foreground leading-relaxed overflow-visible pb-3">{plan.titleEn}</p>
                 <div className="mt-4">
-                  <div className="text-2xl font-bold text-bitcoin">{plan.price}</div>
-                  <div className="text-lg text-muted-foreground">{plan.priceKrw}</div>
+                  <div className="text-2xl font-bold text-bitcoin leading-relaxed overflow-visible pb-3">{plan.price}</div>
+                  <div className="text-lg text-muted-foreground leading-relaxed overflow-visible pb-3">{plan.priceKrw}</div>
                 </div>
               </CardHeader>
               
-              <CardContent className="pt-0">
+              <CardContent className="pt-0 pb-6">
                 <ul className="space-y-3 mb-6">
                   {plan.features.map((feature, featureIndex) => (
                     <li key={featureIndex} className="flex items-start gap-3">

@@ -16,7 +16,7 @@ const HeroSection = () => {
     },
     en: {
       subtitle: "A space for Bitcoiners",
-      address: '30, Sinchon-ro 2an-gil, Mapo-gu, Seoul, 2nd Floor',
+      address: '30, Sinchon-ro 2an-gil, Mapo-gu, Seoul, 2F',
       hours: '10:00 - 18:00 (Tue-Sun)',
       learnButton: 'Learn More'
     }
@@ -24,26 +24,29 @@ const HeroSection = () => {
 
   // 순환하는 메인 이미지
   const [mainImageIndex, setMainImageIndex] = React.useState(0);
-  const [isVisible, setIsVisible] = React.useState(true);
+  const [nextImageIndex, setNextImageIndex] = React.useState(1);
+  const [isTransitioning, setIsTransitioning] = React.useState(false);
   const mainImages = ['/images/main1.png', '/images/main2.png', '/images/main3.png'];
 
   React.useEffect(() => {
     const interval = setInterval(() => {
-      // 이미지 페이드아웃
-      setIsVisible(false);
+      if (isTransitioning) return;
       
-      // 1초 후 다음 이미지로 변경
+      setIsTransitioning(true);
+      
+      // 다음 이미지 인덱스 미리 계산
+      const nextIndex = (mainImageIndex + 1) % mainImages.length;
+      setNextImageIndex(nextIndex);
+      
+      // 500ms 후 이미지 변경
       setTimeout(() => {
-        setMainImageIndex((prevIndex) => (prevIndex + 1) % mainImages.length);
-        // 1초 후 이미지 페이드인
-        setTimeout(() => {
-          setIsVisible(true);
-        }, 1000);
-      }, 1000);
+        setMainImageIndex(nextIndex);
+        setIsTransitioning(false);
+      }, 500);
     }, 8000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [mainImageIndex, isTransitioning]);
   return (
     <section className="min-h-screen bg-gradient-to-br from-background via-background to-card flex items-center justify-center relative overflow-hidden">
       {/* Background Pattern */}
@@ -65,11 +68,19 @@ const HeroSection = () => {
               key={mainImageIndex}
               src={mainImages[mainImageIndex]} 
               alt={`Main ${mainImageIndex + 1}`}
-              className={`mx-auto max-w-full h-auto transition-all duration-1000 ease-in-out relative z-10 ${
-                isVisible ? 'opacity-100' : 'opacity-0'
-              }`}
+              className="mx-auto max-w-full h-auto transition-opacity duration-1000 ease-in-out relative z-10 opacity-100"
               style={{ maxHeight: '300px' }}
             />
+            {/* 다음 이미지 (크로스페이드용) */}
+            {isTransitioning && (
+              <img 
+                key={`next-${nextImageIndex}`}
+                src={mainImages[nextImageIndex]} 
+                alt={`Next Main ${nextImageIndex + 1}`}
+                className="mx-auto max-w-full h-auto transition-opacity duration-1000 ease-in-out absolute inset-0 opacity-0"
+                style={{ maxHeight: '300px' }}
+              />
+            )}
           </div>
           
           {/* 로고 추가 */}

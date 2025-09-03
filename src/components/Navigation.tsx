@@ -12,7 +12,7 @@ const Navigation = () => {
   };
 
   const scrollToSection = (index: number) => {
-    const sections = ['about', 'services', 'pricing'];
+    const sections = ['about', 'services', 'price'];
     const element = document.getElementById(sections[index]);
     element?.scrollIntoView({ behavior: 'smooth' });
   };

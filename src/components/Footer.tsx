@@ -20,7 +20,7 @@ const Footer = () => {
       description: "A Space for Bitcoiners.",
       descriptionEn: '비트코이너를 위한 공간',
       contact: 'Contact',
-      address: '30, Sinchon-ro 2an-gil, Mapo-gu, Seoul, 2nd Floor',
+      address: '30, Sinchon-ro 2an-gil, Mapo-gu, Seoul, 2F',
       hours: '10:00 - 18:00 (Tue-Sun)',
       email: 'hello@noncelab.com',
       kakao: '+82-2-702-1718',

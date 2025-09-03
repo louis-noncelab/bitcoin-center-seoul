@@ -21,7 +21,7 @@ const AboutSection = () => {
       title: 'About',
       subtitle: 'A space in Seoul where you can experience and learn about the value and technology of Bitcoin.',
       location: 'Location',
-      locationAddress: '30, Sinchon-ro 2an-gil, Mapo-gu, Seoul, 2nd Floor',
+      locationAddress: '30, Sinchon-ro 2an-gil, Mapo-gu, Seoul, 2F',
       locationSubtext: '3 min walk from Hongik University Station (Exit 6)',
       hours: 'Business Hours',
       hoursDetail: '10:00 - 18:00\nTuesday - Sunday\n(Closed on Mondays)',
