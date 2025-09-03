@@ -136,7 +136,7 @@ const ServicesSection = () => {
             >
               <CardContent className="p-6 text-center">
                 <div className="w-14 h-14 bg-gradient-to-r from-bitcoin/20 to-bitcoin-dark/20 rounded-lg flex items-center justify-center mx-auto mb-4 group-hover:from-bitcoin group-hover:to-bitcoin-dark transition-all duration-300">
-                  <service.icon className="w-7 h-7 text-bitcoin group-hover:text-bitcoin-foreground transition-colors duration-300" />
+                  <service.icon className="w-7 h-7 text-bitcoin group-hover:text-white transition-all duration-300 group-hover:scale-110" />
                 </div>
                 <h3 className="text-lg font-semibold mb-2 text-foreground">{service.title}</h3>
                 <p className="text-muted-foreground text-sm mb-2 leading-relaxed">

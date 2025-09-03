@@ -38,7 +38,7 @@ const Navigation = () => {
               variant="outline"
               size="sm"
               onClick={toggleLanguage}
-              className="border-bitcoin text-bitcoin hover:bg-bitcoin hover:text-bitcoin-foreground"
+              className="border-bitcoin text-bitcoin hover:bg-bitcoin hover:text-foreground"
             >
               <Globe className="w-4 h-4 mr-2" />
               {language === 'ko' ? 'EN' : '한글'}
