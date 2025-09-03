@@ -109,16 +109,7 @@ const HeroSection = () => {
             </div>
           </div>
 
-          <div className="flex justify-center">
-            <Button 
-              variant="outline" 
-              size="lg"
-              className="border-bitcoin text-bitcoin hover:bg-bitcoin hover:text-bitcoin-foreground"
-              onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
-            >
-              {content[language].learnButton}
-            </Button>
-          </div>
+
         </div>
       </div>
     </section>
