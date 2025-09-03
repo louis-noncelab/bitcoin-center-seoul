@@ -16,7 +16,7 @@ const PricingSection = () => {
           title: '입장료',
           titleEn: 'Admission',
           price: '3,000 sats',
-          priceKrw: '5,000 KRW',
+          priceKrw: 'KRW : +20%',
           icon: Coffee,
           features: [
             '무료 커피 (각종 음료 포함)',
@@ -31,7 +31,7 @@ const PricingSection = () => {
           title: '행사 대관',
           titleEn: 'Event Rental',
           price: '200,000 sats',
-          priceKrw: '300,000 KRW / Hour',
+          priceKrw: 'KRW : +20%',
           icon: Users,
           features: [
             '와이파이',
@@ -55,7 +55,7 @@ const PricingSection = () => {
           title: 'Admission',
           titleEn: '입장료',
           price: '3,000 sats',
-          priceKrw: '5,000 KRW',
+          priceKrw: 'KRW : +20%',
           icon: Coffee,
           features: [
             'Free Coffee (various beverages included)',
@@ -70,7 +70,7 @@ const PricingSection = () => {
           title: 'Event Rental',
           titleEn: '행사 대관',
           price: '200,000 sats',
-          priceKrw: '300,000 KRW / Hour',
+          priceKrw: 'KRW : +20%',
           icon: Users,
           features: [
             'Wifi',
