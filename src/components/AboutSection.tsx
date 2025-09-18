@@ -13,7 +13,7 @@ const AboutSection = () => {
       locationAddress: '서울시 마포구 신촌로2안길 30 2층',
       locationSubtext: '지하철 홍대입구역 6번출구 도보 3분',
       hours: '운영시간',
-      hoursDetail: '10:00 - 18:00\n화요일 - 일요일\n(월요일 휴무)',
+      hoursDetail: '12:00 - 20:00\n화요일 - 일요일\n(월요일 휴무)',
       contact: '문의',
       contactDetail: '예약 및 문의\nhello@noncelab.com\n+82-2-702-1718'
     },
@@ -24,7 +24,7 @@ const AboutSection = () => {
       locationAddress: '30, Sinchon-ro 2an-gil, Mapo-gu, Seoul, 2F',
       locationSubtext: '3 min walk from Hongik University Station (Exit 6)',
       hours: 'Business Hours',
-      hoursDetail: '10:00 - 18:00\nTuesday - Sunday\n(Closed on Mondays)',
+      hoursDetail: '12:00 - 20:00\nTuesday - Sunday\n(Closed on Mondays)',
       contact: 'Contact',
       contactDetail: 'Reservations & Inquiries\nhello@noncelab.com\n+82-2-702-1718'
     }

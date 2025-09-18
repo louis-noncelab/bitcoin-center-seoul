@@ -11,13 +11,13 @@ const HeroSection = () => {
     ko: {
       subtitle: '비트코이너를 위한 공간',
       address: '서울시 마포구 신촌로2안길 30 2층',
-      hours: '10:00 - 18:00 (화-일)',
+      hours: '12:00 - 20:00 (화-일)',
       learnButton: '자세히 보기'
     },
     en: {
       subtitle: "A space for Bitcoiners",
       address: '30, Sinchon-ro 2an-gil, Mapo-gu, Seoul, 2F',
-      hours: '10:00 - 18:00 (Tue-Sun)',
+      hours: '12:00 - 20:00 (Tue-Sun)',
       learnButton: 'Learn More'
     }
   };
