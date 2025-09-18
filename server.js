@@ -11,8 +11,8 @@ const port = process.env.PORT || 3000;
 // 정적 파일 서빙
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// SPA 라우팅을 위한 fallback
-app.get('*', (req, res) => {
+// SPA 라우팅을 위한 fallback - 모든 경로에 대해 index.html 반환
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
