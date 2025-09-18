@@ -12,9 +12,17 @@ const Navigation = () => {
   };
 
   const scrollToSection = (index: number) => {
-    const sections = ['about', 'services', 'price'];
+    const sections = ['about', 'services', 'pricing'];
     const element = document.getElementById(sections[index]);
-    element?.scrollIntoView({ behavior: 'smooth' });
+    if (element) {
+      const elementPosition = element.offsetTop;
+      const offsetPosition = elementPosition - 100; // 네비게이션 바 높이만큼 위로 조정
+      
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
   };
 
   return (
