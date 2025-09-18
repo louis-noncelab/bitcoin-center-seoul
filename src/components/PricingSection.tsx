@@ -11,7 +11,7 @@ const PricingSection = () => {
       title: '가격 정보',
       subtitle: '비트코인 결제를 통해 비트코인 센터 서울을 이용하세요.',
       popular: '인기',
-      pricing: [
+      price: [
         {
           title: '입장료',
           titleEn: 'Admission',
@@ -50,7 +50,7 @@ const PricingSection = () => {
       title: 'Price',
       subtitle: 'Use Bitcoin Center Seoul through Bitcoin payments.',
       popular: 'Popular',
-      pricing: [
+      price: [
         {
           title: 'Admission',
           titleEn: '입장료',
@@ -100,7 +100,7 @@ const PricingSection = () => {
   };
 
   return (
-    <section id="pricing" className="py-20 bg-card">
+    <section id="price" className="py-20 bg-card">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-foreground to-bitcoin bg-clip-text text-transparent">
@@ -112,7 +112,7 @@ const PricingSection = () => {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {content[language].pricing.map((plan, index) => (
+          {content[language].price.map((plan, index) => (
             <Card 
               key={index}
               className={`relative bg-background border-border shadow-lg hover:shadow-xl transition-all duration-300 p-2 ${

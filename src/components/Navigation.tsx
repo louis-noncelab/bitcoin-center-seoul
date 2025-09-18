@@ -8,11 +8,11 @@ const Navigation = () => {
 
   const menuItems = {
     ko: ['소개', '주요 역할', '가격 정보'],
-    en: ['About', 'Services', 'Pricing']
+    en: ['About', 'Services', 'Price']
   };
 
   const scrollToSection = (index: number) => {
-    const sections = ['about', 'services', 'pricing'];
+    const sections = ['about', 'services', 'price'];
     const element = document.getElementById(sections[index]);
     if (element) {
       const elementPosition = element.offsetTop;
