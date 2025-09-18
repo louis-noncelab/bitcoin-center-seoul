@@ -8,7 +8,6 @@ set -e
 
 # 설정
 GITHUB_REPO="https://github.com/louis-noncelab/bitcoin-center-seoul.git"
-APP_DIR="/bitcoin-center-seoul"
 
 # 색상 코드
 RED='\033[0;31m'
@@ -21,14 +20,7 @@ echo -e "${BLUE}🚀 Bitcoin Center Seoul 배포 시작...${NC}"
 
 # 1. 현재 디렉토리 확인
 echo -e "${YELLOW}🔍 현재 위치 확인 중...${NC}"
-if [ ! -d "$APP_DIR" ]; then
-    echo -e "${RED}❌ 애플리케이션 디렉토리를 찾을 수 없습니다: $APP_DIR${NC}"
-    echo -e "${YELLOW}   올바른 디렉토리에서 실행해주세요.${NC}"
-    exit 1
-fi
-
-cd $APP_DIR
-echo -e "${GREEN}✅ 애플리케이션 디렉토리로 이동: $(pwd)${NC}"
+echo -e "${GREEN}✅ 현재 디렉토리: $(pwd)${NC}"
 
 # 2. Git 상태 확인
 echo -e "${YELLOW}📋 Git 상태 확인 중...${NC}"
