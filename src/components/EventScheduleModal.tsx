@@ -27,7 +27,7 @@ const EventScheduleModal = () => {
       title: '대관 예약',
       titleEn: 'Event Rental',
       date: '2025-10-25',
-      time: '14:00 - 20:00',
+      time: '16:00 - 20:00',
       location: '비트코인 센터 서울',
       locationEn: 'Bitcoin Center Seoul',
       description: '해당 시간에는 센터 입장이 불가능합니다.',
