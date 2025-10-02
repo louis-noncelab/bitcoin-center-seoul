@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { MapPin, Clock } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Logo from './Logo';
+import EventScheduleModal from './EventScheduleModal';
 
 const HeroSection = () => {
   const { language } = useLanguage();
@@ -11,13 +12,13 @@ const HeroSection = () => {
     ko: {
       subtitle: '비트코이너를 위한 공간',
       address: '서울시 마포구 신촌로2안길 30 2층',
-      hours: '12:00 - 20:00 (화-일)',
+      hours: '12:00 - 20:00 (연중무휴, 공휴일 제외, 대관시 사용 불가)',
       learnButton: '자세히 보기'
     },
     en: {
       subtitle: "A space for Bitcoiners",
       address: '30, Sinchon-ro 2an-gil, Mapo-gu, Seoul, 2F',
-      hours: '12:00 - 20:00 (Tue-Sun)',
+      hours: '12:00 - 20:00 \n (Mon-Sun, except holidays, closed for private booking)',
       learnButton: 'Learn More'
     }
   };
@@ -98,7 +99,7 @@ const HeroSection = () => {
             <br />
           </p>
 
-          <div className="flex flex-col md:flex-row items-center justify-center gap-8 mb-12">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-8 mb-8">
             <div className="flex items-center gap-3 text-muted-foreground">
               <MapPin className="w-5 h-5 text-bitcoin" />
               <span>{content[language].address}</span>
@@ -107,6 +108,10 @@ const HeroSection = () => {
               <Clock className="w-5 h-5 text-bitcoin" />
               <span>{content[language].hours}</span>
             </div>
+          </div>
+
+          <div className="flex justify-center mb-12">
+            <EventScheduleModal />
           </div>
 
 

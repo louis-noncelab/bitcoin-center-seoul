@@ -11,7 +11,7 @@ const Footer = () => {
       descriptionEn: "A Space for Bitcoiners.",
       contact: '연락처',
       address: '서울시 마포구 신촌로2안길 30 2층',
-      hours: '12:00 - 20:00 (화-일)',
+      hours: '12:00 - 20:00 (연중무휴, 공휴일 제외)',
       email: 'hello@noncelab.com',
       kakao: '+82-2-702-1718',
       copyright: '© 2025 NonceLab Inc. All rights reserved.'
@@ -21,7 +21,7 @@ const Footer = () => {
       descriptionEn: '비트코이너를 위한 공간',
       contact: 'Contact',
       address: '30, Sinchon-ro 2an-gil, Mapo-gu, Seoul, 2F',
-      hours: '12:00 - 20:00 (Tue-Sun)',
+      hours: '12:00 - 20:00 (Mon-Sun, except holidays)',
       email: 'hello@noncelab.com',
       kakao: '+82-2-702-1718',
       copyright: '© 2025 NonceLab Inc. All rights reserved.'
