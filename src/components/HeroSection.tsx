@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { MapPin, Clock } from 'lucide-react';
+import { MapPin, Clock, Instagram, MessageCircle } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Logo from './Logo';
 import EventScheduleModal from './EventScheduleModal';
@@ -17,8 +17,8 @@ const HeroSection = () => {
     },
     en: {
       subtitle: "A space for Bitcoiners",
-      address: '30, Sinchon-ro 2an-gil, Mapo-gu, Seoul, 2F',
-      hours: '12:00 - 20:00 \n (Mon-Sun, except holidays, closed for private booking)',
+      address: '30, Sinchon-ro 2an-gil, Mapo-gu, Seoul,2F',
+      hours: '12:00 - 20:00 (Mon-Sun, except holidays)',
       learnButton: 'Learn More'
     }
   };
@@ -99,14 +99,39 @@ const HeroSection = () => {
             <br />
           </p>
 
-          <div className="flex flex-col md:flex-row items-center justify-center gap-8 mb-8">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-8 mb-6">
             <div className="flex items-center gap-3 text-muted-foreground">
               <MapPin className="w-5 h-5 text-bitcoin" />
-              <span>{content[language].address}</span>
+              <span dangerouslySetInnerHTML={{ __html: content[language].address }} />
             </div>
             <div className="flex items-center gap-3 text-muted-foreground">
               <Clock className="w-5 h-5 text-bitcoin" />
-              <span>{content[language].hours}</span>
+              <span dangerouslySetInnerHTML={{ __html: content[language].hours }} />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center gap-6 mb-8">
+            <div className="flex items-center gap-3 text-muted-foreground">
+              <Instagram className="w-5 h-5 text-bitcoin" />
+              <a 
+                href="https://www.instagram.com/bitcoincenterseoul/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:text-bitcoin transition-colors"
+              >
+                @bitcoincenterseoul
+              </a>
+            </div>
+            <div className="flex items-center gap-3 text-muted-foreground">
+              <MessageCircle className="w-5 h-5 text-bitcoin" />
+              <a 
+                href="https://www.threads.com/@bitcoincenterseoul" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:text-bitcoin transition-colors"
+              >
+                @bitcoincenterseoul
+              </a>
             </div>
           </div>
 
