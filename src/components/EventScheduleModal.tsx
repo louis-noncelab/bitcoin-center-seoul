@@ -19,21 +19,33 @@ interface Event {
 const EventScheduleModal = () => {
   const { language } = useLanguage();
   const [isOpen, setIsOpen] = React.useState(false);
+  const [events, setEvents] = React.useState<Event[]>([]);
+  const [loading, setLoading] = React.useState(false);
 
-  // 샘플 이벤트 데이터
-  const events: Event[] = [
-    {
-      id: 1,
-      title: '대관 예약',
-      titleEn: 'Event Rental',
-      date: '2025-10-25',
-      time: '16:00 - 20:00',
-      location: '비트코인 센터 서울',
-      locationEn: 'Bitcoin Center Seoul',
-      description: '해당 시간에는 센터 입장이 불가능합니다.',
-      descriptionEn: 'The center is closed during this time.'
-    },
-  ];
+  // API에서 이벤트 데이터 가져오기
+  const fetchEvents = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/events/upcoming');
+      if (response.ok) {
+        const data = await response.json();
+        setEvents(data);
+      } else {
+        console.error('이벤트 데이터를 가져오는데 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('이벤트 데이터 요청 오류:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 모달이 열릴 때 이벤트 데이터 가져오기
+  React.useEffect(() => {
+    if (isOpen) {
+      fetchEvents();
+    }
+  }, [isOpen]);
 
   const content = {
     ko: {
@@ -60,6 +72,8 @@ const EventScheduleModal = () => {
     });
   };
 
+  // API에서 이미 필터링된 데이터를 받아오므로 추가 필터링 불필요
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -74,9 +88,17 @@ const EventScheduleModal = () => {
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-bitcoin" />
-            {content[language].title}
+          <DialogTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-bitcoin" />
+              {content[language].title}
+            </div>
+            <a 
+              href="/admin/events" 
+              className="text-xs text-muted-foreground hover:text-bitcoin transition-colors"
+            >
+              일정관리
+            </a>
           </DialogTitle>
         </DialogHeader>
         
@@ -85,7 +107,12 @@ const EventScheduleModal = () => {
             {content[language].upcomingEvents}
           </h3>
           
-          {events.length > 0 ? (
+          {loading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-bitcoin mx-auto mb-4"></div>
+              <p>이벤트를 불러오는 중...</p>
+            </div>
+          ) : events.length > 0 ? (
             <div className="space-y-4">
               {events.map((event) => (
                 <div
