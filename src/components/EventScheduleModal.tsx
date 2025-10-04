@@ -21,6 +21,7 @@ const EventScheduleModal = () => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [events, setEvents] = React.useState<Event[]>([]);
   const [loading, setLoading] = React.useState(false);
+  const [showDontShowAgain, setShowDontShowAgain] = React.useState(false);
 
   // API에서 이벤트 데이터 가져오기
   const fetchEvents = async () => {
@@ -40,6 +41,23 @@ const EventScheduleModal = () => {
     }
   };
 
+  // 홈페이지 입장 시 자동으로 팝업 열기
+  React.useEffect(() => {
+    const dontShowToday = localStorage.getItem('dontShowEventModalToday');
+    const today = new Date().toDateString();
+    
+    // 오늘 날짜와 저장된 날짜가 다르면 팝업 표시
+    if (dontShowToday !== today) {
+      // 약간의 지연 후 팝업 열기 (페이지 로딩 완료 후)
+      const timer = setTimeout(() => {
+        setIsOpen(true);
+        setShowDontShowAgain(true);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   // 모달이 열릴 때 이벤트 데이터 가져오기
   React.useEffect(() => {
     if (isOpen) {
@@ -47,18 +65,28 @@ const EventScheduleModal = () => {
     }
   }, [isOpen]);
 
+  // 오늘 더이상 보지 않기 기능
+  const handleDontShowToday = () => {
+    const today = new Date().toDateString();
+    localStorage.setItem('dontShowEventModalToday', today);
+    setIsOpen(false);
+    setShowDontShowAgain(false);
+  };
+
   const content = {
     ko: {
       title: '이벤트 일정',
       upcomingEvents: '다가오는 이벤트',
       noEvents: '현재 예정된 이벤트가 없습니다.',
-      close: '닫기'
+      close: '닫기',
+      dontShowAgain: '오늘 더이상 보지 않기'
     },
     en: {
       title: 'Event Schedule',
       upcomingEvents: 'Upcoming Events',
       noEvents: 'No upcoming events scheduled.',
-      close: 'Close'
+      close: 'Close',
+      dontShowAgain: "Don't show today"
     }
   };
 
@@ -88,18 +116,18 @@ const EventScheduleModal = () => {
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-bitcoin" />
-              {content[language].title}
-            </div>
+          <DialogTitle className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-bitcoin" />
+            {content[language].title}
+          </DialogTitle>
+          <div className="flex justify-start mt-2">
             <a 
               href="/admin/events" 
               className="text-xs text-muted-foreground hover:text-bitcoin transition-colors"
             >
               일정관리
             </a>
-          </DialogTitle>
+          </div>
         </DialogHeader>
         
         <div className="mt-6">
@@ -156,11 +184,20 @@ const EventScheduleModal = () => {
           )}
         </div>
         
-        <div className="flex justify-end mt-6 pt-4 border-t border-border">
+        <div className="flex justify-between items-center mt-6 pt-4 border-t border-border">
+          {showDontShowAgain && (
+            <Button
+              variant="ghost"
+              onClick={handleDontShowToday}
+              className="text-muted-foreground hover:text-foreground text-sm"
+            >
+              {content[language].dontShowAgain}
+            </Button>
+          )}
           <Button
             variant="outline"
             onClick={() => setIsOpen(false)}
-            className="border-bitcoin text-bitcoin hover:bg-bitcoin hover:text-foreground"
+            className="border-bitcoin text-bitcoin hover:bg-bitcoin hover:text-foreground ml-auto"
           >
             {content[language].close}
           </Button>
