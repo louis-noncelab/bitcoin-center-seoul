@@ -34,10 +34,10 @@ const AdminEvents = () => {
     titleEn: '',
     date: '',
     time: '',
-    location: '',
-    locationEn: '',
-    description: '',
-    descriptionEn: ''
+    location: '비트코인 센터 서울',
+    locationEn: 'Bitcoin Center Seoul',
+    description: '해당 시간동안 비트코인 센터 서울의 이용이 불가능합니다.',
+    descriptionEn: 'Bitcoin Center Seoul is unavailable during this time.'
   });
 
   // 인증 확인
@@ -92,10 +92,10 @@ const AdminEvents = () => {
       titleEn: '',
       date: '',
       time: '',
-      location: '',
-      locationEn: '',
-      description: '',
-      descriptionEn: ''
+      location: '비트코인 센터 서울',
+      locationEn: 'Bitcoin Center Seoul',
+      description: '해당 시간동안 비트코인 센터 서울의 이용이 불가능합니다.',
+      descriptionEn: 'Bitcoin Center Seoul is unavailable during this time.'
     });
     setIsEditing(false);
     setEditingEvent(null);
