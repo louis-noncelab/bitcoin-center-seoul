@@ -87,17 +87,6 @@ const PricingSection = () => {
     }
   };
 
-  const handleContact = () => {
-    const subject = language === 'ko' 
-      ? encodeURIComponent('행사 대관 문의')
-      : encodeURIComponent('Event Space Inquiry');
-    
-    const body = language === 'ko'
-      ? encodeURIComponent(`안녕하세요,\n\n비트코인 센터 서울 행사 대관에 대해 문의드립니다.\n\n행사 일정:\n행사 내용:\n참석 인원:\n기타 요청사항:\n\n연락처:\n\n감사합니다.`)
-      : encodeURIComponent(`Hello,\n\nI would like to inquire about event space rental at Bitcoin Center Seoul.\n\nEvent Date:\nEvent Details:\nNumber of Attendees:\nOther Requirements:\n\nContact Information:\n\nThank you.`);
-    
-    window.open(`mailto:hello@noncelab.com?subject=${subject}&body=${body}`, '_blank');
-  };
 
   return (
     <section id="price" className="py-20 bg-card">
@@ -155,15 +144,6 @@ const PricingSection = () => {
                   ))}
                 </ul>
                 
-                {/* 행사 대관에만 문의하기 버튼 표시 */}
-                {plan.isPopular && (
-                  <Button 
-                    className="w-full bg-gradient-to-r from-bitcoin to-bitcoin-dark hover:from-bitcoin-dark hover:to-bitcoin text-bitcoin-foreground"
-                    onClick={handleContact}
-                  >
-                    {language === 'ko' ? '대관 문의하기' : 'Inquire for Rental'}
-                  </Button>
-                )}
               </CardContent>
             </Card>
           ))}
