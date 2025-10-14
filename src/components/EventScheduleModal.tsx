@@ -170,9 +170,12 @@ const EventScheduleModal = () => {
                     </div>
                   </div>
                   
-                  <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-                    {language === 'ko' ? event.description : event.descriptionEn}
-                  </p>
+                  <p 
+                    className="mt-3 text-sm text-muted-foreground leading-relaxed whitespace-pre-line"
+                    dangerouslySetInnerHTML={{ 
+                      __html: (language === 'ko' ? event.description : event.descriptionEn).replace(/\n/g, '<br />') 
+                    }}
+                  />
                 </div>
               ))}
             </div>

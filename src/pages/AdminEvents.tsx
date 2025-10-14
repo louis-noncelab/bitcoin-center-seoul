@@ -36,8 +36,8 @@ const AdminEvents = () => {
     time: '',
     location: '비트코인 센터 서울',
     locationEn: 'Bitcoin Center Seoul',
-    description: '해당 시간동안 비트코인 센터 서울의 이용이 불가능합니다.',
-    descriptionEn: 'Bitcoin Center Seoul is unavailable during this time.'
+    description: '해당 시간동안 비트코인 센터 서울의 이용이 불가능합니다.\n\n문의사항이 있으시면 연락주세요.',
+    descriptionEn: 'Bitcoin Center Seoul is unavailable during this time.\n\nPlease contact us if you have any questions.'
   });
 
   // 인증 확인
@@ -94,8 +94,8 @@ const AdminEvents = () => {
       time: '',
       location: '비트코인 센터 서울',
       locationEn: 'Bitcoin Center Seoul',
-      description: '해당 시간동안 비트코인 센터 서울의 이용이 불가능합니다.',
-      descriptionEn: 'Bitcoin Center Seoul is unavailable during this time.'
+      description: '해당 시간동안 비트코인 센터 서울의 이용이 불가능합니다.\n\n문의사항이 있으시면 연락주세요.',
+      descriptionEn: 'Bitcoin Center Seoul is unavailable during this time.\n\nPlease contact us if you have any questions.'
     });
     setIsEditing(false);
     setEditingEvent(null);
@@ -487,9 +487,12 @@ const AdminEvents = () => {
                       </div>
                       
                       <div className="mt-3 pt-3 border-t border-border/50">
-                        <p className="text-sm text-muted-foreground leading-relaxed">
-                          {event.description}
-                        </p>
+                        <p 
+                          className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line"
+                          dangerouslySetInnerHTML={{ 
+                            __html: event.description.replace(/\n/g, '<br />') 
+                          }}
+                        />
                       </div>
                     </div>
                   ))}
