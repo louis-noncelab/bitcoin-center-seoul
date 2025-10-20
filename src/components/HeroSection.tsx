@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { MapPin, Clock, Instagram, MessageCircle } from 'lucide-react';
+import { MapPin, Clock, Instagram, MessageCircle, MessageSquare } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Logo from './Logo';
 import EventScheduleModal from './EventScheduleModal';
@@ -13,13 +13,15 @@ const HeroSection = () => {
       subtitle: '비트코이너를 위한 공간',
       address: '서울시 마포구 신촌로2안길 30 2층',
       hours: '12:00 - 20:00 (연중무휴, 공휴일 제외, 대관시 사용 불가)',
-      learnButton: '자세히 보기'
+      learnButton: '자세히 보기',
+      kakaoInquiry: '문의하기'
     },
     en: {
       subtitle: "A space for Bitcoiners",
       address: '30, Sinchon-ro 2an-gil, Mapo-gu, Seoul,2F',
       hours: '12:00 - 20:00 (Mon-Sun, except holidays)',
-      learnButton: 'Learn More'
+      learnButton: 'Learn More',
+      kakaoInquiry: 'Inquiry'
     }
   };
 
@@ -123,7 +125,7 @@ const HeroSection = () => {
               </a>
             </div>
             <div className="flex items-center gap-3 text-muted-foreground">
-              <MessageCircle className="w-5 h-5 text-bitcoin" />
+              <MessageSquare className="w-5 h-5 text-bitcoin" />
               <a 
                 href="https://www.threads.com/@bitcoincenterseoul" 
                 target="_blank" 
@@ -135,8 +137,17 @@ const HeroSection = () => {
             </div>
           </div>
 
-          <div className="flex justify-center mb-12">
+          <div className="flex justify-center gap-4 mb-12">
             <EventScheduleModal />
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-bitcoin text-bitcoin hover:bg-bitcoin hover:text-foreground"
+              onClick={() => window.open('https://pf.kakao.com/_HjxaxaG', '_blank')}
+            >
+              <MessageCircle className="w-4 h-4 mr-2" />
+              {content[language].kakaoInquiry}
+            </Button>
           </div>
 
 

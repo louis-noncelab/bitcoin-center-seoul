@@ -1,4 +1,4 @@
-import { MapPin, Clock, Mail, Phone } from 'lucide-react';
+import { MapPin, Clock, Mail, Phone, MessageCircle } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Logo from './Logo';
 

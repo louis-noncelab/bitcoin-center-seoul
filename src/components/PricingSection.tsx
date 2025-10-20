@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Coffee, Users } from 'lucide-react';
+import { Check, Coffee, Users, MessageCircle } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const PricingSection = () => {
@@ -30,8 +30,9 @@ const PricingSection = () => {
         {
           title: '행사 대관',
           titleEn: 'Event Rental',
-          price: '150,000 sat / hour',
+          price: '150,000 sats / hour',
           priceKrw: '원화 결제시 +20%',
+          priceDiscount: '평일대관 시 -50%',
           icon: Users,
           features: [
             '와이파이',
@@ -42,7 +43,7 @@ const PricingSection = () => {
             '음향 시설 제공'
           ],
           isPopular: true,
-          buttonText: '문의하기'
+          buttonText: '대관 문의'
         }
       ]
     },
@@ -69,8 +70,9 @@ const PricingSection = () => {
         {
           title: 'Event Rental',
           titleEn: '행사 대관',
-          price: '150,000 sat / hour',
+          price: '150,000 sats / hour',
           priceKrw: '+20% in KRW',
+          priceDiscount: 'Weekday rental -50%',
           icon: Users,
           features: [
             'Wifi',
@@ -81,7 +83,7 @@ const PricingSection = () => {
             'Audio equipment provided'
           ],
           isPopular: true,
-          buttonText: 'Contact Us'
+          buttonText: 'Rental Inquiry'
         }
       ]
     }
@@ -130,7 +132,10 @@ const PricingSection = () => {
                 <p className="text-sm text-muted-foreground leading-relaxed overflow-visible pb-3">{plan.titleEn}</p>
                 <div className="mt-4">
                   <div className="text-2xl font-bold text-bitcoin leading-relaxed overflow-visible pb-3">{plan.price}</div>
-                  <div className="text-lg text-muted-foreground leading-relaxed overflow-visible pb-3">{plan.priceKrw}</div>
+                  {plan.priceDiscount && (
+                    <div className="text-lg text-bitcoin font-medium leading-relaxed overflow-visible pb-2">{plan.priceDiscount}</div>
+                  )}
+                  <div className="text-sm text-muted-foreground leading-relaxed overflow-visible pb-3">{plan.priceKrw}</div>
                 </div>
               </CardHeader>
               
@@ -143,6 +148,18 @@ const PricingSection = () => {
                     </li>
                   ))}
                 </ul>
+                
+                {plan.title === '행사 대관' || plan.title === 'Event Rental' ? (
+                  <div className="mt-6">
+                    <Button
+                      className="w-full bg-bitcoin hover:bg-bitcoin-dark text-bitcoin-foreground"
+                      onClick={() => window.open('https://pf.kakao.com/_HjxaxaG', '_blank')}
+                    >
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      {plan.buttonText}
+                    </Button>
+                  </div>
+                ) : null}
                 
               </CardContent>
             </Card>
