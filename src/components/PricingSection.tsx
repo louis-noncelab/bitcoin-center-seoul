@@ -30,7 +30,7 @@ const PricingSection = () => {
         {
           title: '행사 대관',
           titleEn: 'Event Rental',
-          price: '150,000 sats / hour',
+          price: '100,000 sats / hour',
           priceKrw: '원화 결제시 +20%',
           priceDiscount: '평일대관 시 -50%',
           icon: Users,
@@ -70,7 +70,7 @@ const PricingSection = () => {
         {
           title: 'Event Rental',
           titleEn: '행사 대관',
-          price: '150,000 sats / hour',
+          price: '100,000 sats / hour',
           priceKrw: '+20% in KRW',
           priceDiscount: 'Weekday rental -50%',
           icon: Users,

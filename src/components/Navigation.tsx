@@ -31,16 +31,18 @@ const Navigation = () => {
         <div className="flex items-center justify-between">
           <Logo size="lg" />
 
-          <div className="hidden md:flex items-center space-x-8">
-            {menuItems[language].map((item, index) => (
-              <button
-                key={item}
-                onClick={() => scrollToSection(index)}
-                className="text-foreground hover:text-bitcoin transition-colors duration-200"
-              >
-                {item}
-              </button>
-            ))}
+          <div className="flex items-center space-x-4 md:space-x-8">
+            <div className="hidden md:flex items-center space-x-8">
+              {menuItems[language].map((item, index) => (
+                <button
+                  key={item}
+                  onClick={() => scrollToSection(index)}
+                  className="text-foreground hover:text-bitcoin transition-colors duration-200"
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
             
             <Button
               variant="outline"
