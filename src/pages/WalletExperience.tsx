@@ -19,9 +19,9 @@ const WalletExperience = () => {
     ko: {
       welcome: {
         title: '하드월렛 체험하기',
-        message1: '안녕하세요. 비트코인센터서울의 하드월렛 체험존에 오신 것을 환영합니다.',
-        message2: '코코넛 월렛 학습용을 통해 마음껏 테스트 비트코인을 주고 받아보세요.',
-        message3: '하드월렛은 고장나지 않게 조심히 다뤄주세요',
+        message1: '비트코인센터서울의 하드월렛 체험존에 오신 것을 환영합니다.',
+        message2: '코코넛 월렛을 통해 마음껏 테스트 비트코인을 주고 받아보세요.',
+        message3: '하드월렛은 고장나지 않게 조심히 다뤄주세요.',
         button: '시작해볼까요?'
       },
       phoneSelection: {
@@ -38,7 +38,7 @@ const WalletExperience = () => {
       },
       walletSelection: {
         title: '하드월렛 선택',
-        message: '체험할 하드월렛 기종을 고르세요'
+        message: '체험할 하드월렛 기종을 고르세요.'
       },
       phases: {
         phase1: 'Phase 1. 니모닉 생성 단계',
@@ -51,7 +51,7 @@ const WalletExperience = () => {
         question: '비트코인 송금에 성공했나요?',
         yes: '네',
         no: '아니오',
-        retryMessage: '스텝의 도움을 받아서 다시 시도해보세요',
+        retryMessage: '스텝의 도움을 받아서 다시 시도해보세요.',
         congratulations: '축하합니다.'
       },
       next: '다음',
@@ -80,7 +80,7 @@ const WalletExperience = () => {
       },
       walletSelection: {
         title: 'Select Hardware Wallet',
-        message: 'Choose the hardware wallet model you want to experience'
+        message: 'Choose the hardware wallet model you want to experience.'
       },
       phases: {
         phase1: 'Phase 1. Mnemonic Generation',
@@ -93,7 +93,7 @@ const WalletExperience = () => {
         question: 'Did you successfully send Bitcoin?',
         yes: 'Yes',
         no: 'No',
-        retryMessage: 'Please try again with the help of the steps',
+        retryMessage: 'Please try again with the help of the steps.',
         congratulations: 'Congratulations!'
       },
       next: 'Next',
@@ -711,12 +711,9 @@ const WalletExperience = () => {
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">{content[language].phoneSelection.title}</h2>
           <p className="text-xl mb-8">{content[language].phoneSelection.message}</p>
-          <div className="flex gap-6">
+          <div className="flex gap-6 mb-8">
             <button
-              onClick={() => {
-                setPhoneOS('android');
-                handleNext();
-              }}
+              onClick={() => setPhoneOS('android')}
               className={`flex flex-col items-center p-6 border-2 rounded-lg transition-all ${
                 phoneOS === 'android' ? 'border-bitcoin bg-bitcoin/10' : 'border-border hover:border-bitcoin/50'
               }`}
@@ -725,10 +722,7 @@ const WalletExperience = () => {
               <span className="text-lg font-semibold">{content[language].phoneSelection.android}</span>
             </button>
             <button
-              onClick={() => {
-                setPhoneOS('ios');
-                handleNext();
-              }}
+              onClick={() => setPhoneOS('ios')}
               className={`flex flex-col items-center p-6 border-2 rounded-lg transition-all ${
                 phoneOS === 'ios' ? 'border-bitcoin bg-bitcoin/10' : 'border-border hover:border-bitcoin/50'
               }`}
@@ -737,6 +731,11 @@ const WalletExperience = () => {
               <span className="text-lg font-semibold">{content[language].phoneSelection.ios}</span>
             </button>
           </div>
+          {phoneOS && (
+            <Button onClick={handleNext} size="lg" className="bg-bitcoin hover:bg-bitcoin-dark">
+              {content[language].next}
+            </Button>
+          )}
         </div>
       );
     }
@@ -774,14 +773,11 @@ const WalletExperience = () => {
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">{content[language].walletSelection.title}</h2>
           <p className="text-xl mb-8">{content[language].walletSelection.message}</p>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-4xl">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-4xl mb-8">
             {wallets.map((wallet) => (
               <button
                 key={wallet.name}
-                onClick={() => {
-                  setWalletType(wallet.name as WalletType);
-                  handleNext();
-                }}
+                onClick={() => setWalletType(wallet.name as WalletType)}
                 className={`flex flex-col items-center p-6 border-2 rounded-lg transition-all ${
                   walletType === wallet.name ? 'border-bitcoin bg-bitcoin/10' : 'border-border hover:border-bitcoin/50'
                 }`}
@@ -791,6 +787,11 @@ const WalletExperience = () => {
               </button>
             ))}
           </div>
+          {walletType && (
+            <Button onClick={handleNext} size="lg" className="bg-bitcoin hover:bg-bitcoin-dark">
+              {content[language].next}
+            </Button>
+          )}
         </div>
       );
     }
