@@ -1,0 +1,196 @@
+체험을 클릭하면, 팝업이 뜨면서 "하드월렛 체험하기" 창이 뜰꺼야.
+ - 이 창은 전체화면으로 할 수 있어야 해
+ - 영문을 지원해야해.
+ - url 이 따져야해. 서브 url은 /walletExperence
+ - 모든 필요한 이미지는 Images/experence 안에 있어.
+ - 모든 화면에는 Home 으로 돌아가는 버튼이 있어야 해.
+ - 버튼이 있는 경우 선택하면 바로 다음 페이지로 넘어가면 돼.
+
+[첫 화면] 안내사항.
+“안녕하세요. 비트코인센터서울의 하드월렛 체험존에 오신 것을 환영합니다.”
+“코코넛 월렛 학습용을 통해 마음껏 테스트 비트코인을 주고 받아보세요.”
+“하드월렛은 고장나지 않게 조심히 다뤄주세요”
+
+ 버튼 : “시작해볼까요?”
+
+[둘째 화면] 자신이 가진 휴대폰 종류와 체험을 원하는 하드월렛을 선택하는 체크 버튼을 만들어줘.
+“현재 사용하고 있는 휴대폰의 OS를 선택해주세요”
+버튼 아이콘을 이미지로 넣어두었으니 활용해
+ 버튼 : 안드로이드 
+ 버튼 : 아이폰
+
+[셋째 화면] 다운로드 QR을 보여줘
+안드로이드의 경우 “아래 QR을 통해 플레이스토어에서 ‘코코넛 월렛 학습용’을 다운받으세요.” 메시지를
+애플의 경우 “아래 QR을 통해 앱스토어에서 ‘코코넛 월렛 학습용’을 다운받으세요.” 메시지를 보여줘
+ 버튼 : 다운로드를 완료했습니다.
+
+[넷째 화면] 하드월렛 선택 버튼을 보여줘. 아이콘을 이미지로 넣어두었으니 활용해 
+ “체험할 하드월렛을 기종을 고르세요”
+ 버튼 : SeedSigner
+ 버튼 : Jade Plus
+ 버튼 : Krux
+ 버튼 : Keystone 3 Pro
+ 버튼 : Coldcard Q
+ 버튼 : Coconut Vault
+
+[다섯째 화면~끝날 때 까지]
+다음은 각 하드월렛마다 Phase 별로 넘어가는 가이드 화면을 만들어줘.
+모든 화면에는 “다음” 버튼을
+마지막 화면에는 “비트코인 송금에 성공했나요?” 메시지에 “네”, "아니오"
+Test address 가 나오는 화면은 receiving_qr.png를 같이 보여줘.
+한글 언어 지원을 하되, 버튼 이름은 앱 이름, 기기 이름은 한글로 번역할 필요 없어
+폰트 색을 다음처럼 해줘.
+ 비밀번호(붉은계열), 버튼명(주황계열), 니모닉(노랑계열), 앱 이름(푸른계열), 기기 이름(초록계열)
+
+- 시드사이너를 선택한 경우
+(Phase 1. 니모닉 생성 단계)
+[SeedSigner] From the main menu, select "Seeds".
+[SeedSigner] Choose "Enter 12-word seed".
+[SeedSigner] Enter the test mnemonic "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about".
+(Phase 2. 보기전용 지갑 연동 단계)
+[SeedSigner] Select "Export Xpub".
+[SeedSigner] Select "Single Sig".
+[SeedSigner] Select "Native Segwit".
+[SeedSigner] Choose "BlueWallet".
+[Coconut Wallet] Select "Try adding a watch-only wallet!".
+[Coconut Wallet] Choose "SeedSigner".
+[Coconut Wallet] Scan QR on the SeedSigner.
+(Phase 3. 트랜잭션 생성 단계)
+[Coconut Wallet] Get test Bitcoin from the faucet if you need.
+[Coconut Wallet] Generate transaction with test address below.
+(Phase 5. 트랜잭션에 서명 단계)
+[SeedSigner] Select "Scan PSBT".
+[SeedSigner] Scan QR on the Coconut Wallet.
+[SeedSigner] Sign the transaction.
+(Phase 6. 비트코인 전송 단계)
+[Coconut Wallet] Scan the QR on the SeedSigner.
+[Coconut Wallet] Broadcast the Transaction on the Coconut Wallet.
+
+- Krux 를 선택한 경우
+(Phase 1. 니모닉 생성 단계)
+[Krux] Select "Load Mnemonic".
+[Krux] Select "Via Manual Input".
+[Krux] Select "Words" and "Yes".
+[Krux] Enter the test mnemonic "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+[Krux] Select "Customize" and select "Network".
+[Krux] Choose "Testnet".
+[Krux] Check Testnet, Single-sig, P2WPKH and m/84h/1h/0h. If not, adjust it through selecting "Customize".
+(Phase 2. 보기전용 지갑 연동 단계)
+[Krux] Back to the main menu, select "Load Wallet".
+[Krux] Select "Extended Public Key". 
+[Krux] Select "VPUB - QR Code".
+[Coconut Wallet] Select "Try adding a watch-only wallet!".
+[Coconut Wallet] Choose "Krux".
+[Coconut Wallet] Scan QR on the Krux.
+(Phase 3. 트랜잭션 생성 단계)
+[Coconut Wallet] Get test Bitcoin from the faucet if you need.
+[Coconut Wallet] Generate transaction with test address below.
+(Phase 5. 트랜잭션에 서명 단계)
+[Krux] Back to the main menu, select "Sign" and "PSBT".
+[Krux] Select "Load from camera".
+[Krux] Sign the transaction.
+[Krux] Select "Sign to QR code".
+(Phase 6. 비트코인 전송 단계)
+[Coconut Wallet] Scan the QR on the Krux.
+[Coconut Wallet] Broadcast the Transaction on the Coconut Wallet.
+
+
+- 제이드를 선택한경우
+(Phase 1. 니모닉 생성 단계)
+[Jade] Select "Options".
+[Jade] Select "Temporary Signer".
+[Jade] Select "12 Words".
+[Jave] Enter the mnemonic "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about".
+[Jade] Select "No".
+[Jade] Select "QR".
+[Jade] From the main menu, select "Options".
+[Jade] Select "Device".
+[Jade] Select "Settings".
+[Jade] Choose "Network: Mainnet".
+[Jade] Choose "Testnet".
+(Phase 2. 보기전용 지갑 연동 단계)
+[Jade] Back to the main menu, select "Options".
+[Jade] Select "Wallet"
+[Jade] Select "Export Xpub".
+[Coconut Wallet] Select "Try adding a watch-only wallet!".
+[Coconut Wallet] Choose "Jade".
+[Coconut Wallet] Select Scan QR on the Jade.
+(Phase 3. 트랜잭션 생성 단계)
+[Coconut Wallet] Get test Bitcoin from the faucet if you need.
+[Coconut Wallet] Generate transaction with test address below.
+(Phase 5. 트랜잭션에 서명 단계)
+[Jade] Select "Scan QR" on the Coconut Wallet.
+[Jade] Sign the transaction.
+(Phase 6. 비트코인 전송 단계)
+[Coconut Wallet] Scan the QR on the Jade.
+[Coconut Wallet] Broadcast the Transaction on the Coconut Wallet.
+
+- 키스톤3을 선택한 경우
+(Phase 1. 니모닉 생성 단계)
+[Keystone] The wallet password is "090103".
+[Keystone] A mnemonic has already been registered on the device.(abandon × 11, then about)
+(Phase 2. 보기전용 지갑 연동 단계)
+[Keystone] Select "…".
+[Keystone] Select "Connect Software Wallet".
+[Keystone] Choose "Sparrow".
+[Coconut Wallet] Select "Try adding a watch-only wallet!".
+[Coconut Wallet] Choose "Keystone 3 Pro".
+[Coconut Wallet] Scan QR on the Keystone.
+(Phase 3. 트랜잭션 생성 단계)
+[Coconut Wallet] Get test Bitcoin from the faucet if you need.
+[Coconut Wallet] Generate transaction with test address below.
+(Phase 5. 트랜잭션에 서명 단계)
+[Keystone] Select "SCAN" and scan QR on the Coconut Wallet.
+[Keystone] Sign the transaction.
+(Phase 6. 비트코인 전송 단계)
+[Coconut Wallet] Scan QR on the Keystone.
+[Coconut Wallet] Broadcast the Transaction on the Coconut Wallet.
+
+- 콜드카드 Q
+(Phase 1. 니모닉 생성 단계)
+[Coldcard] Press and hold the power button.
+[Coldcard] Pin is "090103" and press "ENTER".
+[Coldcard] Check "hen comic".
+[Coldcard] Second Pin is also "090103" and press "ENTER".
+[Coldcard] A mnemonic has already been registered on the device.
+(Phase 2. 보기전용 지갑 연동 단계)
+[Coldcard] Select "Advanced/Tools" and press "ENTER".
+[Coldcard] Select "Export Wallet" and press "ENTER".
+[Coldcard] Choose "Sparrow Wallet" and press "ENTER".
+[Coldcard] Press "ENTER" and press "QR" button.
+[Coconut Wallet] Select "Try adding a watch-only wallet!".
+[Coconut Wallet] Choose "Coldcard".
+[Coconut Wallet] Scan QR on the Coldcard.
+(Phase 3. 트랜잭션 생성 단계)
+[Coconut Wallet] Get test Bitcoin from the faucet if you need.
+[Coconut Wallet] Generate transaction with test address below.
+(Phase 5. 트랜잭션에 서명 단계)
+[Coldcard] Back to the main menu (Press "CANCEL"), select "Ready to Sign" and press "ENTER".
+[Coldcard] Press "QR" button.
+[Coldcard] Scan QR on the Coconut Wallet. (The camera is on the top.)
+[Coldcard] Select "OK TO SEND?" and press "ENTER".
+(Phase 6. 비트코인 전송 단계)
+[Coconut Wallet] Scan QR on the Coldcard.
+[Coconut Wallet] Broadcast the Transaction on the Coconut Wallet.
+
+- 코코넛 볼트를 선택한 경우
+(Phase 1. 니모닉 생성 단계)
+[Coconut Vault] The iPhone’s passcode is 090103.
+[Coconut Vault] Pin of Coconut Vault is 090103.
+[Coconut Vault] A mnemonic has already been registered on the device. 
+(Phase 2. 보기전용 지갑 연동 단계)
+[Coconut Vault] Choose "Export to Watch-only Wallet" and select "Coconut".
+[Coconut Wallet] Select "Try adding a watch-only wallet!".
+[Coconut Wallet] Choose "Coconut Vault".
+[Coconut Wallet] Scan QR on the Coconut Vault.
+(Phase 3. 트랜잭션 생성 단계)
+[Coconut Wallet] Get test Bitcoin from the faucet if you need.
+[Coconut Wallet] Generate transaction with test address below.
+(Phase 5. 트랜잭션에 서명 단계)
+[Coconut Vault] Select "Sign".
+[Coconut Vault] Scan QR on the Coconut Wallet.
+[Coconut Vault] Sign the transaction.
+(Phase 6. 비트코인 전송 단계)
+[Coconut Wallet] Scan QR on the Coconut Vault.
+[Coconut Wallet] Broadcast the Transaction on the Coconut Wallet.
+

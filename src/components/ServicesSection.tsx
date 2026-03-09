@@ -1,9 +1,12 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Monitor, Gamepad2, GraduationCap, Users, Coffee, Palette, ShoppingBag, Laptop } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 const ServicesSection = () => {
   const { language } = useLanguage();
+  const navigate = useNavigate();
 
   const content = {
     ko: {
@@ -142,9 +145,17 @@ const ServicesSection = () => {
                 <p className="text-muted-foreground text-sm mb-2 leading-relaxed">
                   {service.description}
                 </p>
-                <p className="text-xs text-muted-foreground/80 leading-relaxed">
+                <p className="text-xs text-muted-foreground/80 leading-relaxed mb-4">
                   {service.details}
                 </p>
+                {(service.title === '체험' || service.title === 'Experience') && (
+                  <Button
+                    onClick={() => navigate('/walletExperence')}
+                    className="w-full bg-bitcoin hover:bg-bitcoin-dark"
+                  >
+                    {language === 'ko' ? '하드월렛 체험하기' : 'Hardware Wallet Experience'}
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ))}
