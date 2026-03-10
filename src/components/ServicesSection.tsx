@@ -5,11 +5,13 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import EducationCoursesModal from './EducationCoursesModal';
+import MeetupsModal from './MeetupsModal';
 
 const ServicesSection = () => {
   const { language } = useLanguage();
   const navigate = useNavigate();
   const [isEducationModalOpen, setIsEducationModalOpen] = useState(false);
+  const [isMeetupsModalOpen, setIsMeetupsModalOpen] = useState(false);
 
   const content = {
     ko: {
@@ -167,6 +169,14 @@ const ServicesSection = () => {
                     {language === 'ko' ? '강의 보기' : 'View Courses'}
                   </Button>
                 )}
+                {(service.title === '공간' || service.title === 'Community Space') && (
+                  <Button
+                    onClick={() => setIsMeetupsModalOpen(true)}
+                    className="w-full bg-bitcoin hover:bg-bitcoin-dark"
+                  >
+                    {language === 'ko' ? '정기 밋업' : 'Regular Meetups'}
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ))}
@@ -174,6 +184,10 @@ const ServicesSection = () => {
         <EducationCoursesModal
           open={isEducationModalOpen}
           onOpenChange={setIsEducationModalOpen}
+        />
+        <MeetupsModal
+          open={isMeetupsModalOpen}
+          onOpenChange={setIsMeetupsModalOpen}
         />
       </div>
     </section>
