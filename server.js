@@ -18,7 +18,7 @@ initDatabase();
 // API 라우트
 app.get('/api/events', (req, res) => {
   try {
-    const events = db.prepare('SELECT * FROM events ORDER BY date ASC').all();
+    const events = db.prepare('SELECT * FROM events ORDER BY date DESC, time DESC').all();
     res.json(events);
   } catch (error) {
     console.error('이벤트 조회 오류:', error);
