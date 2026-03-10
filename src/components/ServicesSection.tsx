@@ -3,10 +3,13 @@ import { Monitor, Gamepad2, GraduationCap, Users, Coffee, Palette, ShoppingBag, 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import EducationCoursesModal from './EducationCoursesModal';
 
 const ServicesSection = () => {
   const { language } = useLanguage();
   const navigate = useNavigate();
+  const [isEducationModalOpen, setIsEducationModalOpen] = useState(false);
 
   const content = {
     ko: {
@@ -156,10 +159,22 @@ const ServicesSection = () => {
                     {language === 'ko' ? '하드월렛 체험하기' : 'Hardware Wallet Experience'}
                   </Button>
                 )}
+                {(service.title === '교육' || service.title === 'Education') && (
+                  <Button
+                    onClick={() => setIsEducationModalOpen(true)}
+                    className="w-full bg-bitcoin hover:bg-bitcoin-dark"
+                  >
+                    {language === 'ko' ? '강의 보기' : 'View Courses'}
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ))}
         </div>
+        <EducationCoursesModal
+          open={isEducationModalOpen}
+          onOpenChange={setIsEducationModalOpen}
+        />
       </div>
     </section>
   );
