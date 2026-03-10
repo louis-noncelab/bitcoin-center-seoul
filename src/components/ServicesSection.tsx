@@ -158,7 +158,7 @@ const ServicesSection = () => {
                     onClick={() => navigate('/walletExperence')}
                     className="w-full bg-bitcoin hover:bg-bitcoin-dark"
                   >
-                    {language === 'ko' ? '하드월렛 체험하기' : 'Hardware Wallet Experience'}
+                    {language === 'ko' ? '하드월렛 체험' : 'Hardware Wallet Experience'}
                   </Button>
                 )}
                 {(service.title === '교육' || service.title === 'Education') && (
@@ -166,7 +166,7 @@ const ServicesSection = () => {
                     onClick={() => setIsEducationModalOpen(true)}
                     className="w-full bg-bitcoin hover:bg-bitcoin-dark"
                   >
-                    {language === 'ko' ? '강의 보기' : 'View Courses'}
+                    {language === 'ko' ? '정규 교육 프로그램' : 'View Courses'}
                   </Button>
                 )}
                 {(service.title === '공간' || service.title === 'Community Space') && (
