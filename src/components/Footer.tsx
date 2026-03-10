@@ -14,7 +14,7 @@ const Footer = () => {
       hours: '12:00 - 20:00 (연중무휴, 공휴일 제외)',
       email: 'hello@noncelab.com',
       kakao: '+82-2-702-1718',
-      copyright: '© 2025 NonceLab Inc. All rights reserved.'
+      copyright: '© 2025 NonceLab Inc. and Saturday Block All rights reserved.'
     },
     en: {
       description: "A Space for Bitcoiners.",
@@ -24,7 +24,7 @@ const Footer = () => {
       hours: '12:00 - 20:00 (Mon-Sun, except holidays)',
       email: 'hello@noncelab.com',
       kakao: '+82-2-702-1718',
-      copyright: '© 2025 NonceLab Inc. All rights reserved.'
+      copyright: '© 2025 NonceLab Inc. and Saturday Block All rights reserved.'
     }
   };
   return (

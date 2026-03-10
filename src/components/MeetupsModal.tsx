@@ -29,39 +29,53 @@ const MeetupsModal = ({ open, onOpenChange }: MeetupsModalProps) => {
       },
       {
         title: '비트코인 무비 나잇',
-        tags: ['매월', '누구나', '무료', '4시간'],
+        tags: ['매월', '누구나', '입장료', '4시간'],
         description: [
-          '함께 모여 비트코인과 관련된 영화와 다큐멘터리를 시청하고',
+          '비트코인센터서울에 함께 모여 비트코인과 관련된 영화와 다큐멘터리를 시청하고',
           '영화 속 이야기와 메시지에 대해 자유롭게 대화를 나누는 시간입니다.',
           '',
-          '편안한 분위기에서 무료 팝콘과 음료를 즐기며',
-          '비트코인 커뮤니티와 함께 특별한 밤을 보내보세요.'
+          '편안한 분위기에서 팝콘과 음료를 즐기며',
+          '비트코이너들과 함께 특별한 밤을 보내보세요.',
+          '본 행사는 비트코인 문화를 선도하는 새러데이 블록이 주최 합니다.'
         ]
       },
       {
         title: '비트코인 정기 밋업',
         tags: ['매월', '누구나', '유료'],
         description: [
-          '비트코인 행사를 전문으로 기획하는 샛비(SatB)에서',
-          '매월 다양한 콘텐츠로 즐거운 밋업을 진행합니다.',
+          '비트코인센터서울에서는 매월 다양한 콘텐츠로 즐거운 밋업을 진행합니다.',
           '',
           '보드게임, 다과, 자유로운 네트워킹까지—',
-          '비트코인을 좋아하는 사람들이 모여 편하게 이야기하고 교류하는 시간입니다.'
+          '비트코인을 좋아하는 사람들이 모여 편하게 이야기하고 교류하는 시간입니다.',
+          '본 행사는 비트코인 문화를 선도하는 새러데이 블록이 주최 합니다.'
         ]
       },
       {
         title: 'Global Bitcoin Community Connection',
         tags: ['연간', '누구나', '유료', '글로벌'],
         description: [
-          '비트코인 행사 전문 기획팀 샛비(SatB)와 함께 주최하는',
-          '글로벌 비트코인 커뮤니티 프로그램입니다.',
-          '',
           '전 세계의 비트코이너들이 한 장소에 모여',
           '서로 교류하고 즐거운 시간을 보내는 특별한 행사입니다.',
           '',
           '해외의 다양한 비트코이너들과 직접 만나',
           '비트코인에 대한 경험과 이야기를 나누며',
-          '글로벌 커뮤니티와 연결되는 기회를 만들어보세요.'
+          '글로벌 커뮤니티와 연결되는 기회를 만들어보세요.',
+          '본 행사는 비트코인센터서울과 새러데이 블록이 함께 주최합니다.'
+        ]
+      },
+      {
+        title: '비트코인 제네시스 위크',
+        tags: ['연간', '누구나', '스페셜'],
+        description: [
+          '2009년 1월 3일, 비트코인의 탄생을 기념하기 위해',
+          '비트코인 생일 주간(Genesis Week) 동안 다양한 행사와 파티가 열립니다.',
+          '',
+          '비트코인의 시작을 함께 축하하며',
+          '다채로운 프로그램이 진행됩니다.',
+          '',
+          '비트코인의 역사적인 순간을',
+          '비트코인센터서울과 함께 기념해보세요.',
+          '본 행사는 비트코인센터서울과 새러데이 블록이 함께 주최합니다.'
         ]
       }
     ],
@@ -79,39 +93,55 @@ const MeetupsModal = ({ open, onOpenChange }: MeetupsModalProps) => {
       },
       {
         title: 'Bitcoin Movie Night',
-        tags: ['Monthly', 'Open to All', 'Free', '4 hours'],
+        tags: ['Monthly', 'Open to All', 'Admission Fee', '4 hours'],
         description: [
+          'Monthly movie screening event is held in Bitcoin Center Seoul.',
+          '',
           'We gather to watch Bitcoin-related movies and documentaries,',
           'and freely talk about the stories and messages in the films.',
           '',
           'Enjoy free popcorn and drinks in a relaxed atmosphere,',
-          'and spend a special night with the Bitcoin community.'
+          'and spend a special night with the Bitcoin community.',
+          'This event is held by Saturday Block.'
         ]
       },
       {
         title: 'Regular Bitcoin Meetup',
         tags: ['Monthly', 'Open to All', 'Paid'],
         description: [
-          'Planned by SatB, a team specialized in organizing Bitcoin events,',
-          'this meetup offers fun content every month.',
+          'Regular meetup is held in Bitcoin Center Seoul every month.',
           '',
           'From board games and snacks to casual networking,',
-          'it is a time for Bitcoin enthusiasts to gather, talk, and connect comfortably.'
+          'it is a time for Bitcoin enthusiasts to gather, talk, and connect comfortably.',
+          'This event is held by Saturday Block.'
         ]
       },
       {
         title: 'Global Bitcoin Community Connection',
         tags: ['Yearly', 'Open to All', 'Paid', 'Global'],
         description: [
-          'A global Bitcoin community program hosted together with SatB,',
-          'a professional Bitcoin event planning team.',
-          '',
           'Bitcoiners from all over the world gather in one place,',
           'to connect with each other and enjoy a memorable time.',
           '',
           'Meet diverse Bitcoiners from abroad,',
           'share your experiences and stories about Bitcoin,',
-          'and build connections with the global community.'
+          'and build connections with the global community.',
+          'This event is held together with Saturday Block.'
+        ]
+      },
+      {
+        title: 'Bitcoin Genesis Week',
+        tags: ['Yearly', 'Open to All', 'Special'],
+        description: [
+          'To commemorate the birth of Bitcoin on January 3, 2009,',
+          'various events and parties are held during Bitcoin\'s birthday week, the Genesis Week.',
+          '',
+          'We celebrate the beginning of Bitcoin together,',
+          'with a wide range of programs throughout the week.',
+          '',
+          'Join Bitcoin Center Seoul to commemorate',
+          'this historic moment in Bitcoin\'s history.',
+          'This event is held together with Saturday Block.'
         ]
       }
     ]
