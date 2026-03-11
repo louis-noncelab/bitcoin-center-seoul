@@ -52,10 +52,10 @@ const MeetupsModal = ({ open, onOpenChange }: MeetupsModalProps) => {
         ]
       },
       {
-        title: '비트코인 정기 밋업',
+        title: '비트코인 세러데이',
         tags: ['매월', '누구나', '유료'],
         description: [
-          '비트코인센터서울에서는 매월 다양한 콘텐츠로 즐거운 밋업을 진행합니다.',
+          '매월 셋째주 토요일에 다양한 콘텐츠로 즐거운 밋업을 진행합니다.',
           '',
           '보드게임, 다과, 자유로운 네트워킹까지—',
           '비트코인을 좋아하는 사람들이 모여 편하게 이야기하고 교류하는 시간입니다.',
@@ -130,14 +130,13 @@ const MeetupsModal = ({ open, onOpenChange }: MeetupsModalProps) => {
         ]
       },
       {
-        title: 'Regular Bitcoin Meetup',
+        title: 'Bitcoin Saturday',
         tags: ['Monthly', 'Open to All', 'Paid'],
         description: [
-          'Regular meetup is held in Bitcoin Center Seoul every month.',
+          'Every third Saturday of the month, we gather for a fun meetup with various content.',
           '',
           'From board games and snacks to casual networking,',
-          'it is a time for Bitcoin enthusiasts to gather, talk, and connect comfortably.',
-          'This event is held by Saturday Block.'
+          'it is a time for Bitcoin enthusiasts to gather, talk, and connect comfortably.'
         ]
       },
       {
@@ -176,7 +175,7 @@ const MeetupsModal = ({ open, onOpenChange }: MeetupsModalProps) => {
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl md:text-3xl font-bold">
-            {language === 'ko' ? '정기 밋업' : 'Regular Meetups'}
+            {language === 'ko' ? '정기 밋업과 행사' : 'Regular Meetups and Events'}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-8 mt-4">
