@@ -52,7 +52,7 @@ const MeetupsModal = ({ open, onOpenChange }: MeetupsModalProps) => {
         ]
       },
       {
-        title: '비트코인 세러데이',
+        title: 'Saturday ₿ash',
         tags: ['매월', '누구나', '유료'],
         description: [
           '매월 셋째주 토요일에 다양한 콘텐츠로 즐거운 밋업을 진행합니다.',
@@ -130,7 +130,7 @@ const MeetupsModal = ({ open, onOpenChange }: MeetupsModalProps) => {
         ]
       },
       {
-        title: 'Bitcoin Saturday',
+        title: 'Saturday ₿ash',
         tags: ['Monthly', 'Open to All', 'Paid'],
         description: [
           'Every third Saturday of the month, we gather for a fun meetup with various content.',
