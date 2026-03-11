@@ -28,6 +28,18 @@ const MeetupsModal = ({ open, onOpenChange }: MeetupsModalProps) => {
         ]
       },
       {
+        title: 'Bitcoin Monthly',
+        tags: ['매월', '누구나', '유료'],
+        description: [
+          '한 달 동안 국내외에서 있었던 비트코인 관련 주요 뉴스와 이슈를 정리하여 함께 공유합니다.',
+          '기술 업데이트, 정책 변화, 글로벌 커뮤니티 소식 등 다양한 주제를 살펴보며',
+          '참석자들과 자유롭게 의견을 나누는 시간을 가집니다.',
+          '',
+          '빠르게 변화하는 비트코인 흐름을 함께 이해하고 이야기해보세요.',
+          '본 행사는 비트코인 교육 전문 기관인 비토문에서 주최 합니다.'
+        ]
+      },
+      {
         title: '비트코인 무비 나잇',
         tags: ['매월', '누구나', '입장료', '4시간'],
         description: [
@@ -89,6 +101,18 @@ const MeetupsModal = ({ open, onOpenChange }: MeetupsModalProps) => {
           'and also an opportunity for non-developers to understand Bitcoin technology and the latest issues.',
           '',
           'Join technical discussions and networking to talk about the present and future of Bitcoin together.'
+        ]
+      },
+      {
+        title: 'Bitcoin Monthly',
+        tags: ['Monthly', 'Open to All', 'Paid'],
+        description: [
+          'We share and discuss major Bitcoin-related news and issues from both domestic and international sources over the past month.',
+          'We explore various topics including technical updates, policy changes, and global community news,',
+          'while freely exchanging opinions with participants.',
+          '',
+          'Join us to understand and discuss the rapidly changing Bitcoin landscape together.',
+          'This event is hosted by Bitomon, a professional Bitcoin education institution.'
         ]
       },
       {

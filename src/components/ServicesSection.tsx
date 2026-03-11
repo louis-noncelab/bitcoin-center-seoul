@@ -38,9 +38,9 @@ const ServicesSection = () => {
         },
         {
           icon: Users,
-          title: '공간',
-          description: '밋업 등 비트코인 커뮤니티를 위한 공간 제공',
-          details: '비트코인 커뮤니티 모임과 이벤트 공간'
+          title: '커뮤니티',
+          description: '각종 커뮤니티 활동',
+          details: '비트코인 관련 밋업과 이벤트 개최'
         },
         {
           icon: Coffee,
@@ -92,9 +92,9 @@ const ServicesSection = () => {
         },
         {
           icon: Users,
-          title: 'Community Space',
-          description: 'Community space for meetups and Bitcoin gatherings',
-          details: 'Space for Bitcoin community meetings and events'
+          title: 'Community',
+          description: 'Various community activities',
+          details: 'Bitcoin community meetups and events'
         },
         {
           icon: Coffee,
@@ -169,12 +169,12 @@ const ServicesSection = () => {
                     {language === 'ko' ? '정규 교육 프로그램' : 'View Courses'}
                   </Button>
                 )}
-                {(service.title === '공간' || service.title === 'Community Space') && (
+                {(service.title === '커뮤니티' || service.title === 'Community') && (
                   <Button
                     onClick={() => setIsMeetupsModalOpen(true)}
                     className="w-full bg-bitcoin hover:bg-bitcoin-dark"
                   >
-                    {language === 'ko' ? '정기 밋업' : 'Regular Meetups'}
+                    {language === 'ko' ? '정기 밋업과 행사' : 'Regular Meetups and Events'}
                   </Button>
                 )}
               </CardContent>
