@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { useLanguage } from '@/contexts/LanguageContext';
+import EventScheduleModal from '@/components/EventScheduleModal';
 
 interface MeetupsModalProps {
   open: boolean;
@@ -13,12 +16,26 @@ interface MeetupsModalProps {
 
 const MeetupsModal = ({ open, onOpenChange }: MeetupsModalProps) => {
   const { language } = useLanguage();
+  const [eventModalOpen, setEventModalOpen] = useState(false);
+
+  const noticeText = {
+    ko: {
+      prefix: '밋업 및 행사 일정은 법정 공휴일이나 운영기관의 사정에 따라 변경되거나 취소될 수 있습니다. 상세 일정은 ',
+      link: '이벤트 일정',
+      suffix: '을 참고 바랍니다.'
+    },
+    en: {
+      prefix: 'Meetup and event schedules may be subject to change or cancellation due to public holidays or circumstances of the operating institution. For detailed schedules, please refer to ',
+      link: 'Event Schedule',
+      suffix: '.'
+    }
+  };
 
   const meetups = {
     ko: [
       {
         title: '비트코인 개발자 밋업',
-        tags: ['매월', '개발자', '유료', '4시간'],
+        tags: ['매월', '4째주 일요일', '개발자', '유료', '2시간'],
         description: [
           '비트코인의 다양한 기술적 이슈와 개발 주제를 함께 이야기하는 밋업입니다.',
           '개발자들에게는 깊이 있는 기술 교류의 장이 되고,',
@@ -29,7 +46,7 @@ const MeetupsModal = ({ open, onOpenChange }: MeetupsModalProps) => {
       },
       {
         title: 'Bitcoin Monthly',
-        tags: ['매월', '누구나', '유료'],
+        tags: ['매월', '1째주 토요일', '누구나', '유료'],
         description: [
           '한 달 동안 국내외에서 있었던 비트코인 관련 주요 뉴스와 이슈를 정리하여 함께 공유합니다.',
           '기술 업데이트, 정책 변화, 글로벌 커뮤니티 소식 등 다양한 주제를 살펴보며',
@@ -41,7 +58,7 @@ const MeetupsModal = ({ open, onOpenChange }: MeetupsModalProps) => {
       },
       {
         title: '비트코인 무비 나잇',
-        tags: ['매월', '누구나', '입장료', '4시간'],
+        tags: ['매월', '2째주 토요일', '누구나', '입장료', '4시간'],
         description: [
           '비트코인센터서울에 함께 모여 비트코인과 관련된 영화와 다큐멘터리를 시청하고',
           '영화 속 이야기와 메시지에 대해 자유롭게 대화를 나누는 시간입니다.',
@@ -53,7 +70,7 @@ const MeetupsModal = ({ open, onOpenChange }: MeetupsModalProps) => {
       },
       {
         title: 'Saturday ₿ash',
-        tags: ['매월', '누구나', '유료'],
+        tags: ['매월', '3째주 토요일', '누구나', '유료'],
         description: [
           '매월 셋째주 토요일에 다양한 콘텐츠로 즐거운 밋업을 진행합니다.',
           '',
@@ -94,7 +111,7 @@ const MeetupsModal = ({ open, onOpenChange }: MeetupsModalProps) => {
     en: [
       {
         title: 'Bitcoin Developer Meetup',
-        tags: ['Monthly', 'Developers', 'Paid', '4 hours'],
+        tags: ['Monthly', '4th Sunday', 'Developers', 'Paid', '2 hours'],
         description: [
           'A meetup to discuss various technical issues and development topics around Bitcoin.',
           'It provides a deep technical exchange for developers,',
@@ -105,7 +122,7 @@ const MeetupsModal = ({ open, onOpenChange }: MeetupsModalProps) => {
       },
       {
         title: 'Bitcoin Monthly',
-        tags: ['Monthly', 'Open to All', 'Paid'],
+        tags: ['Monthly', '1st Saturday', 'Open to All', 'Paid'],
         description: [
           'We share and discuss major Bitcoin-related news and issues from both domestic and international sources over the past month.',
           'We explore various topics including technical updates, policy changes, and global community news,',
@@ -117,7 +134,7 @@ const MeetupsModal = ({ open, onOpenChange }: MeetupsModalProps) => {
       },
       {
         title: 'Bitcoin Movie Night',
-        tags: ['Monthly', 'Open to All', 'Admission Fee', '4 hours'],
+        tags: ['Monthly', '2nd Saturday', 'Open to All', 'Admission Fee', '4 hours'],
         description: [
           'Monthly movie screening event is held in Bitcoin Center Seoul.',
           '',
@@ -131,7 +148,7 @@ const MeetupsModal = ({ open, onOpenChange }: MeetupsModalProps) => {
       },
       {
         title: 'Saturday ₿ash',
-        tags: ['Monthly', 'Open to All', 'Paid'],
+        tags: ['Monthly', '3rd Saturday', 'Open to All', 'Paid'],
         description: [
           'Every third Saturday of the month, we gather for a fun meetup with various content.',
           '',
@@ -211,7 +228,24 @@ const MeetupsModal = ({ open, onOpenChange }: MeetupsModalProps) => {
             </div>
           ))}
         </div>
+        <DialogFooter className="mt-6 pt-6 border-t border-border">
+          <p className="text-center text-muted-foreground text-sm w-full">
+            {noticeText[language].prefix}
+            <button
+              onClick={() => setEventModalOpen(true)}
+              className="text-bitcoin hover:underline cursor-pointer"
+            >
+              {noticeText[language].link}
+            </button>
+            {noticeText[language].suffix}
+          </p>
+        </DialogFooter>
       </DialogContent>
+      <EventScheduleModal 
+        open={eventModalOpen} 
+        onOpenChange={setEventModalOpen}
+        showAutoOpen={false}
+      />
     </Dialog>
   );
 };

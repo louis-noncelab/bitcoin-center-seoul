@@ -4,8 +4,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { useLanguage } from '@/contexts/LanguageContext';
+import EventScheduleModal from '@/components/EventScheduleModal';
 
 interface EducationCoursesModalProps {
   open: boolean;
@@ -14,12 +16,13 @@ interface EducationCoursesModalProps {
 
 const EducationCoursesModal = ({ open, onOpenChange }: EducationCoursesModalProps) => {
   const { language } = useLanguage();
+  const [eventModalOpen, setEventModalOpen] = useState(false);
 
   const courses = {
     ko: [
       {
         title: '코코넛 볼트 사용자를 위한 셀프 커스터디 강의',
-        tags: ['매월', '지갑', '초보', '무료', '4시간'],
+        tags: ['홀수월', '4째주 금요일', '지갑', '초보', '무료', '4시간'],
         description: [
           '매월 코코넛 볼트 구매자를 위한 셀프 커스터디 클래스가 열립니다.',
           '비트코인을 스스로 안전하게 보관하는 방법을 처음부터 차근차근 알려드립니다.',
@@ -29,8 +32,8 @@ const EducationCoursesModal = ({ open, onOpenChange }: EducationCoursesModalProp
         ]
       },
       {
-        title: '비트코인 프로토콜 강의',
-        tags: ['격월', '프로토콜', '초보', '유료', '4시간'],
+        title: '비트코인 프로토콜의 이해 : 코딩 몰라도 이해하는 비트코인 백서 강의',
+        tags: ['홀수월', '2째주 토요일', '프로토콜', '초보', '유료', '4시간'],
         description: [
           '비트코인이 어떻게 작동하는지 궁금하신가요?',
           '',
@@ -42,8 +45,8 @@ const EducationCoursesModal = ({ open, onOpenChange }: EducationCoursesModalProp
         ]
       },
       {
-        title: '비트코인 이해하기',
-        tags: ['격월', '입문', '초보', '유료', '3시간'],
+        title: '함께 듣고 함께 질문하는 비트코인 오렌지필 강의',
+        tags: ['짝수월', '2째주 토요일', '입문', '초보', '유료', '3시간'],
         description: [
           '가족, 친구와 함께 들을 수 있는 비트코인 입문 클래스입니다.',
           '• 비트코인은 왜 탄생했을까?',
@@ -55,7 +58,7 @@ const EducationCoursesModal = ({ open, onOpenChange }: EducationCoursesModalProp
       },
       {
         title: '비트코인 개발자 아카데미',
-        tags: ['여름/겨울', '개발자', '유료', '20시간', '수료증 발급'],
+        tags: ['6월/12월', '개발자', '유료', '20시간', '수료증 발급'],
         description: [
           '비트코인을 깊이 있게 이해하고 직접 구현해보는 개발자 과정입니다.',
           '',
@@ -78,7 +81,7 @@ const EducationCoursesModal = ({ open, onOpenChange }: EducationCoursesModalProp
     en: [
       {
         title: 'Coconut Vault User Course',
-        tags: ['Monthly', 'Wallet', 'Beginner', 'Free', '4 hours'],
+        tags: ['Odd months', '4th Friday', 'Wallet', 'Beginner', 'Free', '4 hours'],
         description: [
           'A monthly self-custody class for Coconut Vault purchasers.',
           'We guide you step by step from the beginning on how to safely store Bitcoin yourself.',
@@ -88,8 +91,8 @@ const EducationCoursesModal = ({ open, onOpenChange }: EducationCoursesModalProp
         ]
       },
       {
-        title: 'Bitcoin Protocol Course',
-        tags: ['Bi-monthly', 'Protocol', 'Beginner', 'Paid', '4 hours'],
+        title: 'Understanding Bitcoin Protocol: Bitcoin Whitepaper Course for Non-Coders',
+        tags: ['Odd months', '2nd Saturday', 'Protocol', 'Beginner', 'Paid', '4 hours'],
         description: [
           'Are you curious about how Bitcoin works?',
           '',
@@ -101,8 +104,8 @@ const EducationCoursesModal = ({ open, onOpenChange }: EducationCoursesModalProp
         ]
       },
       {
-        title: 'Understanding Bitcoin',
-        tags: ['Bi-monthly', 'Introduction', 'Beginner', 'Paid', '3 hours'],
+        title: 'Bitcoin Orange Pill Course: Listen and Ask Together',
+        tags: ['Even months', '2nd Saturday', 'Introduction', 'Beginner', 'Paid', '3 hours'],
         description: [
           'A Bitcoin introductory class that you can attend with family and friends.',
           '• Why was Bitcoin created?',
@@ -114,7 +117,7 @@ const EducationCoursesModal = ({ open, onOpenChange }: EducationCoursesModalProp
       },
       {
         title: 'Bitcoin Developer Academy',
-        tags: ['Summer/Winter', 'Developer', 'Paid', '20 hours', 'Certificate Issued'],
+        tags: ['June/December', 'Developer', 'Paid', '20 hours', 'Certificate Issued'],
         description: [
           'A developer course to deeply understand Bitcoin and implement it yourself.',
           '',
@@ -136,9 +139,17 @@ const EducationCoursesModal = ({ open, onOpenChange }: EducationCoursesModalProp
     ]
   };
 
-  const footerText = {
-    ko: '정규 과정 이외에도 다양한 특강과 외부강의를 진행합니다.',
-    en: 'In addition to regular courses, we also conduct various special lectures and external courses.'
+  const noticeText = {
+    ko: {
+      prefix: '강의 일정은 법정 공휴일이나 운영기관의 사정에 따라 변경되거나 취소될 수 있습니다. 상세 일정은 ',
+      link: '이벤트 일정',
+      suffix: '을 참고 바랍니다.'
+    },
+    en: {
+      prefix: 'Course schedules may be subject to change or cancellation due to public holidays or circumstances of the operating institution. For detailed schedules, please refer to ',
+      link: 'Event Schedule',
+      suffix: '.'
+    }
   };
 
   return (
@@ -181,13 +192,25 @@ const EducationCoursesModal = ({ open, onOpenChange }: EducationCoursesModalProp
               )}
             </div>
           ))}
-          <div className="mt-8 pt-6 border-t border-border">
-            <p className="text-center text-muted-foreground">
-              {footerText[language]}
-            </p>
-          </div>
         </div>
+        <DialogFooter className="mt-6 pt-6 border-t border-border">
+          <p className="text-center text-muted-foreground text-sm w-full">
+            {noticeText[language].prefix}
+            <button
+              onClick={() => setEventModalOpen(true)}
+              className="text-bitcoin hover:underline cursor-pointer"
+            >
+              {noticeText[language].link}
+            </button>
+            {noticeText[language].suffix}
+          </p>
+        </DialogFooter>
       </DialogContent>
+      <EventScheduleModal 
+        open={eventModalOpen} 
+        onOpenChange={setEventModalOpen}
+        showAutoOpen={false}
+      />
     </Dialog>
   );
 };

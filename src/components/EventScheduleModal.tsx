@@ -16,9 +16,17 @@ interface Event {
   descriptionEn: string;
 }
 
-const EventScheduleModal = () => {
+interface EventScheduleModalProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showAutoOpen?: boolean;
+}
+
+const EventScheduleModal = ({ open: externalOpen, onOpenChange: externalOnOpenChange, showAutoOpen = true }: EventScheduleModalProps = {}) => {
   const { language } = useLanguage();
-  const [isOpen, setIsOpen] = React.useState(false);
+  const [internalOpen, setInternalOpen] = React.useState(false);
+  const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setIsOpen = externalOnOpenChange || setInternalOpen;
   const [events, setEvents] = React.useState<Event[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [showDontShowAgain, setShowDontShowAgain] = React.useState(false);
@@ -41,8 +49,10 @@ const EventScheduleModal = () => {
     }
   };
 
-  // 홈페이지 입장 시 자동으로 팝업 열기
+  // 홈페이지 입장 시 자동으로 팝업 열기 (외부 제어가 없을 때만)
   React.useEffect(() => {
+    if (!showAutoOpen || externalOpen !== undefined) return;
+    
     const dontShowToday = localStorage.getItem('dontShowEventModalToday');
     const today = new Date().toDateString();
     
@@ -56,7 +66,7 @@ const EventScheduleModal = () => {
       
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [showAutoOpen, externalOpen]);
 
   // 모달이 열릴 때 이벤트 데이터 가져오기
   React.useEffect(() => {
@@ -104,16 +114,18 @@ const EventScheduleModal = () => {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="border-bitcoin text-bitcoin hover:bg-bitcoin hover:text-foreground"
-        >
-          <Calendar className="w-4 h-4 mr-2" />
-          {language === 'ko' ? '이벤트 일정' : 'Events'}
-        </Button>
-      </DialogTrigger>
+      {externalOpen === undefined && (
+        <DialogTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-bitcoin text-bitcoin hover:bg-bitcoin hover:text-foreground"
+          >
+            <Calendar className="w-4 h-4 mr-2" />
+            {language === 'ko' ? '이벤트 일정' : 'Events'}
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
