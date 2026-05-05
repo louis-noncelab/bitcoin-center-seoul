@@ -41,13 +41,13 @@ ssh -i $KEY_PATH ubuntu@$EC2_IP << EOF
     npm run build
     
     # PM2 설정 파일이 있는지 확인
-    if [ ! -f "ecosystem.config.js" ]; then
-        echo "⚠️  ecosystem.config.js 파일이 없습니다. PM2 설정을 수동으로 해주세요."
+    if [ ! -f "ecosystem.config.cjs" ]; then
+        echo "⚠️  ecosystem.config.cjs 파일이 없습니다. PM2 설정을 수동으로 해주세요."
     fi
     
     # PM2로 서비스 시작
     echo "🚀 PM2 서비스 시작 중..."
-    pm2 start ecosystem.config.js || pm2 start server.js --name "bitcoin-center-seoul"
+    pm2 start ecosystem.config.cjs || pm2 start server.js --name "bitcoin-center-seoul"
     pm2 save
     pm2 startup
     

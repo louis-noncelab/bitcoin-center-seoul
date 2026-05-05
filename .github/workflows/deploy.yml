@@ -61,7 +61,7 @@ jobs:
           
           # PM2로 서비스 재시작
           echo "🔄 서비스 재시작 중..."
-          pm2 restart bitcoin-center-seoul || pm2 start ecosystem.config.js
+          pm2 restart bitcoin-center-seoul --update-env || pm2 start ecosystem.config.cjs
           
           # PM2 상태 확인
           echo "📊 PM2 서비스 상태:"
