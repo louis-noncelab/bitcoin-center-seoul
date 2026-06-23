@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Calendar, Clock, MapPin, Plus, Trash2, Edit, ArrowLeft, Save, X, Eye } from 'lucide-react';
+import { Calendar, Clock, MapPin, Trash2, Edit, ArrowLeft, Save, X, ExternalLink, Upload, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import DatePicker from '@/components/DatePicker';
 
@@ -19,16 +19,22 @@ interface Event {
   locationEn: string;
   description: string;
   descriptionEn: string;
+  image: string;
+  link: string;
 }
 
 const AdminEvents = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     title: '',
     titleEn: '',
@@ -37,7 +43,9 @@ const AdminEvents = () => {
     location: '비트코인 센터 서울',
     locationEn: 'Bitcoin Center Seoul',
     description: '해당 시간동안 비트코인 센터 서울의 이용이 불가능합니다.\n\n문의사항이 있으시면 연락주세요.',
-    descriptionEn: 'Bitcoin Center Seoul is unavailable during this time.\n\nPlease contact us if you have any questions.'
+    descriptionEn: 'Bitcoin Center Seoul is unavailable during this time.\n\nPlease contact us if you have any questions.',
+    image: '',
+    link: ''
   });
 
   // 인증 확인
@@ -46,12 +54,12 @@ const AdminEvents = () => {
     console.log('인증 상태 확인:', authStatus); // 디버깅용
     if (authStatus !== 'true') {
       console.log('인증되지 않음, 리다이렉트'); // 디버깅용
-      navigate('/admin/auth');
+      navigate(`/admin/auth?redirect=${encodeURIComponent(location.pathname)}`);
       return;
     }
     console.log('인증됨'); // 디버깅용
     setIsAuthenticated(true);
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
   // 이벤트 목록 가져오기
   const fetchEvents = async () => {
@@ -95,7 +103,9 @@ const AdminEvents = () => {
       location: '비트코인 센터 서울',
       locationEn: 'Bitcoin Center Seoul',
       description: '해당 시간동안 비트코인 센터 서울의 이용이 불가능합니다.\n\n문의사항이 있으시면 연락주세요.',
-      descriptionEn: 'Bitcoin Center Seoul is unavailable during this time.\n\nPlease contact us if you have any questions.'
+      descriptionEn: 'Bitcoin Center Seoul is unavailable during this time.\n\nPlease contact us if you have any questions.',
+      image: '',
+      link: ''
     });
     setIsEditing(false);
     setEditingEvent(null);
@@ -209,9 +219,46 @@ const AdminEvents = () => {
       location: event.location,
       locationEn: event.locationEn,
       description: event.description,
-      descriptionEn: event.descriptionEn
+      descriptionEn: event.descriptionEn,
+      image: event.image || '',
+      link: event.link || ''
     });
     setIsEditing(true);
+  };
+
+  const uploadImage = async (file?: File) => {
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({ title: '업로드 오류', description: '이미지 파일만 업로드할 수 있습니다.', variant: 'destructive' });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const response = await fetch('/api/event-images', {
+        method: 'POST',
+        headers: {
+          'Content-Type': file.type,
+          'X-File-Name': encodeURIComponent(file.name),
+        },
+        body: file,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setFormData((current) => ({ ...current, image: data.path }));
+        toast({ title: '성공', description: '이미지가 업로드되었습니다.' });
+      } else {
+        const data = await response.json().catch(() => null);
+        toast({ title: '업로드 오류', description: data?.error || '이미지 업로드에 실패했습니다.', variant: 'destructive' });
+      }
+    } catch {
+      toast({ title: '업로드 오류', description: '이미지 업로드 중 네트워크 오류가 발생했습니다.', variant: 'destructive' });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -250,15 +297,14 @@ const AdminEvents = () => {
               <ArrowLeft className="w-4 h-4" />
               홈으로
             </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate('/admin/highlights')}
+            >
+              하이라이트 관리
+            </Button>
             <h1 className="text-2xl font-bold">이벤트 관리</h1>
           </div>
-          <Button
-            onClick={resetForm}
-            className="bg-bitcoin hover:bg-bitcoin/90"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            새 이벤트
-          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -359,6 +405,67 @@ const AdminEvents = () => {
                   />
                 </div>
 
+                <div>
+                  <label className="text-sm font-medium mb-2 block">링크 첨부</label>
+                  <Input
+                    type="url"
+                    value={formData.link}
+                    onChange={(e) => setFormData({...formData, link: e.target.value})}
+                    placeholder="https://example.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block">이미지 첨부</label>
+                  <div
+                    onDragEnter={(e) => {
+                      e.preventDefault();
+                      setIsDragging(true);
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDragging(true);
+                    }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setIsDragging(false);
+                      uploadImage(e.dataTransfer.files?.[0]);
+                    }}
+                    className={`rounded-lg border border-dashed p-5 text-center transition-colors ${
+                      isDragging ? 'border-bitcoin bg-bitcoin/10' : 'border-border bg-muted/20'
+                    }`}
+                  >
+                    <Upload className="mx-auto mb-2 h-6 w-6 text-bitcoin" />
+                    <p className="text-sm font-medium text-foreground">
+                      이미지를 드래그하거나 파일을 선택하세요
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      JPG, PNG, WEBP, GIF / 최대 20MB
+                    </p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => uploadImage(e.target.files?.[0])}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={isUploading}
+                      onClick={() => fileInputRef.current?.click()}
+                      className="mt-3"
+                    >
+                      {isUploading ? '업로드 중...' : '컴퓨터에서 선택'}
+                    </Button>
+                  </div>
+                  {formData.image && (
+                    <img src={formData.image} alt="선택된 이벤트" className="mt-3 aspect-video w-full rounded-md object-cover" />
+                  )}
+                </div>
+
                 <div className="flex gap-2">
                   {isEditing && (
                     <Button
@@ -387,10 +494,26 @@ const AdminEvents = () => {
           {/* 이벤트 목록 */}
           <Card>
             <CardHeader>
-              <CardTitle>등록된 이벤트</CardTitle>
-              <CardDescription>
-                총 {events.length}개의 이벤트가 등록되어 있습니다
-              </CardDescription>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <CardTitle>등록된 이벤트</CardTitle>
+                  <CardDescription>
+                    총 {events.length}개의 이벤트가 등록되어 있습니다
+                  </CardDescription>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    resetForm();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="bg-bitcoin hover:bg-bitcoin/90"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  새 이벤트 추가하기
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {loading ? (
@@ -404,95 +527,74 @@ const AdminEvents = () => {
                   <p>등록된 이벤트가 없습니다.</p>
                 </div>
               ) : (
-                <div className="space-y-3 max-h-96 overflow-y-auto">
+                <div className="space-y-3 max-h-[720px] overflow-y-auto">
                   {events.map((event) => (
                     <div
                       key={event.id}
-                      className={`border rounded-lg p-4 transition-all duration-200 ${
+                      className={`grid grid-cols-[120px_1fr] gap-4 rounded-lg border p-3 transition-all duration-200 ${
                         editingEvent?.id === event.id 
                           ? 'border-bitcoin bg-bitcoin/5' 
                           : 'border-border hover:border-bitcoin/50 hover:bg-card/50'
                       }`}
                     >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-foreground mb-1">
-                            {event.title}
-                          </h4>
-                          <p className="text-sm text-muted-foreground">
-                            {event.titleEn}
-                          </p>
-                        </div>
-                        <div className="flex gap-2 ml-4">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEdit(event)}
-                            className="h-8 px-3"
-                            title="수정"
-                          >
-                            <Edit className="w-3 h-3 mr-1" />
-                            수정
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-8 px-3 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                title="삭제"
+                      <img
+                        src={event.image || '/images/main1.png'}
+                        alt={event.title}
+                        className="aspect-[4/3] rounded-md object-cover"
+                      />
+                      <div>
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <h4 className="font-semibold text-foreground">{event.title}</h4>
+                            <p className="text-xs text-bitcoin">{event.titleEn}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {event.date} · {event.time} · {event.location}
+                            </p>
+                            <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{event.description}</p>
+                            {event.link && (
+                              <a
+                                href={event.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-2 inline-flex items-center gap-1 text-xs text-bitcoin hover:text-bitcoin-light"
                               >
-                                <Trash2 className="w-3 h-3 mr-1" />
-                                삭제
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>이벤트 삭제 확인</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  <strong>"{event.title}"</strong> 이벤트를 정말로 삭제하시겠습니까?
-                                  <br />
-                                  <span className="text-red-500">이 작업은 되돌릴 수 없습니다.</span>
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>취소</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDelete(event.id)}
-                                  className="bg-red-500 hover:bg-red-600"
-                                >
-                                  삭제
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                                링크 열기
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            )}
+                          </div>
+                          <div className="flex gap-1">
+                            <Button size="sm" variant="outline" onClick={() => handleEdit(event)}>
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button size="sm" variant="outline" className="text-red-500 hover:text-red-600">
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>이벤트 삭제 확인</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    <strong>"{event.title}"</strong> 이벤트를 정말로 삭제하시겠습니까?
+                                    <br />
+                                    <span className="text-red-500">이 작업은 되돌릴 수 없습니다.</span>
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>취소</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDelete(event.id)}
+                                    className="bg-red-500 hover:bg-red-600"
+                                  >
+                                    삭제
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Calendar className="w-4 h-4 text-bitcoin flex-shrink-0" />
-                          <span className="truncate">{formatDate(event.date)}</span>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Clock className="w-4 h-4 text-bitcoin flex-shrink-0" />
-                          <span>{event.time}</span>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <MapPin className="w-4 h-4 text-bitcoin flex-shrink-0" />
-                          <span className="truncate">{event.location}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-3 pt-3 border-t border-border/50">
-                        <p 
-                          className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line"
-                          dangerouslySetInnerHTML={{ 
-                            __html: event.description.replace(/\n/g, '<br />') 
-                          }}
-                        />
                       </div>
                     </div>
                   ))}

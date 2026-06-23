@@ -57,7 +57,7 @@ const AboutSection = () => {
               {/* 지도 링크 버튼들 */}
               <div className="flex flex-col sm:flex-row gap-2 justify-center mt-4">
                 <a 
-                  href="https://maps.google.com/?q=비트코인+센터+서울"
+                  href="https://maps.app.goo.gl/n143j19LYrx3g8UF6"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-bitcoin bg-bitcoin/10 border border-bitcoin/20 rounded-lg hover:bg-bitcoin/20 hover:border-bitcoin/30 transition-all duration-200"

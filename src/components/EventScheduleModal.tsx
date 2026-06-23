@@ -1,7 +1,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, MapPin, X } from 'lucide-react';
+import { Calendar, Clock, ExternalLink, MapPin, X } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Event {
@@ -14,15 +14,18 @@ interface Event {
   locationEn: string;
   description: string;
   descriptionEn: string;
+  image?: string;
+  link?: string;
 }
 
 interface EventScheduleModalProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   showAutoOpen?: boolean;
+  triggerStyle?: 'button' | 'link';
 }
 
-const EventScheduleModal = ({ open: externalOpen, onOpenChange: externalOnOpenChange, showAutoOpen = true }: EventScheduleModalProps = {}) => {
+const EventScheduleModal = ({ open: externalOpen, onOpenChange: externalOnOpenChange, showAutoOpen = false, triggerStyle = 'button' }: EventScheduleModalProps = {}) => {
   const { language } = useLanguage();
   const [internalOpen, setInternalOpen] = React.useState(false);
   const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
@@ -85,16 +88,16 @@ const EventScheduleModal = ({ open: externalOpen, onOpenChange: externalOnOpenCh
 
   const content = {
     ko: {
-      title: '이벤트 일정',
-      upcomingEvents: '다가오는 이벤트',
-      noEvents: '현재 예정된 이벤트가 없습니다.',
+      title: '대관 일정',
+      upcomingEvents: '다가오는 대관 일정',
+      noEvents: '현재 예정된 대관 일정이 없습니다.',
       close: '닫기',
       dontShowAgain: '오늘 더이상 보지 않기'
     },
     en: {
-      title: 'Event Schedule',
-      upcomingEvents: 'Upcoming Events',
-      noEvents: 'No upcoming events scheduled.',
+      title: 'Rental Schedule',
+      upcomingEvents: 'Upcoming Rental Schedule',
+      noEvents: 'No upcoming rental schedule.',
       close: 'Close',
       dontShowAgain: "Don't show today"
     }
@@ -117,12 +120,17 @@ const EventScheduleModal = ({ open: externalOpen, onOpenChange: externalOnOpenCh
       {externalOpen === undefined && (
         <DialogTrigger asChild>
           <Button
-            variant="outline"
+            variant={triggerStyle === 'link' ? 'ghost' : 'outline'}
             size="sm"
-            className="border-bitcoin text-bitcoin hover:bg-bitcoin hover:text-foreground"
+            data-event-schedule-trigger
+            className={
+              triggerStyle === 'link'
+                ? 'h-auto p-0 text-sm text-bitcoin hover:bg-transparent hover:text-bitcoin-light'
+                : 'border-bitcoin text-bitcoin hover:bg-bitcoin hover:text-foreground'
+            }
           >
-            <Calendar className="w-4 h-4 mr-2" />
-            {language === 'ko' ? '이벤트 일정' : 'Events'}
+            <Calendar className={triggerStyle === 'link' ? 'w-3.5 h-3.5 mr-1' : 'w-4 h-4 mr-2'} />
+            {language === 'ko' ? '대관 일정' : 'Rental Schedule'}
           </Button>
         </DialogTrigger>
       )}
@@ -132,14 +140,6 @@ const EventScheduleModal = ({ open: externalOpen, onOpenChange: externalOnOpenCh
             <Calendar className="w-5 h-5 text-bitcoin" />
             {content[language].title}
           </DialogTitle>
-          <div className="flex justify-start mt-2">
-            <a 
-              href="/admin/events" 
-              className="text-xs text-muted-foreground hover:text-bitcoin transition-colors"
-            >
-              일정관리
-            </a>
-          </div>
         </DialogHeader>
         
         <div className="mt-6">
@@ -164,6 +164,14 @@ const EventScheduleModal = ({ open: externalOpen, onOpenChange: externalOnOpenCh
                       {language === 'ko' ? event.title : event.titleEn}
                     </h4>
                   </div>
+
+                  {event.image && (
+                    <img
+                      src={event.image}
+                      alt={language === 'ko' ? event.title : event.titleEn}
+                      className="mb-3 aspect-video w-full rounded-md object-cover"
+                    />
+                  )}
                   
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
@@ -188,6 +196,17 @@ const EventScheduleModal = ({ open: externalOpen, onOpenChange: externalOnOpenCh
                       __html: (language === 'ko' ? event.description : event.descriptionEn).replace(/\n/g, '<br />') 
                     }}
                   />
+                  {event.link && (
+                    <a
+                      href={event.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-flex items-center gap-1 text-sm text-bitcoin hover:text-bitcoin-light"
+                    >
+                      {language === 'ko' ? '링크 열기' : 'Open Link'}
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  )}
                 </div>
               ))}
             </div>

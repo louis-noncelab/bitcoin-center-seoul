@@ -1,9 +1,8 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Monitor, Gamepad2, GraduationCap, Users, Coffee, Palette, ShoppingBag, Laptop } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { useState } from 'react';
+import { ChevronRight } from 'lucide-react';
 import EducationCoursesModal from './EducationCoursesModal';
 import MeetupsModal from './MeetupsModal';
 
@@ -15,113 +14,133 @@ const ServicesSection = () => {
 
   const content = {
     ko: {
-      title: '주요 역할',
-      subtitle: '다양한 비트코인 관련 서비스와 체험을 한 곳에서 만나보세요.',
+      title: '활동',
+      subtitle: '다양한 비트코인 관련 경험을 한 곳에서 만나보세요.',
       services: [
         {
-          icon: Monitor,
           title: '전시',
           description: '비트코인 관련 굿즈 및 관련 용품',
+          image: '/images/What we do/전시.jpeg',
           details: '다양한 비트코인 굿즈와 하드웨어 전시'
         },
         {
-          icon: Gamepad2,
           title: '체험',
           description: '하드월렛 등 비트코인 관련 기기 체험',
+          image: '/images/What we do/체험.jpeg',
           details: '하드웨어 월렛과 비트코인 기기 직접 체험'
         },
         {
-          icon: GraduationCap,
           title: '교육',
           description: '비트코인 관련 교육',
+          image: '/images/What we do/교육.png',
           details: '비트코인 기초부터 고급까지 체계적 교육'
         },
         {
-          icon: Users,
           title: '커뮤니티',
           description: '각종 커뮤니티 활동',
+          image: '/images/What we do/커뮤니티.jpg',
           details: '비트코인 관련 밋업과 이벤트 개최'
         },
         {
-          icon: Coffee,
           title: '라운지',
           description: '카페 라운지',
+          image: '/images/What we do/라운지.jpeg',
           details: '편안한 카페 라운지에서 네트워킹과 휴식'
         },
         {
-          icon: Palette,
           title: '갤러리',
           description: '비트코인 관련 예술작품 전시',
+          image: '/images/What we do/갤러리.jpeg',
           details: '비트코인에서 영감을 받은 예술작품 전시'
         },
         {
-          icon: ShoppingBag,
           title: '판매',
           description: '각종 비트코인 관련 용품 판매',
+          image: '/images/What we do/판매.jpeg',
           details: '비트코인 관련 제품과 굿즈 판매 공간'
         },
         {
-          icon: Laptop,
           title: '코워킹',
           description: '코워킹 스페이스 제공',
+          image: '/images/What we do/코워킹.png',
           details: '비트코인 기업가를 위한 전문 코워킹 공간'
         }
       ]
     },
     en: {
-      title: 'Our Services',
-      subtitle: 'Experience diverse Bitcoin-related services and activities all in one place.',
+      title: 'Activities',
+      subtitle: 'Discover a wide range of Bitcoin experiences in one place.',
       services: [
         {
-          icon: Monitor,
           title: 'Exhibition',
           description: 'Bitcoin merchandise and related equipment',
+          image: '/images/What we do/전시.jpeg',
           details: 'Exhibition of various Bitcoin goods and hardware'
         },
         {
-          icon: Gamepad2,
           title: 'Experience',
           description: 'Hands-on experience with hardware wallets and Bitcoin devices',
+          image: '/images/What we do/체험.jpeg',
           details: 'Direct experience with hardware wallets and Bitcoin devices'
         },
         {
-          icon: GraduationCap,
           title: 'Education',
           description: 'Comprehensive Bitcoin education and workshops',
+          image: '/images/What we do/교육.png',
           details: 'Systematic education from Bitcoin basics to advanced'
         },
         {
-          icon: Users,
           title: 'Community',
           description: 'Various community activities',
+          image: '/images/What we do/커뮤니티.jpg',
           details: 'Bitcoin community meetups and events'
         },
         {
-          icon: Coffee,
           title: 'Lounge',
           description: 'Comfortable cafe lounge for networking and relaxation',
+          image: '/images/What we do/라운지.jpeg',
           details: 'Comfortable cafe lounge for networking and relaxation'
         },
         {
-          icon: Palette,
           title: 'Gallery',
           description: 'Gallery showcasing Bitcoin-inspired artwork',
+          image: '/images/What we do/갤러리.jpeg',
           details: 'Gallery showcasing Bitcoin-inspired artwork'
         },
         {
-          icon: ShoppingBag,
           title: 'Retail',
           description: 'Retail space for Bitcoin-related products and merchandise',
+          image: '/images/What we do/판매.jpeg',
           details: 'Retail space for Bitcoin-related products and goods'
         },
         {
-          icon: Laptop,
           title: 'Coworking',
           description: 'Professional coworking space for Bitcoin entrepreneurs',
+          image: '/images/What we do/코워킹.png',
           details: 'Professional coworking space for Bitcoin entrepreneurs'
         }
       ]
     }
+  };
+
+  const handleServiceClick = (title: string) => {
+    if (title === '체험' || title === 'Experience') {
+      navigate('/walletExperence');
+      return;
+    }
+
+    if (title === '교육' || title === 'Education') {
+      setIsEducationModalOpen(true);
+      return;
+    }
+
+    if (title === '커뮤니티' || title === 'Community') {
+      setIsMeetupsModalOpen(true);
+    }
+  };
+
+  const hasAction = (title: string) => {
+    return ['체험', 'Experience', '교육', 'Education', '커뮤니티', 'Community'].includes(title);
   };
 
   return (
@@ -140,43 +159,31 @@ const ServicesSection = () => {
           {content[language].services.map((service, index) => (
             <Card 
               key={index}
-              className="bg-card border-border shadow-lg hover:shadow-xl transition-all duration-300 hover:border-bitcoin/50 group"
+              onClick={() => handleServiceClick(service.title)}
+              className="group overflow-hidden bg-card border-border shadow-lg hover:shadow-xl transition-all duration-300 hover:border-bitcoin/50 cursor-pointer"
             >
-              <CardContent className="p-6 text-center">
-                <div className="w-14 h-14 bg-gradient-to-r from-bitcoin/20 to-bitcoin-dark/20 rounded-lg flex items-center justify-center mx-auto mb-4 group-hover:from-bitcoin group-hover:to-bitcoin-dark transition-all duration-300">
-                  <service.icon className="w-7 h-7 text-bitcoin group-hover:text-white transition-all duration-300 group-hover:scale-110" />
+              <CardContent className="p-0">
+                <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+                  <img
+                    src={service.image}
+                    alt={service.title}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/35 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-4 pr-12">
+                    <h3 className="mb-1 text-lg font-semibold text-foreground">
+                      {service.title}
+                    </h3>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      {service.description}
+                    </p>
+                  </div>
+                  {hasAction(service.title) && (
+                    <div className="absolute bottom-4 right-4 text-muted-foreground/80 drop-shadow-md transition-all duration-300 group-hover:translate-x-1 group-hover:text-foreground">
+                      <ChevronRight className="h-6 w-6" />
+                    </div>
+                  )}
                 </div>
-                <h3 className="text-lg font-semibold mb-2 text-foreground">{service.title}</h3>
-                <p className="text-muted-foreground text-sm mb-2 leading-relaxed">
-                  {service.description}
-                </p>
-                <p className="text-xs text-muted-foreground/80 leading-relaxed mb-4">
-                  {service.details}
-                </p>
-                {(service.title === '체험' || service.title === 'Experience') && (
-                  <Button
-                    onClick={() => navigate('/walletExperence')}
-                    className="w-full bg-bitcoin hover:bg-bitcoin-dark"
-                  >
-                    {language === 'ko' ? '하드월렛 체험' : 'Hardware Wallet Experience'}
-                  </Button>
-                )}
-                {(service.title === '교육' || service.title === 'Education') && (
-                  <Button
-                    onClick={() => setIsEducationModalOpen(true)}
-                    className="w-full bg-bitcoin hover:bg-bitcoin-dark"
-                  >
-                    {language === 'ko' ? '정규 교육 프로그램' : 'View Courses'}
-                  </Button>
-                )}
-                {(service.title === '커뮤니티' || service.title === 'Community') && (
-                  <Button
-                    onClick={() => setIsMeetupsModalOpen(true)}
-                    className="w-full bg-bitcoin hover:bg-bitcoin-dark"
-                  >
-                    {language === 'ko' ? '정기 밋업과 행사' : 'Regular Meetups and Events'}
-                  </Button>
-                )}
               </CardContent>
             </Card>
           ))}

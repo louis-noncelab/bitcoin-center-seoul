@@ -130,4 +130,25 @@ All colors MUST be HSL.
   .animate-fade-in {
     animation: fade-in 0.8s ease-out;
   }
+
+  @keyframes hero-video-zoom-out {
+    from {
+      transform: scale(1.25);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
+
+  .animate-hero-video-zoom-out {
+    animation: hero-video-zoom-out 5s ease-out forwards;
+    transform-origin: center center;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-hero-video-zoom-out {
+      animation: none;
+      transform: scale(1);
+    }
+  }
 }

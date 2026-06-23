@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AdminAuth from "./pages/AdminAuth";
 import AdminEvents from "./pages/AdminEvents";
+import AdminHighlights from "./pages/AdminHighlights";
 import WalletExperience from "./pages/WalletExperience";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/walletExperence" element={<WalletExperience />} />
             <Route path="/admin/auth" element={<AdminAuth />} />
             <Route path="/admin/events" element={<AdminEvents />} />
+            <Route path="/admin/highlights" element={<AdminHighlights />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

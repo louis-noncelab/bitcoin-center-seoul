@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,8 +10,11 @@ const AdminAuth = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const correctPassword = 'qlxmzhdlstpsxjtjdnf1021';
+  const redirectPath = searchParams.get('redirect');
+  const nextPath = redirectPath?.startsWith('/admin/') ? redirectPath : '/admin/events';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +27,7 @@ const AdminAuth = () => {
     if (password === correctPassword) {
       // 세션 스토리지에 인증 상태 저장
       sessionStorage.setItem('admin_authenticated', 'true');
-      navigate('/admin/events');
+      navigate(nextPath);
     } else {
       setError('잘못된 암호입니다.');
     }
@@ -41,7 +44,7 @@ const AdminAuth = () => {
           </div>
           <CardTitle>관리자 인증</CardTitle>
           <CardDescription>
-            이벤트 일정을 관리하려면 암호를 입력하세요
+            관리자 페이지에 접근하려면 암호를 입력하세요
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -60,7 +60,7 @@ const MeetupsModal = ({ open, onOpenChange }: MeetupsModalProps) => {
         title: '비트코인 무비 나잇',
         tags: ['매월', '2째주 토요일', '누구나', '입장료', '4시간'],
         description: [
-          '비트코인센터서울에 함께 모여 비트코인과 관련된 영화와 다큐멘터리를 시청하고',
+          '비트코인 센터 서울에 함께 모여 비트코인과 관련된 영화와 다큐멘터리를 시청하고',
           '영화 속 이야기와 메시지에 대해 자유롭게 대화를 나누는 시간입니다.',
           '',
           '편안한 분위기에서 팝콘과 음료를 즐기며',
@@ -89,7 +89,7 @@ const MeetupsModal = ({ open, onOpenChange }: MeetupsModalProps) => {
           '해외의 다양한 비트코이너들과 직접 만나',
           '비트코인에 대한 경험과 이야기를 나누며',
           '글로벌 커뮤니티와 연결되는 기회를 만들어보세요.',
-          '본 행사는 비트코인센터서울과 새러데이 블록이 함께 주최합니다.'
+          '본 행사는 비트코인 센터 서울과 새러데이 블록이 함께 주최합니다.'
         ]
       },
       {
@@ -103,8 +103,8 @@ const MeetupsModal = ({ open, onOpenChange }: MeetupsModalProps) => {
           '다채로운 프로그램이 진행됩니다.',
           '',
           '비트코인의 역사적인 순간을',
-          '비트코인센터서울과 함께 기념해보세요.',
-          '본 행사는 비트코인센터서울과 새러데이 블록이 함께 주최합니다.'
+          '비트코인 센터 서울과 함께 기념해보세요.',
+          '본 행사는 비트코인 센터 서울과 새러데이 블록이 함께 주최합니다.'
         ]
       }
     ],
@@ -251,4 +251,3 @@ const MeetupsModal = ({ open, onOpenChange }: MeetupsModalProps) => {
 };
 
 export default MeetupsModal;
-

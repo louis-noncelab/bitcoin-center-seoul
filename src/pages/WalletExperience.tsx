@@ -19,7 +19,7 @@ const WalletExperience = () => {
     ko: {
       welcome: {
         title: '하드월렛 체험하기',
-        message1: '비트코인센터서울의 하드월렛 체험존에 오신 것을 환영합니다.',
+        message1: '비트코인 센터 서울의 하드월렛 체험존에 오신 것을 환영합니다.',
         message2: '코코넛 월렛을 통해 마음껏 테스트 비트코인을 주고 받아보세요.',
         message3: '하드월렛은 고장나지 않게 조심히 다뤄주세요.',
         button: '시작해볼까요?'
@@ -950,10 +950,7 @@ const WalletExperience = () => {
   };
 
   const handleHome = () => {
-    setStep(1);
-    setPhoneOS(null);
-    setWalletType(null);
-    setCurrentPhase(1);
+    navigate('/');
   };
 
   return (
