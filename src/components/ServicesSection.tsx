@@ -20,49 +20,49 @@ const ServicesSection = () => {
         {
           title: '전시',
           description: '비트코인 관련 굿즈 및 관련 용품',
-          image: '/images/What we do/전시.jpeg',
+          image: '/images/what-we-do/exhibition.jpeg',
           details: '다양한 비트코인 굿즈와 하드웨어 전시'
         },
         {
           title: '체험',
           description: '하드월렛 등 비트코인 관련 기기 체험',
-          image: '/images/What we do/체험.jpeg',
+          image: '/images/what-we-do/experience.jpeg',
           details: '하드웨어 월렛과 비트코인 기기 직접 체험'
         },
         {
           title: '교육',
           description: '비트코인 관련 교육',
-          image: '/images/What we do/교육.png',
+          image: '/images/what-we-do/education.png',
           details: '비트코인 기초부터 고급까지 체계적 교육'
         },
         {
           title: '커뮤니티',
           description: '각종 커뮤니티 활동',
-          image: '/images/What we do/커뮤니티.jpg',
+          image: '/images/what-we-do/community.jpg',
           details: '비트코인 관련 밋업과 이벤트 개최'
         },
         {
           title: '라운지',
           description: '카페 라운지',
-          image: '/images/What we do/라운지.jpeg',
+          image: '/images/what-we-do/lounge.jpeg',
           details: '편안한 카페 라운지에서 네트워킹과 휴식'
         },
         {
           title: '갤러리',
           description: '비트코인 관련 예술작품 전시',
-          image: '/images/What we do/갤러리.jpeg',
+          image: '/images/what-we-do/gallery.jpeg',
           details: '비트코인에서 영감을 받은 예술작품 전시'
         },
         {
           title: '판매',
           description: '각종 비트코인 관련 용품 판매',
-          image: '/images/What we do/판매.jpeg',
+          image: '/images/what-we-do/retail.jpeg',
           details: '비트코인 관련 제품과 굿즈 판매 공간'
         },
         {
           title: '코워킹',
           description: '코워킹 스페이스 제공',
-          image: '/images/What we do/코워킹.png',
+          image: '/images/what-we-do/coworking.png',
           details: '비트코인 기업가를 위한 전문 코워킹 공간'
         }
       ]
@@ -74,49 +74,49 @@ const ServicesSection = () => {
         {
           title: 'Exhibition',
           description: 'Bitcoin merchandise and related equipment',
-          image: '/images/What we do/전시.jpeg',
+          image: '/images/what-we-do/exhibition.jpeg',
           details: 'Exhibition of various Bitcoin goods and hardware'
         },
         {
           title: 'Experience',
           description: 'Hands-on experience with hardware wallets and Bitcoin devices',
-          image: '/images/What we do/체험.jpeg',
+          image: '/images/what-we-do/experience.jpeg',
           details: 'Direct experience with hardware wallets and Bitcoin devices'
         },
         {
           title: 'Education',
           description: 'Comprehensive Bitcoin education and workshops',
-          image: '/images/What we do/교육.png',
+          image: '/images/what-we-do/education.png',
           details: 'Systematic education from Bitcoin basics to advanced'
         },
         {
           title: 'Community',
           description: 'Various community activities',
-          image: '/images/What we do/커뮤니티.jpg',
+          image: '/images/what-we-do/community.jpg',
           details: 'Bitcoin community meetups and events'
         },
         {
           title: 'Lounge',
           description: 'Comfortable cafe lounge for networking and relaxation',
-          image: '/images/What we do/라운지.jpeg',
+          image: '/images/what-we-do/lounge.jpeg',
           details: 'Comfortable cafe lounge for networking and relaxation'
         },
         {
           title: 'Gallery',
           description: 'Gallery showcasing Bitcoin-inspired artwork',
-          image: '/images/What we do/갤러리.jpeg',
+          image: '/images/what-we-do/gallery.jpeg',
           details: 'Gallery showcasing Bitcoin-inspired artwork'
         },
         {
           title: 'Retail',
           description: 'Retail space for Bitcoin-related products and merchandise',
-          image: '/images/What we do/판매.jpeg',
+          image: '/images/what-we-do/retail.jpeg',
           details: 'Retail space for Bitcoin-related products and goods'
         },
         {
           title: 'Coworking',
           description: 'Professional coworking space for Bitcoin entrepreneurs',
-          image: '/images/What we do/코워킹.png',
+          image: '/images/what-we-do/coworking.png',
           details: 'Professional coworking space for Bitcoin entrepreneurs'
         }
       ]
@@ -179,8 +179,8 @@ const ServicesSection = () => {
                     </p>
                   </div>
                   {hasAction(service.title) && (
-                    <div className="absolute bottom-4 right-4 text-muted-foreground/80 drop-shadow-md transition-all duration-300 group-hover:translate-x-1 group-hover:text-foreground">
-                      <ChevronRight className="h-6 w-6" />
+                    <div className="absolute bottom-4 right-4 flex h-9 w-9 items-center justify-center rounded-full border border-bitcoin/60 bg-background/85 text-bitcoin shadow-lg backdrop-blur-sm transition-all duration-300 group-hover:scale-105 group-hover:bg-bitcoin group-hover:text-bitcoin-foreground">
+                      <ChevronRight className="h-5 w-5" />
                     </div>
                   )}
                 </div>

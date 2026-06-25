@@ -165,14 +165,6 @@ const EventScheduleModal = ({ open: externalOpen, onOpenChange: externalOnOpenCh
                     </h4>
                   </div>
 
-                  {event.image && (
-                    <img
-                      src={event.image}
-                      alt={language === 'ko' ? event.title : event.titleEn}
-                      className="mb-3 aspect-video w-full rounded-md object-cover"
-                    />
-                  )}
-                  
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-bitcoin" />

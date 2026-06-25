@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Calendar, Clock, MapPin, Trash2, Edit, ArrowLeft, Save, X, ExternalLink, Upload, Plus } from 'lucide-react';
+import { Calendar, Trash2, Edit, ArrowLeft, Save, X, ExternalLink, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import DatePicker from '@/components/DatePicker';
 
@@ -32,9 +32,6 @@ const AdminEvents = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     title: '',
     titleEn: '',
@@ -117,7 +114,7 @@ const AdminEvents = () => {
     setLoading(true);
 
     // 필수 필드 검증
-    const requiredFields = ['title', 'titleEn', 'date', 'time', 'location', 'locationEn', 'description', 'descriptionEn'];
+    const requiredFields = ['title', 'titleEn', 'date', 'time', 'location', 'locationEn', 'description', 'descriptionEn', 'link'];
     const missingFields = requiredFields.filter(field => !formData[field as keyof typeof formData]);
     
     if (missingFields.length > 0) {
@@ -141,7 +138,7 @@ const AdminEvents = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, image: '' }),
       });
 
       console.log('응답 상태:', response.status); // 디버깅용
@@ -220,45 +217,10 @@ const AdminEvents = () => {
       locationEn: event.locationEn,
       description: event.description,
       descriptionEn: event.descriptionEn,
-      image: event.image || '',
+      image: '',
       link: event.link || ''
     });
     setIsEditing(true);
-  };
-
-  const uploadImage = async (file?: File) => {
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast({ title: '업로드 오류', description: '이미지 파일만 업로드할 수 있습니다.', variant: 'destructive' });
-      return;
-    }
-
-    setIsUploading(true);
-    try {
-      const response = await fetch('/api/event-images', {
-        method: 'POST',
-        headers: {
-          'Content-Type': file.type,
-          'X-File-Name': encodeURIComponent(file.name),
-        },
-        body: file,
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setFormData((current) => ({ ...current, image: data.path }));
-        toast({ title: '성공', description: '이미지가 업로드되었습니다.' });
-      } else {
-        const data = await response.json().catch(() => null);
-        toast({ title: '업로드 오류', description: data?.error || '이미지 업로드에 실패했습니다.', variant: 'destructive' });
-      }
-    } catch {
-      toast({ title: '업로드 오류', description: '이미지 업로드 중 네트워크 오류가 발생했습니다.', variant: 'destructive' });
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
   };
 
   const formatDate = (dateString: string) => {
@@ -412,58 +374,8 @@ const AdminEvents = () => {
                     value={formData.link}
                     onChange={(e) => setFormData({...formData, link: e.target.value})}
                     placeholder="https://example.com"
+                    required
                   />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block">이미지 첨부</label>
-                  <div
-                    onDragEnter={(e) => {
-                      e.preventDefault();
-                      setIsDragging(true);
-                    }}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setIsDragging(true);
-                    }}
-                    onDragLeave={() => setIsDragging(false)}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      setIsDragging(false);
-                      uploadImage(e.dataTransfer.files?.[0]);
-                    }}
-                    className={`rounded-lg border border-dashed p-5 text-center transition-colors ${
-                      isDragging ? 'border-bitcoin bg-bitcoin/10' : 'border-border bg-muted/20'
-                    }`}
-                  >
-                    <Upload className="mx-auto mb-2 h-6 w-6 text-bitcoin" />
-                    <p className="text-sm font-medium text-foreground">
-                      이미지를 드래그하거나 파일을 선택하세요
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      JPG, PNG, WEBP, GIF / 최대 20MB
-                    </p>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => uploadImage(e.target.files?.[0])}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={isUploading}
-                      onClick={() => fileInputRef.current?.click()}
-                      className="mt-3"
-                    >
-                      {isUploading ? '업로드 중...' : '컴퓨터에서 선택'}
-                    </Button>
-                  </div>
-                  {formData.image && (
-                    <img src={formData.image} alt="선택된 이벤트" className="mt-3 aspect-video w-full rounded-md object-cover" />
-                  )}
                 </div>
 
                 <div className="flex gap-2">
@@ -531,17 +443,12 @@ const AdminEvents = () => {
                   {events.map((event) => (
                     <div
                       key={event.id}
-                      className={`grid grid-cols-[120px_1fr] gap-4 rounded-lg border p-3 transition-all duration-200 ${
+                      className={`rounded-lg border p-3 transition-all duration-200 ${
                         editingEvent?.id === event.id 
                           ? 'border-bitcoin bg-bitcoin/5' 
                           : 'border-border hover:border-bitcoin/50 hover:bg-card/50'
                       }`}
                     >
-                      <img
-                        src={event.image || '/images/main1.png'}
-                        alt={event.title}
-                        className="aspect-[4/3] rounded-md object-cover"
-                      />
                       <div>
                         <div className="flex items-start justify-between gap-3">
                           <div>

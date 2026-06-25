@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, ExternalLink, Image, Plus, Save, Trash2, Upload, X } from 'lucide-react';
+import { ArrowLeft, Edit, ExternalLink, Link, Plus, Save, Trash2, X } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +18,8 @@ interface Highlight {
   category: string;
   categoryEn: string;
   date: string;
+  startDate: string;
+  endDate: string;
   host: string;
   hostEn: string;
   description: string;
@@ -37,6 +39,8 @@ const defaultForm = {
   category: '행사',
   categoryEn: 'Event',
   date: '',
+  startDate: '',
+  endDate: '',
   host: '비트코인 센터 서울',
   hostEn: 'Bitcoin Center Seoul',
   description: '',
@@ -48,6 +52,8 @@ const defaultForm = {
   is_active: true,
 };
 
+type DateMode = 'single' | 'range';
+
 const AdminHighlights = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -58,9 +64,7 @@ const AdminHighlights = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingHighlight, setEditingHighlight] = useState<Highlight | null>(null);
   const [formData, setFormData] = useState(defaultForm);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dateMode, setDateMode] = useState<DateMode>('single');
 
   useEffect(() => {
     const authStatus = sessionStorage.getItem('admin_authenticated');
@@ -95,12 +99,14 @@ const AdminHighlights = () => {
 
   const resetForm = () => {
     setFormData(defaultForm);
+    setDateMode('single');
     setIsEditing(false);
     setEditingHighlight(null);
   };
 
   const handleEdit = (highlight: Highlight) => {
     setEditingHighlight(highlight);
+    setDateMode(highlight.startDate || highlight.endDate ? 'range' : 'single');
     setFormData({
       title: highlight.title,
       titleEn: highlight.titleEn,
@@ -109,11 +115,13 @@ const AdminHighlights = () => {
       category: highlight.category || '행사',
       categoryEn: highlight.categoryEn || 'Event',
       date: highlight.date || '',
+      startDate: highlight.startDate || '',
+      endDate: highlight.endDate || '',
       host: highlight.host || '비트코인 센터 서울',
       hostEn: highlight.hostEn || 'Bitcoin Center Seoul',
       description: highlight.description,
       descriptionEn: highlight.descriptionEn,
-      image: highlight.image,
+      image: '',
       link: highlight.link || '',
       icon: highlight.icon,
       sort_order: highlight.sort_order,
@@ -124,11 +132,41 @@ const AdminHighlights = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const requiredFields = ['title', 'titleEn', 'category', 'categoryEn', 'date', 'host', 'hostEn', 'description', 'descriptionEn', 'image'];
+    const requiredFields = ['title', 'titleEn', 'category', 'categoryEn', 'host', 'hostEn', 'description', 'descriptionEn', 'link'];
     const missingFields = requiredFields.filter((field) => !formData[field as keyof typeof formData]);
 
     if (missingFields.length > 0) {
       toast({ title: '입력 오류', description: `다음 필드를 입력해주세요: ${missingFields.join(', ')}`, variant: 'destructive' });
+      return;
+    }
+
+    if (!formData.date && !formData.startDate && !formData.endDate) {
+      toast({ title: '입력 오류', description: '날짜 또는 시작일/종료일 중 하나를 입력해주세요.', variant: 'destructive' });
+      return;
+    }
+
+    if (dateMode === 'single' && !formData.date) {
+      toast({ title: '입력 오류', description: '날짜를 입력해주세요.', variant: 'destructive' });
+      return;
+    }
+
+    if (dateMode === 'range' && (!formData.startDate || !formData.endDate)) {
+      toast({ title: '입력 오류', description: '시작일과 종료일을 모두 입력해주세요.', variant: 'destructive' });
+      return;
+    }
+
+    if (dateMode === 'single' && (formData.startDate || formData.endDate)) {
+      toast({ title: '입력 오류', description: '날짜와 기간은 둘 중 하나만 입력해주세요.', variant: 'destructive' });
+      return;
+    }
+
+    if (dateMode === 'range' && formData.date) {
+      toast({ title: '입력 오류', description: '날짜와 기간은 둘 중 하나만 입력해주세요.', variant: 'destructive' });
+      return;
+    }
+
+    if (dateMode === 'range' && formData.startDate > formData.endDate) {
+      toast({ title: '입력 오류', description: '종료일은 시작일보다 빠를 수 없습니다.', variant: 'destructive' });
       return;
     }
 
@@ -141,6 +179,9 @@ const AdminHighlights = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
+          date: dateMode === 'single' ? formData.date : '',
+          startDate: dateMode === 'range' ? formData.startDate : '',
+          endDate: dateMode === 'range' ? formData.endDate : '',
           meta: formData.meta || '하이라이트',
           metaEn: formData.metaEn || 'Highlight',
         }),
@@ -177,39 +218,12 @@ const AdminHighlights = () => {
     }
   };
 
-  const uploadImage = async (file?: File) => {
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast({ title: '업로드 오류', description: '이미지 파일만 업로드할 수 있습니다.', variant: 'destructive' });
-      return;
+  const formatDate = (date: string) => date.replaceAll('-', '.');
+  const getDateLabel = (highlight: Highlight) => {
+    if (highlight.startDate && highlight.endDate) {
+      return `${formatDate(highlight.startDate)} ~ ${formatDate(highlight.endDate)}`;
     }
-
-    setIsUploading(true);
-    try {
-      const response = await fetch('/api/highlight-images', {
-        method: 'POST',
-        headers: {
-          'Content-Type': file.type,
-          'X-File-Name': encodeURIComponent(file.name),
-        },
-        body: file,
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setFormData((current) => ({ ...current, image: data.path }));
-        toast({ title: '성공', description: '이미지가 업로드되었습니다.' });
-      } else {
-        const data = await response.json().catch(() => null);
-        toast({ title: '업로드 오류', description: data?.error || '이미지 업로드에 실패했습니다.', variant: 'destructive' });
-      }
-    } catch {
-      toast({ title: '업로드 오류', description: '이미지 업로드 중 네트워크 오류가 발생했습니다.', variant: 'destructive' });
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
+    return highlight.date || '날짜 없음';
   };
 
   if (!isAuthenticated) {
@@ -243,10 +257,10 @@ const AdminHighlights = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Image className="w-5 h-5 text-bitcoin" />
+                <Link className="w-5 h-5 text-bitcoin" />
                 {isEditing ? '하이라이트 수정' : '새 하이라이트 등록'}
               </CardTitle>
-              <CardDescription>홈페이지 하이라이트 카드의 문구와 이미지를 관리합니다.</CardDescription>
+              <CardDescription>홈페이지 하이라이트 카드의 문구와 첨부 링크를 관리합니다.</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -288,11 +302,7 @@ const AdminHighlights = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">날짜</label>
-                    <Input value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} placeholder="2026.04.19" required />
-                  </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium mb-2 block">주최 (한국어)</label>
                     <Input value={formData.host} onChange={(e) => setFormData({ ...formData, host: e.target.value })} required />
@@ -301,6 +311,73 @@ const AdminHighlights = () => {
                     <label className="text-sm font-medium mb-2 block">Host (영어)</label>
                     <Input value={formData.hostEn} onChange={(e) => setFormData({ ...formData, hostEn: e.target.value })} required />
                   </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-sm font-medium block">날짜 유형</label>
+                  <div className="grid grid-cols-2 gap-2 rounded-md border border-border bg-muted/20 p-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDateMode('single');
+                        setFormData({ ...formData, startDate: '', endDate: '' });
+                      }}
+                      className={`rounded-sm px-3 py-2 text-sm font-medium transition-colors ${
+                        dateMode === 'single'
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      당일
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDateMode('range');
+                        setFormData({ ...formData, date: '' });
+                      }}
+                      className={`rounded-sm px-3 py-2 text-sm font-medium transition-colors ${
+                        dateMode === 'range'
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      기간
+                    </button>
+                  </div>
+                </div>
+
+                <div className={dateMode === 'range' ? 'grid grid-cols-2 gap-4' : ''}>
+                  <div>
+                    {dateMode === 'single' ? (
+                      <>
+                        <label className="text-sm font-medium mb-2 block">날짜</label>
+                        <Input value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} placeholder="2026.04.19" required />
+                      </>
+                    ) : (
+                      <>
+                        <label className="text-sm font-medium mb-2 block">시작일</label>
+                        <Input
+                          type="date"
+                          value={formData.startDate}
+                          onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                          required
+                        />
+                      </>
+                    )}
+                  </div>
+                  {dateMode === 'range' && (
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">종료일</label>
+                      <Input
+                        type="date"
+                        value={formData.endDate}
+                        min={formData.startDate || undefined}
+                        onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                        required
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -320,58 +397,8 @@ const AdminHighlights = () => {
                     value={formData.link}
                     onChange={(e) => setFormData({ ...formData, link: e.target.value })}
                     placeholder="https://example.com"
+                    required
                   />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block">이미지</label>
-                  <div
-                    onDragEnter={(e) => {
-                      e.preventDefault();
-                      setIsDragging(true);
-                    }}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setIsDragging(true);
-                    }}
-                    onDragLeave={() => setIsDragging(false)}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      setIsDragging(false);
-                      uploadImage(e.dataTransfer.files?.[0]);
-                    }}
-                    className={`mb-3 rounded-lg border border-dashed p-5 text-center transition-colors ${
-                      isDragging ? 'border-bitcoin bg-bitcoin/10' : 'border-border bg-muted/20'
-                    }`}
-                  >
-                    <Upload className="mx-auto mb-2 h-6 w-6 text-bitcoin" />
-                    <p className="text-sm font-medium text-foreground">
-                      이미지를 드래그하거나 파일을 선택하세요
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      JPG, PNG, WEBP, GIF / 최대 20MB
-                    </p>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => uploadImage(e.target.files?.[0])}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={isUploading}
-                      onClick={() => fileInputRef.current?.click()}
-                      className="mt-3"
-                    >
-                      {isUploading ? '업로드 중...' : '컴퓨터에서 선택'}
-                    </Button>
-                  </div>
-                  {formData.image && (
-                    <img src={formData.image} alt="선택된 하이라이트" className="mt-3 aspect-video w-full rounded-md object-cover" />
-                  )}
                 </div>
 
                 <label className="flex items-center gap-2 text-sm">
@@ -430,18 +457,17 @@ const AdminHighlights = () => {
                   {highlights.map((highlight) => (
                     <div
                       key={highlight.id}
-                      className={`grid grid-cols-[120px_1fr] gap-4 rounded-lg border p-3 ${
+                      className={`rounded-lg border p-3 ${
                         editingHighlight?.id === highlight.id ? 'border-bitcoin bg-bitcoin/5' : 'border-border'
                       }`}
                     >
-                      <img src={highlight.image} alt={highlight.title} className="aspect-[4/3] rounded-md object-cover" />
                       <div>
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <h4 className="font-semibold text-foreground">{highlight.title}</h4>
                             <p className="text-xs text-bitcoin">{highlight.meta}</p>
                             <p className="text-xs text-muted-foreground mt-1">
-                              {highlight.category || '행사'} · {highlight.date || '날짜 없음'} · {highlight.host || '비트코인 센터 서울'}
+                              {highlight.category || '행사'} · {getDateLabel(highlight)} · {highlight.host || '비트코인 센터 서울'}
                             </p>
                             <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{highlight.description}</p>
                             {highlight.link && (

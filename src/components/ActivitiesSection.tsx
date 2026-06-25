@@ -1,10 +1,5 @@
 import {
   CalendarDays,
-  Clapperboard,
-  Code2,
-  Handshake,
-  Users,
-  WalletCards,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -38,57 +33,13 @@ const ActivitiesSection = () => {
         '비트코인 센터 서울에서 열리는 정기 밋업, 교육, 체험, 커뮤니티 행사를 확인하세요.',
       featured: {
         label: '다음 행사',
-        title: '비트코이너가 모이고 배우고 실험하는 이벤트',
-        description:
-          '정기 밋업과 교육, 하드월렛 체험, 커뮤니티 행사가 같은 공간에서 이어집니다. 방문자가 이벤트의 분위기를 바로 느끼도록 가장 좋은 현장 사진을 크게 배치하세요.',
+        title: '등록된 이벤트가 없습니다',
+        description: '관리자 페이지에서 이벤트를 등록하면 이 영역에 표시됩니다.',
         image: '/images/main1.png',
       },
       eventTitle: '행사 하이라이트',
       eventSubtitle: '실제 활동의 순간들을 확인해보세요.',
-      activities: [
-        {
-          title: 'Bitcoin Monthly',
-          meta: '매월 1째주 토요일',
-          description: '한 달간의 주요 비트코인 뉴스와 이슈를 함께 정리하고 토론합니다.',
-          image: '/images/main2.png',
-          icon: CalendarDays,
-        },
-        {
-          title: '비트코인 개발자 밋업',
-          meta: '매월 4째주 일요일',
-          description: '프로토콜, 지갑, 네트워크 등 기술 주제를 중심으로 교류합니다.',
-          image: '/images/main3.png',
-          icon: Code2,
-        },
-        {
-          title: '비트코인 무비 나잇',
-          meta: '매월 2째주 토요일',
-          description: '비트코인 영화와 다큐멘터리를 보고 자유롭게 이야기합니다.',
-          image: '/images/main1.png',
-          icon: Clapperboard,
-        },
-        {
-          title: 'Saturday ₿ash',
-          meta: '매월 3째주 토요일',
-          description: '보드게임, 다과, 네트워킹이 함께하는 캐주얼 밋업입니다.',
-          image: '/images/main2.png',
-          icon: Users,
-        },
-        {
-          title: '셀프 커스터디 클래스',
-          meta: '홀수월 4째주 금요일',
-          description: '코코넛 볼트 사용자를 위한 하드월렛과 보관 실습 강의입니다.',
-          image: '/images/main3.png',
-          icon: WalletCards,
-        },
-        {
-          title: '대관 및 커뮤니티 행사',
-          meta: '예약 운영',
-          description: '프로젝터, 음향, 커피가 준비된 소규모 비트코인 행사 공간입니다.',
-          image: '/images/main1.png',
-          icon: Handshake,
-        },
-      ],
+      activities: [],
     },
     en: {
       eyebrow: 'EVENTS',
@@ -97,57 +48,13 @@ const ActivitiesSection = () => {
         'Explore regular meetups, education, hands-on experiences, and community events at Bitcoin Center Seoul.',
       featured: {
         label: 'Next Event',
-        title: 'Events where Bitcoiners gather, learn, and experiment',
-        description:
-          'Regular meetups, education, hardware wallet experiences, and community events happen in one space. Use the strongest real event photo here so visitors immediately feel the atmosphere.',
+        title: 'No events have been added',
+        description: 'Events added in the admin page will appear here.',
         image: '/images/main1.png',
       },
       eventTitle: 'Event Highlights',
       eventSubtitle: 'Add real event records as photos become available.',
-      activities: [
-        {
-          title: 'Bitcoin Monthly',
-          meta: '1st Saturday monthly',
-          description: 'A monthly review and discussion of major Bitcoin news and issues.',
-          image: '/images/main2.png',
-          icon: CalendarDays,
-        },
-        {
-          title: 'Bitcoin Developer Meetup',
-          meta: '4th Sunday monthly',
-          description: 'Technical exchange around protocol, wallets, network, and development topics.',
-          image: '/images/main3.png',
-          icon: Code2,
-        },
-        {
-          title: 'Bitcoin Movie Night',
-          meta: '2nd Saturday monthly',
-          description: 'Watch Bitcoin films and documentaries, then discuss them together.',
-          image: '/images/main1.png',
-          icon: Clapperboard,
-        },
-        {
-          title: 'Saturday ₿ash',
-          meta: '3rd Saturday monthly',
-          description: 'A casual meetup with board games, snacks, and community networking.',
-          image: '/images/main2.png',
-          icon: Users,
-        },
-        {
-          title: 'Self-Custody Class',
-          meta: '4th Friday, odd months',
-          description: 'Hands-on wallet and custody class for Coconut Vault users.',
-          image: '/images/main3.png',
-          icon: WalletCards,
-        },
-        {
-          title: 'Hosted Community Events',
-          meta: 'By reservation',
-          description: 'Small Bitcoin events with projector, audio, coffee, and a dedicated venue.',
-          image: '/images/main1.png',
-          icon: Handshake,
-        },
-      ],
+      activities: [],
     },
   };
 
@@ -177,7 +84,7 @@ const ActivitiesSection = () => {
       title: language === 'ko' ? event.title : event.titleEn,
       meta: `${event.date}${event.time ? ` · ${event.time}` : ''}`,
       description: language === 'ko' ? event.description : event.descriptionEn,
-      image: event.image || fallbackImage,
+      image: fallbackImage,
       link: event.link || '',
       icon: CalendarDays,
     }));
@@ -194,7 +101,7 @@ const ActivitiesSection = () => {
     title: language === 'ko' ? event.title : event.titleEn,
     location: language === 'ko' ? event.location : event.locationEn,
     description: language === 'ko' ? event.description : event.descriptionEn,
-    image: event.image || fallbackImage,
+    image: fallbackImage,
   });
 
   return (
@@ -209,7 +116,7 @@ const ActivitiesSection = () => {
             </p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
+        <div className={sideEvents.length > 0 ? 'grid gap-6 lg:grid-cols-[1.25fr_0.75fr]' : 'grid gap-6'}>
           <article className="overflow-hidden rounded-lg border border-border bg-background shadow-lg">
             <div className="relative min-h-[420px]">
               <img
@@ -247,34 +154,36 @@ const ActivitiesSection = () => {
             </div>
           </article>
 
-          <aside className="grid gap-4">
-            {sideEvents.slice(0, 2).map((activity) => (
-              <article
-                key={activity.title}
-                className="rounded-lg border border-border bg-background p-5 shadow-lg"
-              >
-                <div className="mb-3 flex items-center gap-2 text-xs font-medium text-bitcoin">
-                  <activity.icon className="h-4 w-4" />
-                  {activity.meta}
-                </div>
-                <h4 className="mb-2 text-base font-semibold text-foreground">
-                  {activity.title}
-                </h4>
-                <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-                  {activity.description}
-                </p>
-                {'raw' in activity && (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedEvent(activity.raw)}
-                    className="mt-4 w-fit text-sm font-medium text-bitcoin transition-colors hover:text-bitcoin-light"
-                  >
-                    {language === 'ko' ? '자세히 보기' : 'View Details'}
-                  </button>
-                )}
-              </article>
-            ))}
-          </aside>
+          {sideEvents.length > 0 && (
+            <aside className="grid gap-4">
+              {sideEvents.slice(0, 2).map((activity) => (
+                <article
+                  key={activity.title}
+                  className="rounded-lg border border-border bg-background p-5 shadow-lg"
+                >
+                  <div className="mb-3 flex items-center gap-2 text-xs font-medium text-bitcoin">
+                    <activity.icon className="h-4 w-4" />
+                    {activity.meta}
+                  </div>
+                  <h4 className="mb-2 text-base font-semibold text-foreground">
+                    {activity.title}
+                  </h4>
+                  <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+                    {activity.description}
+                  </p>
+                  {'raw' in activity && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedEvent(activity.raw)}
+                      className="mt-4 w-fit text-sm font-medium text-bitcoin transition-colors hover:text-bitcoin-light"
+                    >
+                      {language === 'ko' ? '자세히 보기' : 'View Details'}
+                    </button>
+                  )}
+                </article>
+              ))}
+            </aside>
+          )}
         </div>
 
         {events.length > 0 && (
@@ -296,7 +205,6 @@ const ActivitiesSection = () => {
             <DialogHeader>
               <DialogTitle>{viewEvent(selectedEvent).title}</DialogTitle>
             </DialogHeader>
-            <img src={viewEvent(selectedEvent).image} alt={viewEvent(selectedEvent).title} className="aspect-video w-full rounded-md object-cover" />
             <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
               <p>Date: {selectedEvent.date}</p>
               <p>Time: {selectedEvent.time}</p>
@@ -335,9 +243,8 @@ const ActivitiesSection = () => {
                     setShowAllEvents(false);
                     setSelectedEvent(event);
                   }}
-                  className="grid w-full gap-4 rounded-md border border-border bg-background p-3 text-left transition-colors hover:border-bitcoin/50 md:grid-cols-[120px_1fr]"
+                  className="w-full rounded-md border border-border bg-background p-3 text-left transition-colors hover:border-bitcoin/50"
                 >
-                  <img src={view.image} alt={view.title} className="aspect-square w-full rounded-md object-cover md:h-28 md:w-28" />
                   <div className="flex flex-col justify-center">
                     <p className="text-xs font-medium text-bitcoin">{event.date} · {event.time}</p>
                     <h3 className="mt-2 font-semibold text-foreground">{view.title}</h3>

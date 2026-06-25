@@ -10,13 +10,15 @@ interface HighlightRecord {
   category?: string;
   categoryEn?: string;
   date?: string;
+  startDate?: string;
+  endDate?: string;
   host?: string;
   hostEn?: string;
   meta: string;
   metaEn: string;
   description: string;
   descriptionEn: string;
-  image: string;
+  image?: string;
   link?: string;
 }
 
@@ -34,92 +36,7 @@ const categoryLabels: Record<string, { ko: string; en: string }> = {
   행사: { ko: '행사', en: 'Event' },
 };
 
-const defaultHighlights: HighlightRecord[] = [
-  {
-    title: '비트코인 개발자 밋업',
-    titleEn: 'Bitcoin Developer Meetup',
-    category: '밋업',
-    categoryEn: 'Meetup',
-    date: '2026.04.19',
-    host: '비트코인 센터 서울',
-    hostEn: 'Bitcoin Center Seoul',
-    meta: '개발자 커뮤니티',
-    metaEn: 'Developer Community',
-    description: '비트코인 개발자들이 모여 기술 주제를 나누는 시간입니다.',
-    descriptionEn: 'Bitcoin developers gather to discuss technical topics.',
-    image: '/images/highlights/행사/비트코인 개발자 밋업.jpeg',
-  },
-  {
-    title: '셀프 커스터디 강의',
-    titleEn: 'Self-Custody Class',
-    category: '강의',
-    categoryEn: 'Class',
-    date: '2026.03.27',
-    host: 'Coconut',
-    hostEn: 'Coconut',
-    meta: '교육 프로그램',
-    metaEn: 'Education Program',
-    description: '비트코인을 스스로 안전하게 보관하는 방법을 배웁니다.',
-    descriptionEn: 'Learn how to safely self-custody Bitcoin.',
-    image: '/images/highlights/행사/1분 비트코인 셀프 커스터디 강의.png',
-  },
-  {
-    title: 'Movie Night',
-    titleEn: 'Bitcoin Movie Night',
-    category: '행사',
-    categoryEn: 'Event',
-    date: '2026.03.08',
-    host: 'Saturday Block',
-    hostEn: 'Saturday Block',
-    meta: '커뮤니티 행사',
-    metaEn: 'Community Event',
-    description: '비트코인과 관련된 영화를 함께 보고 이야기합니다.',
-    descriptionEn: 'Watch Bitcoin-related films and discuss them together.',
-    image: '/images/highlights/행사/MOBIE NIGHT.png',
-  },
-  {
-    title: '비트코인 프로토콜 강의',
-    titleEn: 'Bitcoin Protocol Course',
-    category: '강의',
-    categoryEn: 'Class',
-    date: '2026.05.17',
-    host: '비트코인 센터 서울',
-    hostEn: 'Bitcoin Center Seoul',
-    meta: '정규 교육',
-    metaEn: 'Education',
-    description: '비트코인의 구조와 프로토콜을 깊이 있게 학습합니다.',
-    descriptionEn: 'Dive deeper into Bitcoin structure and protocol.',
-    image: '/images/highlights/행사/5월 17일 비트코인 프로토콜 강의 3기.jpg',
-  },
-  {
-    title: '리스펙 토크 콘서트',
-    titleEn: 'Respect Talk Concert',
-    category: '행사',
-    categoryEn: 'Event',
-    date: '2026.04.19',
-    host: '리스펙',
-    hostEn: 'Respect',
-    meta: '토크 콘서트',
-    metaEn: 'Talk Concert',
-    description: '비트코인 커뮤니티와 함께 이야기를 나누는 행사입니다.',
-    descriptionEn: 'A community event for Bitcoin conversations.',
-    image: '/images/highlights/행사/리스펙 비트코인 토크 콘서트 2기.PNG',
-  },
-  {
-    title: '코워킹 데이',
-    titleEn: 'Coworking Day',
-    category: '행사',
-    categoryEn: 'Event',
-    date: '2026.04.10',
-    host: '비트코인 센터 서울',
-    hostEn: 'Bitcoin Center Seoul',
-    meta: '코워킹',
-    metaEn: 'Coworking',
-    description: '비트코이너들이 함께 일하고 교류하는 시간입니다.',
-    descriptionEn: 'Bitcoiners work and connect together at the center.',
-    image: '/images/highlights/코워킹/2026.04.10.png',
-  },
-];
+const defaultHighlights: HighlightRecord[] = [];
 
 const inferCategory = (item: HighlightRecord) => {
   const text = `${item.title} ${item.meta}`.toLowerCase();
@@ -128,6 +45,15 @@ const inferCategory = (item: HighlightRecord) => {
   if (text.includes('밋업') || text.includes('meetup')) return '밋업';
   return '행사';
 };
+
+const formatDate = (date: string) => date.replaceAll('-', '.');
+const getDateLabel = (item: HighlightRecord) => {
+  if (item.startDate && item.endDate) {
+    return `${formatDate(item.startDate)} ~ ${formatDate(item.endDate)}`;
+  }
+  return item.date || item.meta;
+};
+const getSortDate = (item: HighlightRecord) => (item.endDate || item.startDate || item.date || '').replaceAll('.', '-');
 
 const EventHighlightsSection = () => {
   const { language } = useLanguage();
@@ -151,9 +77,13 @@ const EventHighlightsSection = () => {
   }, []);
 
   const items = remoteHighlights.length > 0 ? remoteHighlights : defaultHighlights;
+  const sortedItems = useMemo(
+    () => [...items].sort((a, b) => getSortDate(b).localeCompare(getSortDate(a)) || String(b.id || '').localeCompare(String(a.id || ''))),
+    [items]
+  );
   const filtered = useMemo(
-    () => activeTab === '전체' ? items : items.filter((item) => inferCategory(item) === activeTab),
-    [activeTab, items]
+    () => activeTab === '전체' ? sortedItems : sortedItems.filter((item) => inferCategory(item) === activeTab),
+    [activeTab, sortedItems]
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pagedItems = filtered.slice((activePage - 1) * pageSize, activePage * pageSize);
@@ -165,7 +95,7 @@ const EventHighlightsSection = () => {
 
   const getViewData = (item: HighlightRecord) => ({
     title: language === 'ko' ? item.title : item.titleEn,
-    date: item.date || item.meta,
+    date: getDateLabel(item),
     host: language === 'ko' ? (item.host || '비트코인 센터 서울') : (item.hostEn || 'Bitcoin Center Seoul'),
     detail: language === 'ko' ? item.description : item.descriptionEn,
     category: categoryLabels[inferCategory(item)]?.[language] || inferCategory(item),
@@ -176,7 +106,7 @@ const EventHighlightsSection = () => {
     <section id="highlights" className="bg-background py-20">
       <div className="container mx-auto px-6">
         <div className="text-center mb-12">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-foreground to-bitcoin bg-clip-text text-transparent">
+          <h2 className="mb-6 pb-1 text-4xl font-bold leading-tight bg-gradient-to-r from-foreground to-bitcoin bg-clip-text text-transparent md:text-5xl">
             {language === 'ko' ? '하이라이트' : 'Highlights'}
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -206,6 +136,11 @@ const EventHighlightsSection = () => {
         </div>
 
         <div className="mx-auto max-w-4xl rounded-lg border border-border bg-card p-4 shadow-lg md:p-5">
+          {filtered.length === 0 ? (
+            <div className="rounded-md border border-border bg-background p-8 text-center text-sm text-muted-foreground">
+              {language === 'ko' ? '등록된 하이라이트가 없습니다.' : 'No highlights have been added yet.'}
+            </div>
+          ) : (
           <div className="space-y-3 transition-all duration-300">
             {pagedItems.map((item, index) => {
               const view = getViewData(item);
@@ -215,14 +150,24 @@ const EventHighlightsSection = () => {
                   key={`${item.title}-${index}`}
                   type="button"
                   onClick={() => setSelectedItem(item)}
-                  className="grid w-full gap-4 rounded-md border border-border bg-background p-3 text-left transition-all hover:border-bitcoin/50 hover:bg-card/70 md:grid-cols-[132px_1fr] md:p-4"
+                  className="w-full rounded-md border border-border bg-background p-4 text-left transition-all hover:border-bitcoin/50 hover:bg-card/70"
                 >
-                  <img src={item.image} alt={view.title} className="aspect-square w-full rounded-md object-cover md:h-32 md:w-32" />
                   <div className="flex flex-col justify-center">
-                    <span className="mb-3 w-fit rounded-full bg-bitcoin/10 px-3 py-1 text-xs font-medium text-bitcoin">
-                      {view.category}
-                    </span>
+                    <div className="mb-3 flex flex-wrap items-center gap-2">
+                      <span className="w-fit rounded-full bg-bitcoin/10 px-3 py-1 text-xs font-medium text-bitcoin">
+                        {view.category}
+                      </span>
+                      {view.link && (
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-bitcoin">
+                          {language === 'ko' ? '링크 첨부' : 'Link attached'}
+                          <ExternalLink className="h-3 w-3" />
+                        </span>
+                      )}
+                    </div>
                     <h3 className="text-lg font-semibold text-foreground md:text-xl">{view.title}</h3>
+                    <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                      {view.detail}
+                    </p>
                     <div className="mt-3 grid gap-1 text-sm text-muted-foreground sm:grid-cols-2">
                       <p>Host: {view.host}</p>
                       <p>Date: {view.date}</p>
@@ -232,6 +177,7 @@ const EventHighlightsSection = () => {
               );
             })}
           </div>
+          )}
 
           {totalPages > 1 && (
             <div className="mt-5 flex justify-center gap-2">
@@ -262,7 +208,6 @@ const EventHighlightsSection = () => {
               <DialogHeader>
                 <DialogTitle>{getViewData(selectedItem).title}</DialogTitle>
               </DialogHeader>
-              <img src={selectedItem.image} alt={getViewData(selectedItem).title} className="aspect-video w-full rounded-md object-cover" />
               <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
                 <p>Category: {getViewData(selectedItem).category}</p>
                 <p>Host: {getViewData(selectedItem).host}</p>

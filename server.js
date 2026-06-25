@@ -9,6 +9,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3000;
+const highlightOrder = "ORDER BY COALESCE(NULLIF(endDate, ''), NULLIF(startDate, ''), REPLACE(date, '.', '-')) DESC, id DESC";
 
 // JSON 파싱 미들웨어
 app.use(express.json());
@@ -111,7 +112,7 @@ app.get('/api/highlights', (req, res) => {
     const highlights = db.prepare(`
       SELECT * FROM highlights
       WHERE is_active = 1
-      ORDER BY date DESC, id DESC
+      ${highlightOrder}
     `).all();
     res.json(highlights);
   } catch (error) {
@@ -122,7 +123,7 @@ app.get('/api/highlights', (req, res) => {
 
 app.get('/api/highlights/all', (req, res) => {
   try {
-    const highlights = db.prepare('SELECT * FROM highlights ORDER BY date DESC, id DESC').all();
+    const highlights = db.prepare(`SELECT * FROM highlights ${highlightOrder}`).all();
     res.json(highlights);
   } catch (error) {
     console.error('하이라이트 전체 조회 오류:', error);
@@ -132,11 +133,11 @@ app.get('/api/highlights/all', (req, res) => {
 
 app.post('/api/highlights', (req, res) => {
   try {
-    const { title, titleEn, meta, metaEn, description, descriptionEn, category, categoryEn, date, host, hostEn, image, link, icon, sort_order, is_active } = req.body;
+    const { title, titleEn, meta, metaEn, description, descriptionEn, category, categoryEn, date, startDate, endDate, host, hostEn, image, link, icon, sort_order, is_active } = req.body;
 
     const insertHighlight = db.prepare(`
-      INSERT INTO highlights (title, titleEn, meta, metaEn, description, descriptionEn, category, categoryEn, date, host, hostEn, image, link, icon, sort_order, is_active)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO highlights (title, titleEn, meta, metaEn, description, descriptionEn, category, categoryEn, date, startDate, endDate, host, hostEn, image, link, icon, sort_order, is_active)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const result = insertHighlight.run(
@@ -149,9 +150,11 @@ app.post('/api/highlights', (req, res) => {
       category || '행사',
       categoryEn || 'Event',
       date || '',
+      startDate || '',
+      endDate || '',
       host || '비트코인 센터 서울',
       hostEn || 'Bitcoin Center Seoul',
-      image,
+      image || '',
       link || '',
       icon || 'calendar',
       Number(sort_order) || 0,
@@ -171,12 +174,12 @@ app.post('/api/highlights', (req, res) => {
 app.put('/api/highlights/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const { title, titleEn, meta, metaEn, description, descriptionEn, category, categoryEn, date, host, hostEn, image, link, icon, sort_order, is_active } = req.body;
+    const { title, titleEn, meta, metaEn, description, descriptionEn, category, categoryEn, date, startDate, endDate, host, hostEn, image, link, icon, sort_order, is_active } = req.body;
 
     const updateHighlight = db.prepare(`
       UPDATE highlights
       SET title = ?, titleEn = ?, meta = ?, metaEn = ?, description = ?, descriptionEn = ?,
-          category = ?, categoryEn = ?, date = ?, host = ?, hostEn = ?,
+          category = ?, categoryEn = ?, date = ?, startDate = ?, endDate = ?, host = ?, hostEn = ?,
           image = ?, link = ?, icon = ?, sort_order = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `);
@@ -191,9 +194,11 @@ app.put('/api/highlights/:id', (req, res) => {
       category || '행사',
       categoryEn || 'Event',
       date || '',
+      startDate || '',
+      endDate || '',
       host || '비트코인 센터 서울',
       hostEn || 'Bitcoin Center Seoul',
-      image,
+      image || '',
       link || '',
       icon || 'calendar',
       Number(sort_order) || 0,
@@ -257,47 +262,6 @@ app.get('/api/highlight-images', (req, res) => {
   } catch (error) {
     console.error('하이라이트 이미지 목록 조회 오류:', error);
     res.status(500).json({ error: '하이라이트 이미지 목록 조회에 실패했습니다.' });
-  }
-});
-
-app.post('/api/event-images', express.raw({
-  type: (req) => req.headers['content-type']?.startsWith('image/') || false,
-  limit: '20mb'
-}), (req, res) => {
-  try {
-    if (!req.body?.length) {
-      return res.status(400).json({ error: '업로드할 이미지가 없습니다.' });
-    }
-
-    const contentType = req.headers['content-type'] || '';
-    const extensionMap = {
-      'image/jpeg': '.jpg',
-      'image/png': '.png',
-      'image/webp': '.webp',
-      'image/gif': '.gif'
-    };
-    const extension = extensionMap[contentType];
-
-    if (!extension) {
-      return res.status(400).json({ error: 'jpg, png, webp, gif 이미지만 업로드할 수 있습니다.' });
-    }
-
-    const uploadDir = path.join(__dirname, 'public', 'images', 'events', 'uploads');
-    fs.mkdirSync(uploadDir, { recursive: true });
-
-    const rawName = decodeURIComponent(req.headers['x-file-name'] || 'event');
-    const safeName = path.parse(rawName).name
-      .replace(/[^a-zA-Z0-9가-힣_-]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 60) || 'event';
-    const fileName = `${Date.now()}-${safeName}${extension}`;
-    const filePath = path.join(uploadDir, fileName);
-
-    fs.writeFileSync(filePath, req.body);
-    res.json({ path: `/images/events/uploads/${fileName}` });
-  } catch (error) {
-    console.error('이벤트 이미지 업로드 오류:', error);
-    res.status(500).json({ error: '이벤트 이미지 업로드에 실패했습니다.' });
   }
 });
 
