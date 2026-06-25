@@ -9,6 +9,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3000;
+const host = process.env.HOST || '127.0.0.1';
 const highlightOrder = "ORDER BY COALESCE(NULLIF(endDate, ''), NULLIF(startDate, ''), REPLACE(date, '.', '-')) DESC, id DESC";
 
 // JSON 파싱 미들웨어
@@ -167,7 +168,7 @@ app.post('/api/highlights', (req, res) => {
     });
   } catch (error) {
     console.error('하이라이트 생성 오류:', error);
-    res.status(500).json({ error: '하이라이트 생성에 실패했습니다.' });
+    res.status(500).json({ error: error.message || '하이라이트 생성에 실패했습니다.' });
   }
 });
 
@@ -213,7 +214,7 @@ app.put('/api/highlights/:id', (req, res) => {
     res.json({ message: '하이라이트가 성공적으로 업데이트되었습니다.' });
   } catch (error) {
     console.error('하이라이트 업데이트 오류:', error);
-    res.status(500).json({ error: '하이라이트 업데이트에 실패했습니다.' });
+    res.status(500).json({ error: error.message || '하이라이트 업데이트에 실패했습니다.' });
   }
 });
 
@@ -315,7 +316,7 @@ app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-app.listen(port, () => {
+app.listen(port, host, () => {
   console.log(`서버가 포트 ${port}에서 실행 중입니다`);
-  console.log(`http://localhost:${port}에서 확인하세요`);
+  console.log(`http://${host}:${port}에서 확인하세요`);
 });

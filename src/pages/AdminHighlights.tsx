@@ -121,7 +121,7 @@ const AdminHighlights = () => {
       hostEn: highlight.hostEn || 'Bitcoin Center Seoul',
       description: highlight.description,
       descriptionEn: highlight.descriptionEn,
-      image: '',
+      image: highlight.image || '',
       link: highlight.link || '',
       icon: highlight.icon,
       sort_order: highlight.sort_order,
@@ -132,7 +132,7 @@ const AdminHighlights = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const requiredFields = ['title', 'titleEn', 'category', 'categoryEn', 'host', 'hostEn', 'description', 'descriptionEn', 'link'];
+    const requiredFields = ['title', 'titleEn', 'category', 'categoryEn', 'host', 'hostEn', 'description', 'descriptionEn', 'link', 'image'];
     const missingFields = requiredFields.filter((field) => !formData[field as keyof typeof formData]);
 
     if (missingFields.length > 0) {
@@ -192,10 +192,27 @@ const AdminHighlights = () => {
         resetForm();
         fetchHighlights();
       } else {
-        toast({ title: '오류', description: '하이라이트 저장에 실패했습니다.', variant: 'destructive' });
+        const errorText = await response.text();
+        let errorMessage = errorText;
+
+        try {
+          errorMessage = JSON.parse(errorText)?.error || errorText;
+        } catch {
+          errorMessage = errorText;
+        }
+
+        toast({
+          title: '오류',
+          description: errorMessage || `하이라이트 저장에 실패했습니다. (${response.status})`,
+          variant: 'destructive',
+        });
       }
-    } catch {
-      toast({ title: '오류', description: '네트워크 오류가 발생했습니다.', variant: 'destructive' });
+    } catch (error) {
+      toast({
+        title: '오류',
+        description: error instanceof Error ? error.message : '네트워크 오류가 발생했습니다.',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -260,7 +277,7 @@ const AdminHighlights = () => {
                 <Link className="w-5 h-5 text-bitcoin" />
                 {isEditing ? '하이라이트 수정' : '새 하이라이트 등록'}
               </CardTitle>
-              <CardDescription>홈페이지 하이라이트 카드의 문구와 첨부 링크를 관리합니다.</CardDescription>
+              <CardDescription>홈페이지 하이라이트 카드의 문구, 게시물 링크, 이미지 링크를 관리합니다.</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -391,7 +408,7 @@ const AdminHighlights = () => {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">링크 첨부</label>
+                  <label className="text-sm font-medium mb-2 block">게시물 링크</label>
                   <Input
                     type="url"
                     value={formData.link}
@@ -399,6 +416,20 @@ const AdminHighlights = () => {
                     placeholder="https://example.com"
                     required
                   />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block">이미지 링크</label>
+                  <Input
+                    type="url"
+                    value={formData.image}
+                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                    placeholder="https://example.com/image.jpg"
+                    required
+                  />
+                  {formData.image && (
+                    <img src={formData.image} alt="하이라이트 미리보기" className="mt-3 aspect-video w-full rounded-md object-cover" />
+                  )}
                 </div>
 
                 <label className="flex items-center gap-2 text-sm">
@@ -478,6 +509,17 @@ const AdminHighlights = () => {
                                 className="mt-2 inline-flex items-center gap-1 text-xs text-bitcoin hover:text-bitcoin-light"
                               >
                                 링크 열기
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            )}
+                            {highlight.image && (
+                              <a
+                                href={highlight.image}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-bitcoin"
+                              >
+                                이미지 링크 열기
                                 <ExternalLink className="h-3 w-3" />
                               </a>
                             )}

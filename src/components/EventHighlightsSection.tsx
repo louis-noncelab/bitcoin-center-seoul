@@ -100,6 +100,7 @@ const EventHighlightsSection = () => {
     detail: language === 'ko' ? item.description : item.descriptionEn,
     category: categoryLabels[inferCategory(item)]?.[language] || inferCategory(item),
     link: item.link || '',
+    image: item.image || '',
   });
 
   return (
@@ -146,23 +147,29 @@ const EventHighlightsSection = () => {
               const view = getViewData(item);
 
               return (
-                <button
+                <div
                   key={`${item.title}-${index}`}
-                  type="button"
                   onClick={() => setSelectedItem(item)}
-                  className="w-full rounded-md border border-border bg-background p-4 text-left transition-all hover:border-bitcoin/50 hover:bg-card/70"
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      setSelectedItem(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  className={`w-full rounded-md border border-border bg-background p-4 text-left transition-all hover:border-bitcoin/50 hover:bg-card/70 ${
+                    view.image ? 'grid items-center gap-4 md:grid-cols-[160px_1fr]' : ''
+                  }`}
                 >
+                  {view.image && (
+                    <img src={view.image} alt={view.title} className="aspect-video w-full rounded-md object-cover md:h-28 md:w-40" />
+                  )}
                   <div className="flex flex-col justify-center">
                     <div className="mb-3 flex flex-wrap items-center gap-2">
                       <span className="w-fit rounded-full bg-bitcoin/10 px-3 py-1 text-xs font-medium text-bitcoin">
                         {view.category}
                       </span>
-                      {view.link && (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-bitcoin">
-                          {language === 'ko' ? '링크 첨부' : 'Link attached'}
-                          <ExternalLink className="h-3 w-3" />
-                        </span>
-                      )}
                     </div>
                     <h3 className="text-lg font-semibold text-foreground md:text-xl">{view.title}</h3>
                     <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
@@ -172,8 +179,22 @@ const EventHighlightsSection = () => {
                       <p>Host: {view.host}</p>
                       <p>Date: {view.date}</p>
                     </div>
+                    {view.link && (
+                      <a
+                        href={view.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={language === 'ko' ? `${view.title} 링크 열기` : `Open ${view.title} link`}
+                        title={language === 'ko' ? '링크 열기' : 'Open link'}
+                        onClick={(event) => event.stopPropagation()}
+                        className="mt-3 inline-flex w-fit items-center gap-1 text-xs font-medium text-bitcoin transition-colors hover:text-bitcoin-light"
+                      >
+                        {language === 'ko' ? '더보기' : 'More'}
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -208,6 +229,13 @@ const EventHighlightsSection = () => {
               <DialogHeader>
                 <DialogTitle>{getViewData(selectedItem).title}</DialogTitle>
               </DialogHeader>
+              {getViewData(selectedItem).image && (
+                <img
+                  src={getViewData(selectedItem).image}
+                  alt={getViewData(selectedItem).title}
+                  className="aspect-video w-full rounded-md object-cover"
+                />
+              )}
               <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
                 <p>Category: {getViewData(selectedItem).category}</p>
                 <p>Host: {getViewData(selectedItem).host}</p>
