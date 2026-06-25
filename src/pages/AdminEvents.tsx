@@ -114,7 +114,7 @@ const AdminEvents = () => {
     setLoading(true);
 
     // 필수 필드 검증
-    const requiredFields = ['title', 'titleEn', 'date', 'time', 'location', 'locationEn', 'description', 'descriptionEn', 'link'];
+    const requiredFields = ['title', 'titleEn', 'date', 'time', 'location', 'locationEn', 'description', 'descriptionEn', 'link', 'image'];
     const missingFields = requiredFields.filter(field => !formData[field as keyof typeof formData]);
     
     if (missingFields.length > 0) {
@@ -138,7 +138,7 @@ const AdminEvents = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ ...formData, image: '' }),
+        body: JSON.stringify(formData),
       });
 
       console.log('응답 상태:', response.status); // 디버깅용
@@ -217,7 +217,7 @@ const AdminEvents = () => {
       locationEn: event.locationEn,
       description: event.description,
       descriptionEn: event.descriptionEn,
-      image: '',
+      image: event.image || '',
       link: event.link || ''
     });
     setIsEditing(true);
@@ -368,7 +368,7 @@ const AdminEvents = () => {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">링크 첨부</label>
+                  <label className="text-sm font-medium mb-2 block">게시물 링크</label>
                   <Input
                     type="url"
                     value={formData.link}
@@ -376,6 +376,20 @@ const AdminEvents = () => {
                     placeholder="https://example.com"
                     required
                   />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block">이미지 링크</label>
+                  <Input
+                    type="url"
+                    value={formData.image}
+                    onChange={(e) => setFormData({...formData, image: e.target.value})}
+                    placeholder="https://example.com/image.jpg"
+                    required
+                  />
+                  {formData.image && (
+                    <img src={formData.image} alt="이벤트 미리보기" className="mt-3 aspect-video w-full rounded-md object-cover" />
+                  )}
                 </div>
 
                 <div className="flex gap-2">
@@ -466,6 +480,17 @@ const AdminEvents = () => {
                                 className="mt-2 inline-flex items-center gap-1 text-xs text-bitcoin hover:text-bitcoin-light"
                               >
                                 링크 열기
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            )}
+                            {event.image && (
+                              <a
+                                href={event.image}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-bitcoin"
+                              >
+                                이미지 링크 열기
                                 <ExternalLink className="h-3 w-3" />
                               </a>
                             )}

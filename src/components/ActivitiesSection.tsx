@@ -84,7 +84,7 @@ const ActivitiesSection = () => {
       title: language === 'ko' ? event.title : event.titleEn,
       meta: `${event.date}${event.time ? ` · ${event.time}` : ''}`,
       description: language === 'ko' ? event.description : event.descriptionEn,
-      image: fallbackImage,
+      image: event.image || fallbackImage,
       link: event.link || '',
       icon: CalendarDays,
     }));
@@ -101,7 +101,7 @@ const ActivitiesSection = () => {
     title: language === 'ko' ? event.title : event.titleEn,
     location: language === 'ko' ? event.location : event.locationEn,
     description: language === 'ko' ? event.description : event.descriptionEn,
-    image: fallbackImage,
+    image: event.image || fallbackImage,
   });
 
   return (
@@ -205,6 +205,9 @@ const ActivitiesSection = () => {
             <DialogHeader>
               <DialogTitle>{viewEvent(selectedEvent).title}</DialogTitle>
             </DialogHeader>
+            {selectedEvent.image && (
+              <img src={viewEvent(selectedEvent).image} alt={viewEvent(selectedEvent).title} className="aspect-video w-full rounded-md object-cover" />
+            )}
             <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
               <p>Date: {selectedEvent.date}</p>
               <p>Time: {selectedEvent.time}</p>
@@ -243,8 +246,13 @@ const ActivitiesSection = () => {
                     setShowAllEvents(false);
                     setSelectedEvent(event);
                   }}
-                  className="w-full rounded-md border border-border bg-background p-3 text-left transition-colors hover:border-bitcoin/50"
+                  className={`w-full rounded-md border border-border bg-background p-3 text-left transition-colors hover:border-bitcoin/50 ${
+                    event.image ? 'grid gap-4 md:grid-cols-[160px_1fr]' : ''
+                  }`}
                 >
+                  {event.image && (
+                    <img src={view.image} alt={view.title} className="aspect-video w-full rounded-md object-cover md:h-28 md:w-40" />
+                  )}
                   <div className="flex flex-col justify-center">
                     <p className="text-xs font-medium text-bitcoin">{event.date} · {event.time}</p>
                     <h3 className="mt-2 font-semibold text-foreground">{view.title}</h3>
