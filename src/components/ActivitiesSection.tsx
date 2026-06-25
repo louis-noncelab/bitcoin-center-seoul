@@ -159,7 +159,7 @@ const ActivitiesSection = () => {
               {sideEvents.slice(0, 2).map((activity) => (
                 <article
                   key={activity.title}
-                  className="rounded-lg border border-border bg-background p-5 shadow-lg"
+                  className="flex min-h-44 flex-col rounded-lg border border-border bg-background p-5 shadow-lg"
                 >
                   <div className="mb-3 flex items-center gap-2 text-xs font-medium text-bitcoin">
                     <activity.icon className="h-4 w-4" />
@@ -172,7 +172,7 @@ const ActivitiesSection = () => {
                     <button
                       type="button"
                       onClick={() => setSelectedEvent(activity.raw)}
-                      className="mt-4 w-fit text-sm font-medium text-bitcoin transition-colors hover:text-bitcoin-light"
+                      className="mt-auto w-fit text-sm font-medium text-bitcoin transition-colors hover:text-bitcoin-light"
                     >
                       {language === 'ko' ? '자세히 보기' : 'View Details'}
                     </button>
