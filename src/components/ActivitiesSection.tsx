@@ -168,9 +168,6 @@ const ActivitiesSection = () => {
                   <h4 className="mb-2 text-base font-semibold text-foreground">
                     {activity.title}
                   </h4>
-                  <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-                    {activity.description}
-                  </p>
                   {'raw' in activity && (
                     <button
                       type="button"
