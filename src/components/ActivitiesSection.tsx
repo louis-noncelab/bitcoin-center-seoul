@@ -60,6 +60,7 @@ const ActivitiesSection = () => {
 
   const section = content[language];
   const fallbackImage = '/images/main1.png';
+  const formatMultiline = (text: string) => text.replace(/\\n/g, '\n');
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -83,7 +84,7 @@ const ActivitiesSection = () => {
       raw: event,
       title: language === 'ko' ? event.title : event.titleEn,
       meta: `${event.date}${event.time ? ` · ${event.time}` : ''}`,
-      description: language === 'ko' ? event.description : event.descriptionEn,
+      description: formatMultiline(language === 'ko' ? event.description : event.descriptionEn),
       image: event.image || fallbackImage,
       link: event.link || '',
       icon: CalendarDays,
@@ -100,7 +101,7 @@ const ActivitiesSection = () => {
   const viewEvent = (event: EventRecord) => ({
     title: language === 'ko' ? event.title : event.titleEn,
     location: language === 'ko' ? event.location : event.locationEn,
-    description: language === 'ko' ? event.description : event.descriptionEn,
+    description: formatMultiline(language === 'ko' ? event.description : event.descriptionEn),
     image: event.image || fallbackImage,
   });
 
@@ -124,8 +125,8 @@ const ActivitiesSection = () => {
                 alt={featured.title}
                 className="absolute inset-0 h-full w-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/45 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-6 md:p-8">
+              <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/60 to-background/90" />
+              <div className="absolute inset-x-0 top-0 p-6 md:p-8">
                 <span className="mb-2 inline-flex items-center rounded-md bg-bitcoin px-3 py-1 text-xs font-semibold text-bitcoin-foreground">
                   {featured.label}
                 </span>
@@ -138,19 +139,18 @@ const ActivitiesSection = () => {
                 <h3 className="mb-4 max-w-2xl text-3xl font-bold leading-tight text-foreground md:text-4xl">
                   {featured.title}
                 </h3>
-                <p className="max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
-                  {featured.description}
-                </p>
-                {'raw' in featured && (
+              </div>
+              {'raw' in featured && (
+                <div className="absolute inset-x-0 bottom-0 p-6 md:p-8">
                   <button
                     type="button"
                     onClick={() => setSelectedEvent(featured.raw)}
-                    className="mt-5 inline-flex rounded-md border border-bitcoin px-4 py-2 text-sm font-medium text-bitcoin transition-colors hover:bg-bitcoin hover:text-bitcoin-foreground"
+                    className="inline-flex rounded-md border border-bitcoin px-4 py-2 text-sm font-medium text-bitcoin transition-colors hover:bg-bitcoin hover:text-bitcoin-foreground"
                   >
                     {language === 'ko' ? '자세히 보기' : 'View Details'}
                   </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </article>
 

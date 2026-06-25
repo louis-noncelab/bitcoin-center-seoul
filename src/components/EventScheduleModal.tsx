@@ -112,6 +112,7 @@ const EventScheduleModal = ({ open: externalOpen, onOpenChange: externalOnOpenCh
       weekday: 'long'
     });
   };
+  const formatMultiline = (text: string) => text.replace(/\\n/g, '\n');
 
   // API에서 이미 필터링된 데이터를 받아오므로 추가 필터링 불필요
 
@@ -190,12 +191,9 @@ const EventScheduleModal = ({ open: externalOpen, onOpenChange: externalOnOpenCh
                     </div>
                   </div>
                   
-                  <p 
-                    className="mt-3 text-sm text-muted-foreground leading-relaxed whitespace-pre-line"
-                    dangerouslySetInnerHTML={{ 
-                      __html: (language === 'ko' ? event.description : event.descriptionEn).replace(/\n/g, '<br />') 
-                    }}
-                  />
+                  <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                    {formatMultiline(language === 'ko' ? event.description : event.descriptionEn)}
+                  </p>
                   {event.link && (
                     <a
                       href={event.link}
