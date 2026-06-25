@@ -97,7 +97,8 @@ const ActivitiesSection = () => {
         ...homeEvents[0],
       }
     : section.featured;
-  const sideEvents = homeEvents?.slice(1, 4) || section.activities.slice(0, 3);
+  const featuredEventId = 'raw' in featured ? featured.raw.id : null;
+  const sideEvents = homeEvents?.filter((event) => event.raw.id !== featuredEventId).slice(0, 3) || section.activities.slice(0, 3);
   const viewEvent = (event: EventRecord) => ({
     title: language === 'ko' ? event.title : event.titleEn,
     location: language === 'ko' ? event.location : event.locationEn,
@@ -159,24 +160,34 @@ const ActivitiesSection = () => {
               {sideEvents.slice(0, 2).map((activity) => (
                 <article
                   key={activity.title}
-                  className="flex min-h-44 flex-col rounded-lg border border-border bg-background p-5 shadow-lg"
+                  className="relative flex min-h-44 overflow-hidden rounded-lg border border-border bg-background shadow-lg"
                 >
-                  <div className="mb-3 flex items-center gap-2 text-xs font-medium text-bitcoin">
-                    <activity.icon className="h-4 w-4" />
-                    {activity.meta}
-                  </div>
-                  <h4 className="mb-2 text-base font-semibold text-foreground">
-                    {activity.title}
-                  </h4>
-                  {'raw' in activity && (
-                    <button
-                      type="button"
-                      onClick={() => setSelectedEvent(activity.raw)}
-                      className="mt-auto w-fit text-sm font-medium text-bitcoin transition-colors hover:text-bitcoin-light"
-                    >
-                      {language === 'ko' ? '자세히 보기' : 'View Details'}
-                    </button>
+                  {activity.image && (
+                    <img
+                      src={activity.image}
+                      alt={activity.title}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
                   )}
+                  <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/65 to-background/90" />
+                  <div className="relative z-10 flex min-h-44 w-full flex-col p-5">
+                    <div className="mb-3 flex items-center gap-2 text-xs font-medium text-bitcoin">
+                      <activity.icon className="h-4 w-4" />
+                      {activity.meta}
+                    </div>
+                    <h4 className="mb-2 text-base font-semibold text-foreground">
+                      {activity.title}
+                    </h4>
+                    {'raw' in activity && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedEvent(activity.raw)}
+                        className="mt-auto w-fit text-sm font-medium text-bitcoin transition-colors hover:text-bitcoin-light"
+                      >
+                        {language === 'ko' ? '자세히 보기' : 'View Details'}
+                      </button>
+                    )}
+                  </div>
                 </article>
               ))}
             </aside>
