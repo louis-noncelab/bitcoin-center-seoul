@@ -34,10 +34,12 @@ const candidates = (url) => {
   });
 };
 
+const UA = { 'User-Agent': 'Mozilla/5.0' };
+
 const download = async (url) => {
   for (const candidate of candidates(url)) {
     try {
-      const response = await fetch(candidate, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+      const response = await fetch(candidate, { headers: UA });
       if (!response.ok) continue;
       const type = response.headers.get('content-type') || '';
       if (!type.startsWith('image/')) continue;
@@ -47,6 +49,31 @@ const download = async (url) => {
     }
   }
   return null;
+};
+
+// X card_img 처럼 원본이 죽은 경우, 신청 링크 페이지의 og:image 를 쓴다.
+const ogImage = async (pageUrl) => {
+  try {
+    const response = await fetch(pageUrl, { headers: UA, redirect: 'follow' });
+    if (!response.ok) return null;
+    const html = await response.text();
+    const tagged = html.match(/<meta[^>]+property=["']og:image["'][^>]*>/i)
+      || html.match(/<meta[^>]+property=["']og:image:url["'][^>]*>/i);
+    if (!tagged) return null;
+    const content = tagged[0].match(/content=["']([^"']+)/i);
+    return content?.[1] || null;
+  } catch {
+    return null;
+  }
+};
+
+const fetchImage = async (row) => {
+  const primary = await download(row.image);
+  if (primary) return primary;
+  if (!row.link) return null;
+  const og = await ogImage(row.link);
+  if (!og) return null;
+  return download(og);
 };
 
 const upload = async ({ buffer, type }, fileName) => {
@@ -86,7 +113,7 @@ for (const [table, listPath] of tables) {
     }
     const label = `${table}#${row.id} ${String(row.title || '').slice(0, 24)}`;
     try {
-      const file = await download(row.image);
+      const file = await fetchImage(row);
       if (!file) {
         failed++;
         console.log(`FAIL ${label} — 다운로드 실패: ${row.image}`);
