@@ -8,6 +8,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Calendar, Trash2, Edit, ArrowLeft, Save, X, ExternalLink, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import DatePicker from '@/components/DatePicker';
+import ImageUploadField from '@/components/ImageUploadField';
+import { adminFetch, isAdminAuthenticated } from '@/lib/admin';
 
 interface Event {
   id: number;
@@ -45,16 +47,12 @@ const AdminEvents = () => {
     link: ''
   });
 
-  // 인증 확인
+  // 인증 확인: 플래그만 있으면 안 되고, 서버에 보낼 토큰도 있어야 한다.
   useEffect(() => {
-    const authStatus = sessionStorage.getItem('admin_authenticated');
-    console.log('인증 상태 확인:', authStatus); // 디버깅용
-    if (authStatus !== 'true') {
-      console.log('인증되지 않음, 리다이렉트'); // 디버깅용
+    if (!isAdminAuthenticated()) {
       navigate(`/admin/auth?redirect=${encodeURIComponent(location.pathname)}`);
       return;
     }
-    console.log('인증됨'); // 디버깅용
     setIsAuthenticated(true);
   }, [navigate, location.pathname]);
 
@@ -133,7 +131,7 @@ const AdminEvents = () => {
 
       console.log('이벤트 저장 요청:', { url, method, formData }); // 디버깅용
 
-      const response = await fetch(url, {
+      const response = await adminFetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
@@ -177,7 +175,7 @@ const AdminEvents = () => {
   const handleDelete = async (id: number) => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/events/${id}`, {
+      const response = await adminFetch(`/api/events/${id}`, {
         method: 'DELETE',
       });
 
@@ -378,19 +376,12 @@ const AdminEvents = () => {
                   />
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium mb-2 block">이미지 링크</label>
-                  <Input
-                    type="url"
-                    value={formData.image}
-                    onChange={(e) => setFormData({...formData, image: e.target.value})}
-                    placeholder="https://example.com/image.jpg"
-                    required
-                  />
-                  {formData.image && (
-                    <img src={formData.image} alt="이벤트 미리보기" className="mt-3 aspect-video w-full rounded-md object-cover" />
-                  )}
-                </div>
+                <ImageUploadField
+                  label="이미지"
+                  value={formData.image}
+                  onChange={(image) => setFormData({...formData, image})}
+                  required
+                />
 
                 <div className="flex gap-2">
                   {isEditing && (
@@ -490,7 +481,7 @@ const AdminEvents = () => {
                                 rel="noopener noreferrer"
                                 className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-bitcoin"
                               >
-                                이미지 링크 열기
+                                이미지 열기
                                 <ExternalLink className="h-3 w-3" />
                               </a>
                             )}

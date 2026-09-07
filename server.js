@@ -2,6 +2,10 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import crypto from 'crypto';
+import 'dotenv/config';
+import multer from 'multer';
+import sharp from 'sharp';
 import { db, initDatabase } from './database.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -14,6 +18,50 @@ const highlightOrder = "ORDER BY COALESCE(NULLIF(endDate, ''), NULLIF(startDate,
 
 // JSON 파싱 미들웨어
 app.use(express.json());
+
+// 관리자 인증: .env 의 ADMIN_PASSWORD 와 x-admin-token 헤더를 비교한다.
+// ADMIN_PASSWORD 가 없으면 예전 클라이언트 하드코딩 값으로 동작하되 경고를 남긴다(.env 설정 전 배포가 깨지지 않도록).
+const LEGACY_ADMIN_PASSWORD = 'qlxmzhdlstpsxjtjdnf1021';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || LEGACY_ADMIN_PASSWORD;
+if (!process.env.ADMIN_PASSWORD) {
+  console.warn('[경고] ADMIN_PASSWORD 환경변수가 없어 예전 비밀번호로 동작합니다. .env 파일에 ADMIN_PASSWORD 를 설정하세요.');
+}
+
+const safeEqual = (a, b) => {
+  const x = Buffer.from(String(a));
+  const y = Buffer.from(String(b));
+  return x.length === y.length && crypto.timingSafeEqual(x, y);
+};
+
+const requireAdmin = (req, res, next) => {
+  const token = req.get('x-admin-token') || '';
+  if (!token || !safeEqual(token, ADMIN_PASSWORD)) {
+    return res.status(401).json({ error: '관리자 인증이 필요합니다.' });
+  }
+  next();
+};
+
+app.post('/api/admin/login', (req, res) => {
+  const { password } = req.body || {};
+  if (!password || !safeEqual(password, ADMIN_PASSWORD)) {
+    return res.status(401).json({ error: '잘못된 암호입니다.' });
+  }
+  res.json({ ok: true });
+});
+
+// 이미지 업로드 설정: 메모리로 받아 sharp 로 변환한 뒤 public/images/uploads/YYYY-MM/ 에 저장한다.
+const UPLOAD_ROOT = path.join(__dirname, 'public', 'images', 'uploads');
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']);
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024, files: 1 },
+  fileFilter: (req, file, cb) => {
+    if (ALLOWED_IMAGE_TYPES.has(file.mimetype)) cb(null, true);
+    else cb(new Error('jpg, png, webp, gif, avif 이미지만 업로드할 수 있습니다.'));
+  },
+});
+const slugify = (name) =>
+  path.parse(name).name.replace(/[^a-zA-Z0-9가-힣_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'image';
 
 // 데이터베이스 초기화
 initDatabase();
@@ -44,7 +92,7 @@ app.get('/api/events/upcoming', (req, res) => {
   }
 });
 
-app.post('/api/events', (req, res) => {
+app.post('/api/events', requireAdmin, (req, res) => {
   try {
     const { title, titleEn, date, time, location, locationEn, description, descriptionEn, image, link } = req.body;
     
@@ -65,7 +113,7 @@ app.post('/api/events', (req, res) => {
   }
 });
 
-app.put('/api/events/:id', (req, res) => {
+app.put('/api/events/:id', requireAdmin, (req, res) => {
   try {
     const { id } = req.params;
     const { title, titleEn, date, time, location, locationEn, description, descriptionEn, image, link } = req.body;
@@ -90,7 +138,7 @@ app.put('/api/events/:id', (req, res) => {
   }
 });
 
-app.delete('/api/events/:id', (req, res) => {
+app.delete('/api/events/:id', requireAdmin, (req, res) => {
   try {
     const { id } = req.params;
     
@@ -132,7 +180,7 @@ app.get('/api/highlights/all', (req, res) => {
   }
 });
 
-app.post('/api/highlights', (req, res) => {
+app.post('/api/highlights', requireAdmin, (req, res) => {
   try {
     const { title, titleEn, meta, metaEn, description, descriptionEn, category, categoryEn, date, startDate, endDate, host, hostEn, image, link, icon, sort_order, is_active } = req.body;
 
@@ -172,7 +220,7 @@ app.post('/api/highlights', (req, res) => {
   }
 });
 
-app.put('/api/highlights/:id', (req, res) => {
+app.put('/api/highlights/:id', requireAdmin, (req, res) => {
   try {
     const { id } = req.params;
     const { title, titleEn, meta, metaEn, description, descriptionEn, category, categoryEn, date, startDate, endDate, host, hostEn, image, link, icon, sort_order, is_active } = req.body;
@@ -218,7 +266,7 @@ app.put('/api/highlights/:id', (req, res) => {
   }
 });
 
-app.delete('/api/highlights/:id', (req, res) => {
+app.delete('/api/highlights/:id', requireAdmin, (req, res) => {
   try {
     const { id } = req.params;
 
@@ -266,45 +314,52 @@ app.get('/api/highlight-images', (req, res) => {
   }
 });
 
-app.post('/api/highlight-images', express.raw({
-  type: (req) => req.headers['content-type']?.startsWith('image/') || false,
-  limit: '20mb'
-}), (req, res) => {
-  try {
-    if (!req.body?.length) {
+// 이미지 업로드: multipart/form-data 의 file 필드 하나.
+// EXIF 회전을 보정하고 긴 변 1600px webp 로 저장하며, 480px 썸네일도 함께 만든다. 원본은 보관하지 않는다.
+app.post('/api/images', requireAdmin, (req, res) => {
+  upload.single('file')(req, res, async (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({ error: '이미지는 20MB 이하만 업로드할 수 있습니다.' });
+      }
+      return res.status(400).json({ error: err.message || '업로드 요청이 올바르지 않습니다.' });
+    }
+    if (!req.file) {
       return res.status(400).json({ error: '업로드할 이미지가 없습니다.' });
     }
 
-    const contentType = req.headers['content-type'] || '';
-    const extensionMap = {
-      'image/jpeg': '.jpg',
-      'image/png': '.png',
-      'image/webp': '.webp',
-      'image/gif': '.gif'
-    };
-    const extension = extensionMap[contentType];
+    try {
+      const month = new Date().toISOString().slice(0, 7); // YYYY-MM
+      const dir = path.join(UPLOAD_ROOT, month);
+      fs.mkdirSync(dir, { recursive: true });
 
-    if (!extension) {
-      return res.status(400).json({ error: 'jpg, png, webp, gif 이미지만 업로드할 수 있습니다.' });
+      const base = `${Date.now()}-${slugify(req.file.originalname)}-${crypto.randomBytes(3).toString('hex')}`;
+      const source = sharp(req.file.buffer, { failOn: 'none' }).rotate();
+      const original = await source.metadata();
+      const main = await source
+        .clone()
+        .resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 82 })
+        .toFile(path.join(dir, `${base}.webp`));
+      await source
+        .clone()
+        .resize({ width: 480, height: 480, fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 78 })
+        .toFile(path.join(dir, `${base}-thumb.webp`));
+
+      res.json({
+        path: `/images/uploads/${month}/${base}.webp`,
+        thumb: `/images/uploads/${month}/${base}-thumb.webp`,
+        width: main.width,
+        height: main.height,
+        bytes: main.size,
+        original: { width: original.width, height: original.height, type: req.file.mimetype, bytes: req.file.size },
+      });
+    } catch (error) {
+      console.error('이미지 업로드 오류:', error);
+      res.status(500).json({ error: '이미지 처리에 실패했습니다. 파일이 손상됐거나 지원하지 않는 형식일 수 있습니다.' });
     }
-
-    const uploadDir = path.join(__dirname, 'public', 'images', 'highlights', 'uploads');
-    fs.mkdirSync(uploadDir, { recursive: true });
-
-    const rawName = decodeURIComponent(req.headers['x-file-name'] || 'highlight');
-    const safeName = path.parse(rawName).name
-      .replace(/[^a-zA-Z0-9가-힣_-]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 60) || 'highlight';
-    const fileName = `${Date.now()}-${safeName}${extension}`;
-    const filePath = path.join(uploadDir, fileName);
-
-    fs.writeFileSync(filePath, req.body);
-    res.json({ path: `/images/highlights/uploads/${fileName}` });
-  } catch (error) {
-    console.error('하이라이트 이미지 업로드 오류:', error);
-    res.status(500).json({ error: '하이라이트 이미지 업로드에 실패했습니다.' });
-  }
+  });
 });
 
 // 정적 파일 서빙

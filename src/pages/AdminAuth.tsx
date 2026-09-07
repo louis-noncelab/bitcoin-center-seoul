@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Lock, ArrowLeft } from 'lucide-react';
+import { adminLogin } from '@/lib/admin';
 
 const AdminAuth = () => {
   const [password, setPassword] = useState('');
@@ -12,7 +13,6 @@ const AdminAuth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const correctPassword = 'qlxmzhdlstpsxjtjdnf1021';
   const redirectPath = searchParams.get('redirect');
   const nextPath = redirectPath?.startsWith('/admin/') ? redirectPath : '/admin/events';
 
@@ -21,15 +21,15 @@ const AdminAuth = () => {
     setLoading(true);
     setError('');
 
-    // 간단한 지연 효과
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    if (password === correctPassword) {
-      // 세션 스토리지에 인증 상태 저장
-      sessionStorage.setItem('admin_authenticated', 'true');
-      navigate(nextPath);
-    } else {
-      setError('잘못된 암호입니다.');
+    // 비밀번호는 서버가 검증한다(.env ADMIN_PASSWORD). 성공하면 adminLogin 이 세션을 저장한다.
+    try {
+      if (await adminLogin(password)) {
+        navigate(nextPath);
+      } else {
+        setError('잘못된 암호입니다.');
+      }
+    } catch {
+      setError('서버에 연결할 수 없습니다. 잠시 후 다시 시도하세요.');
     }
     
     setLoading(false);

@@ -12,11 +12,25 @@ dist
 dist-ssr
 *.local
 
-# Database files
+# Env / keys
+.env
+.env.*
+!.env.example
+*.pem
+
+# Database files (runtime DB is data/events.db, created by database.js)
 data/
 *.db
 *.sqlite
 *.sqlite3
+
+# Runtime uploads written by server.js (POST /api/images; older path kept for existing files)
+public/images/uploads/
+public/images/highlights/uploads/
+scripts/rehost-backup-*.json
+
+# Agent tooling state
+.omo/
 
 # Editor directories and files
 .vscode/*

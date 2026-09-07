@@ -11,7 +11,13 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:3000',
+        // 로컬에서 3000이 이미 쓰이면 API_PORT=3001 npm run dev
+        target: `http://127.0.0.1:${process.env.API_PORT || 3000}`,
+        changeOrigin: true,
+      },
+      // 업로드 직후 파일이 Express public/ 에만 생기므로, Vite가 빈 404를 내지 않게 같은 서버로 넘긴다.
+      '/images/uploads': {
+        target: `http://127.0.0.1:${process.env.API_PORT || 3000}`,
         changeOrigin: true,
       },
     },

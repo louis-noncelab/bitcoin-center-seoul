@@ -8,6 +8,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import ImageUploadField from '@/components/ImageUploadField';
+import { adminFetch, isAdminAuthenticated } from '@/lib/admin';
 
 interface Highlight {
   id: number;
@@ -67,8 +69,7 @@ const AdminHighlights = () => {
   const [dateMode, setDateMode] = useState<DateMode>('single');
 
   useEffect(() => {
-    const authStatus = sessionStorage.getItem('admin_authenticated');
-    if (authStatus !== 'true') {
+    if (!isAdminAuthenticated()) {
       navigate(`/admin/auth?redirect=${encodeURIComponent(location.pathname)}`);
       return;
     }
@@ -170,11 +171,16 @@ const AdminHighlights = () => {
       return;
     }
 
+    if (!formData.image) {
+      toast({ title: '입력 오류', description: '이미지를 업로드해주세요.', variant: 'destructive' });
+      return;
+    }
+
     setLoading(true);
     try {
       const url = isEditing ? `/api/highlights/${editingHighlight?.id}` : '/api/highlights';
       const method = isEditing ? 'PUT' : 'POST';
-      const response = await fetch(url, {
+      const response = await adminFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -221,7 +227,7 @@ const AdminHighlights = () => {
   const handleDelete = async (id: number) => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/highlights/${id}`, { method: 'DELETE' });
+      const response = await adminFetch(`/api/highlights/${id}`, { method: 'DELETE' });
       if (response.ok) {
         toast({ title: '성공', description: '하이라이트가 삭제되었습니다.' });
         fetchHighlights();
@@ -277,7 +283,7 @@ const AdminHighlights = () => {
                 <Link className="w-5 h-5 text-bitcoin" />
                 {isEditing ? '하이라이트 수정' : '새 하이라이트 등록'}
               </CardTitle>
-              <CardDescription>홈페이지 하이라이트 카드의 문구, 게시물 링크, 이미지 링크를 관리합니다.</CardDescription>
+              <CardDescription>홈페이지 하이라이트 카드의 문구, 게시물 링크, 이미지를 관리합니다.</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -418,19 +424,12 @@ const AdminHighlights = () => {
                   />
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium mb-2 block">이미지 링크</label>
-                  <Input
-                    type="url"
-                    value={formData.image}
-                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                    placeholder="https://example.com/image.jpg"
-                    required
-                  />
-                  {formData.image && (
-                    <img src={formData.image} alt="하이라이트 미리보기" className="mt-3 aspect-video w-full rounded-md object-cover" />
-                  )}
-                </div>
+                <ImageUploadField
+                  label="이미지"
+                  value={formData.image}
+                  onChange={(image) => setFormData({ ...formData, image })}
+                  required
+                />
 
                 <label className="flex items-center gap-2 text-sm">
                   <Checkbox
@@ -519,7 +518,7 @@ const AdminHighlights = () => {
                                 rel="noopener noreferrer"
                                 className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-bitcoin"
                               >
-                                이미지 링크 열기
+                                이미지 열기
                                 <ExternalLink className="h-3 w-3" />
                               </a>
                             )}
