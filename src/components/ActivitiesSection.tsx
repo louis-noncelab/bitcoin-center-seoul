@@ -4,6 +4,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useReveal } from '@/hooks/use-reveal';
 
 interface EventRecord {
   id: number;
@@ -21,6 +22,7 @@ interface EventRecord {
 
 const ActivitiesSection = () => {
   const { language } = useLanguage();
+  const revealRef = useReveal<HTMLElement>();
   const [events, setEvents] = useState<EventRecord[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<EventRecord | null>(null);
   const [showAllEvents, setShowAllEvents] = useState(false);
@@ -91,13 +93,14 @@ const ActivitiesSection = () => {
     }));
   }, [events, language]);
 
-  const featured = homeEvents?.[0]
+  const featuredEvent = homeEvents?.[0] ?? null;
+  const featured = featuredEvent
     ? {
         label: language === 'ko' ? '다가오는 이벤트' : 'Upcoming Event',
-        ...homeEvents[0],
+        ...featuredEvent,
       }
     : section.featured;
-  const featuredEventId = 'raw' in featured ? featured.raw.id : null;
+  const featuredEventId = featuredEvent?.raw.id ?? null;
   const sideEvents = homeEvents?.filter((event) => event.raw.id !== featuredEventId).slice(0, 3) || section.activities.slice(0, 3);
   const viewEvent = (event: EventRecord) => ({
     title: language === 'ko' ? event.title : event.titleEn,
@@ -107,82 +110,92 @@ const ActivitiesSection = () => {
   });
 
   return (
-    <section id="events" className="bg-card py-20">
+    <section id="events" ref={revealRef} className="motion-reveal scroll-mt-[72px] bg-card py-16 md:py-24">
       <div className="container mx-auto px-6">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-foreground to-bitcoin bg-clip-text text-transparent">
+        <div className="mb-10 text-center md:mb-14">
+          <p className="mb-3 text-xs font-semibold tracking-[0.2em] text-bitcoin">{section.eyebrow}</p>
+          <h2 className="mb-4 pb-1 text-3xl font-bold text-foreground md:text-4xl">
               {section.title}
             </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="mx-auto max-w-2xl text-base text-muted-foreground md:text-lg">
               {section.subtitle}
             </p>
         </div>
 
-        <div className={sideEvents.length > 0 ? 'grid gap-6 lg:grid-cols-[1.25fr_0.75fr]' : 'grid gap-6'}>
-          <article className="overflow-hidden rounded-lg border border-border bg-background shadow-lg">
-            <div className="relative min-h-[420px]">
-              <img
-                src={featured.image}
-                alt={featured.title}
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/60 to-background/90" />
-              <div className="absolute inset-x-0 top-0 p-6 md:p-8">
-                <span className="mb-2 inline-flex items-center rounded-md bg-bitcoin px-3 py-1 text-xs font-semibold text-bitcoin-foreground">
-                  {featured.label}
-                </span>
-                {'meta' in featured && (
-                  <div className="mb-4 -ml-1 flex w-fit items-center gap-2 rounded-md bg-background/80 px-4 py-2 text-xs font-medium text-bitcoin backdrop-blur-sm">
+        <div className={sideEvents.length > 0 ? 'grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:gap-8' : 'grid gap-6'}>
+          <article className="motion-lift overflow-hidden rounded-lg border border-border bg-background">
+            {featuredEvent ? (
+              <>
+                <img
+                  src={featuredEvent.image}
+                  alt={featuredEvent.title}
+                  className="aspect-[16/10] w-full object-cover md:aspect-[2/1]"
+                />
+                <div className="p-6 md:p-8">
+                  <span className="inline-flex items-center rounded-md bg-bitcoin px-3 py-1 text-xs font-semibold text-bitcoin-foreground">
+                    {featured.label}
+                  </span>
+                  <p className="mt-3 flex items-center gap-2 text-xs font-medium text-bitcoin">
                     <CalendarDays className="h-4 w-4" />
-                    {featured.meta}
-                  </div>
-                )}
-                <h3 className="mb-4 max-w-2xl text-3xl font-bold leading-tight text-foreground md:text-4xl">
-                  {featured.title}
-                </h3>
-              </div>
-              {'raw' in featured && (
-                <div className="absolute inset-x-0 bottom-0 p-6 md:p-8">
+                    {featuredEvent.meta}
+                  </p>
+                  <h3 className="mt-2 text-2xl font-bold leading-tight text-foreground md:text-3xl">
+                    {featuredEvent.title}
+                  </h3>
+                  {featuredEvent.description && (
+                    <p className="mt-3 line-clamp-3 whitespace-pre-line text-sm text-muted-foreground">
+                      {featuredEvent.description}
+                    </p>
+                  )}
                   <button
                     type="button"
-                    onClick={() => setSelectedEvent(featured.raw)}
-                    className="inline-flex rounded-md border border-bitcoin px-4 py-2 text-sm font-medium text-bitcoin transition-colors hover:bg-bitcoin hover:text-bitcoin-foreground"
+                    onClick={() => setSelectedEvent(featuredEvent.raw)}
+                    className="motion-press mt-5 inline-flex rounded-md border border-bitcoin px-4 py-2 text-sm font-medium text-bitcoin hover:bg-bitcoin hover:text-bitcoin-foreground"
                   >
                     {language === 'ko' ? '자세히 보기' : 'View Details'}
                   </button>
                 </div>
-              )}
-            </div>
+              </>
+            ) : (
+              <div className="p-8 text-center">
+                <span className="inline-flex items-center rounded-md bg-bitcoin px-3 py-1 text-xs font-semibold text-bitcoin-foreground">
+                  {featured.label}
+                </span>
+                <h3 className="mt-4 text-2xl font-bold text-foreground">{featured.title}</h3>
+                <p className="mt-3 text-sm text-muted-foreground">{featured.description}</p>
+              </div>
+            )}
           </article>
 
           {sideEvents.length > 0 && (
-            <aside className="grid gap-4">
+            <aside className="hidden gap-4 lg:grid">
               {sideEvents.slice(0, 2).map((activity) => (
                 <article
                   key={activity.title}
-                  className="relative flex min-h-44 overflow-hidden rounded-lg border border-border bg-background shadow-lg"
+                  className="motion-lift grid overflow-hidden rounded-lg border border-border bg-background md:grid-cols-[9rem_1fr]"
                 >
                   {activity.image && (
                     <img
                       src={activity.image}
                       alt={activity.title}
-                      className="absolute inset-0 h-full w-full object-cover"
+                      loading="lazy"
+                      decoding="async"
+                      className="aspect-[4/3] h-full w-full object-cover"
                     />
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/65 to-background/90" />
-                  <div className="relative z-10 flex min-h-44 w-full flex-col p-5">
-                    <div className="mb-3 flex items-center gap-2 text-xs font-medium text-bitcoin">
+                  <div className="flex flex-col p-5">
+                    <div className="mb-2 flex items-center gap-2 text-xs font-medium text-bitcoin">
                       <activity.icon className="h-4 w-4" />
                       {activity.meta}
                     </div>
-                    <h4 className="mb-2 text-base font-semibold text-foreground">
+                    <h4 className="text-base font-semibold text-foreground">
                       {activity.title}
                     </h4>
                     {'raw' in activity && (
                       <button
                         type="button"
                         onClick={() => setSelectedEvent(activity.raw)}
-                        className="mt-auto w-fit text-sm font-medium text-bitcoin transition-colors hover:text-bitcoin-light"
+                        className="mt-auto w-fit pt-3 text-sm font-medium text-bitcoin transition-colors hover:text-bitcoin-light"
                       >
                         {language === 'ko' ? '자세히 보기' : 'View Details'}
                       </button>
@@ -195,11 +208,11 @@ const ActivitiesSection = () => {
         </div>
 
         {events.length > 0 && (
-          <div className="mt-8 flex justify-center">
+          <div className="mt-10 flex justify-center">
             <button
               type="button"
               onClick={() => setShowAllEvents(true)}
-              className="rounded-md border border-bitcoin px-5 py-2 text-sm font-medium text-bitcoin transition-colors hover:bg-bitcoin hover:text-bitcoin-foreground"
+              className="motion-press rounded-md border border-bitcoin px-6 py-2.5 text-sm font-medium text-bitcoin hover:bg-bitcoin hover:text-bitcoin-foreground"
             >
               {language === 'ko' ? '행사 전체보기' : 'View All Events'}
             </button>
@@ -217,9 +230,9 @@ const ActivitiesSection = () => {
               <img src={viewEvent(selectedEvent).image} alt={viewEvent(selectedEvent).title} className="aspect-video w-full rounded-md object-cover" />
             )}
             <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
-              <p>Date: {selectedEvent.date}</p>
-              <p>Time: {selectedEvent.time}</p>
-              <p>Location: {viewEvent(selectedEvent).location}</p>
+              <p>{language === 'ko' ? '날짜' : 'Date'}: {selectedEvent.date}</p>
+              <p>{language === 'ko' ? '시간' : 'Time'}: {selectedEvent.time}</p>
+              <p>{language === 'ko' ? '장소' : 'Location'}: {viewEvent(selectedEvent).location}</p>
             </div>
             <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
               {viewEvent(selectedEvent).description}
@@ -229,7 +242,7 @@ const ActivitiesSection = () => {
                 href={selectedEvent.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex w-fit rounded-md border border-bitcoin px-3 py-2 text-sm text-bitcoin transition-colors hover:bg-bitcoin hover:text-bitcoin-foreground"
+                className="motion-press inline-flex w-fit rounded-md border border-bitcoin px-3 py-2 text-sm text-bitcoin hover:bg-bitcoin hover:text-bitcoin-foreground"
               >
                 {language === 'ko' ? '신청하기' : 'Register'}
               </a>
@@ -259,7 +272,7 @@ const ActivitiesSection = () => {
                   }`}
                 >
                   {event.image && (
-                    <img src={view.image} alt={view.title} className="aspect-video w-full rounded-md object-cover md:h-28 md:w-40" />
+                    <img src={view.image} alt={view.title} loading="lazy" decoding="async" className="aspect-video w-full rounded-md object-cover md:h-28 md:w-40" />
                   )}
                   <div className="flex flex-col justify-center">
                     <p className="text-xs font-medium text-bitcoin">{event.date} · {event.time}</p>

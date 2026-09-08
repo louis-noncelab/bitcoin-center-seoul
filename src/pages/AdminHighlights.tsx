@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import ImageUploadField from '@/components/ImageUploadField';
-import { adminFetch, isAdminAuthenticated } from '@/lib/admin';
+import { adminFetch, clearAdminSession, isAdminAuthenticated } from '@/lib/admin';
 
 interface Highlight {
   id: number;
@@ -61,7 +61,8 @@ const AdminHighlights = () => {
   const location = useLocation();
   const { toast } = useToast();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [listLoading, setListLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editingHighlight, setEditingHighlight] = useState<Highlight | null>(null);
@@ -77,7 +78,7 @@ const AdminHighlights = () => {
   }, [navigate, location.pathname]);
 
   const fetchHighlights = async () => {
-    setLoading(true);
+    setListLoading(true);
     try {
       const response = await fetch('/api/highlights/all');
       if (response.ok) {
@@ -88,7 +89,7 @@ const AdminHighlights = () => {
     } catch {
       toast({ title: '오류', description: '하이라이트를 불러오는데 실패했습니다.', variant: 'destructive' });
     } finally {
-      setLoading(false);
+      setListLoading(false);
     }
   };
 
@@ -176,7 +177,7 @@ const AdminHighlights = () => {
       return;
     }
 
-    setLoading(true);
+    setSaving(true);
     try {
       const url = isEditing ? `/api/highlights/${editingHighlight?.id}` : '/api/highlights';
       const method = isEditing ? 'PUT' : 'POST';
@@ -220,12 +221,12 @@ const AdminHighlights = () => {
         variant: 'destructive',
       });
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    setLoading(true);
+    setSaving(true);
     try {
       const response = await adminFetch(`/api/highlights/${id}`, { method: 'DELETE' });
       if (response.ok) {
@@ -237,7 +238,7 @@ const AdminHighlights = () => {
     } catch {
       toast({ title: '오류', description: '하이라이트 삭제에 실패했습니다.', variant: 'destructive' });
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -263,7 +264,7 @@ const AdminHighlights = () => {
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div className="flex items-center gap-3">
             <Button variant="outline" onClick={() => navigate('/')} className="flex items-center gap-2">
               <ArrowLeft className="w-4 h-4" />
@@ -274,6 +275,7 @@ const AdminHighlights = () => {
             </Button>
             <h1 className="text-2xl font-bold">하이라이트 관리</h1>
           </div>
+          <Button variant="outline" onClick={() => { clearAdminSession(); navigate('/admin/auth'); }}>로그아웃</Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-6">
@@ -446,9 +448,9 @@ const AdminHighlights = () => {
                       취소
                     </Button>
                   )}
-                  <Button type="submit" disabled={loading} className="flex-1 bg-bitcoin hover:bg-bitcoin/90">
+                  <Button type="submit" disabled={saving} className="flex-1 bg-bitcoin hover:bg-bitcoin/90 text-bitcoin-foreground">
                     <Save className="w-4 h-4 mr-2" />
-                    {loading ? '저장 중...' : (isEditing ? '수정' : '등록')}
+                    {saving ? '저장 중...' : (isEditing ? '수정' : '등록')}
                   </Button>
                 </div>
               </form>
@@ -469,7 +471,7 @@ const AdminHighlights = () => {
                     resetForm();
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="bg-bitcoin hover:bg-bitcoin/90"
+                  className="bg-bitcoin hover:bg-bitcoin/90 text-bitcoin-foreground"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   새 하이라이트 추가하기
@@ -477,10 +479,14 @@ const AdminHighlights = () => {
               </div>
             </CardHeader>
             <CardContent>
-              {loading ? (
+              {listLoading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-bitcoin mx-auto mb-4"></div>
                   <p className="text-muted-foreground">로딩 중...</p>
+                </div>
+              ) : highlights.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>등록된 하이라이트가 없습니다.</p>
                 </div>
               ) : (
                 <div className="space-y-3 max-h-[720px] overflow-y-auto">
@@ -532,7 +538,7 @@ const AdminHighlights = () => {
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button size="sm" variant="outline" className="text-red-500 hover:text-red-600">
+                                <Button size="sm" variant="outline" className="text-destructive hover:text-destructive">
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
                               </AlertDialogTrigger>
@@ -545,7 +551,12 @@ const AdminHighlights = () => {
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>취소</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDelete(highlight.id)}>삭제</AlertDialogAction>
+                                  <AlertDialogAction
+                                    onClick={() => handleDelete(highlight.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    삭제
+                                  </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
                             </AlertDialog>

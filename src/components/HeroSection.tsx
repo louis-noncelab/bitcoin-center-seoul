@@ -1,9 +1,19 @@
 import { ExternalLink, MapPin, Clock } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import EventScheduleModal from './EventScheduleModal';
 
 const HeroSection = () => {
   const { language } = useLanguage();
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    video.pause();
+    video.removeAttribute('autoplay');
+  }, []);
 
   const content = {
     ko: {
@@ -14,60 +24,58 @@ const HeroSection = () => {
     },
     en: {
       subtitle: "A space for Bitcoiners",
-      address: '30, Sinchon-ro 2an-gil, Mapo-gu, Seoul,2F',
+      address: '30, Sinchon-ro 2an-gil, Mapo-gu, Seoul, 2F',
       googleMap: 'Google Maps',
       hours: '12:00 - 20:00 (Mon-Sun, except holidays)',
     }
   };
 
   return (
-    <section className="bg-background pt-28 pb-12">
+    <section className="bg-background pt-24 pb-16 md:pt-28 md:pb-24">
       <div className="container mx-auto px-6">
         <div className="relative mx-auto max-w-5xl overflow-hidden rounded-lg border border-border bg-card shadow-2xl">
-          <div className="relative aspect-[4/5] md:aspect-video">
-          <video
-            src="https://bitcoin-center-seoul.s3.ap-northeast-2.amazonaws.com/BCS_480p.mov"
-            poster="/images/thumnail/IMG_6227.jpg"
-            autoPlay
-            muted
-            loop
-            playsInline
-            aria-label="Bitcoin Center Seoul"
-            className="animate-hero-video-zoom-out absolute inset-0 h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
-
-          <div className="absolute inset-x-0 bottom-0 flex flex-col items-center p-4 text-center md:p-6">
-            <p className="mb-4 text-2xl font-semibold leading-tight text-foreground drop-shadow-lg md:text-4xl">
+          <div className="relative aspect-video">
+            <video
+              ref={videoRef}
+              src="https://bitcoin-center-seoul.s3.ap-northeast-2.amazonaws.com/BCS_480p.mov"
+              poster="/images/thumnail/IMG_6227.jpg"
+              autoPlay
+              muted
+              loop
+              playsInline
+              aria-label="Bitcoin Center Seoul"
+              className="animate-hero-video-zoom-out absolute inset-0 h-full w-full object-cover"
+            />
+          </div>
+          <div className="motion-enter border-t border-border bg-card px-4 py-6 text-center md:px-8 md:py-8">
+            <h1 className="max-w-3xl mx-auto text-3xl font-semibold leading-tight tracking-tight text-foreground [overflow-wrap:anywhere] md:text-5xl">
               {content[language].subtitle}
-            </p>
-
-            <div className="grid w-full overflow-hidden rounded-lg border border-white/15 bg-background/78 text-left backdrop-blur-md md:grid-cols-2">
-              <div className="flex flex-col items-center gap-2 border-b border-white/10 p-4 text-center md:border-b-0 md:border-r">
+            </h1>
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <div className="flex flex-col items-center gap-2 md:border-r md:border-border">
                 <div className="flex items-center gap-3">
                   <MapPin className="h-5 w-5 flex-shrink-0 text-bitcoin" />
-                  <span className="text-base leading-relaxed text-foreground" dangerouslySetInnerHTML={{ __html: content[language].address }} />
+                  <span className="text-base leading-relaxed text-foreground">{content[language].address}</span>
                 </div>
                 <a
                   href="https://maps.app.goo.gl/n143j19LYrx3g8UF6"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-sm text-bitcoin hover:text-bitcoin-light transition-colors"
+                  className="inline-flex items-center gap-1 text-sm text-bitcoin transition-colors hover:text-bitcoin-light"
                 >
                   {content[language].googleMap}
                   <ExternalLink className="h-3.5 w-3.5" />
                 </a>
               </div>
-              <div className="flex flex-col items-center gap-2 p-4 text-center">
+              <div className="flex flex-col items-center gap-2">
                 <div className="flex items-center justify-center gap-3">
                   <Clock className="h-5 w-5 flex-shrink-0 text-bitcoin" />
-                  <span className="text-sm leading-relaxed text-foreground md:whitespace-nowrap lg:text-base" dangerouslySetInnerHTML={{ __html: content[language].hours }} />
+                  <span className="text-sm leading-relaxed text-foreground lg:text-base">{content[language].hours}</span>
                 </div>
                 <EventScheduleModal triggerStyle="link" />
               </div>
             </div>
           </div>
-        </div>
         </div>
       </div>
     </section>

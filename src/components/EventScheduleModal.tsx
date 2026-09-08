@@ -92,14 +92,16 @@ const EventScheduleModal = ({ open: externalOpen, onOpenChange: externalOnOpenCh
       upcomingEvents: '다가오는 대관 일정',
       noEvents: '현재 예정된 대관 일정이 없습니다.',
       close: '닫기',
-      dontShowAgain: '오늘 더이상 보지 않기'
+      dontShowAgain: '오늘 더이상 보지 않기',
+      loading: '이벤트를 불러오는 중...'
     },
     en: {
       title: 'Rental Schedule',
       upcomingEvents: 'Upcoming Rental Schedule',
       noEvents: 'No upcoming rental schedule.',
       close: 'Close',
-      dontShowAgain: "Don't show today"
+      dontShowAgain: "Don't show today",
+      loading: 'Loading events...'
     }
   };
 
@@ -127,7 +129,7 @@ const EventScheduleModal = ({ open: externalOpen, onOpenChange: externalOnOpenCh
             className={
               triggerStyle === 'link'
                 ? 'h-auto p-0 text-sm text-bitcoin hover:bg-transparent hover:text-bitcoin-light'
-                : 'border-bitcoin text-bitcoin hover:bg-bitcoin hover:text-foreground'
+                : 'border-bitcoin text-bitcoin hover:bg-bitcoin hover:text-bitcoin-foreground'
             }
           >
             <Calendar className={triggerStyle === 'link' ? 'w-3.5 h-3.5 mr-1' : 'w-4 h-4 mr-2'} />
@@ -151,7 +153,7 @@ const EventScheduleModal = ({ open: externalOpen, onOpenChange: externalOnOpenCh
           {loading ? (
             <div className="text-center py-8 text-muted-foreground">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-bitcoin mx-auto mb-4"></div>
-              <p>이벤트를 불러오는 중...</p>
+              <p>{content[language].loading}</p>
             </div>
           ) : events.length > 0 ? (
             <div className="space-y-4">
@@ -229,7 +231,7 @@ const EventScheduleModal = ({ open: externalOpen, onOpenChange: externalOnOpenCh
           <Button
             variant="outline"
             onClick={() => setIsOpen(false)}
-            className="border-bitcoin text-bitcoin hover:bg-bitcoin hover:text-foreground ml-auto"
+            className="ml-auto border-bitcoin text-bitcoin hover:bg-bitcoin hover:text-bitcoin-foreground"
           >
             {content[language].close}
           </Button>

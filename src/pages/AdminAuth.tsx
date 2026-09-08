@@ -37,7 +37,7 @@ const AdminAuth = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+      <Card className="motion-enter w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 w-12 h-12 bg-bitcoin/10 rounded-full flex items-center justify-center">
             <Lock className="w-6 h-6 text-bitcoin" />
@@ -59,7 +59,7 @@ const AdminAuth = () => {
                 required
               />
               {error && (
-                <p className="text-sm text-red-500 mt-2">{error}</p>
+                <p className="text-sm text-red-400 mt-2">{error}</p>
               )}
             </div>
             
@@ -76,7 +76,7 @@ const AdminAuth = () => {
               <Button
                 type="submit"
                 disabled={loading}
-                className="flex-1 bg-bitcoin hover:bg-bitcoin/90"
+                className="flex-1 bg-bitcoin hover:bg-bitcoin/90 text-bitcoin-foreground"
               >
                 {loading ? '확인 중...' : '확인'}
               </Button>

@@ -9,7 +9,7 @@ import { Calendar, Trash2, Edit, ArrowLeft, Save, X, ExternalLink, Plus } from '
 import { useToast } from '@/hooks/use-toast';
 import DatePicker from '@/components/DatePicker';
 import ImageUploadField from '@/components/ImageUploadField';
-import { adminFetch, isAdminAuthenticated } from '@/lib/admin';
+import { adminFetch, clearAdminSession, isAdminAuthenticated } from '@/lib/admin';
 
 interface Event {
   id: number;
@@ -30,7 +30,8 @@ const AdminEvents = () => {
   const location = useLocation();
   const { toast } = useToast();
   const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [listLoading, setListLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -58,7 +59,7 @@ const AdminEvents = () => {
 
   // 이벤트 목록 가져오기
   const fetchEvents = async () => {
-    setLoading(true);
+    setListLoading(true);
     try {
       const response = await fetch('/api/events');
       if (response.ok) {
@@ -78,7 +79,7 @@ const AdminEvents = () => {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setListLoading(false);
     }
   };
 
@@ -109,7 +110,7 @@ const AdminEvents = () => {
   // 이벤트 생성/수정
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setSaving(true);
 
     // 필수 필드 검증
     const requiredFields = ['title', 'titleEn', 'date', 'time', 'location', 'locationEn', 'description', 'descriptionEn', 'link', 'image'];
@@ -121,7 +122,7 @@ const AdminEvents = () => {
         description: `다음 필드를 입력해주세요: ${missingFields.join(', ')}`,
         variant: "destructive",
       });
-      setLoading(false);
+      setSaving(false);
       return;
     }
 
@@ -167,13 +168,13 @@ const AdminEvents = () => {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
   // 이벤트 삭제
   const handleDelete = async (id: number) => {
-    setLoading(true);
+    setSaving(true);
     try {
       const response = await adminFetch(`/api/events/${id}`, {
         method: 'DELETE',
@@ -199,7 +200,7 @@ const AdminEvents = () => {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -247,7 +248,7 @@ const AdminEvents = () => {
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto">
         {/* 헤더 */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div className="flex items-center gap-4">
             <Button
               variant="outline"
@@ -265,6 +266,7 @@ const AdminEvents = () => {
             </Button>
             <h1 className="text-2xl font-bold">이벤트 관리</h1>
           </div>
+          <Button variant="outline" onClick={() => { clearAdminSession(); navigate('/admin/auth'); }}>로그아웃</Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -397,11 +399,11 @@ const AdminEvents = () => {
                   )}
                   <Button
                     type="submit"
-                    disabled={loading}
-                    className="flex-1 bg-bitcoin hover:bg-bitcoin/90"
+                    disabled={saving}
+                    className="flex-1 bg-bitcoin hover:bg-bitcoin/90 text-bitcoin-foreground"
                   >
                     <Save className="w-4 h-4 mr-2" />
-                    {loading ? '저장 중...' : (isEditing ? '수정' : '등록')}
+                    {saving ? '저장 중...' : (isEditing ? '수정' : '등록')}
                   </Button>
                 </div>
               </form>
@@ -425,7 +427,7 @@ const AdminEvents = () => {
                     resetForm();
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="bg-bitcoin hover:bg-bitcoin/90"
+                  className="bg-bitcoin hover:bg-bitcoin/90 text-bitcoin-foreground"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   새 이벤트 추가하기
@@ -433,7 +435,7 @@ const AdminEvents = () => {
               </div>
             </CardHeader>
             <CardContent>
-              {loading ? (
+              {listLoading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-bitcoin mx-auto mb-4"></div>
                   <p className="text-muted-foreground">로딩 중...</p>
@@ -492,7 +494,7 @@ const AdminEvents = () => {
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button size="sm" variant="outline" className="text-red-500 hover:text-red-600">
+                                <Button size="sm" variant="outline" className="text-destructive hover:text-destructive">
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
                               </AlertDialogTrigger>
@@ -509,7 +511,7 @@ const AdminEvents = () => {
                                   <AlertDialogCancel>취소</AlertDialogCancel>
                                   <AlertDialogAction
                                     onClick={() => handleDelete(event.id)}
-                                    className="bg-red-500 hover:bg-red-600"
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   >
                                     삭제
                                   </AlertDialogAction>

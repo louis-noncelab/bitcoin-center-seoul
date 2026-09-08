@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ExternalLink } from 'lucide-react';
+import { useReveal } from '@/hooks/use-reveal';
 
 interface HighlightRecord {
   id?: number;
@@ -57,6 +58,7 @@ const getSortDate = (item: HighlightRecord) => (item.endDate || item.startDate |
 
 const EventHighlightsSection = () => {
   const { language } = useLanguage();
+  const revealRef = useReveal<HTMLElement>();
   const [remoteHighlights, setRemoteHighlights] = useState<HighlightRecord[]>([]);
   const [activeTab, setActiveTab] = useState('전체');
   const [activePage, setActivePage] = useState(1);
@@ -104,20 +106,21 @@ const EventHighlightsSection = () => {
   });
 
   return (
-    <section id="highlights" className="bg-background py-20">
+    <section id="highlights" ref={revealRef} className="motion-reveal scroll-mt-[72px] bg-background py-16 md:py-24">
       <div className="container mx-auto px-6">
-        <div className="text-center mb-12">
-          <h2 className="mb-6 pb-1 text-4xl font-bold leading-tight bg-gradient-to-r from-foreground to-bitcoin bg-clip-text text-transparent md:text-5xl">
+        <div className="mb-10 text-center md:mb-14">
+          <p className="mb-3 text-xs font-semibold tracking-[0.2em] text-bitcoin">HIGHLIGHTS</p>
+          <h2 className="mb-4 pb-1 text-3xl font-bold text-foreground md:text-4xl">
             {language === 'ko' ? '하이라이트' : 'Highlights'}
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="mx-auto max-w-2xl text-base text-muted-foreground md:text-lg">
             {language === 'ko'
               ? '실제 활동의 순간들을 확인해보세요.'
               : 'Explore real moments from past Bitcoin Center Seoul activities.'}
           </p>
         </div>
 
-        <div className="mb-8 flex flex-wrap justify-center gap-2">
+        <div className="mb-8 flex flex-nowrap justify-start gap-2 overflow-x-auto pb-1 md:justify-center">
           {tabs.map((tab) => (
             <button
               key={tab.value}
@@ -125,7 +128,7 @@ const EventHighlightsSection = () => {
               onClick={() => {
                 setActiveTab(tab.value);
               }}
-              className={`rounded-full border px-5 py-2 text-sm font-medium transition-all ${
+              className={`shrink-0 whitespace-nowrap rounded-full border px-5 py-2 text-sm font-medium transition-colors ${
                 activeTab === tab.value
                   ? 'border-bitcoin bg-bitcoin text-bitcoin-foreground'
                   : 'border-border text-muted-foreground hover:border-bitcoin hover:text-bitcoin'
@@ -136,13 +139,13 @@ const EventHighlightsSection = () => {
           ))}
         </div>
 
-        <div className="mx-auto max-w-4xl rounded-lg border border-border bg-card p-4 shadow-lg md:p-5">
+        <div className="mx-auto max-w-5xl">
           {filtered.length === 0 ? (
-            <div className="rounded-md border border-border bg-background p-8 text-center text-sm text-muted-foreground">
+            <div className="rounded-md border border-border bg-card p-8 text-center text-sm text-muted-foreground">
               {language === 'ko' ? '등록된 하이라이트가 없습니다.' : 'No highlights have been added yet.'}
             </div>
           ) : (
-          <div className="space-y-3 transition-all duration-300">
+          <div className="grid gap-4">
             {pagedItems.map((item, index) => {
               const view = getViewData(item);
 
@@ -158,27 +161,25 @@ const EventHighlightsSection = () => {
                   }}
                   role="button"
                   tabIndex={0}
-                  className={`w-full rounded-md border border-border bg-background p-4 text-left transition-all hover:border-bitcoin/50 hover:bg-card/70 ${
-                    view.image ? 'grid items-center gap-4 md:grid-cols-[160px_1fr]' : ''
+                  className={`motion-lift w-full rounded-lg border border-border bg-card p-4 text-left md:p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+                    view.image ? 'grid items-center gap-5 md:grid-cols-[220px_1fr]' : ''
                   }`}
                 >
                   {view.image && (
-                    <img src={view.image} alt={view.title} className="aspect-video w-full rounded-md object-cover md:h-28 md:w-40" />
+                    <img src={view.image} alt={view.title} loading="lazy" decoding="async" className="aspect-[16/10] w-full rounded-md object-cover md:h-36 md:w-56" />
                   )}
                   <div className="flex flex-col justify-center">
-                    <div className="mb-3 flex flex-wrap items-center gap-2">
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
                       <span className="w-fit rounded-full bg-bitcoin/10 px-3 py-1 text-xs font-medium text-bitcoin">
                         {view.category}
                       </span>
+                      <span className="text-xs font-medium text-bitcoin">{view.date}</span>
                     </div>
-                    <h3 className="text-lg font-semibold text-foreground md:text-xl">{view.title}</h3>
+                    <h3 className="text-xl font-semibold text-foreground md:text-2xl">{view.title}</h3>
                     <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                       {view.detail}
                     </p>
-                    <div className="mt-3 grid gap-1 text-sm text-muted-foreground sm:grid-cols-2">
-                      <p>Host: {view.host}</p>
-                      <p>Date: {view.date}</p>
-                    </div>
+                    <p className="mt-3 text-sm text-muted-foreground">{view.host}</p>
                     {view.link && (
                       <a
                         href={view.link}
@@ -201,7 +202,7 @@ const EventHighlightsSection = () => {
           )}
 
           {totalPages > 1 && (
-            <div className="mt-5 flex justify-center gap-2">
+            <div className="mt-8 flex justify-center gap-2">
               {Array.from({ length: totalPages }).map((_, index) => {
                 const page = index + 1;
                 return (
@@ -211,8 +212,8 @@ const EventHighlightsSection = () => {
                     onClick={() => setActivePage(page)}
                     className={`h-9 min-w-9 rounded-md border px-3 text-sm transition-colors ${
                       activePage === page
-                        ? 'border-bitcoin bg-bitcoin text-bitcoin-foreground'
-                        : 'border-border text-muted-foreground hover:border-bitcoin hover:text-bitcoin'
+                        ? 'h-10 border-bitcoin bg-bitcoin text-bitcoin-foreground'
+                        : 'h-10 border-border text-muted-foreground hover:border-bitcoin hover:text-bitcoin'
                     }`}
                   >
                     {page}
@@ -237,9 +238,9 @@ const EventHighlightsSection = () => {
                 />
               )}
               <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
-                <p>Category: {getViewData(selectedItem).category}</p>
-                <p>Host: {getViewData(selectedItem).host}</p>
-                <p>Date: {getViewData(selectedItem).date}</p>
+                <p>{language === 'ko' ? '분류' : 'Category'}: {getViewData(selectedItem).category}</p>
+                <p>{language === 'ko' ? '주최' : 'Host'}: {getViewData(selectedItem).host}</p>
+                <p>{language === 'ko' ? '날짜' : 'Date'}: {getViewData(selectedItem).date}</p>
               </div>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 {getViewData(selectedItem).detail}
@@ -249,7 +250,7 @@ const EventHighlightsSection = () => {
                   href={getViewData(selectedItem).link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex w-fit items-center gap-1 rounded-md border border-bitcoin px-3 py-2 text-sm text-bitcoin transition-colors hover:bg-bitcoin hover:text-bitcoin-foreground"
+                  className="motion-press inline-flex w-fit items-center gap-1 rounded-md border border-bitcoin px-3 py-2 text-sm text-bitcoin hover:bg-bitcoin hover:text-bitcoin-foreground"
                 >
                   {language === 'ko' ? '링크 열기' : 'Open Link'}
                   <ExternalLink className="h-3.5 w-3.5" />

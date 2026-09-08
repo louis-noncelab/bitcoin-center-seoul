@@ -56,7 +56,8 @@ const WalletExperience = () => {
       },
       next: '다음',
       prev: '이전',
-      home: '처음으로'
+      restart: '다시 시작',
+      exit: '나가기'
     },
     en: {
       welcome: {
@@ -98,7 +99,8 @@ const WalletExperience = () => {
       },
       next: 'Next',
       prev: 'Previous',
-      home: 'Home'
+      restart: 'Restart',
+      exit: 'Exit'
     }
   };
 
@@ -547,35 +549,35 @@ const WalletExperience = () => {
     formatted = replaceOutsideTags(
       formatted,
       /\babandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about\b/g,
-      '<span class="text-yellow-600 dark:text-yellow-400 font-semibold">abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about</span>'
+      '<span class="text-bitcoin font-semibold">abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about</span>'
     );
     
     // 특수 키워드 먼저 처리 - [Coconut Wallet]을 하나의 키워드로 처리
     formatted = replaceOutsideTags(
       formatted,
       /\[Coconut Wallet\]/g,
-      '<span class="text-blue-600 dark:text-blue-400 font-semibold">[Coconut Wallet]</span>'
+      '<span class="text-sky-400 font-semibold">[Coconut Wallet]</span>'
     );
     
     // 기기 이름 (초록계열) - Coconut Wallet 제외
     formatted = replaceOutsideTags(
       formatted,
       /\[(SeedSigner|Krux|Jade|Keystone|Keystone 3 Pro|Coldcard|Coconut Vault)\]/g,
-      (match, device) => `<span class="text-green-600 dark:text-green-400 font-semibold">[${device}]</span>`
+      (match, device) => `<span class="text-emerald-400 font-semibold">[${device}]</span>`
     );
     
     // BlueWallet, Sparrow도 푸른색으로
     formatted = replaceOutsideTags(
       formatted,
       /\b(BlueWallet|Sparrow)\b/g,
-      (match, app) => `<span class="text-blue-600 dark:text-blue-400 font-semibold">${app}</span>`
+      (match, app) => `<span class="text-sky-400 font-semibold">${app}</span>`
     );
     
     // 비밀번호 (붉은계열)
     formatted = replaceOutsideTags(
       formatted,
       /\b090103\b/g,
-      '<span class="text-red-600 dark:text-red-400 font-semibold">090103</span>'
+      '<span class="text-red-400 font-semibold">090103</span>'
     );
     
     // 버튼명 (주황계열) - 주요 버튼명 리스트 (긴 것부터 정렬)
@@ -603,7 +605,7 @@ const WalletExperience = () => {
       formatted = replaceOutsideTags(
         formatted,
         pattern,
-        `<span class="text-orange-600 dark:text-orange-400 font-semibold">${buttonName}</span>`
+        `<span class="text-bitcoin font-semibold">${buttonName}</span>`
       );
     });
     
@@ -621,7 +623,7 @@ const WalletExperience = () => {
           return match; // Coconut Wallet 내부의 Wallet은 그대로 반환
         }
         
-        return '<span class="text-orange-600 dark:text-orange-400 font-semibold">Wallet</span>';
+        return '<span class="text-bitcoin font-semibold">Wallet</span>';
       },
       true // useFullContext = true
     );
@@ -641,6 +643,17 @@ const WalletExperience = () => {
     );
     
     return formatted;
+  };
+
+  const handleHome = () => {
+    navigate('/');
+  };
+
+  const handleRestart = () => {
+    setStep(1);
+    setPhoneOS(null);
+    setWalletType(null);
+    setCurrentPhase(1);
   };
 
   const handleNext = () => {
@@ -690,8 +703,8 @@ const WalletExperience = () => {
   const renderStep = () => {
     if (step === 1) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
-          <h1 className="text-4xl md:text-5xl font-bold mb-8 bg-gradient-to-r from-foreground to-bitcoin bg-clip-text text-transparent">
+        <div className="motion-enter flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
+          <h1 className="text-3xl md:text-5xl font-semibold mb-8 text-foreground">
             {content[language].welcome.title}
           </h1>
           <div className="space-y-4 mb-8 max-w-2xl">
@@ -699,7 +712,7 @@ const WalletExperience = () => {
             <p className="text-xl">{content[language].welcome.message2}</p>
             <p className="text-xl text-red-500">{content[language].welcome.message3}</p>
           </div>
-          <Button onClick={handleNext} size="lg" className="bg-bitcoin hover:bg-bitcoin-dark">
+          <Button onClick={handleNext} size="lg" className="bg-bitcoin hover:bg-bitcoin/90 text-bitcoin-foreground">
             {content[language].welcome.button}
           </Button>
         </div>
@@ -708,13 +721,13 @@ const WalletExperience = () => {
 
     if (step === 2) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
+        <div className="motion-enter flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">{content[language].phoneSelection.title}</h2>
           <p className="text-xl mb-8">{content[language].phoneSelection.message}</p>
           <div className="flex gap-6 mb-8">
             <button
               onClick={() => setPhoneOS('android')}
-              className={`flex flex-col items-center p-6 border-2 rounded-lg transition-all ${
+              className={`motion-lift flex flex-col items-center p-6 border-2 rounded-lg ${
                 phoneOS === 'android' ? 'border-bitcoin bg-bitcoin/10' : 'border-border hover:border-bitcoin/50'
               }`}
             >
@@ -723,7 +736,7 @@ const WalletExperience = () => {
             </button>
             <button
               onClick={() => setPhoneOS('ios')}
-              className={`flex flex-col items-center p-6 border-2 rounded-lg transition-all ${
+              className={`motion-lift flex flex-col items-center p-6 border-2 rounded-lg ${
                 phoneOS === 'ios' ? 'border-bitcoin bg-bitcoin/10' : 'border-border hover:border-bitcoin/50'
               }`}
             >
@@ -731,30 +744,42 @@ const WalletExperience = () => {
               <span className="text-lg font-semibold">{content[language].phoneSelection.ios}</span>
             </button>
           </div>
-          {phoneOS && (
-            <Button onClick={handleNext} size="lg" className="bg-bitcoin hover:bg-bitcoin-dark">
-              {content[language].next}
+          <div className="flex gap-4">
+            <Button onClick={handlePrev} variant="outline" size="lg">
+              {content[language].prev}
             </Button>
-          )}
+            {phoneOS && (
+              <Button onClick={handleNext} size="lg" className="bg-bitcoin hover:bg-bitcoin/90 text-bitcoin-foreground">
+                {content[language].next}
+              </Button>
+            )}
+          </div>
         </div>
       );
     }
 
     if (step === 3) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
+        <div className="motion-enter flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">{content[language].download.title}</h2>
           <p className="text-xl mb-8">
             {phoneOS === 'android' ? content[language].download.android : content[language].download.ios}
           </p>
-          <img
-            src={phoneOS === 'android' ? '/images/experence/google_download_qr.png' : '/images/experence/apple_download_qr.png'}
-            alt="Download QR"
-            className="w-64 h-64 mb-8"
-          />
-          <Button onClick={handleNext} size="lg" className="bg-bitcoin hover:bg-bitcoin-dark">
-            {content[language].download.button}
-          </Button>
+          <div className="mb-8 rounded-lg bg-white p-3">
+            <img
+              src={phoneOS === 'android' ? '/images/experence/google_download_qr.png' : '/images/experence/apple_download_qr.png'}
+              alt="Download QR"
+              className="w-56 h-56 md:w-64 md:h-64"
+            />
+          </div>
+          <div className="flex gap-4">
+            <Button onClick={handlePrev} variant="outline" size="lg">
+              {content[language].prev}
+            </Button>
+            <Button onClick={handleNext} size="lg" className="bg-bitcoin hover:bg-bitcoin/90 text-bitcoin-foreground">
+              {content[language].download.button}
+            </Button>
+          </div>
         </div>
       );
     }
@@ -770,7 +795,7 @@ const WalletExperience = () => {
       ];
 
       return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
+        <div className="motion-enter flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">{content[language].walletSelection.title}</h2>
           <p className="text-xl mb-8">{content[language].walletSelection.message}</p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-4xl mb-8">
@@ -778,20 +803,27 @@ const WalletExperience = () => {
               <button
                 key={wallet.name}
                 onClick={() => setWalletType(wallet.name as WalletType)}
-                className={`flex flex-col items-center p-6 border-2 rounded-lg transition-all ${
+                className={`motion-lift flex flex-col items-center p-6 border-2 rounded-lg ${
                   walletType === wallet.name ? 'border-bitcoin bg-bitcoin/10' : 'border-border hover:border-bitcoin/50'
                 }`}
               >
                 <img src={wallet.icon} alt={wallet.name} className="w-20 h-20 mb-4" />
-                <span className="text-sm font-semibold text-green-600 dark:text-green-400">{wallet.name}</span>
+                <span className={`text-sm font-semibold ${walletType === wallet.name ? 'text-bitcoin' : 'text-foreground'}`}>
+                  {wallet.name}
+                </span>
               </button>
             ))}
           </div>
-          {walletType && (
-            <Button onClick={handleNext} size="lg" className="bg-bitcoin hover:bg-bitcoin-dark">
-              {content[language].next}
+          <div className="flex gap-4">
+            <Button onClick={handlePrev} variant="outline" size="lg">
+              {content[language].prev}
             </Button>
-          )}
+            {walletType && (
+              <Button onClick={handleNext} size="lg" className="bg-bitcoin hover:bg-bitcoin/90 text-bitcoin-foreground">
+                {content[language].next}
+              </Button>
+            )}
+          </div>
         </div>
       );
     }
@@ -801,8 +833,8 @@ const WalletExperience = () => {
       const showReceivingQR = phases[currentPhase - 1] === 'phase3';
 
       return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 max-w-4xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold mb-8 text-green-600 dark:text-green-400 text-center">
+        <div className="motion-enter flex flex-col items-center justify-center min-h-[60vh] px-6 max-w-4xl mx-auto">
+          <h2 className="text-2xl md:text-3xl font-bold mb-8 text-bitcoin text-center">
             {phaseLabels[phases[currentPhase - 1] as keyof typeof phaseLabels]}
           </h2>
           <div className="w-full space-y-4 mb-8">
@@ -811,7 +843,7 @@ const WalletExperience = () => {
                 key={index}
                 className="flex items-start gap-4 p-4 rounded-lg bg-card border border-border"
               >
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 text-black dark:text-white flex items-center justify-center font-bold">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted text-foreground flex items-center justify-center font-bold">
                   {index + 1}
                 </div>
                 <div
@@ -822,11 +854,11 @@ const WalletExperience = () => {
             ))}
           </div>
           {showReceivingQR && (
-            <div className="mb-8">
+            <div className="mb-8 rounded-lg bg-white p-3">
               <img
                 src="/images/experence/receiving_qr.png"
                 alt="Receiving QR"
-                className="w-64 h-64 mx-auto"
+                className="w-56 h-56 md:w-64 md:h-64 mx-auto"
               />
             </div>
           )}
@@ -834,7 +866,7 @@ const WalletExperience = () => {
             <Button onClick={handlePrev} variant="outline" size="lg">
               {content[language].prev}
             </Button>
-            <Button onClick={handleNext} size="lg" className="bg-bitcoin hover:bg-bitcoin-dark">
+            <Button onClick={handleNext} size="lg" className="bg-bitcoin hover:bg-bitcoin/90 text-bitcoin-foreground">
               {content[language].next}
             </Button>
           </div>
@@ -844,13 +876,13 @@ const WalletExperience = () => {
 
     if (step === 6) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
+        <div className="motion-enter flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
           <h2 className="text-3xl md:text-4xl font-bold mb-8">{content[language].final.question}</h2>
           <div className="flex gap-4 flex-wrap justify-center">
             <Button
               onClick={() => setStep(8)}
               size="lg"
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-bitcoin hover:bg-bitcoin/90 text-bitcoin-foreground"
             >
               {content[language].final.yes}
             </Button>
@@ -868,8 +900,8 @@ const WalletExperience = () => {
 
     if (step === 7) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
-          <h2 className="text-3xl md:text-4xl font-bold mb-8 text-orange-600 dark:text-orange-400">
+        <div className="motion-enter flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
+          <h2 className="text-3xl md:text-4xl font-bold mb-8 text-foreground">
             {content[language].final.retryMessage}
           </h2>
           <div className="flex gap-4">
@@ -881,11 +913,11 @@ const WalletExperience = () => {
               {content[language].prev}
             </Button>
             <Button
-              onClick={handleHome}
+              onClick={handleRestart}
               size="lg"
-              className="bg-bitcoin hover:bg-bitcoin-dark"
+              className="bg-bitcoin hover:bg-bitcoin/90 text-bitcoin-foreground"
             >
-              {content[language].home}
+              {content[language].restart}
             </Button>
           </div>
         </div>
@@ -894,63 +926,20 @@ const WalletExperience = () => {
 
     if (step === 8) {
       return (
-        <div className="relative flex flex-col items-center justify-center min-h-[60vh] text-center px-6 overflow-hidden">
-          {/* 폭죽 효과 */}
-          <div className="absolute inset-0 pointer-events-none">
-            {[...Array(50)].map((_, i) => (
-              <div
-                key={i}
-                className="absolute confetti"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  width: `${Math.random() * 10 + 5}px`,
-                  height: `${Math.random() * 10 + 5}px`,
-                  backgroundColor: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE'][Math.floor(Math.random() * 7)],
-                  animationDelay: `${Math.random() * 2}s`,
-                  animationDuration: `${Math.random() * 2 + 2}s`,
-                }}
-              />
-            ))}
-          </div>
-          
-          <h2 className="text-4xl md:text-5xl font-bold mb-8 text-green-600 dark:text-green-400 relative z-10 animate-bounce">
+        <div className="motion-enter flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
+          <h2 className="text-3xl md:text-5xl font-semibold mb-8 text-foreground">
             {content[language].final.congratulations}
           </h2>
-          
-          <div className="flex gap-4 relative z-10">
-            <Button
-              onClick={handleHome}
-              size="lg"
-              className="bg-bitcoin hover:bg-bitcoin-dark"
-            >
-              {content[language].home}
-            </Button>
-          </div>
-
-          <style>{`
-            @keyframes confetti-fall {
-              0% {
-                transform: translateY(-100vh) rotate(0deg);
-                opacity: 1;
-              }
-              100% {
-                transform: translateY(100vh) rotate(720deg);
-                opacity: 0;
-              }
-            }
-            .confetti {
-              animation: confetti-fall linear infinite;
-              border-radius: 50%;
-            }
-          `}</style>
+          <Button
+            onClick={handleRestart}
+            size="lg"
+            className="bg-bitcoin hover:bg-bitcoin/90 text-bitcoin-foreground"
+          >
+            {content[language].restart}
+          </Button>
         </div>
       );
     }
-  };
-
-  const handleHome = () => {
-    navigate('/');
   };
 
   return (
@@ -963,19 +952,19 @@ const WalletExperience = () => {
             className="flex items-center gap-2"
           >
             <Home className="w-5 h-5" />
-            {content[language].home}
+            {content[language].exit}
           </Button>
-          {step === 1 && (
-            <Button
-              onClick={toggleLanguage}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              {language === 'ko' ? 'EN' : '한글'}
-            </Button>
-          )}
+          <Button
+            onClick={toggleLanguage}
+            variant="outline"
+            className="border-bitcoin text-bitcoin hover:bg-bitcoin hover:text-bitcoin-foreground"
+          >
+            {language === 'ko' ? 'EN' : '한글'}
+          </Button>
         </div>
-        {renderStep()}
+        <div key={`${step}-${currentPhase}-${language}`}>
+          {renderStep()}
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import { ExternalLink } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useReveal } from '@/hooks/use-reveal';
 
 const InstagramLogo = ({ className = '' }: { className?: string }) => (
   <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
@@ -51,55 +52,66 @@ const DiscordLogo = ({ className = '' }: { className?: string }) => (
 
 const CommunitySection = () => {
   const { language } = useLanguage();
+  const revealRef = useReveal<HTMLElement>();
 
   const content = {
     ko: {
+      eyebrow: 'COMMUNITY',
       title: '커뮤니티',
       subtitle: '비트코인 센터 서울의 소식과 커뮤니티 채널을 확인하세요.',
       channels: [
         {
           name: 'Instagram',
+          handle: '@bitcoincenterseoul',
           href: 'https://www.instagram.com/bitcoincenterseoul/',
           icon: InstagramLogo,
         },
         {
           name: 'X',
+          handle: '@BtcCtrSeoul',
           href: 'https://x.com/BtcCtrSeoul',
           icon: XLogo,
         },
         {
           name: '네이버 블로그',
+          handle: 'blog.naver.com/coconut_btc',
           href: 'https://blog.naver.com/coconut_btc',
           icon: NaverBlogLogo,
         },
         {
           name: 'Discord',
+          handle: 'discord.gg/s3T9gURJr7',
           href: 'https://discord.gg/s3T9gURJr7',
           icon: DiscordLogo,
         },
       ],
     },
     en: {
+      eyebrow: 'COMMUNITY',
       title: 'Community',
       subtitle: 'Follow Bitcoin Center Seoul updates and community channels.',
       channels: [
         {
           name: 'Instagram',
+          handle: '@bitcoincenterseoul',
           href: 'https://www.instagram.com/bitcoincenterseoul/',
           icon: InstagramLogo,
         },
         {
           name: 'X',
+          handle: '@BtcCtrSeoul',
           href: 'https://x.com/BtcCtrSeoul',
           icon: XLogo,
         },
         {
           name: 'Naver Blog',
+          handle: 'blog.naver.com/coconut_btc',
           href: 'https://blog.naver.com/coconut_btc',
           icon: NaverBlogLogo,
         },
         {
           name: 'Discord',
+          handle: 'discord.gg/s3T9gURJr7',
           href: 'https://discord.gg/s3T9gURJr7',
           icon: DiscordLogo,
         },
@@ -108,13 +120,16 @@ const CommunitySection = () => {
   };
 
   return (
-    <section id="community" className="py-20 bg-card">
+    <section id="community" ref={revealRef} className="motion-reveal bg-card py-16 md:py-24 scroll-mt-[72px]">
       <div className="container mx-auto px-6">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-foreground to-bitcoin bg-clip-text text-transparent">
+        <div className="mb-10 text-center md:mb-14">
+          <p className="mb-3 text-xs font-semibold tracking-[0.2em] text-bitcoin">
+            {content[language].eyebrow}
+          </p>
+          <h2 className="mb-4 pb-1 text-3xl font-bold text-foreground md:text-4xl">
             {content[language].title}
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="mx-auto max-w-2xl text-base text-muted-foreground md:text-lg">
             {content[language].subtitle}
           </p>
         </div>
@@ -126,7 +141,7 @@ const CommunitySection = () => {
               href={channel.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="group rounded-lg border border-border bg-background p-6 text-center shadow-lg transition-all duration-300 hover:border-bitcoin/50 hover:shadow-xl"
+              className="motion-lift group rounded-lg border border-border bg-background p-6 text-center shadow-lg hover:border-bitcoin/50 hover:shadow-xl"
             >
               <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-lg bg-bitcoin/10 text-bitcoin transition-colors group-hover:bg-bitcoin group-hover:text-bitcoin-foreground">
                 <channel.icon className="h-8 w-8" />
@@ -137,6 +152,7 @@ const CommunitySection = () => {
                 </h3>
                 <ExternalLink className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-bitcoin" />
               </div>
+              <p className="mt-1 text-sm text-muted-foreground">{channel.handle}</p>
             </a>
           ))}
         </div>

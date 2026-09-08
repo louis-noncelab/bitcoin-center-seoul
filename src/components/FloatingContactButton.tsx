@@ -1,4 +1,4 @@
-import { Mail, MessageCircle, Phone, X, Zap } from 'lucide-react';
+import { Mail, MessageCircle, Phone, X } from 'lucide-react';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -22,9 +22,9 @@ const FloatingContactButton = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+    <div className="fixed z-50 flex flex-col items-end gap-3 bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-[max(1.5rem,env(safe-area-inset-right))]">
       {open && (
-        <div className="w-64 overflow-hidden rounded-lg border border-border bg-background shadow-2xl">
+        <div id="contact-panel" className="motion-panel w-64 overflow-hidden rounded-lg border border-border bg-background shadow-2xl">
           <a
             href="https://pf.kakao.com/_HjxaxaG"
             target="_blank"
@@ -53,17 +53,16 @@ const FloatingContactButton = () => {
 
       <button
         type="button"
-        aria-label={content[language].label}
+        aria-expanded={open}
+        aria-controls="contact-panel"
+        aria-label={open ? (language === 'ko' ? '닫기' : 'Close') : content[language].label}
         onClick={() => setOpen((current) => !current)}
-        className="group flex h-16 w-16 items-center justify-center rounded-full border border-bitcoin/40 bg-bitcoin text-bitcoin-foreground shadow-2xl transition-all hover:bg-bitcoin-dark focus:outline-none focus:ring-2 focus:ring-bitcoin focus:ring-offset-2 focus:ring-offset-background"
+        className="motion-press flex h-12 w-12 items-center justify-center rounded-full border border-bitcoin/40 bg-bitcoin text-bitcoin-foreground shadow-xl hover:bg-bitcoin/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         {open ? (
-          <X className="h-7 w-7" />
+          <X className="h-5 w-5" />
         ) : (
-          <span className="relative flex h-9 w-9 items-center justify-center">
-            <MessageCircle className="absolute h-9 w-9" strokeWidth={2.4} />
-            <Zap className="relative h-4 w-4 fill-current" strokeWidth={2.6} />
-          </span>
+          <MessageCircle className="h-5 w-5" />
         )}
       </button>
     </div>

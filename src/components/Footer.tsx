@@ -27,7 +27,7 @@ const Footer = () => {
   };
 
   return (
-    <footer className="bg-card border-t border-border py-16">
+    <footer className="border-t border-border bg-card pt-16 pb-[max(7rem,calc(env(safe-area-inset-bottom)+6rem))]">
       <div className="container mx-auto px-6 text-center">
         <div className="flex justify-center mb-6">
           <Logo size="md" />

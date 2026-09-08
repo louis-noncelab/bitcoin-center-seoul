@@ -1,19 +1,21 @@
-import { Card, CardContent } from '@/components/ui/card';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
+import { useReveal } from '@/hooks/use-reveal';
 import EducationCoursesModal from './EducationCoursesModal';
 import MeetupsModal from './MeetupsModal';
 
 const ServicesSection = () => {
   const { language } = useLanguage();
   const navigate = useNavigate();
+  const revealRef = useReveal<HTMLElement>();
   const [isEducationModalOpen, setIsEducationModalOpen] = useState(false);
   const [isMeetupsModalOpen, setIsMeetupsModalOpen] = useState(false);
 
   const content = {
     ko: {
+      eyebrow: 'ACTIVITIES',
       title: '활동',
       subtitle: '다양한 비트코인 관련 경험을 한 곳에서 만나보세요.',
       services: [
@@ -68,6 +70,7 @@ const ServicesSection = () => {
       ]
     },
     en: {
+      eyebrow: 'ACTIVITIES',
       title: 'Activities',
       subtitle: 'Discover a wide range of Bitcoin experiences in one place.',
       services: [
@@ -144,33 +147,59 @@ const ServicesSection = () => {
   };
 
   return (
-    <section id="services" className="py-20 bg-background">
+    <section id="services" ref={revealRef} className="motion-reveal scroll-mt-[72px] bg-background py-16 md:py-24">
       <div className="container mx-auto px-6">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-foreground to-bitcoin bg-clip-text text-transparent">
+        <div className="mb-10 text-center md:mb-14">
+          <p className="mb-3 text-xs font-semibold tracking-[0.2em] text-bitcoin">
+            {content[language].eyebrow}
+          </p>
+          <h2 className="mb-4 pb-1 text-3xl font-bold text-foreground md:text-4xl">
             {content[language].title}
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="mx-auto max-w-2xl text-base text-muted-foreground md:text-lg">
             {content[language].subtitle}
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {content[language].services.map((service, index) => (
-            <Card 
-              key={index}
-              onClick={() => handleServiceClick(service.title)}
-              className="group overflow-hidden bg-card border-border shadow-lg hover:shadow-xl transition-all duration-300 hover:border-bitcoin/50 cursor-pointer"
-            >
-              <CardContent className="p-0">
-                <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {content[language].services.map((service, index) => {
+            const clickable = hasAction(service.title);
+
+            return (
+              <div
+                key={index}
+                role={clickable ? 'button' : undefined}
+                tabIndex={clickable ? 0 : undefined}
+                onClick={clickable ? () => handleServiceClick(service.title) : undefined}
+                onKeyDown={
+                  clickable
+                    ? (event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          handleServiceClick(service.title);
+                        }
+                      }
+                    : undefined
+                }
+                className={`overflow-hidden rounded-lg border border-border bg-card ${
+                  clickable
+                    ? 'motion-lift group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background'
+                    : 'cursor-default'
+                }`}
+              >
+                <div className="aspect-[4/3] overflow-hidden bg-muted">
                   <img
                     src={service.image}
                     alt={service.title}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
+                    decoding="async"
+                    className={`h-full w-full object-cover${
+                      clickable ? ' transition-transform duration-500 group-hover:scale-105' : ''
+                    }`}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/35 to-transparent" />
-                  <div className="absolute inset-x-0 bottom-0 p-4 pr-12">
+                </div>
+                <div className="flex items-start justify-between gap-2 bg-card p-4">
+                  <div>
                     <h3 className="mb-1 text-lg font-semibold text-foreground">
                       {service.title}
                     </h3>
@@ -178,15 +207,13 @@ const ServicesSection = () => {
                       {service.description}
                     </p>
                   </div>
-                  {hasAction(service.title) && (
-                    <div className="absolute bottom-4 right-4 flex h-9 w-9 items-center justify-center rounded-full border border-bitcoin/60 bg-background/85 text-bitcoin shadow-lg backdrop-blur-sm transition-all duration-300 group-hover:scale-105 group-hover:bg-bitcoin group-hover:text-bitcoin-foreground">
-                      <ChevronRight className="h-5 w-5" />
-                    </div>
+                  {clickable && (
+                    <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-bitcoin" />
                   )}
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              </div>
+            );
+          })}
         </div>
         <EducationCoursesModal
           open={isEducationModalOpen}

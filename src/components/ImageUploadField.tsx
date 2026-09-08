@@ -89,7 +89,7 @@ const ImageUploadField = ({ value, onChange, label = '이미지', required }: Im
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
           onDrop={(e) => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files?.[0]); }}
-          className={`w-full aspect-video rounded-md border border-dashed flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground transition-colors hover:bg-muted/40 disabled:opacity-60 ${dragging ? 'border-bitcoin bg-bitcoin/5' : ''}`}
+          className={`min-h-[9rem] w-full rounded-md border border-dashed py-8 flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground transition-colors hover:bg-muted/40 disabled:opacity-60 ${dragging ? 'border-bitcoin bg-bitcoin/5' : ''}`}
         >
           {uploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <ImagePlus className="w-6 h-6" />}
           <span>{uploading ? '업로드 중...' : '클릭하거나 파일을 끌어다 놓으세요'}</span>
@@ -97,7 +97,7 @@ const ImageUploadField = ({ value, onChange, label = '이미지', required }: Im
         </button>
       )}
 
-      {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
+      {error && <p className="text-sm text-red-400 mt-2">{error}</p>}
     </div>
   );
 };

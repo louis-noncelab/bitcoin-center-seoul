@@ -17,10 +17,8 @@ const Index = () => {
       const element = document.getElementById(sectionId);
       if (!element) return;
 
-      window.scrollTo({
-        top: element.offsetTop - 100,
-        behavior: 'smooth',
-      });
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      element.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
     }, 100);
 
     return () => window.clearTimeout(timer);
