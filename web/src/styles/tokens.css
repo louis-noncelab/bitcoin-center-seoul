@@ -1,0 +1,136 @@
+:root {
+  /* Candidate tokens from DESIGN.md. The two accents belong to the supplied identity. */
+  --canvas: #fafaf8;
+  --surface: #f0f1ec;
+  --ink: #20211f;
+  --muted: #62675f;
+  --line: #d8dcd3;
+  --orange: #ff6b0a;
+  --blue: #6c9fd8;
+  --blue-ink: #32699f;
+  --focus: #ae4308;
+  --selection: color-mix(in srgb, var(--blue) 16%, var(--canvas));
+  --action: var(--orange);
+  --action-ink: #20211f;
+  --action-hover: color-mix(in srgb, var(--orange) 88%, var(--canvas));
+  --shadow-disclosure: 0 16px 40px color-mix(in srgb, var(--ink) 10%, transparent);
+
+  --font-pretendard: "Pretendard Variable", system-ui, sans-serif;
+  --font-display: var(--font-pretendard);
+  --font-body: var(--font-pretendard);
+  --text-display: clamp(2.5rem, 5vw, 4.5rem);
+  --text-masthead: clamp(3rem, calc(4.6875vw + 0.75rem), 4.5rem);
+  --text-feature: clamp(2rem, 4vw, 3.5rem);
+  --text-footer-name: clamp(2rem, 3.75vw, 3rem);
+  --text-marquee: clamp(3rem, 7vw, 6rem);
+  --text-heading: clamp(1.75rem, 3vw, 2.75rem);
+  --text-subheading: clamp(1.375rem, 2vw, 1.75rem);
+  --text-title: 1.125rem;
+  --text-body: clamp(1.0625rem, 1.4vw, 1.125rem);
+  --text-small: 1rem;
+  --text-caption: 0.9375rem;
+  --text-navigation: 0.9375rem;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-brand-emphasis: 650;
+  --leading-display: 1.08;
+  --leading-heading: 1.2;
+  --leading-body: 1.75;
+  --leading-small: 1.5;
+  --tracking-display: -0.045em;
+  --tracking-heading: -0.035em;
+  --tracking-label: 0.08em;
+
+  /* Four-pixel scale. Fluid spacing only interpolates between these stops. */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-11: 2.75rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-22: 5.5rem;
+  --space-24: 6rem;
+  --space-32: 8rem;
+  --space-36: 9rem;
+  --gutter: clamp(var(--space-5), 4vw, var(--space-12));
+  --section-gap: clamp(var(--space-10), 5vw, var(--space-16));
+  --content-max: 80rem;
+  --measure: 62ch;
+  --measure-short: 42ch;
+  --header-height: var(--space-20);
+  --control-height: var(--space-12);
+  --selection-row-height: var(--space-16);
+  --selection-panel-height: 20rem;
+  --swatch-height: var(--space-16);
+
+  --radius: var(--space-3);
+  --radius-panel: var(--space-3);
+  --radius-control: var(--space-2);
+  --border-width: 1px;
+  --reading-progress-height: 3px;
+  --focus-width: 2px;
+  --focus-offset: var(--space-1);
+  --icon-size: var(--space-5);
+  --icon-stroke: 1.6;
+  --ratio-wide: 21 / 9;
+  --ratio-landscape: 16 / 9;
+  --ratio-portrait: 4 / 5;
+  --ratio-square: 1 / 1;
+  --hero-height: 30rem;
+
+  --duration-marquee: 48s;
+  --duration-press: 160ms;
+  --duration-control: 220ms;
+  --duration-menu-enter: 260ms;
+  --duration-menu-exit: 180ms;
+  --duration-image: 500ms;
+  --duration-reveal: 600ms;
+  --duration-stagger: 80ms;
+  --duration-letter: 24ms;
+  --reveal-distance: var(--space-6);
+  --photo-scale: 1.025;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --press-scale: 0.98;
+
+  /* Layer scale: selected background 0, label 1, disclosure 10, progress 15, skip link 20. */
+  --layer-selection: 0;
+  --layer-label: 1;
+  --layer-disclosure: 10;
+  --layer-progress: 15;
+  --layer-skip: 20;
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --canvas: #171917;
+  --surface: #222521;
+  --ink: #f0f1eb;
+  --muted: #acb2a7;
+  --line: #3c4238;
+  --orange: #ff8a40;
+  --blue: #8db8ea;
+  --blue-ink: #a4c8ed;
+  --focus: var(--orange);
+  color-scheme: dark;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  :root { --text-masthead: clamp(3rem, 8vw, 4.5rem); }
+}
+
+@media (max-width: 767px) {
+  :root {
+    --text-display: clamp(2.25rem, 8.5vw, 3.25rem);
+    --text-masthead: clamp(2.5rem, 11.75vw, 3.25rem);
+    --header-height: var(--space-16);
+    --selection-row-height: var(--space-16);
+    --selection-panel-height: 16rem;
+  }
+}

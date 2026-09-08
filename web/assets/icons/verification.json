@@ -1,0 +1,106 @@
+{
+  "verifiedDate": "2026-09-08",
+  "svgFiles": 2402,
+  "svgBytes": 1399570,
+  "allLocalCopiesByteIdentical": true,
+  "allPinnedUpstreamSvgByteIdentical": true,
+  "staticSafetyIssueCount": 0,
+  "inventoryHashFormat": "UTF-8 concatenation of lexically sorted lines: <sha256><two spaces><relative SVG path><LF>; SHA-256 of the concatenation. LICENSE excluded.",
+  "collections": [
+    {
+      "collection": "tailwind-svg",
+      "repository": "tailwindlabs/heroicons",
+      "commit": "bd6c5c0d5acec14d116da611b4c5044fec1bb7dc",
+      "upstreamFolder": "optimized/24/outline",
+      "localFiles": 324,
+      "localBytes": 154241,
+      "upstreamFiles": 324,
+      "byteMatches": 324,
+      "changed": [],
+      "missingUpstream": [],
+      "missingLocal": [],
+      "inventorySha256": "ab423e0bb5053630cb492f0978e03ed45800b9c7d1fd305dc9f2516d4ada461b",
+      "licenseSha256": "60e0b68c0f35c078eef3a5d29419d0b03ff84ec1df9c3f9d6e39a519a5ae7985",
+      "elementCounts": {
+        "svg": 324,
+        "path": 337
+      },
+      "attributeCounts": {
+        "fill": 324,
+        "viewBox": 324,
+        "stroke-width": 324,
+        "stroke": 324,
+        "aria-hidden": 324,
+        "data-slot": 324,
+        "stroke-linecap": 336,
+        "stroke-linejoin": 337,
+        "d": 337
+      },
+      "viewBoxes": {
+        "0 0 24 24": 324
+      },
+      "staticSafetyIssues": [],
+      "releaseComparison": {
+        "tag": "v2.2.0",
+        "commit": "0435d4ca364a608cc75e2f8683d374e55abbae26",
+        "byteMatches": 323,
+        "changed": [
+          "gift.svg"
+        ]
+      },
+      "copiedFilesVerified": 324,
+      "sourceDirectory": "/Users/max/saturdayblock-web/public/tailwind-svg",
+      "destinationDirectory": "web/assets/icons/tailwind-svg",
+      "upstreamSourceUrl": "https://github.com/tailwindlabs/heroicons/tree/bd6c5c0d5acec14d116da611b4c5044fec1bb7dc/optimized/24/outline",
+      "upstreamLicenseUrl": "https://github.com/tailwindlabs/heroicons/blob/bd6c5c0d5acec14d116da611b4c5044fec1bb7dc/LICENSE"
+    },
+    {
+      "collection": "bootstrap-icons-svg",
+      "repository": "twbs/icons",
+      "candidateTag": "v1.13.1",
+      "commit": "ce0e49dd063243118a115f17ad1fe1fe7576d552",
+      "upstreamFolder": "icons",
+      "localFiles": 2078,
+      "localBytes": 1245329,
+      "upstreamFiles": 2078,
+      "byteMatches": 2078,
+      "changed": [],
+      "missingUpstream": [],
+      "missingLocal": [],
+      "inventorySha256": "9638581b5cae2a837e4c16ce8eccbd35580c7d314ea7f63d131ea2ad560fc6c4",
+      "licenseSha256": "0fb3e11bd57e896c5a512afd64864d28a37de45d19835016c87ca1ad19ead969",
+      "elementCounts": {
+        "svg": 2078,
+        "path": 3053,
+        "rect": 2,
+        "circle": 2
+      },
+      "attributeCounts": {
+        "width": 2080,
+        "height": 2080,
+        "fill": 2078,
+        "class": 2078,
+        "viewBox": 2078,
+        "d": 3053,
+        "fill-rule": 429,
+        "x": 1,
+        "y": 1,
+        "rx": 2,
+        "transform": 1,
+        "cx": 2,
+        "cy": 2,
+        "r": 2,
+        "fill-opacity": 1
+      },
+      "viewBoxes": {
+        "0 0 16 16": 2078
+      },
+      "staticSafetyIssues": [],
+      "copiedFilesVerified": 2078,
+      "sourceDirectory": "/Users/max/saturdayblock-web/public/bootstrap-icons-svg",
+      "destinationDirectory": "web/assets/icons/bootstrap-icons-svg",
+      "upstreamSourceUrl": "https://github.com/twbs/icons/tree/ce0e49dd063243118a115f17ad1fe1fe7576d552/icons",
+      "upstreamLicenseUrl": "https://github.com/twbs/icons/blob/ce0e49dd063243118a115f17ad1fe1fe7576d552/LICENSE"
+    }
+  ]
+}

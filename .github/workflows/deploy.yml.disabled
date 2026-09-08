@@ -1,0 +1,78 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          set -e
+
+          # 애플리케이션 디렉토리로 이동
+          cd /var/www/bitcoin-center-seoul
+
+          # Git 상태 확인
+          echo "현재 브랜치: $(git branch --show-current)"
+          echo "최신 커밋: $(git log -1 --oneline)"
+
+          # 변경사항이 있으면 stash
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "로컬 변경사항을 stash합니다..."
+            git stash push -m "Deploy stash $(date)"
+          fi
+
+          # GitHub에서 최신 코드 pull
+          echo "GitHub에서 최신 코드를 pull합니다..."
+          git fetch origin
+          git reset --hard origin/main
+
+          # 최신 커밋 정보 출력
+          echo "업데이트된 커밋: $(git log -1 --oneline)"
+
+          # 의존성 설치
+          echo "📦 의존성 설치 중..."
+          npm install
+
+          # 프로덕션 빌드
+          echo "🔨 프로덕션 빌드 중..."
+          npm run build
+
+          # 빌드 결과 확인
+          if [ ! -d "dist" ]; then
+            echo "❌ 빌드 실패: dist 디렉토리가 생성되지 않았습니다."
+            exit 1
+          fi
+
+          echo "✅ 빌드 완료: $(du -sh dist | cut -f1) 크기의 dist 디렉토리 생성"
+
+          # PM2로 서비스 재시작
+          echo "🔄 서비스 재시작 중..."
+          pm2 restart bitcoin-center-seoul --update-env || pm2 start ecosystem.config.cjs
+
+          # PM2 상태 확인
+          echo "📊 PM2 서비스 상태:"
+          pm2 status
+
+          # PM2 설정 저장
+          pm2 save
+
+          echo "✅ 배포 완료!"
+
+    - name: Health Check
+      run: |
+        sleep 10
+        curl -f http://${{ secrets.EC2_HOST }} || exit 1

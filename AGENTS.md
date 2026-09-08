@@ -4,6 +4,15 @@
 **Commit:** 0a19953
 **Branch:** main
 
+## REDESIGN EXECUTION — 2026-09-08
+
+- Work on `redesign/center-web`. The approved target stack is Next.js, React, TypeScript, Tailwind CSS, PostgreSQL, and Prisma.
+- Build the new public frontend in `web/` first, isolated from the existing Vite/Express application. Design approval precedes backend implementation and SQLite migration.
+- **Do not enable, run, or depend on GitHub Actions.** Preserve the historical automatic deployment file as `.github/workflows/deploy.yml.disabled`; the owner explicitly requested disabling it, not deleting it.
+- Run type, lint, browser, dependency, and security checks locally. Repeat authentication/session/authorization checks when those boundaries change. Production deployment remains a separate, explicitly approved manual operation.
+- Design: cinematic but understated, gallery-like and welcoming, using real center photography. Light is the default with a dark switch; use the supplied logo's orange and blue identity. Keep Korean/English pages and restrained, reduced-motion-safe interaction.
+- Do not copy the reference project's multi-brand scope, Vercel-specific security defaults, or unresolved security issues into the center.
+
 ## OVERVIEW
 Public site for Bitcoin Center Seoul (Mapo): Lovable-scaffolded Vite + React 18 + shadcn/Tailwind SPA, plus an Express + better-sqlite3 backend (`server.js`, `database.js`) that serves `/api/*`, `public/`, and the built `dist/`. Runs under PM2 on one EC2 box behind nginx.
 
@@ -16,7 +25,7 @@ bitcoin-center-seoul/
 ├── ecosystem.config.cjs    # PM2 (live). ecosystem.config.js = dead duplicate with hardcoded cwd
 ├── deploy.sh               # runs ON the EC2 box: reset to origin/main, npm install, build, pm2 restart
 ├── upload-to-ec2.sh        # local rsync --delete to EC2 (destructive, see ANTI-PATTERNS); setup-ec2-git.sh = first clone
-├── .github/workflows/deploy.yml  # push main -> ssh EC2 -> same steps as deploy.sh
+├── .github/workflows/deploy.yml.disabled  # original workflow retained, not an active GitHub Actions file
 ├── public/                 # certificate/*.pdf, images/ (server writes uploads here too)
 ├── prompt.txt              # orphan Korean event copy, unreferenced
 └── src/
@@ -42,7 +51,7 @@ bitcoin-center-seoul/
 | Highlight ordering | `server.js:13` `highlightOrder` | `COALESCE(endDate, startDate, REPLACE(date,'.','-')) DESC` |
 | Design tokens | `src/index.css :root`, `tailwind.config.ts` | `bitcoin` / `bitcoin-dark` / `bitcoin-light` |
 | Hardware-wallet demo flow | `src/pages/WalletExperience.tsx` | 984 lines; `step` x `phoneOS` x `WalletType` state |
-| Deploy | `.github/workflows/deploy.yml`, `deploy.sh` | secrets `EC2_HOST`, `EC2_SSH_KEY`; app dir `/var/www/bitcoin-center-seoul` |
+| Deploy | `deploy.sh` (legacy manual script) | app dir `/var/www/bitcoin-center-seoul`; no GitHub Actions; explicit approval required |
 
 ## CODE MAP
 Refs = import sites counted with rg (LSP unavailable: `node_modules` absent locally).
@@ -75,7 +84,7 @@ Refs = import sites counted with rg (LSP unavailable: `node_modules` absent loca
 - Never add a `<Route>` below `path="*"` (`src/App.tsx:29`).
 - Never call a mutating endpoint with bare `fetch`; use `adminFetch` from `src/lib/admin.ts` so `x-admin-token` is sent (server answers 401 otherwise). GETs are still public; there is still no rate limiting, CORS config, or body validation.
 - Never put the admin password back in the client. It lives in `.env` `ADMIN_PASSWORD`; without `.env` the server falls back to `LEGACY_ADMIN_PASSWORD` and logs a warning - delete that fallback once prod has `.env`.
-- Never run `./upload-to-ec2.sh` against production: its `rsync --delete` excludes only `node_modules/.git/dist/.env/*.log`, so it deletes the server's `data/` (live DB) and `public/images/highlights/uploads/`. Deploy by pushing `main` or running `deploy.sh` on the box.
+- Never run `./upload-to-ec2.sh` against production: its `rsync --delete` excludes only `node_modules/.git/dist/.env/*.log`, so it deletes the server's `data/` (live DB) and `public/images/highlights/uploads/`. Deployment is manual and requires explicit approval; pushing a branch is not a deployment procedure.
 - Never rename `/walletExperence` without a redirect; it is the published URL.
 - Never commit `data/` or `*.db` (gitignored). Root `events.db` is a historical artifact, not the runtime DB.
 - Never edit `ecosystem.config.js`; `.cjs` is the one PM2 loads.
@@ -99,8 +108,8 @@ npm run build                    # -> dist/
 npm run serve                    # build && node server.js (production-like)
 npm run lint                     # eslint .
 npx tsc -p tsconfig.app.json --noEmit   # no typecheck script exists
-# deploy: git push origin main   -> .github/workflows/deploy.yml
-# manual on EC2: cd /var/www/bitcoin-center-seoul && ./deploy.sh
+# No GitHub Actions. Review a manual deployment procedure before an approved release.
+# Legacy manual script on EC2: cd /var/www/bitcoin-center-seoul && ./deploy.sh
 ```
 
 ## NOTES

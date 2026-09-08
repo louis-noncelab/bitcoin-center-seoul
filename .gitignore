@@ -31,6 +31,13 @@ scripts/rehost-backup-*.json
 
 # Agent tooling state
 .omo/
+/.codegraph
+/.claude/settings.local.json
+
+# Local archives and generated review artifacts
+/.local/
+/OmO-session-*.html
+/docs/checkpoints/evidence/
 
 # Editor directories and files
 .vscode/*
