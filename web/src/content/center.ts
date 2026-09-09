@@ -45,17 +45,6 @@ export type CenterLocaleContent = {
     readonly eyebrow: string;
     readonly title: string;
     readonly introduction: string;
-    readonly entries: readonly {
-      readonly id: string;
-      readonly category: string;
-      readonly title: string;
-      readonly summary: string;
-    }[];
-  };
-  readonly goods: {
-    readonly eyebrow: string;
-    readonly title: string;
-    readonly introduction: string;
   };
   readonly visit: {
     readonly eyebrow: string;
@@ -88,7 +77,6 @@ export const centerContent = {
       { id: "programs", label: "프로그램", href: "#programs" },
       { id: "experience", label: "전시·체험", href: "#experience" },
       { id: "journal", label: "활동 기록", href: "#journal" },
-      { id: "goods", label: "굿즈", href: "#goods" },
       { id: "visit", label: "방문 안내", href: "#visit" },
     ],
     hero: {
@@ -106,7 +94,7 @@ export const centerContent = {
         "라운지와 비트코인 서가, 교실, 하드웨어 지갑 체험존이 있습니다.",
       details: [
         "라운지에서 비트코인 책과 작품을 볼\u00a0수\u00a0있습니다.",
-        "교실에서는 강의와 밋업이 열립니다.",
+        "홀에서는 강의와 밋업이 열립니다.",
         "하드웨어 지갑 체험존도 이용할\u00a0수\u00a0있습니다.",
       ],
     },
@@ -151,7 +139,7 @@ export const centerContent = {
       ],
       walletExperienceLink: {
         label: "지갑 체험 가이드",
-        href: "https://bitcoincenterseoul.com/walletExperence",
+        href: "/experience/wallet",
       },
     },
     journal: {
@@ -159,32 +147,6 @@ export const centerContent = {
       title: "활동 기록",
       introduction:
         "센터에서 열린 강의와 밋업을 사진과 글로 소개합니다.",
-      entries: [
-        {
-          id: "bitcoin-protocol-course",
-          category: "교육",
-          title: "비트코인 프로토콜 강의",
-          summary: "비트코인 백서를 살펴본 강의입니다.",
-        },
-        {
-          id: "bitcoin-developer-meetup",
-          category: "밋업",
-          title: "비트코인 개발자 밋업",
-          summary: "비트코인 기술과 개발을 주제로 열린 모임입니다.",
-        },
-        {
-          id: "self-custody-class",
-          category: "교육",
-          title: "셀프 커스터디 강의",
-          summary: "비트코인을 직접 보관하는 방법을 다룬 강의입니다.",
-        },
-      ],
-    },
-    goods: {
-      eyebrow: "GOODS",
-      title: "비트코인 굿즈",
-      introduction:
-        "비트코인 관련 소품과 도구를 센터에서 볼\u00a0수\u00a0있습니다.",
     },
     visit: {
       eyebrow: "VISIT",
@@ -193,7 +155,7 @@ export const centerContent = {
         "홍대입구역 6번 출구에서 걸어서 3분 거리입니다. 대관 중에는 공간을 이용할\u00a0수\u00a0없습니다.",
       address: {
         label: "주소",
-        value: "서울시 신촌로2안길 30 2층",
+        value: "서울시 마포구 신촌로2안길 30 2층",
         note: "홍대입구역 6번 출구에서 도보 3분",
       },
       hours: {
@@ -201,7 +163,7 @@ export const centerContent = {
         lines: ["12:00 ~ 20:00", "매일 운영 (법정 공휴일 휴무)", "대관 중 이용 불가"],
       },
       contact: {
-        label: "예약 및 문의",
+        label: "문의",
         email: { label: "hello@noncelab.com", href: "mailto:hello@noncelab.com" },
         phone: { label: "+82-2-702-1718", href: "tel:+8227021718" },
       },
@@ -221,7 +183,6 @@ export const centerContent = {
       { id: "programs", label: "Programs", href: "#programs" },
       { id: "experience", label: "Exhibition & Experience", href: "#experience" },
       { id: "journal", label: "Journal", href: "#journal" },
-      { id: "goods", label: "Goods", href: "#goods" },
       { id: "visit", label: "Visit", href: "#visit" },
     ],
     hero: {
@@ -239,7 +200,7 @@ export const centerContent = {
         "The center has a lounge, a Bitcoin library, a classroom and a hardware wallet area.",
       details: [
         "The lounge includes Bitcoin books and art.",
-        "Classes and meetups take place in the classroom.",
+        "Classes and meetups take place in the hall.",
         "Hardware wallets are available to try in the demo area.",
       ],
     },
@@ -247,7 +208,7 @@ export const centerContent = {
       eyebrow: "PROGRAMS",
       title: "Classes and meetups",
       introduction:
-        "Courses cover Bitcoin basics and development. Check the event notices for the schedule.",
+        "Courses cover Bitcoin basics and development. Check the event schedule for upcoming dates.",
       categories: [
         {
           id: "meetups",
@@ -284,38 +245,13 @@ export const centerContent = {
       ],
       walletExperienceLink: {
         label: "Wallet experience guide",
-        href: "https://bitcoincenterseoul.com/walletExperence",
+        href: "/experience/wallet",
       },
     },
     journal: {
       eyebrow: "JOURNAL",
       title: "Past events",
       introduction: "Photos and reports from classes and meetups at the center.",
-      entries: [
-        {
-          id: "bitcoin-protocol-course",
-          category: "Education",
-          title: "Bitcoin protocol course",
-          summary: "A class on the Bitcoin whitepaper.",
-        },
-        {
-          id: "bitcoin-developer-meetup",
-          category: "Meetup",
-          title: "Bitcoin developer meetup",
-          summary: "A meetup on Bitcoin technology and development.",
-        },
-        {
-          id: "self-custody-class",
-          category: "Education",
-          title: "Self-custody course",
-          summary: "A class on holding and managing your own bitcoin.",
-        },
-      ],
-    },
-    goods: {
-      eyebrow: "GOODS",
-      title: "Bitcoin goods",
-      introduction: "Bitcoin-related items and tools are on display at the center.",
     },
     visit: {
       eyebrow: "VISIT",
@@ -324,7 +260,7 @@ export const centerContent = {
         "The center is a three-minute walk from Hongik University Station Exit 6. It is unavailable during private rentals.",
       address: {
         label: "Address",
-        value: "30, Sinchon-ro 2an\u2011gil, Seoul, 2F",
+        value: "30, Sinchon-ro 2an\u2011gil, Mapo-gu, Seoul, 2F",
         note: "3-minute walk from Hongik University Station Exit 6",
       },
       hours: {
@@ -332,7 +268,7 @@ export const centerContent = {
         lines: ["12:00 - 20:00", "Open daily, except public holidays", "Unavailable during private rentals"],
       },
       contact: {
-        label: "Reservations and inquiries",
+        label: "Contact",
         email: { label: "hello@noncelab.com", href: "mailto:hello@noncelab.com" },
         phone: { label: "+82-2-702-1718", href: "tel:+8227021718" },
       },

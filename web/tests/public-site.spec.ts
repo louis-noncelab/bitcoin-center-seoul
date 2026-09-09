@@ -1,5 +1,6 @@
 import { mkdir } from "node:fs/promises";
-import { expect, test } from "@playwright/test";
+import { expect, test, type APIRequestContext } from "@playwright/test";
+import { z } from "zod";
 
 const evidence = `${process.env.BCS_EVIDENCE_DIR ?? "../docs/checkpoints/evidence"}/public-site`;
 const pages = [
@@ -8,10 +9,25 @@ const pages = [
   "/programs",
   "/experience",
   "/journal",
-  "/goods",
   "/visit",
-  "/design-system",
 ] as const;
+const removedPages = ["/goods", "/design-system"] as const;
+const publicRowsSchema = z.object({ data: z.array(z.object({ id: z.number().int().positive() })) });
+
+async function publicDetailPaths(request: APIRequestContext) {
+  const [events, highlights] = await Promise.all([
+    request.get("/api/events"),
+    request.get("/api/highlights"),
+  ]);
+  expect(events.status()).toBe(200);
+  expect(highlights.status()).toBe(200);
+  const eventRows = publicRowsSchema.parse(await events.json()).data;
+  const highlightRows = publicRowsSchema.parse(await highlights.json()).data;
+  return [
+    ...eventRows.map(({ id }) => `/programs/${id}`),
+    ...highlightRows.map(({ id }) => `/journal/${id}`),
+  ];
+}
 
 for (const locale of ["ko", "en"] as const) {
   for (const theme of ["light", "dark"] as const) {
@@ -143,6 +159,12 @@ test("public metadata, search policy and unknown routes have explicit behavior",
   expect((await request.get("/robots.txt")).status()).toBe(200);
   const sitemap = await request.get("/sitemap.xml");
   expect(sitemap.status()).toBe(200);
-  expect((await sitemap.text()).match(/<loc>/g)).toHaveLength(14);
+  const detailPaths = await publicDetailPaths(request);
+  expect((await sitemap.text()).match(/<loc>/g)).toHaveLength((pages.length + detailPaths.length) * 2);
+  for (const locale of ["ko", "en"]) {
+    for (const path of removedPages) {
+      expect((await request.get(`/${locale}${path}`)).status()).toBe(404);
+    }
+  }
   expect((await request.get("/ko/unknown-page")).status()).toBe(404);
 });

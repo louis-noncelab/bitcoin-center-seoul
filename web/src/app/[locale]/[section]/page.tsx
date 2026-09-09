@@ -1,5 +1,7 @@
 import { ArrowLeft } from "lucide-react";
-import { notFound } from "next/navigation";
+import { cache } from "react";
+import { notFound, redirect } from "next/navigation";
+import { connection } from "next/server";
 import { hasLocale } from "next-intl";
 import { SectionContent } from "@/components/site/section-content";
 import { PageMotion } from "@/components/site/page-motion";
@@ -8,11 +10,27 @@ import { SiteHeader } from "@/components/site/site-header";
 import { centerContent } from "@/content/center";
 import { pageMetadata, publicSections } from "@/content/site";
 import { Link } from "@/i18n/navigation";
-import { routing } from "@/i18n/routing";
+import { routing, type Locale } from "@/i18n/routing";
+import type { EventRecord, HighlightRecord } from "@/lib/events-contract";
+import { listEvents, listHighlightsPage } from "@/server/events";
+import "@/styles/events-public.css";
 import "@/styles/site.css";
 import "@/styles/site-sections.css";
 
-type Props = { readonly params: Promise<{ locale: string; section: string }> };
+type Props = {
+  readonly params: Promise<{ locale: string; section: string }>;
+  readonly searchParams: Promise<{ readonly page?: string | string[] }>;
+};
+
+const journalPage = cache(async (locale: Locale, value: string | string[] | undefined) => {
+  await connection();
+  if (value !== undefined && (typeof value !== "string" || !/^[1-9]\d*$/.test(value))) redirect(`/${locale}/journal`);
+  const result = listHighlightsPage(value === undefined ? 1 : Number(value));
+  if (value !== undefined && (result.page === 1 || value !== String(result.page))) {
+    redirect(`/${locale}/journal${result.page === 1 ? "" : `?page=${result.page}`}`);
+  }
+  return result;
+});
 
 export function generateStaticParams() {
   return routing.locales.flatMap((locale) =>
@@ -20,18 +38,42 @@ export function generateStaticParams() {
   );
 }
 
-export async function generateMetadata({ params }: Props) {
+export async function generateMetadata({ params, searchParams }: Props) {
   const { locale, section: value } = await params;
   const section = publicSections.find((item) => item === value);
   if (!hasLocale(routing.locales, locale) || !section) notFound();
-  return pageMetadata(locale, section);
+  const metadata = pageMetadata(locale, section);
+  if (section !== "journal") return metadata;
+  const { page } = await journalPage(locale, (await searchParams).page);
+  const query = page === 1 ? "" : `?page=${page}`;
+  return {
+    ...metadata,
+    alternates: {
+      canonical: `/${locale}/journal${query}`,
+      languages: { ko: `/ko/journal${query}`, en: `/en/journal${query}`, "x-default": `/ko/journal${query}` },
+    },
+    openGraph: { ...metadata.openGraph, url: `/${locale}/journal${query}` },
+  };
 }
 
-export default async function SectionPage({ params }: Props) {
+export default async function SectionPage({ params, searchParams }: Props) {
   const { locale, section: value } = await params;
   const section = publicSections.find((item) => item === value);
   if (!hasLocale(routing.locales, locale) || !section) notFound();
   const content = centerContent[locale][section];
+  let events: EventRecord[] = [];
+  let highlights: HighlightRecord[] = [];
+  let today = "";
+  let pagination = { page: 1, totalPages: 1 };
+  if (section === "programs") {
+    await connection();
+    events = await listEvents();
+    today = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
+  } else if (section === "journal") {
+    const result = await journalPage(locale, (await searchParams).page);
+    highlights = result.highlights;
+    pagination = result;
+  }
   return (
     <>
       <SiteHeader locale={locale} section={section} />
@@ -48,7 +90,7 @@ export default async function SectionPage({ params }: Props) {
           <h1>{content.title}</h1>
           <p className="body-copy muted">{content.introduction}</p>
         </div>
-        <SectionContent locale={locale} section={section} />
+        <SectionContent locale={locale} section={section} events={events} highlights={highlights} today={today} pagination={pagination} />
         {section !== "visit" && (
           <div className="detail-visit">
             <Link
@@ -61,7 +103,7 @@ export default async function SectionPage({ params }: Props) {
             </Link>
           </div>
         )}
-        <PageMotion pageKey={`${locale}-${section}`} />
+        <PageMotion pageKey={`${locale}-${section}-${pagination.page}`} />
       </main>
       <SiteFooter locale={locale} />
     </>

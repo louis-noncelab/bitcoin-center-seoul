@@ -60,41 +60,10 @@ test("server-rendered content remains visible without JavaScript", async ({ brow
     // Then the photograph and first program are available without hydration.
     await expect(page.locator(".hero-photo .center-photo")).toHaveCSS("opacity", "1");
     await expect(page.locator("#hero-title")).toBeVisible();
-    expect(await page.locator(".brand-marquee-track").evaluate((element) => element.getAnimations().length)).toBe(0);
-    await expect(page.locator(".brand-marquee-control")).toBeHidden();
+    await expect(page.locator(".site-footer")).toBeVisible();
     await expect(page.locator(".program-explorer").getByRole("tabpanel")).toHaveCount(1);
     await expect(page.locator(".program-explorer .selection-panel").first()).toBeVisible();
   } finally {
     await context.close();
   }
-});
-
-
-test("the footer text motion can be paused and becomes static with reduced motion", async ({ page, browser }) => {
-  await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.goto("/en");
-  const frame = page.locator(".brand-marquee");
-  const track = page.locator(".brand-marquee-track");
-  await frame.scrollIntoViewIfNeeded();
-  await expect(frame).toHaveAttribute("data-enhanced", "true");
-  await page.evaluate(() => document.fonts.ready);
-  const enhancedHeight = await frame.evaluate((element) => element.getBoundingClientRect().height);
-  const fallbackContext = await browser.newContext({ javaScriptEnabled: false, viewport: page.viewportSize() });
-  try {
-    const fallbackPage = await fallbackContext.newPage();
-    await fallbackPage.goto("/en");
-    await fallbackPage.evaluate(() => document.fonts.ready);
-    const staticHeight = await fallbackPage.locator(".brand-marquee").evaluate((element) => element.getBoundingClientRect().height);
-    expect(Math.abs(enhancedHeight - staticHeight)).toBeLessThan(1);
-  } finally {
-    await fallbackContext.close();
-  }
-  await page.getByRole("button", { name: "Pause text animation", exact: true }).click();
-  await expect(track).toHaveCSS("animation-play-state", "paused");
-  await page.getByRole("button", { name: "Play text animation", exact: true }).click();
-  await expect(track).toHaveCSS("animation-play-state", "running");
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await expect(track).toHaveCSS("animation-name", "none");
-  await expect(page.locator(".brand-marquee-control")).toBeHidden();
-  expect(await track.evaluate((element) => element.getAnimations().length)).toBe(0);
 });

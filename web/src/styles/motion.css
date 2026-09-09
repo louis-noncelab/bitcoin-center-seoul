@@ -53,7 +53,6 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .hero-introduction,
-  .hero-caption,
   .detail-heading,
   .detail-heading + div {
     animation: center-content-arrival var(--duration-image) var(--ease-out) both;
@@ -65,7 +64,6 @@
   }
 
   .hero-introduction { animation-delay: 140ms; }
-  .hero-caption { animation-delay: 210ms; }
   .hero-photo .center-photo {
     animation: center-photo-arrival calc(var(--duration-reveal) + 100ms) var(--ease-out) both;
   }

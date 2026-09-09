@@ -1,6 +1,9 @@
+import { Suspense } from "react";
+import { LocaleLink } from "@/components/controls/locale-link";
 import { NavigationDisclosure } from "@/components/controls/navigation-disclosure";
 import { NavigationFeedback } from "@/components/controls/navigation-feedback";
 import { ThemeToggle } from "@/components/controls/theme-toggle";
+import { BrandWordmark } from "@/components/site/brand-wordmark";
 import { ActionLink } from "@/components/ui/primitives";
 import { centerContent } from "@/content/center";
 import type { PublicSection } from "@/content/site";
@@ -30,9 +33,11 @@ const labels = {
 export function SiteHeader({
   locale,
   section,
+  home = false,
 }: {
   readonly locale: Locale;
   readonly section?: PublicSection;
+  readonly home?: boolean;
 }) {
   const t = labels[locale];
   const otherLocale = locale === "ko" ? "en" : "ko";
@@ -50,39 +55,30 @@ export function SiteHeader({
           href="/"
           locale={locale}
           className="site-wordmark"
-          aria-current={section ? undefined : "page"}
+          lang="en"
+          aria-label="Bitcoin Center Seoul"
+          aria-current={home ? "page" : undefined}
         >
-          <span lang="en">
-            <span className="wordmark-name">Bitcoin Center</span>{" "}
-            <span className="wordmark-city">Seoul</span>
-          </span>
+          <BrandWordmark />
         </Link>
         <nav className="desktop-navigation" aria-label={t.navigation}>
           {navigation.map((item) => (
             <Link
               key={item.id}
               href={`/${item.id}`}
+              prefetch={item.id === "journal" ? false : undefined}
               locale={locale}
               aria-current={section === item.id ? "page" : undefined}
               className="navigation-link"
             >
-              {item.label}
-              <NavigationFeedback />
+              <NavigationFeedback label={item.label} />
             </Link>
           ))}
         </nav>
         <div className="header-controls">
-          <Link
-            href={section ? `/${section}` : "/"}
-            locale={otherLocale}
-            hrefLang={otherLocale}
-            lang={otherLocale}
-            aria-label={t.language}
-            className="button header-control language-control"
-            data-variant="quiet"
-          >
-            {otherLocale === "en" ? "EN" : "KO"}
-          </Link>
+          <Suspense fallback={<Link href={section ? `/${section}` : "/"} locale={otherLocale} hrefLang={otherLocale} lang={otherLocale} aria-label={t.language} className="button header-control language-control" data-variant="quiet">{otherLocale === "en" ? "EN" : "KO"}</Link>}>
+            <LocaleLink locale={otherLocale} label={t.language} />
+          </Suspense>
           <ThemeToggle label={t.theme} />
           <div className="mobile-navigation">
             <NavigationDisclosure

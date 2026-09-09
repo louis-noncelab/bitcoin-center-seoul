@@ -1,8 +1,29 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type APIRequestContext } from "@playwright/test";
+import { z } from "zod";
 
 const origin = "https://bitcoincenterseoul.com";
-const sections = ["", "/about", "/programs", "/experience", "/journal", "/goods", "/visit"] as const;
+const sections = ["", "/about", "/programs", "/experience", "/journal", "/visit"] as const;
 const brands = { ko: "비트코인 센터 서울", en: "Bitcoin Center Seoul" } as const;
+const publicRowsSchema = z.object({ data: z.array(z.object({ id: z.number().int().positive(), slug: z.string().default("") })) });
+
+async function publicDetailPaths(request: APIRequestContext) {
+  const [events, highlights, notices] = await Promise.all([
+    request.get("/api/events"),
+    request.get("/api/highlights"),
+    request.get("/api/notices"),
+  ]);
+  expect(events.status()).toBe(200);
+  expect(highlights.status()).toBe(200);
+  expect(notices.status()).toBe(200);
+  const eventRows = publicRowsSchema.parse(await events.json()).data;
+  const highlightRows = publicRowsSchema.parse(await highlights.json()).data;
+  const noticeRows = publicRowsSchema.parse(await notices.json()).data;
+  return [
+    ...noticeRows.map(({ slug }) => `/notices/${slug}`),
+    ...eventRows.map(({ id, slug }) => `/programs/${slug || id}`),
+    ...highlightRows.map(({ id, slug }) => `/journal/${slug || id}`),
+  ];
+}
 
 for (const locale of ["ko", "en"] as const) {
   test(`${locale} public titles identify distinct pages in the page language`, async ({ request }) => {
@@ -42,7 +63,7 @@ for (const locale of ["ko", "en"] as const) {
     const script = page.locator('script[type="application/ld+json"]');
     await expect(script).toHaveCount(1);
     const identity: unknown = JSON.parse(await script.innerText());
-    const email = page.locator('footer a[href^="mailto:"]');
+    const email = page.locator('.footer-actions a[href^="mailto:"]');
     const telephone = page.locator('footer a[href^="tel:"]');
     const phoneNumber = await telephone.getAttribute("title");
     await expect(email).toHaveAccessibleName(/hello@noncelab\.com/);
@@ -69,11 +90,12 @@ test("the sitemap keeps the same Korean fallback for every locale pair", async (
   const response = await request.get("/sitemap.xml");
   const xml = await response.text();
   const entries = xml.match(/<url>[\s\S]*?<\/url>/g) ?? [];
+  const paths = [...sections, "/experience/wallet", "/notices", ...await publicDetailPaths(request)];
 
   expect(response.status()).toBe(200);
-  expect(entries).toHaveLength(sections.length * 2);
+  expect(entries).toHaveLength(paths.length * 2);
   for (const locale of ["ko", "en"]) {
-    for (const path of sections) {
+    for (const path of paths) {
       const entry = entries.find((value) => value.includes(`<loc>${origin}/${locale}${path}</loc>`));
       expect(entry).toBeDefined();
       for (const [language, routeLocale] of [["ko", "ko"], ["en", "en"], ["x-default", "ko"]]) {

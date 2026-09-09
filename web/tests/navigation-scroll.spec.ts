@@ -23,7 +23,7 @@ for (const locale of ["ko", "en"] as const) {
       await page.goto(`/${locale}`);
       await page.evaluate(() => document.fonts.ready);
 
-      for (const section of ["about", "programs", "experience", "journal", "goods", "visit"]) {
+      for (const section of ["about", "programs", "experience", "journal", "visit"]) {
         await page.locator(`.desktop-navigation a[href="/${locale}/${section}"]`).click();
         await expect(page).toHaveURL(`/${locale}/${section}`);
         await expect(page.locator(`.detail-${section}`)).toBeVisible();
@@ -73,3 +73,55 @@ test("the keyboard skip link keeps its intentional hash and focus", async ({ pag
   await expect(page.locator("#main")).toBeFocused();
   await expect(page.locator("#main")).toBeInViewport();
 });
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+  test(`floating back-to-top appears after scrolling and hides again with ${reducedMotion}`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion });
+    await page.goto("/ko");
+    const top = page.locator(".back-to-top");
+    await expect(top).toBeHidden();
+    await expect(top).toHaveAttribute("tabindex", "-1");
+    await page.mouse.wheel(0, 120);
+    await expect(top).toBeVisible();
+    await expect(top).toHaveAttribute("aria-hidden", "false");
+    await expect(top).toHaveCSS("position", "fixed");
+    await top.click();
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+    await expect(top).toBeHidden();
+    await expect(page.locator("#main")).toBeFocused();
+    await expect(page.locator(".footer-collaboration")).toHaveAttribute("href", "mailto:hello@noncelab.com");
+  });
+}
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+  test(`journal pagination and cards enter smoothly with ${reducedMotion}`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion });
+    await page.goto("/ko/journal");
+    for (const selector of ['.journal-pagination a[rel="next"]', '.highlight-card-link']) {
+      const link = page.locator(selector).last();
+      await link.scrollIntoViewIfNeeded();
+      const target = await link.getAttribute("href");
+      expect(target).toBeTruthy();
+      const frames = await link.evaluate((element) => new Promise<{ y: number; url: string }[]>((resolve) => {
+        const samples: { y: number; url: string }[] = [{ y: scrollY, url: location.href }];
+        const start = performance.now();
+        function sample(now: number) {
+          samples.push({ y: scrollY, url: location.href });
+          if (now - start > 650) resolve(samples);
+          else requestAnimationFrame(sample);
+        }
+        requestAnimationFrame(sample);
+        if (element instanceof HTMLAnchorElement) element.click();
+      }));
+      await expect(page).toHaveURL(new RegExp(`${target?.replace("?", "\\?")}$`));
+      expect(await page.evaluate(() => scrollY)).toBe(0);
+      const first = frames[0];
+      expect(first?.y).toBeGreaterThan(0);
+      if (reducedMotion === "no-preference" && first) {
+        expect(frames.filter(({ y, url }) => url === first.url && y > 0 && y < first.y).length).toBeGreaterThan(3);
+      }
+    }
+    await expect(page.locator(".event-detail")).toHaveCSS("transform", "none");
+    await expect(page.locator(".detail-heading")).toHaveCSS("transform", "none");
+  });
+}

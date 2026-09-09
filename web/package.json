@@ -16,9 +16,14 @@
     "test": "playwright test",
     "audit": "npm audit",
     "doctor": "react-doctor . --verbose",
-    "analyze": "ANALYZE=true next build --webpack"
+    "analyze": "ANALYZE=true next build --webpack",
+    "review": "node scripts/events-review.mjs",
+    "test:events": "playwright test --config playwright.events.config.ts",
+    "postinstall": "node scripts/patch-next-image-optimizer.mjs apply",
+    "test:image-optimizer": "node --test tests/image-optimizer-abort.mjs"
   },
   "dependencies": {
+    "better-sqlite3": "12.4.1",
     "lucide-react": "1.23.0",
     "motion": "13.2.0",
     "next": "16.3.4",
@@ -26,12 +31,15 @@
     "next-themes": "0.4.6",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "sharp": "0.35.4"
+    "server-only": "0.0.1",
+    "sharp": "0.35.4",
+    "zod": "4.5.4"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "16.3.4",
     "@playwright/test": "1.59.1",
     "@tailwindcss/postcss": "4.3.3",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.19.0",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
@@ -41,6 +49,7 @@
     "react-grab": "0.2.0",
     "react-scan": "0.5.7",
     "tailwindcss": "4.3.3",
+    "tsx": "4.23.13",
     "typescript": "6.0.2"
   }
 }

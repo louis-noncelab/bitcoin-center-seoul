@@ -8,7 +8,6 @@ export const publicSections = [
   "programs",
   "experience",
   "journal",
-  "goods",
   "visit",
 ] as const;
 export type PublicSection = (typeof publicSections)[number];
@@ -66,6 +65,41 @@ export function pageMetadata(
       title,
       description: content.introduction,
       images: [image.src],
+    },
+  };
+}
+
+export function recordMetadata(
+  locale: Locale,
+  section: Extract<PublicSection, "programs" | "journal">,
+  identifier: string | number,
+  title: string,
+  description: string,
+): Metadata {
+  const metadata = pageMetadata(locale, section);
+  const path = `/${section}/${identifier}`;
+  return {
+    ...metadata,
+    title: `${title} | ${centerContent[locale].hero.title}`,
+    description,
+    alternates: {
+      canonical: `/${locale}${path}`,
+      languages: {
+        ko: `/ko${path}`,
+        en: `/en${path}`,
+        "x-default": `/ko${path}`,
+      },
+    },
+    openGraph: {
+      ...metadata.openGraph,
+      title,
+      description,
+      url: `/${locale}${path}`,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
     },
   };
 }

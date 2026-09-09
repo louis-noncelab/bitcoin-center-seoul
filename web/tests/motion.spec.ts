@@ -6,7 +6,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
     await page.emulateMedia({ reducedMotion });
     await page.goto("/ko");
     await page.evaluate(() => document.fonts.ready);
-    const section = page.locator("#goods");
+    const section = page.locator("#experience");
     const parts = section.locator("[data-reveal-part]");
     await expect(parts).toHaveCount(3);
 
@@ -84,7 +84,7 @@ test("reduced-motion changes cancel entrances and stop observing new sections", 
   // Given active group entrances paused so their cleanup cannot pass by timeout.
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/ko");
-  const section = page.locator("#goods");
+  const section = page.locator("#experience");
   await section.evaluate((element) => element.scrollIntoView({ behavior: "instant", block: "start" }));
   await expect.poll(() => section.evaluate((element) => {
     const animations = element.getAnimations({ subtree: true });
@@ -102,7 +102,7 @@ test("reduced-motion changes cancel entrances and stop observing new sections", 
     await expect(part).toHaveCSS("transform", "none");
   }
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  const untouched = page.locator("#experience");
+  const untouched = page.locator("#journal");
   await untouched.evaluate((element) => element.scrollIntoView({ behavior: "instant", block: "start" }));
   await page.evaluate(() => new Promise<void>((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
@@ -116,7 +116,7 @@ test("mobile parts enter once when each reaches the viewport", async ({ page }) 
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/en");
   await page.evaluate(() => document.fonts.ready);
-  const section = page.locator("#goods");
+  const section = page.locator("#experience");
   const first = section.locator("[data-reveal-part]").first();
   const last = section.locator("[data-reveal-part]").last();
 

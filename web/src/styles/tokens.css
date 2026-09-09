@@ -5,14 +5,17 @@
   --ink: #20211f;
   --muted: #62675f;
   --line: #d8dcd3;
-  --orange: #ff6b0a;
-  --blue: #6c9fd8;
+  --field-border: #848a7f;
+  --orange: #ff7609;
+  --blue: #76adeb;
   --blue-ink: #32699f;
   --focus: #ae4308;
+  --danger: #a32d2b;
+  --success: #286138;
   --selection: color-mix(in srgb, var(--blue) 16%, var(--canvas));
-  --action: var(--orange);
+  --action: #e2e6dc;
   --action-ink: #20211f;
-  --action-hover: color-mix(in srgb, var(--orange) 88%, var(--canvas));
+  --action-hover: #d5dccd;
   --shadow-disclosure: 0 16px 40px color-mix(in srgb, var(--ink) 10%, transparent);
 
   --font-pretendard: "Pretendard Variable", system-ui, sans-serif;
@@ -62,6 +65,7 @@
   --gutter: clamp(var(--space-5), 4vw, var(--space-12));
   --section-gap: clamp(var(--space-10), 5vw, var(--space-16));
   --content-max: 80rem;
+  --footer-content-max: 80rem;
   --measure: 62ch;
   --measure-short: 42ch;
   --header-height: var(--space-20);
@@ -86,18 +90,22 @@
   --hero-height: 30rem;
 
   --duration-marquee: 48s;
-  --duration-press: 160ms;
-  --duration-control: 220ms;
-  --duration-menu-enter: 260ms;
-  --duration-menu-exit: 180ms;
+  --duration-press: 180ms;
+  --duration-control: 240ms;
+  --duration-overlay: 280ms;
+  --duration-menu-enter: 280ms;
+  --duration-menu-exit: 200ms;
   --duration-image: 500ms;
   --duration-reveal: 600ms;
   --duration-stagger: 80ms;
   --duration-letter: 24ms;
+  --duration-theme: 350ms;
+  --duration-page: 380ms;
   --reveal-distance: var(--space-6);
   --photo-scale: 1.025;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --press-scale: 0.98;
+  --hover-scale: 1.02;
+  --press-scale: 0.97;
 
   /* Layer scale: selected background 0, label 1, disclosure 10, progress 15, skip link 20. */
   --layer-selection: 0;
@@ -109,20 +117,33 @@
 }
 
 [data-theme="dark"] {
-  --canvas: #171917;
-  --surface: #222521;
-  --ink: #f0f1eb;
-  --muted: #acb2a7;
-  --line: #3c4238;
+  --canvas: #171717;
+  --surface: #222222;
+  --ink: #f4f4f4;
+  --muted: #b4b4b4;
+  --line: color-mix(in srgb, #fff 12%, transparent);
+  --field-border: color-mix(in srgb, #fff 28%, transparent);
   --orange: #ff8a40;
+  --action: #c6cdbf;
+  --action-hover: #d5dccd;
   --blue: #8db8ea;
   --blue-ink: #a4c8ed;
   --focus: var(--orange);
+  --danger: #ffa9a5;
+  --success: #a1d2a3;
   color-scheme: dark;
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {
   :root { --text-masthead: clamp(3rem, 8vw, 4.5rem); }
+}
+
+@media (min-width: 1440px) {
+  :root { --content-max: 90rem; }
+}
+
+@media (min-width: 1800px) {
+  :root { --content-max: 110rem; }
 }
 
 @media (max-width: 767px) {

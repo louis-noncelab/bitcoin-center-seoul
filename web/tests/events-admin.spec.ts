@@ -1,0 +1,121 @@
+import { test, expect, type Page } from "@playwright/test";
+import { readFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
+import sharp from "sharp";
+import { z } from "zod";
+import { eventRecordSchema, highlightRecordSchema } from "../src/lib/events-contract";
+
+async function login(page: Page) {
+  const { ADMIN_PASSWORD } = z.object({ ADMIN_PASSWORD: z.string() }).parse(JSON.parse(await readFile(new URL("../.local/events-review/runtime.json", import.meta.url), "utf8")));
+  await page.getByLabel("관리자 비밀번호", { exact: true }).fill(ADMIN_PASSWORD);
+  await page.getByRole("button", { name: "로그인", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "행사 목록", exact: true })).toBeVisible();
+}
+
+test("행사 등록, 사진 두 장 업로드, 수정, 세션 만료 후 초안 보존, 삭제", async ({ page, baseURL }) => {
+  const title = `[검토] 행사 ${randomUUID()}`;
+  const slug = `event-${randomUUID()}`;
+  let id: number | undefined;
+  await page.goto("/ko/admin");
+  await login(page);
+  try {
+    await page.getByRole("button", { name: "새 항목 등록" }).click();
+    await page.getByLabel("제목 · 한국어", { exact: true }).fill(title);
+    await page.getByLabel("URL 슬러그", { exact: true }).fill(slug);
+    await page.getByLabel("제목 · 영어", { exact: true }).fill("[Review] Event gallery");
+    await page.getByLabel("설명 · 한국어", { exact: true }).fill("검토용 행사입니다. 공개 운영 자료가 아닙니다.");
+    await page.getByLabel("설명 · 영어", { exact: true }).fill("Local review event, not an operational event.");
+    await page.getByLabel("행사 날짜", { exact: true }).fill("2026-10-10");
+    await page.getByLabel("시간", { exact: true }).fill("14:00–16:00");
+    await page.getByLabel("장소 · 한국어", { exact: true }).fill("비트코인 센터 서울");
+    await page.getByLabel("장소 · 영어", { exact: true }).fill("Bitcoin Center Seoul");
+    const buffers = await Promise.all(["#ff6b0a", "#32699f"].map((background) => sharp({ create: { width: 80, height: 60, channels: 3, background } }).png().toBuffer()));
+    await page.getByLabel("사진 여러 장 선택").setInputFiles(buffers.map((buffer, index) => ({ name: `review-${index}.png`, mimeType: "image/png", buffer })));
+    await expect(page.getByText("2장 선택됨", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "저장", exact: true }).click();
+    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    const initial = z.object({ data: z.array(eventRecordSchema) }).parse(await (await page.request.get("/api/events")).json()).data.find((record) => record.title === title);
+    expect(initial).toBeDefined();
+    if (!initial) throw new Error("Created review event missing");
+    id = initial.id;
+    expect(initial.images).toHaveLength(2);
+    expect(initial.slug).toBe(slug);
+    await page.goto(`/en/programs/${id}`);
+    await expect(page).toHaveURL(`/en/programs/${slug}`);
+    await expect(page.getByRole("heading", { name: "[Review] Event gallery", exact: true })).toBeVisible();
+    await page.goto("/ko/admin");
+    const row = page.locator(".events-admin-list > li").filter({ hasText: title });
+    await row.getByRole("button", { name: "수정", exact: true }).click();
+    await page.getByLabel("제목 · 한국어", { exact: true }).fill(title + " 수정");
+    await page.getByLabel("URL 슬러그", { exact: true }).fill(slug + "-updated");
+    await page.getByRole("button", { name: "사진 2 앞으로", exact: true }).click();
+    const logout = await page.request.post("/api/admin/logout", { headers: { origin: baseURL ?? "" }, data: {} });
+    expect(logout.ok()).toBeTruthy();
+    const expiredBuffer = buffers[0];
+    if (!expiredBuffer) throw new Error("Review image was not generated");
+    await page.getByLabel("사진 여러 장 선택").setInputFiles({ name: "expired.png", mimeType: "image/png", buffer: expiredBuffer });
+    await expect(page.getByLabel("관리자 비밀번호", { exact: true })).toBeVisible();
+    await expect(page.getByText("2장 선택됨", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "저장", exact: true }).click();
+    await expect(page.getByText("세션이 만료되었습니다. 작성한 내용은 유지됩니다. 다시 로그인한 뒤 저장해 주세요.")).toBeVisible();
+    await expect(page.getByLabel("제목 · 한국어", { exact: true })).toHaveValue(title + " 수정");
+    const { ADMIN_PASSWORD } = z.object({ ADMIN_PASSWORD: z.string() }).parse(JSON.parse(await readFile(new URL("../.local/events-review/runtime.json", import.meta.url), "utf8")));
+    await page.getByLabel("관리자 비밀번호", { exact: true }).fill(ADMIN_PASSWORD);
+    await page.getByRole("button", { name: "로그인", exact: true }).click();
+    await expect(page.getByLabel("관리자 비밀번호", { exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: "저장", exact: true }).click();
+    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    const amended = z.object({ data: eventRecordSchema }).parse(await (await page.request.get(`/api/events/${id}`)).json()).data;
+    expect(amended.title).toBe(title + " 수정");
+    expect(amended.slug).toBe(slug + "-updated");
+    const previousUrl = await page.request.get(`/en/programs/${slug}`, { maxRedirects: 0 });
+    expect(previousUrl.status()).toBe(308);
+    expect(previousUrl.headers().location).toBe(`/en/programs/${slug}-updated`);
+    expect(amended.images).toEqual([...initial.images].reverse());
+    page.once("dialog", (dialog) => void dialog.accept());
+    await page.locator(".events-admin-list > li").filter({ hasText: title + " 수정" }).getByRole("button", { name: "삭제", exact: true }).click();
+    await expect(page.getByText("삭제했습니다.", { exact: true })).toBeVisible();
+    expect((await page.request.get(`/api/events/${id}`)).status()).toBe(404);
+  } finally {
+    if (id !== undefined) await page.request.delete(`/api/admin/events/${id}`, { headers: { origin: baseURL ?? "" } });
+  }
+});
+
+test("하이라이트 기간과 비공개 상태를 저장하며 관리자 화면은 영어 경로에서도 한국어", async ({ page, baseURL }) => {
+  const title = `[검토] 하이라이트 ${randomUUID()}`;
+  const slug = `highlight-${randomUUID()}`;
+  let id: number | undefined;
+  await page.goto("/en/admin");
+  await expect(page.getByRole("heading", { name: "행사·하이라이트 관리", exact: true })).toBeVisible();
+  await login(page);
+  try {
+    await page.getByRole("button", { name: "하이라이트", exact: true }).click();
+    await page.getByRole("button", { name: "새 항목 등록", exact: true }).click();
+    await page.getByLabel("제목 · 한국어", { exact: true }).fill(title);
+    await page.getByLabel("URL 슬러그", { exact: true }).fill(slug);
+    await page.getByLabel("제목 · 영어", { exact: true }).fill("[Review] Highlight");
+    await page.getByLabel("설명 · 한국어", { exact: true }).fill("검토용 하이라이트");
+    await page.getByLabel("설명 · 영어", { exact: true }).fill("Local review highlight");
+    await page.getByLabel("시작일", { exact: true }).fill("2026-09-01");
+    await page.getByLabel("종료일", { exact: true }).fill("2026-09-03");
+    await page.getByLabel("공개", { exact: true }).uncheck();
+    await page.getByRole("button", { name: "저장", exact: true }).click();
+    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    const items = z.object({ data: z.array(highlightRecordSchema) }).parse(await (await page.request.get("/api/admin/highlights")).json()).data;
+    const record = items.find((item) => item.title === title);
+    expect(record).toBeDefined();
+    if (!record) throw new Error("Created review highlight missing");
+    id = record.id;
+    expect(record.slug).toBe(slug);
+    expect(record.startDate).toBe("2026-09-01");
+    expect(record.endDate).toBe("2026-09-03");
+    expect((await page.request.get(`/api/highlights/${id}`)).status()).toBe(404);
+    await page.locator(".events-admin-list > li").filter({ hasText: title }).getByRole("button", { name: "수정", exact: true }).click();
+    await page.getByLabel("공개", { exact: true }).check();
+    await page.getByRole("button", { name: "저장", exact: true }).click();
+    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    expect((await page.request.get(`/api/highlights/${id}`)).status()).toBe(200);
+  } finally {
+    if (id !== undefined) await page.request.delete(`/api/admin/highlights/${id}`, { headers: { origin: baseURL ?? "" } });
+  }
+});

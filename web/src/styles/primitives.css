@@ -263,6 +263,7 @@ button:not(:disabled), summary {
 }
 
 @media (hover: hover) {
+  .button:not(:disabled):hover { transform: scale(var(--hover-scale)); }
   .button[data-variant="primary"]:not(:disabled):hover {
     background: var(--action-hover);
   }
@@ -288,12 +289,24 @@ button:not(:disabled), summary {
     transition: none;
   }
 
-  .button:not(:disabled):active, .button:is(:hover, :focus-visible) .icon,
+  .button:not(:disabled):active, .button:not(:disabled):hover, .button:is(:hover, :focus-visible) .icon,
   .section-link:active, .section-link:is(:hover, :focus-visible) .icon {
     transform: none;
   }
+
+  html.theme-changing, html.theme-changing * { transition: none !important; }
 }
 
 @media (prefers-reduced-motion: no-preference) {
   html { scroll-behavior: smooth; }
+
+  html.theme-changing, html.theme-changing body {
+    transition: background-color var(--duration-theme) var(--ease-out), color var(--duration-theme) var(--ease-out);
+  }
+
+  html.theme-changing *:not(img, video, picture, canvas, iframe) {
+    transition: background-color var(--duration-theme) var(--ease-out), color var(--duration-theme) var(--ease-out), border-color var(--duration-theme) var(--ease-out), outline-color var(--duration-theme) var(--ease-out), box-shadow var(--duration-theme) var(--ease-out), fill var(--duration-theme) var(--ease-out), stroke var(--duration-theme) var(--ease-out) !important;
+  }
+
+  html.theme-changing :is(img, video, picture, canvas, iframe) { transition: none !important; }
 }

@@ -1,5 +1,40 @@
 # Bitcoin Center Seoul: public design revision
 
+## Current owner contract — events-only public surface, 2026-09-09
+
+The owner selected `63a08b95cb54e06d9a00c89ae14d8d9eb1851284`
+as the reset base and asked to retain the later public visual craft while reducing
+the product to the center and its events. This section supersedes every historical
+reference below to goods, shop, cart, checkout, payment, booking, accounts,
+notices, community administration, inquiry forms and transaction state. Those
+notes remain only as a record of earlier design work.
+
+- Public routes are home, about, programs, experience, journal and visit, plus
+  numeric event and highlight detail routes. Programs show the real event records;
+  journal and the home preview show active real highlights. Empty states state
+  that no record is published and never substitute fabricated content.
+- Event details retain the legacy title, date, time, location, description and
+  original external HTTP(S) link. Highlight details retain their category,
+  date or date range, host, description, metadata and original HTTP(S) link.
+  Neither surface accepts registration or payment.
+- Record images use the existing `/images/uploads/`,
+  `/images/events/uploads/` and `/images/highlights/uploads/` sources. Detail
+  pages use a simple responsive one/two-column gallery with meaningful alt text;
+  no carousel, modal viewer or added client state.
+- Preserve the documentary hero, real center photography, Pretendard, supplied
+  orange/sky identity, official light/dark wordmarks, centered navigation marker,
+  locale path/query/hash continuity, reading progress, reduced-motion-safe page
+  motion, factual footer marquee and wider centered chrome at large viewports.
+- Footer actions are direct `mailto:`, `tel:` and map links. There is no inquiry
+  backend, notice archive, account access or commerce destination.
+- Public copy and metadata remain Korean/English. Runtime SQLite reads occur only
+  after a request connection, so static builds do not touch review or production
+  content. The local review remains `noindex` until a separate release decision.
+- Accessibility constraints: semantic headings and landmarks, visible focus,
+  44px minimum interactive targets, descriptive gallery alt text, non-color-only
+  metadata and immediate reduced-motion behavior. Accepted debt is limited to
+  owner visual approval and final real-browser verification after integration.
+
 ## Current motion contract — title assembly and viewport entrances, 2026-09-08
 
 The owner requests the large home name to form on entry and content to settle
@@ -463,3 +498,10 @@ backend mutation is part of the first candidate.
 
 ## Final polish from rendered review
 The English journal category uses88px to keep Education whole; mobile heading rows may wrap the related action to preserve meaningful title lines. The goods caption uses the same1/2 division and40px gutter as the journal. User's horizontal photograph album idea remains review-only and is not implemented.
+
+## Owner review overrides — events-only, 2026-09-09
+The supplied center branding and latest spacing/type tokens are implemented. Public content comes from the copied real SQLite event/highlight records. Home shows the three latest highlights as photo cards; detail photos appear below the title before the date and body, with no separate photo section label or trailing generic highlight label. The footer has no marquee and uses email, phone, X and Instagram icon links plus an icon-only back-to-top action. Navigation and contact links emphasize text color without underlines or filled active backgrounds; keyboard focus remains visible. Public pages stay bilingual, admin stays Korean-only. Earlier commerce and pending-branding notes above are historical.
+
+Owner refinement: primary action fills are muted warm gray-green, with dark text in both themes. Footer contact has a visible 문의하기/Contact heading and four circular outlined icons. Detail galleries use one reading-width column with uncropped images, superseding the older two-column note. Administrators can choose a URL slug; numeric and old slug links redirect to the current canonical path.
+
+Latest owner refinements: the footer uses a centered compact three-column grid, contact icons and a collaboration email link. Back-to-top floats at the lower right after scrolling and fades away at the top. Journal pagination uses a muted filled circle; content links smoothly return to the top and fade in the next listing/detail without vertical entrance movement. Card hover lifts4px with a restrained image shadow; reduced motion disables transforms. Public notices reuse the same typography, layout and footer; the Korean-only administrator can publish or save privately. The address includes Mapo-gu.

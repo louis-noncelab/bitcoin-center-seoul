@@ -1,3 +1,12 @@
+## Latest owner additions — 2026-09-09
+The owner also authorizes notices draft/publish/edit/delete, editable URL slugs, journal pagination and the local wallet learning guide. Public pages stay bilingual; administration stays Korean-only. SQLite/password compatibility and the no-deployment boundaries still apply.
+
+## Current owner decision — 2026-09-09 events-only reset
+
+The owner explicitly selected base commit `63a08b95cb54e06d9a00c89ae14d8d9eb1851284` and authorized restoring current public design changes while limiting functionality to event/highlight display and admin create/edit/delete with multiple image uploads. Keep Next.js/React/TypeScript and the existing SQLite schema/ADMIN_PASSWORD compatibility. No shop, checkout, cart, payments, booking, customer accounts, PostgreSQL migration, or unrelated administration in this increment. This supersedes older scope instructions below. Existing root legacy application and runtime/production data stay untouched. No push, deployment, GitHub Actions, real payments, refunds or operational email. Never inspect existing .env/.env.local; never output secret values. Only coordinator stages/commits.
+
+Recovery point: `backup/center-web-before-events-only-20260909-175952`, commit `b1cc3f81190f06fb53da668c003421f479854543`. Independent verified bundle and public assets are at `/Users/max/noncelab/center/bitcoin-center-seoul-backups/20260909-175952`. This snapshot is WIP, not a release.
+
 # PROJECT KNOWLEDGE BASE
 
 **Generated:** 2026-09-07

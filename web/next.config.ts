@@ -11,6 +11,9 @@ const repositoryRoot = path.resolve(
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  distDir: process.env.BCS_EVENTS_REVIEW === "true" ? ".next-events" : ".next",
+  serverExternalPackages: ["better-sqlite3"],
+  outputFileTracingExcludes: { "/*": ["./.local/**/*", "./src/generated/**/*", "../.local/**/*", "../data/**/*"] },
   output: "standalone",
   outputFileTracingRoot: repositoryRoot,
   turbopack: {

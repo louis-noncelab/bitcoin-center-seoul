@@ -1,7 +1,10 @@
 .header-controls {
+  position: static;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  margin-inline-start: auto;
 }
 
 .header-control {

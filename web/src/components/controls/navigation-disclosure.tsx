@@ -88,6 +88,7 @@ export function NavigationDisclosure({
             <li key={item.href}>
               <Link
                 href={item.href}
+                prefetch={item.href === "/journal" ? false : undefined}
                 locale={locale}
                 className="navigation-link"
                 aria-current={item.current ? "page" : undefined}
@@ -96,8 +97,7 @@ export function NavigationDisclosure({
                   trigger.current?.focus({ preventScroll: true });
                 }}
               >
-                {item.label}
-                <NavigationFeedback />
+                <NavigationFeedback label={item.label} />
               </Link>
             </li>
           ))}

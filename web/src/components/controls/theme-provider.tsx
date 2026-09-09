@@ -10,7 +10,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       defaultTheme="light"
       enableSystem={false}
       storageKey="bcs-theme"
-      disableTransitionOnChange
     >
       {children}
     </NextThemeProvider>

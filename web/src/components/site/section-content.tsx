@@ -3,8 +3,11 @@ import { SelectionTabs } from "@/components/controls/selection-tabs";
 import { ActionLink, MediaFrame } from "@/components/ui/primitives";
 import { centerContent } from "@/content/center";
 import type { PublicSection } from "@/content/site";
+import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
+import type { EventRecord, HighlightRecord } from "@/lib/events-contract";
 import { CenterPhoto } from "./center-photo";
+import { EventsCatalog, HighlightsCatalog, JournalPagination } from "./events-public";
 
 export function ProgramsContent({
   locale,
@@ -35,8 +38,8 @@ export function ProgramsContent({
                 <div className="program-description">
                   <Heading>{locale === "ko" ? "비트코인 강의" : "Bitcoin classes"}</Heading>
                   <p>{education.description}</p>
-                  <ActionLink href={`${content.visit.website.href}/#events`} variant="secondary">
-                    {locale === "ko" ? "행사 일정 확인" : "Event notices"}
+                  <ActionLink href={`/${locale}/programs#events`} variant="secondary">
+                    {locale === "ko" ? "행사 일정 확인" : "Event schedule"}
                     <ArrowUpRight className="icon" aria-hidden="true" />
                   </ActionLink>
                 </div>
@@ -52,8 +55,8 @@ export function ProgramsContent({
                 <div className="program-description">
                   <Heading>{locale === "ko" ? "비트코인 밋업" : "Meetups at the center"}</Heading>
                   <p>{meetups.description}</p>
-                  <ActionLink href={`${content.visit.website.href}/#events`} variant="secondary">
-                    {locale === "ko" ? "행사 일정 확인" : "Event notices"}
+                  <ActionLink href={`/${locale}/programs#events`} variant="secondary">
+                    {locale === "ko" ? "행사 일정 확인" : "Event schedule"}
                     <ArrowUpRight className="icon" aria-hidden="true" />
                   </ActionLink>
                 </div>
@@ -99,36 +102,10 @@ export function ExperienceContent({ locale }: { readonly locale: Locale }) {
             sizes="(max-width: 767px) 100vw, 50vw"
           />
         </MediaFrame>
-        <ActionLink variant="secondary" href={content.walletExperienceLink.href}>
+        <Link className="button" data-variant="secondary" locale={locale} href={content.walletExperienceLink.href}>
           {content.walletExperienceLink.label}
           <ArrowUpRight className="icon" aria-hidden="true" />
-        </ActionLink>
-      </div>
-    </div>
-  );
-}
-
-export function JournalContent({ locale }: { readonly locale: Locale }) {
-  const content = centerContent[locale];
-  return (
-    <div className="journal-layout">
-      <div className="journal-photo">
-        <CenterPhoto name="education" locale={locale} />
-      </div>
-      <div className="journal-entries">
-        {content.journal.entries.map((entry) => (
-          <article key={entry.id} id={entry.id}>
-            <p className="caption muted">{entry.category}</p>
-            <h2>{entry.title}</h2>
-            <p className="body-copy muted">{entry.summary}</p>
-          </article>
-        ))}
-        <ActionLink variant="secondary" href={content.visit.website.href}>
-          {locale === "ko"
-            ? "활동 사진 더 보기"
-            : "More photos from the center"}
-          <ArrowUpRight className="icon" aria-hidden="true" />
-        </ActionLink>
+        </Link>
       </div>
     </div>
   );
@@ -161,12 +138,12 @@ export function VisitDetails({ locale }: { readonly locale: Locale }) {
         <div>
           <dt>{visit.contact.label}</dt>
           <dd>
-            <ActionLink href={visit.contact.email.href} variant="secondary">
+            <a href={visit.contact.email.href} className="contact-link">
               <Mail className="icon" aria-hidden="true" />{visit.contact.email.label}
-            </ActionLink>
-            <ActionLink href={visit.contact.phone.href} variant="secondary">
+            </a>
+            <a href={visit.contact.phone.href} className="contact-link">
               <Phone className="icon" aria-hidden="true" />{visit.contact.phone.label}
-            </ActionLink>
+            </a>
           </dd>
         </div>
       </dl>
@@ -177,9 +154,17 @@ export function VisitDetails({ locale }: { readonly locale: Locale }) {
 export function SectionContent({
   locale,
   section,
+  events = [],
+  highlights = [],
+  today = "",
+  pagination = { page: 1, totalPages: 1 },
 }: {
   readonly locale: Locale;
   readonly section: PublicSection;
+  readonly events?: readonly EventRecord[];
+  readonly highlights?: readonly HighlightRecord[];
+  readonly today?: string;
+  readonly pagination?: { readonly page: number; readonly totalPages: number };
 }) {
   const content = centerContent[locale];
   switch (section) {
@@ -205,21 +190,11 @@ export function SectionContent({
         </div>
       );
     case "programs":
-      return <ProgramsContent locale={locale} heading="h2" />;
+      return <><ProgramsContent locale={locale} heading="h2" /><EventsCatalog events={events} locale={locale} today={today} /></>;
     case "experience":
       return <ExperienceContent locale={locale} />;
     case "journal":
-      return <JournalContent locale={locale} />;
-    case "goods":
-      return (
-        <div className="goods-detail">
-          <CenterPhoto name="retail" locale={locale} hero sizes="(max-width: 767px) 125vw, 100vw" />
-          <ActionLink href={content.visit.contact.email.href} variant="secondary" className="section-more">
-            <Mail className="icon" aria-hidden="true" />
-            {locale === "ko" ? "상품 문의" : "Product inquiries"}
-          </ActionLink>
-        </div>
-      );
+      return <><div className="journal-results" key={pagination.page}><HighlightsCatalog highlights={highlights} locale={locale} /></div><JournalPagination locale={locale} pagination={pagination} /></>;
     case "visit":
       return <VisitDetails locale={locale} />;
     default:
