@@ -1,5 +1,7 @@
 # Events-only local checkpoint — 2026-09-09
 
+The events-only baseline below was committed as `727a88228c172bab7b5293bf1a46dd0382c28d0a`. Its password, throttle and SQLite-engine descriptions are historical; the subsequently authorized security increment at the end of this file supersedes them.
+
 ## Owner scope
 
 Reset to `63a08b95cb54e06d9a00c89ae14d8d9eb1851284`, retain later public design work, and keep only event/highlight publishing with multiple images. Public pages remain Korean/English, light/dark. Administration is Korean-only on both locale paths. No commerce, customer accounts, payment, booking or administrator-account CRUD. Later owner refinements add editable URL slugs, a 12-record paginated journal, the local six-model bilingual wallet learning guide, administrator notice publishing and smooth content navigation.
@@ -40,5 +42,30 @@ No push, deployment, GitHub Actions, production writes, operational email or pay
 
 The single-password login has a global five-failure / 15-minute throttle. This bounds guessing without trusting spoofable proxy headers, but an attacker can temporarily deny new admin logins. Before an approved public release, restrict administrator access at the known nginx/network boundary or configure and test a trusted-proxy policy. Existing valid sessions continue working. Removing an image from a record does not delete potentially shared files; disk cleanup is a separate explicit maintenance action.
 
-## Subsequent review request (no implementation authorized)
+## Historical review request (before security implementation was authorized)
 The owner requested review only of PostgreSQL migration value, stronger password handling/full security-audit scope, and bitcoinindonesia.xyz as a motion reference. Current implementation remains the local baseline. A read-only in-memory query reports bundled SQLite3.50.4; SQLite's official WAL documentation identifies this as predating the WAL-reset race fix (3.51.3+, or3.50.7 backport). The published trigger requires concurrent write/checkpoint activity from multiple connections; no corruption or exploitation was demonstrated here. A dependency/engine update is a follow-up review recommendation, not an implemented fix, and npm-audit0 does not cover this native-engine finding. Source: https://www.sqlite.org/wal.html
+
+## Authorized security and focus increment — 2026-09-09
+
+The owner then authorized resolving the SQLite/security items and smoothing input focus. SQLite remains the content store; better-sqlite3 13.0.3 embeds SQLite 3.53.4. Existing data and administrator passwords remain compatible through the documented one-time scrypt conversion. The new app accepts only `ADMIN_PASSWORD_HASH`, uses independent opaque sessions with idle/absolute expiry and credential rotation, and requires a configured trusted proxy for HTTPS login throttling. The previous global in-flight rejection was replaced by a serial KDF queue admitting up to eight distinct clients; the ninth and duplicate-client requests are rejected. Online backup and isolated restore verification include the referenced images. See [security findings and scope](../security/2026-09-09-hardening.md) and [operator procedures](../security/operations.md).
+
+Final integrated checks, all exit0, in `web/.local/events-review/`:
+
+| Verification | Result | Evidence |
+| --- | --- | --- |
+| Production build | PASS | `security-delivery-build.log` |
+| TypeScript and ESLint | PASS | `security-delivery-check.log` |
+| Browser/API/admin/notices/wallet/focus/CSP | 47/47 | `security-delivery.log` |
+| Password migration/session/proxy/concurrent admission | 8/8 | `security-unit-delivery.log` |
+| WAL backup, images, permissions, restore and failure paths | 10/10 | `security-backup-delivery.log` |
+| Public navigation, motion and SEO | 27/27 | `security-public.log` |
+| Image optimizer patch | 3/3 | `security-image-optimizer.log` |
+| New web dependency audit | 0 advisories | `security-npm-audit.json` |
+
+The public suite ran before the final backend-only queue correction; public source did not change afterward. The integrated 47-test run and build include that correction. Root also used the real browser to log in, visit administration, log out and confirm access was revoked, observing zero page/console errors (`security-manual.json`, `security-manual-admin.png`). The password CLI was exercised interactively with an artificial test password: hidden confirmation prompts, private verifier file, compatibility verification and cleanup all passed. No operational credential was inspected.
+
+Focus evidence under `web/.local/focus-motion/` contains24 form/theme/width sets,72 PNGs,204 native-control checks,48 image diffs and two independent PASS reviews with no blockers. The four forms cover login, events, highlights and notices; widths are375/768/1280 in both themes. Interrupted focus and dynamic reduced-motion/forced-colors preferences pass. Frontend evidence is bound to CSS SHA-256 `2c9b418369c8ad123171ec4abcf8bdfa35d6a8c8278dffdcb7f60b360f831153`; later backend rebuilds did not change that source. See `final-report.md` and `current/reviews.json`.
+
+The immutable baseline security scan is sealed under `.local/security-2026-09-09/baseline/`. It records seven findings: the new app's global lockout was fixed; six findings remain in the deliberately preserved root legacy service/tools. The root dependency audit separately reports37 advisories. New standalone deployment templates exclude the legacy runtime. Production is not changed, so these legacy risks must not be represented as remediated on the live server. Host TLS, nginx syntax, firewall, service permissions and scheduled off-host backups require the separately authorized operational release; nginx is not installed locally.
+
+The LSP hook timeout was reproduced without editing source: clean-to-clean edits do not always generate a new empty diagnostic notification, while OMO waits three seconds for one. Compiler/lint/build checks above are the authoritative validation for this tool-protocol limitation. No global plugin or hook was disabled. No push, deployment, GitHub Actions, production writes, operational messages or payments occurred.
