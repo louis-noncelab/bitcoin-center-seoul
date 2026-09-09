@@ -10,6 +10,7 @@ import {
   clearSessionCookie,
   isAuthenticated,
   login,
+  loginClientKey,
   logout,
   requireAdmin,
   requireSameOrigin,
@@ -144,7 +145,7 @@ export async function adminLogin(request: NextRequest): Promise<Response> {
     requireSameOrigin(request);
     const { password } = await jsonBody(request, loginSchema);
     const response = dataResponse({ authenticated: true });
-    setSessionCookie(response, login(password));
+    setSessionCookie(response, await login(password, loginClientKey(request)));
     return response;
   });
 }

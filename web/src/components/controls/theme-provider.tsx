@@ -3,13 +3,14 @@
 import { ThemeProvider as NextThemeProvider } from "next-themes";
 import type { ReactNode } from "react";
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
+export function ThemeProvider({ children, nonce }: { readonly children: ReactNode; readonly nonce: string }) {
   return (
     <NextThemeProvider
       attribute="data-theme"
       defaultTheme="light"
       enableSystem={false}
       storageKey="bcs-theme"
+      nonce={nonce}
     >
       {children}
     </NextThemeProvider>

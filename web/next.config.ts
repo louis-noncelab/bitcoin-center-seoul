@@ -24,6 +24,10 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
+          {
+            key: "Content-Security-Policy",
+            value: "default-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+          },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
           {

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { locale as getRootLocale } from "next/root-params";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
@@ -24,12 +25,13 @@ export default async function LocaleLayout({
 }) {
   const locale = await getRootLocale();
   if (!hasLocale(routing.locales, locale)) notFound();
+  const nonce = (await headers()).get("x-nonce") ?? "";
 
   return (
     <html lang={locale} data-scroll-behavior="smooth" suppressHydrationWarning>
       <body>
         <NextIntlClientProvider locale={locale} messages={null}>
-          <ThemeProvider>
+          <ThemeProvider nonce={nonce}>
             <ReadingProgress />
             {children}
           </ThemeProvider>

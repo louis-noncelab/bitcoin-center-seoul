@@ -90,6 +90,13 @@ function initialize(next: Database.Database, createLegacy: boolean): Database.Da
     CREATE UNIQUE INDEX IF NOT EXISTS content_slugs_current
       ON content_slugs (kind, content_id) WHERE is_current = 1;
     `);
+    const sessionColumns = next.prepare<[], { readonly name: string }>("PRAGMA table_info(admin_sessions)").all();
+    if (!sessionColumns.some(({ name }) => name === "last_seen_at")) {
+      next.exec("ALTER TABLE admin_sessions ADD COLUMN last_seen_at INTEGER NOT NULL DEFAULT 0");
+    }
+    if (!sessionColumns.some(({ name }) => name === "credential_version")) {
+      next.exec("ALTER TABLE admin_sessions ADD COLUMN credential_version TEXT NOT NULL DEFAULT ''");
+    }
     return next;
   } catch (error) {
     if (next.open) next.close();

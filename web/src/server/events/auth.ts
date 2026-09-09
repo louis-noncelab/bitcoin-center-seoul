@@ -1,17 +1,20 @@
 import "server-only";
 
-import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
+import { isIP } from "node:net";
 import type { NextRequest, NextResponse } from "next/server";
 import { configuredOrigin } from "@/server/events/config";
 import { getDatabase } from "@/server/events/db";
 import { ApiError, configurationError } from "@/server/events/errors";
+import { validPasswordHash, verifyPassword } from "@/server/events/password";
 
 const cookieName = "bcs_admin_session";
 const sessionSeconds = 8 * 60 * 60;
+const idleMilliseconds = 30 * 60 * 1000;
 const loginWindowMs = 15 * 60 * 1000;
 const loginLimit = 5;
-// ponytail: one password uses one global throttle; add a trusted-proxy IP bucket only if concurrent admins need it.
-const loginKey = "global";
+const pendingClients = new Set<string>();
+let verificationTail = Promise.resolve();
 
 type AttemptRow = {
   readonly window_started: number;
@@ -23,18 +26,10 @@ function hash(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
-function password(): string {
-  const value = process.env.ADMIN_PASSWORD;
-  if (!value) throw configurationError("ADMIN_PASSWORD");
+function passwordHash(): string {
+  const value = process.env.ADMIN_PASSWORD_HASH;
+  if (!value || !validPasswordHash(value)) throw configurationError("ADMIN_PASSWORD_HASH");
   return value;
-}
-
-function safePasswordEqual(candidate: string): boolean {
-  return timingSafeEqual(Buffer.from(hash(candidate)), Buffer.from(hash(password())));
-}
-
-export function sessionTokenHash(token: string, secret: string): string {
-  return createHmac("sha256", secret).update(token).digest("hex");
 }
 
 function assertLoginAllowed(key: string, now: number): void {
@@ -48,9 +43,10 @@ function assertLoginAllowed(key: string, now: number): void {
   }
 }
 
-function recordFailure(key: string, now: number): boolean {
+function reserveAttempt(key: string, now: number): void {
   const db = getDatabase();
-  return db.transaction(() => {
+  db.transaction(() => {
+    assertLoginAllowed(key, now);
     const row = db
       .prepare<[string], AttemptRow>(
         "SELECT window_started, failures, blocked_until FROM admin_login_attempts WHERE client_hash = ?",
@@ -66,8 +62,20 @@ function recordFailure(key: string, now: number): boolean {
       ON CONFLICT(client_hash) DO UPDATE SET
         window_started = excluded.window_started, failures = excluded.failures, blocked_until = excluded.blocked_until
     `).run(key, windowStarted, failures, blockedUntil);
-    return blockedUntil > now;
+    db.prepare("DELETE FROM admin_login_attempts WHERE window_started < ? AND blocked_until < ?")
+      .run(now - loginWindowMs, now);
   })();
+}
+
+export function loginClientKey(request: NextRequest): string {
+  const origin = configuredOrigin();
+  if (process.env.BCS_TRUST_PROXY !== "true") {
+    if (origin.protocol === "http:") return "global";
+    throw configurationError("BCS_TRUST_PROXY");
+  }
+  const address = request.headers.get("x-bcs-client-ip");
+  if (!address || !isIP(address)) throw new ApiError(403, "PROXY_REQUIRED", "요청 경로를 확인할 수 없습니다.");
+  return hash(address);
 }
 
 export function requireSameOrigin(request: NextRequest): void {
@@ -86,22 +94,34 @@ export function requireSameOrigin(request: NextRequest): void {
   }
 }
 
-export function login(candidate: string): string {
+export async function login(candidate: string, clientKey: string): Promise<string> {
+  const encoded = passwordHash();
   const now = Date.now();
-  assertLoginAllowed(loginKey, now);
-  if (!safePasswordEqual(candidate)) {
-    const blocked = recordFailure(loginKey, now);
-    if (blocked) throw new ApiError(429, "RATE_LIMITED", "잠시 후 다시 시도해주세요.");
-    throw new ApiError(401, "INVALID_CREDENTIALS", "암호가 올바르지 않습니다.");
+  if (pendingClients.has(clientKey) || pendingClients.size >= 8) throw new ApiError(429, "RATE_LIMITED", "잠시 후 다시 시도해주세요.");
+  // Reserve the attempt before awaiting the KDF, including across Node processes.
+  reserveAttempt(clientKey, now);
+  pendingClients.add(clientKey);
+  const verification = verificationTail.then(() => verifyPassword(candidate, encoded));
+  verificationTail = verification.then(() => undefined, () => undefined);
+  try {
+    if (!await verification) {
+      assertLoginAllowed(clientKey, Date.now());
+      throw new ApiError(401, "INVALID_CREDENTIALS", "암호가 올바르지 않습니다.");
+    }
+  } finally {
+    pendingClients.delete(clientKey);
   }
   const db = getDatabase();
   const token = randomBytes(32).toString("base64url");
   db.transaction(() => {
-    db.prepare("DELETE FROM admin_sessions WHERE expires_at <= ?").run(now);
-    db.prepare("DELETE FROM admin_login_attempts WHERE client_hash = ?").run(loginKey);
-    db.prepare("INSERT INTO admin_sessions (token_hash, expires_at) VALUES (?, ?)").run(
-      sessionTokenHash(token, password()),
+    db.prepare("DELETE FROM admin_sessions WHERE expires_at <= ? OR last_seen_at <= ? OR credential_version != ?")
+      .run(now, now - idleMilliseconds, hash(encoded));
+    db.prepare("DELETE FROM admin_login_attempts WHERE client_hash = ?").run(clientKey);
+    db.prepare("INSERT INTO admin_sessions (token_hash, expires_at, last_seen_at, credential_version) VALUES (?, ?, ?, ?)").run(
+      hash(token),
       now + sessionSeconds * 1000,
+      now,
+      hash(encoded),
     );
   })();
   return token;
@@ -110,12 +130,12 @@ export function login(candidate: string): string {
 export function isAuthenticated(request: NextRequest): boolean {
   const token = request.cookies.get(cookieName)?.value;
   if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) return false;
-  const row = getDatabase()
-    .prepare<[string, number], { readonly authenticated: 1 }>(
-      "SELECT 1 AS authenticated FROM admin_sessions WHERE token_hash = ? AND expires_at > ?",
-    )
-    .get(sessionTokenHash(token, password()), Date.now());
-  return row?.authenticated === 1;
+  const now = Date.now();
+  const result = getDatabase().prepare(`
+    UPDATE admin_sessions SET last_seen_at = ?
+    WHERE token_hash = ? AND expires_at > ? AND last_seen_at > ? AND credential_version = ?
+  `).run(now, hash(token), now, now - idleMilliseconds, hash(passwordHash()));
+  return result.changes === 1;
 }
 
 export function requireAdmin(request: NextRequest): void {
@@ -125,7 +145,7 @@ export function requireAdmin(request: NextRequest): void {
 export function logout(request: NextRequest): void {
   const token = request.cookies.get(cookieName)?.value;
   if (token && /^[A-Za-z0-9_-]{43}$/.test(token)) {
-    getDatabase().prepare("DELETE FROM admin_sessions WHERE token_hash = ?").run(sessionTokenHash(token, password()));
+    getDatabase().prepare("DELETE FROM admin_sessions WHERE token_hash = ?").run(hash(token));
   }
 }
 

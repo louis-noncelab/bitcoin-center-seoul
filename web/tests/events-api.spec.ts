@@ -42,10 +42,11 @@ test("keeps runtime database access fail closed and legacy compatible", () => {
     const before = JSON.stringify(seed.prepare("SELECT * FROM events WHERE id = 1").get());
     seed.close();
     process.env.BCS_EVENTS_DB = process.env.BCS_LEGACY_TEST_PATH;
-    process.env.ADMIN_PASSWORD = "local-test-password";
+    const { createPasswordHash } = await import("./src/server/events/password.ts");
+    process.env.ADMIN_PASSWORD_HASH = await createPasswordHash("local-test-password");
     const [{ listEvents }, { login }] = await Promise.all([import("./src/server/events/index.ts"), import("./src/server/events/auth.ts")]);
     const events = listEvents();
-    login("local-test-password");
+    await login("local-test-password", "global");
     const verify = new Sqlite(process.env.BCS_LEGACY_TEST_PATH, { fileMustExist: true });
     const after = JSON.stringify(verify.prepare("SELECT * FROM events WHERE id = 1").get());
     const additions = verify.prepare("SELECT count(*) AS count FROM sqlite_master WHERE type='table' AND name IN ('content_images','content_slugs','admin_sessions','admin_login_attempts')").get().count;

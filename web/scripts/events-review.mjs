@@ -4,6 +4,7 @@ import { spawn } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { applyPatch } from "./patch-next-image-optimizer.mjs";
+import { createPasswordHash, validPasswordHash } from "../src/server/events/password.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const directory = join(root, ".local/events-review");
@@ -37,6 +38,14 @@ if (!runtime || typeof runtime !== "object" || Array.isArray(runtime)
   throw new Error("Invalid isolated review configuration.");
 }
 const environment = { ...process.env, ...runtime, BCS_EVENTS_REVIEW: "true", __NEXT_PROCESSED_ENV: "true" };
+if (!runtime.ADMIN_PASSWORD_HASH) {
+  runtime.ADMIN_PASSWORD_HASH = await createPasswordHash(runtime.ADMIN_PASSWORD);
+  await writeFile(file, JSON.stringify(runtime), { mode: 0o600 });
+}
+if (!validPasswordHash(runtime.ADMIN_PASSWORD_HASH)) throw new Error("Invalid review password hash.");
+environment.ADMIN_PASSWORD_HASH = runtime.ADMIN_PASSWORD_HASH;
+environment.BCS_TRUST_PROXY = "false";
+if (command !== "test") delete environment.ADMIN_PASSWORD;
 applyPatch();
 let target;
 switch (command) {

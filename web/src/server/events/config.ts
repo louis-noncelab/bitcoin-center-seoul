@@ -27,6 +27,10 @@ export function configuredOrigin(): URL {
   try {
     const url = new URL(required("APP_ORIGIN"));
     if (url.protocol !== "https:" && url.protocol !== "http:") throw configurationError("APP_ORIGIN");
+    const loopback = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+    if ((url.protocol === "http:" && !loopback) || url.username || url.password || url.pathname !== "/" || url.search || url.hash) {
+      throw configurationError("APP_ORIGIN");
+    }
     return new URL(url.origin);
   } catch (error) {
     if (error instanceof ApiError) throw error;

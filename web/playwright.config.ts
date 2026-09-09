@@ -8,7 +8,9 @@ export default defineConfig({
   reporter: "list",
   use: {
     baseURL: "http://127.0.0.1:3100",
-    trace: "retain-on-failure",
+    trace: "off",
+    screenshot: "off",
+    video: "off",
   },
   projects: [
     {
