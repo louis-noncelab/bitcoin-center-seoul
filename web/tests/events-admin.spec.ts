@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Locator, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
@@ -10,6 +10,56 @@ async function login(page: Page) {
   await page.getByLabel("관리자 비밀번호", { exact: true }).fill(ADMIN_PASSWORD);
   await page.getByRole("button", { name: "로그인", exact: true }).click();
   await expect(page.getByRole("heading", { name: "행사 목록", exact: true })).toBeVisible();
+}
+
+async function expectSmoothFocus(field: Locator) {
+  const bounds = await field.boundingBox();
+  await field.focus();
+  const colors = await field.evaluate((element) => {
+    const transition = element.getAnimations().find((animation) => animation instanceof CSSTransition && animation.transitionProperty === "outline-color");
+    if (!transition?.effect) return [];
+    const duration = Number(transition.effect.getComputedTiming().duration);
+    transition.pause();
+    const frames = [0, duration / 2, duration].map((time) => {
+      transition.currentTime = time;
+      return getComputedStyle(element).outlineColor;
+    });
+    transition.finish();
+    return frames;
+  });
+  expect(colors).toHaveLength(3);
+  expect(colors[0]).toBe("rgba(0, 0, 0, 0)");
+  expect(colors[1]).not.toBe(colors[0]);
+  expect(colors[1]).not.toBe(colors[2]);
+  await expect(field).toHaveCSS("outline-style", "solid");
+  await expect(field).toHaveCSS("outline-width", "2px");
+  expect(await field.boundingBox()).toEqual(bounds);
+}
+
+for (const theme of ["light", "dark"]) {
+  test(`입력 포커스가 부드럽게 전환되고 모션 감소에서는 즉시 표시된다 · ${theme}`, async ({ page }) => {
+    await page.addInitScript((value) => localStorage.setItem("bcs-theme", value), theme);
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/ko/admin");
+    await expectSmoothFocus(page.getByLabel("관리자 비밀번호", { exact: true }));
+    await login(page);
+    await page.getByRole("button", { name: "새 항목 등록", exact: true }).click();
+    const description = page.getByLabel("설명 · 한국어", { exact: true });
+    await description.scrollIntoViewIfNeeded();
+    await expectSmoothFocus(description);
+
+    await description.blur();
+    expect(await description.evaluate((element) => element.getAnimations().length)).toBe(1);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    expect(await description.evaluate((element) => element.getAnimations().length)).toBe(0);
+    await description.focus();
+    expect(await description.evaluate((element) => element.getAnimations().length)).toBe(0);
+    await expect(description).toHaveCSS("outline-color", theme === "light" ? "rgb(174, 67, 8)" : "rgb(255, 138, 64)");
+    await page.emulateMedia({ forcedColors: "active" });
+    await expect(description).toHaveCSS("outline-style", "solid");
+    await description.blur();
+    await expect(description).toHaveCSS("outline-style", "none");
+  });
 }
 
 test("행사 등록, 사진 두 장 업로드, 수정, 세션 만료 후 초안 보존, 삭제", async ({ page, baseURL }) => {
