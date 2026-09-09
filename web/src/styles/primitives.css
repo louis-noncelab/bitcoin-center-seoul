@@ -94,7 +94,7 @@ button:not(:disabled), summary {
 .section-heading {
   display: grid;
   gap: var(--space-4);
-  margin-block-end: var(--space-8);
+  margin-block-end: var(--space-6);
 }
 
 .body-copy {
@@ -124,7 +124,7 @@ button:not(:disabled), summary {
   justify-content: center;
   gap: var(--space-3);
   min-block-size: var(--control-height);
-  padding: var(--space-3) var(--space-6);
+  padding: calc(var(--space-3) - var(--border-width)) var(--space-6);
   border: var(--border-width) solid transparent;
   border-radius: var(--radius-control);
   font-size: var(--text-small);
@@ -182,6 +182,69 @@ button:not(:disabled), summary {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
+}
+
+.form-control {
+  position: relative;
+  display: grid;
+  min-inline-size: 0;
+}
+
+.form-control > :is(input, select, textarea) {
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-inline-size: 0;
+  min-block-size: var(--control-height);
+  padding: calc(var(--space-3) - var(--border-width)) var(--space-3);
+  color: var(--ink);
+  background: var(--canvas);
+  border: var(--border-width) solid var(--field-border);
+  border-radius: var(--radius-control);
+  font-size: var(--text-small);
+  line-height: var(--leading-small);
+  outline: none;
+}
+
+.form-control > textarea { resize: vertical; }
+.form-control > select { padding-inline-end: var(--space-10); }
+.form-control > :disabled { color: var(--muted); background: var(--surface); cursor: not-allowed; }
+.form-control > [aria-invalid="true"] { border-color: var(--danger); }
+.form-control > input[type="file"] { padding: calc(var(--space-2) - var(--border-width)); }
+.form-control > input::file-selector-button {
+  margin-inline-end: var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  border: 0;
+  border-radius: var(--space-1);
+  color: var(--ink);
+  background: var(--surface);
+  font: inherit;
+  cursor: pointer;
+}
+.form-control > input:disabled::file-selector-button { color: var(--muted); cursor: not-allowed; }
+
+.form-control::after {
+  content: "";
+  position: absolute;
+  inset-inline: var(--radius-control);
+  inset-block-end: 0;
+  block-size: var(--focus-width);
+  background: var(--focus);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: none;
+  pointer-events: none;
+}
+.form-control:focus-within::after { transform: scaleX(1); }
+.form-control:has([aria-invalid="true"])::after { background: var(--danger); }
+.form-control:has(:disabled)::after { transform: scaleX(0); }
+
+@media (prefers-reduced-motion: no-preference) and (forced-colors: none) {
+  .form-control::after { transition: transform var(--duration-control) var(--ease-out); }
+}
+
+@media (forced-colors: active) {
+  .form-control::after { display: none; }
+  .form-control > :focus { outline: var(--focus-width) solid Highlight; outline-offset: var(--focus-offset); }
 }
 
 .text-link {

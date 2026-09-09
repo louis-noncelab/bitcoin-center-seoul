@@ -1,5 +1,9 @@
 import type { ComponentPropsWithRef, ReactNode } from "react";
 
+export function FormControl({ children }: { readonly children: ReactNode }) {
+  return <span className="form-control">{children}</span>;
+}
+
 type ActionVariant = "primary" | "secondary" | "quiet";
 
 type ButtonProps = ComponentPropsWithRef<"button"> & {

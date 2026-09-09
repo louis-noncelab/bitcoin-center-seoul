@@ -15,46 +15,58 @@ async function login(page: Page) {
 async function expectSmoothFocus(field: Locator) {
   const bounds = await field.boundingBox();
   await field.focus();
-  const colors = await field.evaluate((element) => {
-    const transition = element.getAnimations().find((animation) => animation instanceof CSSTransition && animation.transitionProperty === "outline-color");
+  const scales = await field.evaluate((element) => {
+    const control = element.parentElement;
+    if (!control?.classList.contains("form-control")) throw new Error("Missing shared field control");
+    const transition = control.getAnimations({ subtree: true }).find((animation) => animation instanceof CSSTransition && animation.transitionProperty === "transform");
     if (!transition?.effect) return [];
     const duration = Number(transition.effect.getComputedTiming().duration);
     transition.pause();
     const frames = [0, duration / 2, duration].map((time) => {
       transition.currentTime = time;
-      return getComputedStyle(element).outlineColor;
+      return new DOMMatrixReadOnly(getComputedStyle(control, "::after").transform).a;
     });
     transition.finish();
     return frames;
   });
-  expect(colors).toHaveLength(3);
-  expect(colors[0]).toBe("rgba(0, 0, 0, 0)");
-  expect(colors[1]).not.toBe(colors[0]);
-  expect(colors[1]).not.toBe(colors[2]);
-  await expect(field).toHaveCSS("outline-style", "solid");
-  await expect(field).toHaveCSS("outline-width", "2px");
+  expect(scales).toHaveLength(3);
+  expect(scales[0]).toBe(0);
+  expect(scales[1]).toBeGreaterThan(0);
+  expect(scales[1]).toBeLessThan(1);
+  expect(scales[2]).toBe(1);
+  const line = await field.locator("..").evaluate((element) => {
+    const style = getComputedStyle(element, "::after");
+    return { height: style.height, origin: parseFloat(style.transformOrigin), width: parseFloat(style.width) };
+  });
+  expect(line.height).toBe("2px");
+  expect(line.origin).toBeCloseTo(line.width / 2);
+  await expect(field).toHaveCSS("outline-style", "none");
   expect(await field.boundingBox()).toEqual(bounds);
 }
 
 for (const theme of ["light", "dark"]) {
-  test(`입력 포커스가 부드럽게 전환되고 모션 감소에서는 즉시 표시된다 · ${theme}`, async ({ page }) => {
+  test(`입력 하단 선이 중앙에서 펼쳐지고 모션 감소에서는 즉시 표시된다 · ${theme}`, async ({ page }) => {
     await page.addInitScript((value) => localStorage.setItem("bcs-theme", value), theme);
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/ko/admin");
     await expectSmoothFocus(page.getByLabel("관리자 비밀번호", { exact: true }));
     await login(page);
     await page.getByRole("button", { name: "새 항목 등록", exact: true }).click();
+    for (const field of [page.getByLabel("제목 · 한국어", { exact: true }), page.getByLabel("행사 날짜", { exact: true }), page.getByLabel("사진 여러 장 선택"), page.getByRole("button", { name: "저장", exact: true })]) {
+      expect((await field.boundingBox())?.height).toBe(48);
+    }
     const description = page.getByLabel("설명 · 한국어", { exact: true });
     await description.scrollIntoViewIfNeeded();
     await expectSmoothFocus(description);
 
     await description.blur();
-    expect(await description.evaluate((element) => element.getAnimations().length)).toBe(1);
+    const control = description.locator("..");
+    expect(await control.evaluate((element) => element.getAnimations({ subtree: true }).length)).toBe(1);
     await page.emulateMedia({ reducedMotion: "reduce" });
-    expect(await description.evaluate((element) => element.getAnimations().length)).toBe(0);
+    expect(await control.evaluate((element) => element.getAnimations({ subtree: true }).length)).toBe(0);
     await description.focus();
-    expect(await description.evaluate((element) => element.getAnimations().length)).toBe(0);
-    await expect(description).toHaveCSS("outline-color", theme === "light" ? "rgb(174, 67, 8)" : "rgb(255, 138, 64)");
+    expect(await control.evaluate((element) => new DOMMatrixReadOnly(getComputedStyle(element, "::after").transform).a)).toBe(1);
+    expect(await control.evaluate((element) => getComputedStyle(element, "::after").backgroundColor)).toBe(theme === "light" ? "rgb(174, 67, 8)" : "rgb(255, 138, 64)");
     await page.emulateMedia({ forcedColors: "active" });
     await expect(description).toHaveCSS("outline-style", "solid");
     await description.blur();

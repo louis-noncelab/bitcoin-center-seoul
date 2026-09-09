@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRef, useState } from "react";
 import { z } from "zod";
-import { Button } from "@/components/ui/primitives";
+import { Button, FormControl } from "@/components/ui/primitives";
 import type { Locale } from "@/i18n/routing";
 import { adminRequest, AdminRequestError, errorText } from "./request";
 
@@ -38,7 +38,7 @@ export function GalleryField({ locale, images, onChange, onPending, onExpired }:
     <fieldset className="events-gallery-field" disabled={pending}>
       <legend>{ko ? "사진" : "Images"}</legend>
       <p className="muted">{ko ? "첫 번째 사진이 대표 이미지입니다. 최대 12장 · 각 10MB · 한 번에 30MB" : "The first image is the cover. Up to 12 images · 10MB each · 30MB per upload"}</p>
-      <label className="events-upload">{ko ? "사진 여러 장 선택" : "Choose images"}<input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(event) => void upload(event.currentTarget)} disabled={pending || images.length >= 12} /></label>
+      <label className="events-upload">{ko ? "사진 여러 장 선택" : "Choose images"}<FormControl><input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(event) => void upload(event.currentTarget)} disabled={pending || images.length >= 12} /></FormControl></label>
       <p role="status">{pending ? (ko ? "사진 업로드 중…" : "Uploading images…") : (ko ? `${images.length}장 선택됨` : `${images.length} images selected`)}</p>
       {error && <p className="events-error" role="alert">{error}</p>}
       <ol className="events-gallery-editor">

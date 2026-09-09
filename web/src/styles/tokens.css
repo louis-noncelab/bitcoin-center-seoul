@@ -63,7 +63,7 @@
   --space-32: 8rem;
   --space-36: 9rem;
   --gutter: clamp(var(--space-5), 4vw, var(--space-12));
-  --section-gap: clamp(var(--space-10), 5vw, var(--space-16));
+  --section-gap: clamp(var(--space-8), 4vw, var(--space-12));
   --content-max: 80rem;
   --footer-content-max: 80rem;
   --measure: 62ch;

@@ -1,8 +1,8 @@
 .events-catalog {
   display: grid;
-  gap: var(--space-12);
-  margin-block-start: var(--space-12);
-  padding-block-start: var(--space-10);
+  gap: var(--space-8);
+  margin-block-start: var(--space-8);
+  padding-block-start: var(--space-8);
   border-block-start: var(--border-width) solid var(--line);
 }
 
@@ -90,7 +90,7 @@
 }
 
 @media (max-width: 767px) {
-  .events-catalog { gap: var(--space-10); margin-block-start: var(--space-10); padding-block-start: var(--space-8); }
+  .events-catalog { margin-block-start: var(--space-6); padding-block-start: var(--space-6); }
   .event-card { grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-4); }
   .event-card-photo { grid-column: 1 / -1; }
   .event-card-copy > strong { font-size: var(--text-title); }

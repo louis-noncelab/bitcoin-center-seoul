@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { z } from "zod";
-import { Button } from "@/components/ui/primitives";
+import { Button, FormControl } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { noticeInputSchema, noticeRecordSchema, type NoticeRecord } from "@/lib/notices-contract";
 import { LoginForm } from "./login-form";
@@ -80,11 +80,11 @@ export function NoticesAdmin() {
     {editing ? <form className="events-form" key={selected?.id ?? "new"} onSubmit={(event) => void save(event)} onChange={() => setDirty(true)}>
       <h2>{selected ? "공지 수정" : "공지 등록"}</h2>
       <fieldset className="events-editor-fields" disabled={pending}>
-        <label>제목<input name="title" defaultValue={selected?.title ?? ""} required maxLength={200} /></label>
-        <label>URL 슬러그<input name="slug" defaultValue={selected?.slug ?? ""} required maxLength={100} pattern="(?=.*[a-z])[a-z0-9]+(-[a-z0-9]+)*" autoCapitalize="none" spellCheck={false} aria-describedby="notice-slug-help" /></label>
+        <label>제목<FormControl><input name="title" defaultValue={selected?.title ?? ""} required maxLength={200} /></FormControl></label>
+        <label>URL 슬러그<FormControl><input name="slug" defaultValue={selected?.slug ?? ""} required maxLength={100} pattern="(?=.*[a-z])[a-z0-9]+(-[a-z0-9]+)*" autoCapitalize="none" spellCheck={false} aria-describedby="notice-slug-help" /></FormControl></label>
         <p id="notice-slug-help" className="muted">/ko/notices/ 뒤에 붙는 주소입니다. 영문 소문자·숫자·하이픈을 사용하세요. 이전 주소도 새 주소로 연결됩니다.</p>
-        <label>본문<textarea name="description" defaultValue={selected?.description ?? ""} required rows={10} maxLength={20000} /></label>
-        <div className="events-field-grid"><label>영어 제목 (선택)<input name="titleEn" defaultValue={selected?.titleEn ?? ""} maxLength={200} /></label><label>영어 본문 (선택)<textarea name="descriptionEn" defaultValue={selected?.descriptionEn ?? ""} rows={5} maxLength={20000} /></label></div>
+        <label>본문<FormControl><textarea name="description" defaultValue={selected?.description ?? ""} required rows={10} maxLength={20000} /></FormControl></label>
+        <div className="events-field-grid"><label>영어 제목 (선택)<FormControl><input name="titleEn" defaultValue={selected?.titleEn ?? ""} maxLength={200} /></FormControl></label><label>영어 본문 (선택)<FormControl><textarea name="descriptionEn" defaultValue={selected?.descriptionEn ?? ""} rows={5} maxLength={20000} /></FormControl></label></div>
         <p className="muted">영어를 입력하지 않으면 영어 페이지에도 한국어 내용이 표시됩니다.</p>
         <label className="events-checkbox"><input name="is_active" type="checkbox" defaultChecked={Boolean(selected?.is_active)} />공개</label>
       </fieldset>
