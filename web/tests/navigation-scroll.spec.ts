@@ -93,8 +93,28 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
   });
 }
 
+test("journal history returns to the card's reading position", async ({ page }) => {
+  await page.goto("/ko/journal?page=2");
+  const link = page.locator(".highlight-card-link").last();
+  await link.scrollIntoViewIfNeeded();
+  const previousScroll = await page.evaluate(() => scrollY);
+  expect(previousScroll).toBeGreaterThan(300);
+  const target = await link.getAttribute("href");
+  expect(target).toBeTruthy();
+
+  await link.click();
+  await expect(page).toHaveURL(new RegExp(`${target}$`));
+  await page.goBack();
+
+  await expect(page).toHaveURL("/ko/journal?page=2");
+  await expect.poll(() => page.evaluate(
+    (previous) => scrollY - Math.min(previous, document.documentElement.scrollHeight - innerHeight),
+    previousScroll,
+  )).toBe(0);
+});
+
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
-  test(`journal pagination and cards enter smoothly with ${reducedMotion}`, async ({ page }) => {
+  test(`journal pagination and cards leave the current reading position intact until routing with ${reducedMotion}`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion });
     await page.goto("/ko/journal");
     for (const selector of ['.journal-pagination a[rel="next"]', '.highlight-card-link']) {
@@ -117,8 +137,8 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
       expect(await page.evaluate(() => scrollY)).toBe(0);
       const first = frames[0];
       expect(first?.y).toBeGreaterThan(0);
-      if (reducedMotion === "no-preference" && first) {
-        expect(frames.filter(({ y, url }) => url === first.url && y > 0 && y < first.y).length).toBeGreaterThan(3);
+      if (first) {
+        expect(frames.filter(({ y, url }) => url === first.url && y !== first.y), "The old page must stay still while the next route loads").toEqual([]);
       }
     }
     await expect(page.locator(".event-detail")).toHaveCSS("transform", "none");
