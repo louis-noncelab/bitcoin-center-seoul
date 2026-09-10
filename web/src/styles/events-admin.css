@@ -4,6 +4,8 @@
 .events-admin-page > h1 { font-size: var(--text-heading); margin-bottom: var(--space-6); }
 .events-admin-workspace, .events-form { display: grid; gap: var(--space-6); }
 .events-login { max-width: 30rem; padding: var(--space-8); border: 1px solid var(--line); border-radius: var(--radius-panel); }
+.events-admin-page > .events-login { margin-inline: auto; }
+.events-admin-page:has(> .events-login) > h1 { text-align: center; }
 .events-form h2, .events-admin-toolbar h2 { font-size: var(--text-subheading); }
 .events-form label { display: grid; align-content: start; gap: var(--space-2); font-size: var(--text-small); }
 .events-form input[type="checkbox"] { width: var(--space-5); height: var(--space-5); accent-color: var(--blue-ink); }
