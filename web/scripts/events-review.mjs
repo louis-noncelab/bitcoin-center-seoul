@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { cp, mkdir, readFile, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -48,13 +48,21 @@ environment.BCS_TRUST_PROXY = "false";
 if (command !== "test") delete environment.ADMIN_PASSWORD;
 applyPatch();
 let target;
+let serverSnapshot;
 switch (command) {
   case "import": target = ["--conditions=react-server", "--import", "tsx", "scripts/events-import.ts", ...args]; break;
   case "dev": target = ["node_modules/next/dist/bin/next", command, "--hostname", "127.0.0.1", "--port", "3102", ...args]; break;
   case "start": {
-    const standalone = join(root, ".next-events/standalone/web");
-    await cp(join(root, "public"), join(standalone, "public"), { recursive: true });
-    await cp(join(root, ".next-events/static"), join(standalone, ".next-events/static"), { recursive: true });
+    serverSnapshot = await mkdtemp(join(directory, "server-"));
+    const standalone = join(serverSnapshot, "web");
+    try {
+      await cp(join(root, ".next-events/standalone"), serverSnapshot, { recursive: true });
+      await cp(join(root, "public"), join(standalone, "public"), { recursive: true });
+      await cp(join(root, ".next-events/static"), join(standalone, ".next-events/static"), { recursive: true });
+    } catch (error) {
+      await rm(serverSnapshot, { recursive: true, force: true });
+      throw error;
+    }
     environment.HOSTNAME = "127.0.0.1"; environment.PORT = "3102";
     target = [join(standalone, "server.js"), ...args]; break;
   }
@@ -65,5 +73,11 @@ switch (command) {
 if (target.some((argument) => typeof argument !== "string")) throw new Error("Run this command through npm run review.");
 const child = spawn(process.execPath, target, { cwd: root, env: environment, stdio: "inherit" });
 for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => child.kill(signal));
-child.once("error", (error) => { console.error(error.name + ": review process could not start."); process.exitCode = 1; });
-child.once("exit", (code, signal) => { process.exitCode = code ?? (signal ? 1 : 0); });
+child.once("error", async (error) => {
+  console.error(error.name + ": review process could not start."); process.exitCode = 1;
+  if (serverSnapshot) await rm(serverSnapshot, { recursive: true, force: true });
+});
+child.once("exit", async (code, signal) => {
+  process.exitCode = code ?? (signal ? 1 : 0);
+  if (serverSnapshot) await rm(serverSnapshot, { recursive: true, force: true });
+});
