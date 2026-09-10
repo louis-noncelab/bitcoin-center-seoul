@@ -8,6 +8,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { eventRecordSchema, highlightRecordSchema } from "@/lib/events-contract";
 import type { ContentKind, ContentRecord } from "./editor-fields";
+import { CenterStatusAdmin } from "./center-status-admin";
 import { LoginForm } from "./login-form";
 import { RecordEditor } from "./record-editor";
 import { adminRequest, AdminRequestError, errorText, jsonBody } from "./request";
@@ -94,12 +95,14 @@ export function EventsAdmin({ locale }: { readonly locale: Locale }) {
           <Button variant="secondary" aria-pressed={kind === "events"} disabled={pending || editorBusy} onClick={() => void pick("events")}>{ko ? "행사" : "Events"}</Button>
           <Button variant="secondary" aria-pressed={kind === "highlights"} disabled={pending || editorBusy} onClick={() => void pick("highlights")}>{ko ? "하이라이트" : "Highlights"}</Button>
           <Link href="/admin/notices" locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void canLeave().then((accepted) => { if (accepted) router.push("/admin/notices", { locale: "ko" }); }); }}>공지사항</Link>
+          <Link href="/admin/collection" locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void canLeave().then((accepted) => { if (accepted) router.push("/admin/collection", { locale: "ko" }); }); }}>도서·작품</Link>
         </nav>
         <Button variant="quiet" disabled={pending || editorBusy} onClick={() => void logout()}>{ko ? "로그아웃" : "Sign out"}</Button>
       </div>
       {expired && <aside className="events-reauth"><p role="alert">{ko ? "세션이 만료되었습니다. 작성한 내용은 유지됩니다. 다시 로그인한 뒤 저장해 주세요." : "Your session expired. Your draft is preserved. Sign in again to save."}</p><LoginForm locale={locale} onLogin={() => { setExpired(false); setError(""); refresh(); }} /></aside>}
       {error && <p className="events-error" role="alert">{error}</p>}
       <p role="status">{notice}</p>
+      {!editing && <CenterStatusAdmin disabled={pending || expired} onExpired={() => setExpired(true)} onBusy={(value) => { editorBusyRef.current = value; setEditorBusy(value); }} />}
       {editing ? <RecordEditor key={`${kind}-${selected?.id ?? "new"}`} locale={locale} kind={kind} record={selected}
         onDirty={() => setDirty(true)} onExpired={() => setExpired(true)} onBusy={(value) => { editorBusyRef.current = value; setEditorBusy(value); }}
         onCancel={() => { void canLeave().then((accepted) => { if (accepted) { setEditing(false); setDirty(false); } }); }}
@@ -107,12 +110,12 @@ export function EventsAdmin({ locale }: { readonly locale: Locale }) {
         <>
           <div className="events-admin-toolbar">
             <h2>{kind === "events" ? (ko ? "행사 목록" : "Events") : (ko ? "하이라이트 목록" : "Highlights")}</h2>
-            <div className="button-row"><Button variant="secondary" disabled={loading || pending} onClick={refresh}>{ko ? "새로고침" : "Refresh"}</Button><Button disabled={pending || expired} onClick={() => { setSelected(null); setEditing(true); setNotice(""); }}>{ko ? "새 항목 등록" : "Add content"}</Button></div>
+            <div className="button-row"><Button variant="secondary" disabled={loading || pending || editorBusy} onClick={refresh}>{ko ? "새로고침" : "Refresh"}</Button><Button disabled={pending || expired || editorBusy} onClick={() => { setSelected(null); setEditing(true); setNotice(""); }}>{ko ? "새 항목 등록" : "Add content"}</Button></div>
           </div>
           {loading ? <p role="status">{ko ? "목록을 불러오는 중…" : "Loading content…"}</p> : <ul className="events-admin-list">
             {records.map((record) => <li key={record.id}>
               <div><h3>{ko ? record.title : record.titleEn}</h3><p className="muted">{record.date || ("startDate" in record ? `${record.startDate} – ${record.endDate}` : "")}{"is_active" in record && !record.is_active ? (ko ? " · 비공개" : " · Unpublished") : ""}</p></div>
-              <div className="button-row"><Link href={`/${kind === "events" ? "programs" : "journal"}/${record.slug || record.id}`} locale={locale} className="button" data-variant="quiet">{ko ? "보기" : "View"}</Link><Button variant="secondary" disabled={pending || expired} onClick={() => { setSelected(record); setEditing(true); setNotice(""); }}>{ko ? "수정" : "Edit"}</Button><Button variant="quiet" disabled={pending || expired} onClick={() => void remove(record)}>{ko ? "삭제" : "Delete"}</Button></div>
+              <div className="button-row"><Link href={`/${kind === "events" ? "programs" : "journal"}/${record.slug || record.id}`} locale={locale} className="button" data-variant="quiet">{ko ? "보기" : "View"}</Link><Button variant="secondary" disabled={pending || expired || editorBusy} onClick={() => { setSelected(record); setEditing(true); setNotice(""); }}>{ko ? "수정" : "Edit"}</Button><Button variant="quiet" disabled={pending || expired || editorBusy} onClick={() => void remove(record)}>{ko ? "삭제" : "Delete"}</Button></div>
             </li>)}
             {!records.length && <li>{ko ? "등록된 항목이 없습니다." : "No content yet."}</li>}
           </ul>}

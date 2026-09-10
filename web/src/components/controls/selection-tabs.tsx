@@ -41,11 +41,13 @@ export function SelectionTabs({
   keyboardHint,
   items,
   orientation = "vertical",
+  action,
 }: {
   readonly label: string;
   readonly keyboardHint: string;
   readonly items: readonly [SelectionItem, ...SelectionItem[]];
   readonly orientation?: "horizontal" | "vertical";
+  readonly action?: ReactNode;
 }) {
   const [selection, setSelection] = useState<SelectionState>({
     current: 0,
@@ -111,6 +113,7 @@ export function SelectionTabs({
     <LazyMotion features={domMax} strict>
       <div className="selection-specimen">
         <div className="selection-layout">
+          <div className="selection-heading" data-action={action ? "true" : undefined}>
           <div
             ref={tablist}
             role="tablist"
@@ -154,6 +157,8 @@ export function SelectionTabs({
                 </button>
               );
             })}
+          </div>
+          {action}
           </div>
           <div className="selection-panels" data-direction={selection.direction}>
             {items.map((item, index) => {

@@ -4,6 +4,7 @@ import { NavigationDisclosure } from "@/components/controls/navigation-disclosur
 import { NavigationFeedback } from "@/components/controls/navigation-feedback";
 import { ThemeToggle } from "@/components/controls/theme-toggle";
 import { BrandWordmark } from "@/components/site/brand-wordmark";
+import { OperatingStatus } from "@/components/site/operating-status";
 import { ActionLink } from "@/components/ui/primitives";
 import { centerContent } from "@/content/center";
 import type { PublicSection } from "@/content/site";
@@ -76,6 +77,7 @@ export function SiteHeader({
           ))}
         </nav>
         <div className="header-controls">
+          <OperatingStatus locale={locale} />
           <Suspense fallback={<Link href={section ? `/${section}` : "/"} locale={otherLocale} hrefLang={otherLocale} lang={otherLocale} aria-label={t.language} className="button header-control language-control" data-variant="quiet">{otherLocale === "en" ? "EN" : "KO"}</Link>}>
             <LocaleLink locale={otherLocale} label={t.language} />
           </Suspense>

@@ -75,15 +75,15 @@ export const centerContent = {
       { id: "home", label: "홈", href: "#home" },
       { id: "about", label: "센터 소개", href: "#about" },
       { id: "programs", label: "프로그램", href: "#programs" },
+      { id: "journal", label: "현장 스케치", href: "#journal" },
       { id: "experience", label: "전시·체험", href: "#experience" },
-      { id: "journal", label: "활동 기록", href: "#journal" },
       { id: "visit", label: "방문 안내", href: "#visit" },
     ],
     hero: {
       eyebrow: "BITCOIN CENTER SEOUL",
       title: "비트코인 센터 서울",
       introduction:
-        "비트코인 강의와 밋업이 열리는 공간입니다. 책과 작품을 전시하고 하드웨어 지갑 체험존을 운영합니다.",
+        "비트코인 강의와 밋업이 열리는 공간입니다. 도서·작품을 전시하고 하드웨어 지갑 체험존을 운영합니다.",
       secondaryLink: { label: "프로그램 보기", href: "#programs" },
     },
     about: {
@@ -92,7 +92,7 @@ export const centerContent = {
       introduction:
         "라운지와 비트코인 서재, 홀, 하드웨어 지갑 체험존이 있습니다.",
       details: [
-        "라운지에서 비트코인 책과 작품을 볼\u00a0수\u00a0있습니다.",
+        "라운지에서 비트코인 도서·작품을 볼\u00a0수\u00a0있습니다.",
         "홀에서는 강의와 밋업이 열립니다.",
         "하드웨어 지갑 체험존도 이용할\u00a0수\u00a0있습니다.",
       ],
@@ -121,11 +121,11 @@ export const centerContent = {
       eyebrow: "EXPERIENCE",
       title: "전시와 지갑 체험",
       introduction:
-        "비트코인 책과 작품을 전시합니다. 체험존에서는 하드웨어 지갑을 사용해 볼\u00a0수\u00a0있습니다.",
+        "비트코인 도서·작품을 전시합니다. 체험존에서는 하드웨어 지갑을 사용해 볼\u00a0수\u00a0있습니다.",
       areas: [
         {
           id: "exhibition",
-          title: "책과 작품",
+          title: "도서·작품",
           description:
             "비트코인 백서와 관련 도서, 비트코인을 주제로 한 작품을 전시합니다.",
         },
@@ -142,8 +142,8 @@ export const centerContent = {
       },
     },
     journal: {
-      eyebrow: "JOURNAL",
-      title: "활동 기록",
+      eyebrow: "HIGHLIGHTS",
+      title: "현장 스케치",
       introduction:
         "센터에서 열린 강의와 밋업을 사진과 글로 소개합니다.",
     },
@@ -181,8 +181,8 @@ export const centerContent = {
       { id: "home", label: "Home", href: "#home" },
       { id: "about", label: "About", href: "#about" },
       { id: "programs", label: "Programs", href: "#programs" },
+      { id: "journal", label: "Highlights", href: "#journal" },
       { id: "experience", label: "Exhibition & Experience", href: "#experience" },
-      { id: "journal", label: "Journal", href: "#journal" },
       { id: "visit", label: "Visit", href: "#visit" },
     ],
     hero: {
@@ -248,8 +248,8 @@ export const centerContent = {
       },
     },
     journal: {
-      eyebrow: "JOURNAL",
-      title: "Past events",
+      eyebrow: "HIGHLIGHTS",
+      title: "Highlights",
       introduction: "Photos and reports from classes and meetups at the center.",
     },
     visit: {

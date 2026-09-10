@@ -25,7 +25,7 @@ export const centerMedia = {
   lounge: {
     image: lounge,
     alt: {
-      ko: "비트코인 책과 작품, 갈색 소파, 창가 좌석이 있는 센터 라운지",
+      ko: "비트코인 도서·작품, 갈색 소파, 창가 좌석이 있는 센터 라운지",
       en: "Center lounge with Bitcoin books and art, a brown sofa and window seating",
     },
     focalPosition: { landscape: "62% 55%", portrait: "68% 54%" },

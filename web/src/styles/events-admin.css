@@ -33,3 +33,8 @@
   .events-admin-list > li { align-items: start; flex-direction: column; }
   .events-login { padding: var(--space-5); }
 }
+.collection-kind { margin: 0; padding: 0; border: 0; }
+.center-status-admin { display: grid; gap: var(--space-3); padding-block: var(--space-5); border-block: var(--border-width) solid var(--line); }
+.center-status-admin h2 { font-size: var(--text-title); }
+.center-status-admin [role="status"]:empty { display: none; }
+.collection-kind legend { margin-block-end: var(--space-2); }

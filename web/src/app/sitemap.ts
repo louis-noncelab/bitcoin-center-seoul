@@ -4,6 +4,7 @@ import { publicSections, siteOrigin } from "@/content/site";
 import { routing } from "@/i18n/routing";
 import { listEvents, listHighlights } from "@/server/events";
 import { listNotices } from "@/server/notices";
+import { listCollection } from "@/server/collection";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   await connection();
@@ -12,6 +13,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "",
     "/experience/wallet",
     "/notices",
+    "/collection",
+    ...listCollection().map((item) => `/collection/${item.id}`),
     ...listNotices().map((notice) => `/notices/${notice.slug}`),
     ...publicSections.map((section) => `/${section}`),
     ...events.map((event) => `/programs/${event.slug || event.id}`),

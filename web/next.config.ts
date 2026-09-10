@@ -11,6 +11,7 @@ const repositoryRoot = path.resolve(
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  images: { localPatterns: [{ pathname: "/_next/static/media/**", search: "" }] },
   distDir: process.env.BCS_EVENTS_REVIEW === "true" ? ".next-events" : ".next",
   serverExternalPackages: ["better-sqlite3"],
   outputFileTracingExcludes: { "/*": ["./.local/**/*", "./src/generated/**/*", "../.local/**/*", "../data/**/*"] },

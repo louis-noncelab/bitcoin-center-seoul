@@ -129,12 +129,12 @@ export function HighlightsCatalog({ highlights, locale, preview = false }: { rea
           <article className="highlight-card" key={highlight.id} data-reveal-part={preview ? "" : undefined}>
             <ContentLink href={`/journal/${highlight.slug || highlight.id}`} locale={locale} className="highlight-card-link">
               {images[0] && <span className="highlight-card-photo"><Image src={images[0]} alt="" fill sizes="(max-width: 767px) 100vw, (max-width: 1119px) 50vw, 33vw" unoptimized /></span>}
-              <span className="highlight-card-copy"><HighlightMeta highlight={highlight} locale={locale} /><Title>{title}</Title><span className="muted">{markdownExcerpt(text(locale, highlight.description, highlight.descriptionEn))}</span><span className="catalog-read">{locale === "ko" ? "기록 보기" : "Read story"}<ArrowRight className="icon" aria-hidden="true" /></span></span>
+              <span className="highlight-card-copy"><HighlightMeta highlight={highlight} locale={locale} /><Title>{title}</Title><span className="muted">{markdownExcerpt(text(locale, highlight.description, highlight.descriptionEn))}</span><span className="catalog-read">{locale === "ko" ? "자세히 보기" : "View details"}<ArrowRight className="icon" aria-hidden="true" /></span></span>
             </ContentLink>
           </article>
         );
       })}
-      {shown.length === 0 && <p className="catalog-empty muted">{locale === "ko" ? "공개된 활동 기록이 없습니다." : "No activity records have been published yet."}</p>}
+      {shown.length === 0 && <p className="catalog-empty muted">{locale === "ko" ? "공개된 현장 스케치가 없습니다." : "No highlights have been published yet."}</p>}
     </div>
   );
 }
@@ -167,7 +167,7 @@ export function HighlightDetail({ highlight, locale }: { readonly highlight: Hig
   );
 }
 
-function PhotoGallery({ images, title, locale }: { readonly images: readonly string[]; readonly title: string; readonly locale: Locale }) {
+export function PhotoGallery({ images, title, locale }: { readonly images: readonly string[]; readonly title: string; readonly locale: Locale }) {
   if (images.length === 0) return null;
   return (
     <div className="photo-gallery">

@@ -17,6 +17,8 @@ import {
   setSessionCookie,
 } from "@/server/events/auth";
 import { ApiError } from "@/server/events/errors";
+import { getDatabase } from "@/server/events/db";
+import { imageReferences } from "@/server/events/image-references";
 import { dataResponse, itemId, jsonBody, multipartFiles, route, type ImageContext, type ItemContext } from "@/server/events/http";
 import { requireExistingImages, resolveImageFile, storeUploadedImages } from "@/server/events/images";
 import {
@@ -172,10 +174,14 @@ export async function adminImages(request: NextRequest): Promise<Response> {
   });
 }
 
-export async function publicImage(_request: NextRequest, context: ImageContext): Promise<Response> {
+export async function publicImage(request: NextRequest, context: ImageContext): Promise<Response> {
   return route(async () => {
     const { path: segments } = await context.params;
     const publicPath = imagePathSchema.parse(`/images/${segments.join("/")}`);
+    // ponytail: scan current references for immediate revocation; index them if the collection grows substantially.
+    if (!isAuthenticated(request) && !imageReferences(getDatabase(), true).includes(publicPath)) {
+      throw new ApiError(404, "NOT_FOUND", "이미지를 찾을 수 없습니다.");
+    }
     requireExistingImages([publicPath]);
     const file = resolveImageFile(publicPath);
     const size = fs.statSync(file).size;
@@ -189,7 +195,7 @@ export async function publicImage(_request: NextRequest, context: ImageContext):
     if (!contentType) throw new ApiError(404, "NOT_FOUND", "이미지를 찾을 수 없습니다.");
     return new NextResponse(await fs.promises.readFile(file), {
       headers: {
-        "cache-control": "public, max-age=31536000, immutable",
+        "cache-control": "private, no-store",
         "content-type": contentType,
         "x-content-type-options": "nosniff",
       },

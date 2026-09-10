@@ -28,6 +28,7 @@ export function SiteFooter({ locale }: { readonly locale: Locale }) {
             </h2>
             <ul>
               <li><Link href="/notices" locale={locale}>{locale === "ko" ? "공지사항" : "Notices"}</Link></li>
+              <li><Link href="/collection" locale={locale}>{locale === "ko" ? "도서·작품" : "Books & art"}</Link></li>
               {content.nav.filter((item) => item.id !== "home").map((item) => (
                 <li key={item.id}>
                   <Link href={`/${item.id}`} prefetch={item.id === "journal" ? false : undefined} locale={locale}>{item.label}</Link>
@@ -36,7 +37,7 @@ export function SiteFooter({ locale }: { readonly locale: Locale }) {
             </ul>
           </nav>
           <nav className="footer-commerce" aria-labelledby="footer-commerce-title">
-            <h2 id="footer-commerce-title" className="footer-label">{locale === "ko" ? "상점·밋업" : "Shop & meetups"}</h2>
+            <h2 id="footer-commerce-title" className="footer-label">{locale === "ko" ? "참여하기" : "Get involved"}</h2>
             <ul>
               <li><a href="https://www.saturdayblock.com/shop?brand=bcs" target="_blank" rel="noopener noreferrer">{locale === "ko" ? "센터 상품" : "Center shop"}<ArrowUpRight className="icon" aria-hidden="true" /><span className="sr-only">{locale === "ko" ? " (새 창)" : " (new window)"}</span></a></li>
               <li><a href="https://www.saturdayblock.com/meetup?brand=bcs" target="_blank" rel="noopener noreferrer">{locale === "ko" ? "밋업 신청" : "Join a meetup"}<ArrowUpRight className="icon" aria-hidden="true" /><span className="sr-only">{locale === "ko" ? " (새 창)" : " (new window)"}</span></a></li>

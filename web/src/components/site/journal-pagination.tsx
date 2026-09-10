@@ -14,7 +14,7 @@ export function JournalPagination({ locale, pagination: { page, totalPages } }: 
     : [...new Set([1, page - 1, page, page + 1, totalPages])].filter((value) => value >= 1 && value <= totalPages).sort((left, right) => left - right);
   const href = (value: number) => value === 1 ? "/journal" : `/journal?page=${value}`;
   return (
-    <nav className="journal-pagination" aria-label={locale === "ko" ? "활동 기록 페이지" : "Journal pages"}>
+    <nav className="journal-pagination" aria-label={locale === "ko" ? "현장 스케치 페이지" : "Highlights pagination"}>
       <div className="journal-page-links">
         {page > 1 && <ContentLink href={href(page - 1)} locale={locale} className="button" data-variant="quiet" rel="prev">{locale === "ko" ? "이전" : "Previous"}</ContentLink>}
         {pages.map((value, index) => (

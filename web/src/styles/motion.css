@@ -100,3 +100,4 @@
   .selection-panels { --selection-offset: var(--space-4); }
   .selection-panels[data-direction="backward"] { --selection-offset: calc(-1 * var(--space-4)); }
 }
+.selection-heading { display: contents; }

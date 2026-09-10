@@ -1,4 +1,4 @@
-import { ArrowUpRight, Mail, Phone } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Mail, Phone } from "lucide-react";
 import { SelectionTabs } from "@/components/controls/selection-tabs";
 import { ActionLink, MediaFrame } from "@/components/ui/primitives";
 import { centerContent } from "@/content/center";
@@ -13,9 +13,11 @@ import { JournalPagination } from "./journal-pagination";
 export function ProgramsContent({
   locale,
   heading: Heading = "h3",
+  preview = false,
 }: {
   readonly locale: Locale;
   readonly heading?: "h2" | "h3";
+  readonly preview?: boolean;
 }) {
   const content = centerContent[locale];
   const [meetups, education] = content.programs.categories;
@@ -24,6 +26,7 @@ export function ProgramsContent({
       <SelectionTabs
         label={content.nav[2].label}
         orientation="horizontal"
+        action={preview ? <Link href="/programs" locale={locale} className="section-link">{locale === "ko" ? "프로그램 안내" : "Program details"}<ArrowRight className="icon" aria-hidden="true" /></Link> : undefined}
         keyboardHint={
           locale === "ko"
             ? "좌우 방향키로 프로그램을 선택하세요."
@@ -86,6 +89,7 @@ export function ExperienceContent({ locale }: { readonly locale: Locale }) {
         >
           <CenterPhoto name="exhibition" locale={locale} sizes="(max-width: 767px) 134vw, 67vw" />
         </MediaFrame>
+        <Link href="/collection" locale={locale} className="section-link collection-entry">{locale === "ko" ? "도서·작품 둘러보기" : "Explore books & art"}<ArrowRight className="icon" aria-hidden="true" /></Link>
       </div>
       <div className="experience-object" data-reveal-part>
         <MediaFrame
@@ -103,9 +107,9 @@ export function ExperienceContent({ locale }: { readonly locale: Locale }) {
             sizes="(max-width: 767px) 100vw, 50vw"
           />
         </MediaFrame>
-        <Link className="button" data-variant="secondary" locale={locale} href={content.walletExperienceLink.href}>
+        <Link className="section-link collection-entry" locale={locale} href={content.walletExperienceLink.href}>
           {content.walletExperienceLink.label}
-          <ArrowUpRight className="icon" aria-hidden="true" />
+          <ArrowRight className="icon" aria-hidden="true" />
         </Link>
       </div>
     </div>
@@ -115,13 +119,14 @@ export function ExperienceContent({ locale }: { readonly locale: Locale }) {
 export function VisitDetails({ locale }: { readonly locale: Locale }) {
   const { visit } = centerContent[locale];
   return (
-    <dl className="visit-details">
+    <div className="visit-layout">
+      <div className="visit-map"><iframe src={visit.mapEmbedSrc} title={locale === "ko" ? "비트코인 센터 서울 위치 지도" : "Bitcoin Center Seoul location map"} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen /></div>
+      <dl className="visit-details">
       <div className="visit-address">
         <dt>{visit.address.label}</dt>
         <dd>
           <p className="visit-street">{visit.address.value}</p>
           <p className="muted">{visit.address.note}</p>
-          <div className="visit-map"><iframe src={visit.mapEmbedSrc} title={locale === "ko" ? "비트코인 센터 서울 위치 지도" : "Bitcoin Center Seoul location map"} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen /></div>
         </dd>
       </div>
       <div>
@@ -143,7 +148,8 @@ export function VisitDetails({ locale }: { readonly locale: Locale }) {
           </a>
         </dd>
       </div>
-    </dl>
+      </dl>
+    </div>
   );
 }
 

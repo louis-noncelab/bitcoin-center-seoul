@@ -56,11 +56,20 @@ export function Home({ locale, highlights }: { readonly locale: Locale; readonly
         <SectionFrame id="programs" titleId="programs-title">
           <div className="section-heading" data-reveal-part>
             <h2 id="programs-title">{content.programs.title}</h2>
-            <Link href="/programs" locale={locale} className="section-link">
-              {locale === "ko" ? "프로그램 안내" : "Program details"}<ArrowRight className="icon" aria-hidden="true" />
-            </Link>
           </div>
-          <div data-reveal-part><ProgramsContent locale={locale} /></div>
+          <div data-reveal-part><ProgramsContent locale={locale} preview /></div>
+        </SectionFrame>
+        <SectionFrame id="journal" titleId="journal-title">
+          <div className="journal-preview">
+            <div className="journal-heading" data-reveal-part>
+              <h2 id="journal-title">{content.journal.title}</h2>
+              <p className="body-copy muted">{content.journal.introduction}</p>
+              <Link href="/journal" prefetch={false} locale={locale} className="section-link">
+                {locale === "ko" ? "현장 스케치 보기" : "View highlights"}<ArrowRight className="icon" aria-hidden="true" />
+              </Link>
+            </div>
+            <HighlightsCatalog highlights={highlights} locale={locale} preview />
+          </div>
         </SectionFrame>
         <SectionFrame id="experience" titleId="experience-title">
           <div className="section-heading" data-reveal-part>
@@ -70,18 +79,6 @@ export function Home({ locale, highlights }: { readonly locale: Locale; readonly
             </Link>
           </div>
           <ExperienceContent locale={locale} />
-        </SectionFrame>
-        <SectionFrame id="journal" titleId="journal-title">
-          <div className="journal-preview">
-            <div className="journal-heading" data-reveal-part>
-              <h2 id="journal-title">{content.journal.title}</h2>
-              <p className="body-copy muted">{content.journal.introduction}</p>
-              <Link href="/journal" prefetch={false} locale={locale} className="section-link">
-                {locale === "ko" ? "활동 기록 보기" : "View journal"}<ArrowRight className="icon" aria-hidden="true" />
-              </Link>
-            </div>
-            <HighlightsCatalog highlights={highlights} locale={locale} preview />
-          </div>
         </SectionFrame>
       </div>
       <PageMotion pageKey={`${locale}-home`} />

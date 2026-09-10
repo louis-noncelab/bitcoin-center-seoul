@@ -51,7 +51,7 @@ const externalLink = z
       throw error;
     }
   }, "링크는 http 또는 https URL이어야 합니다.");
-const images = z
+export const contentImagesSchema = z
   .array(imagePathSchema.refine((value) => value !== "", "빈 이미지 경로는 사용할 수 없습니다."))
   .max(12)
   .refine((values) => new Set(values).size === values.length, "같은 이미지를 중복해서 사용할 수 없습니다.");
@@ -69,7 +69,7 @@ const eventFields = {
   descriptionEn: requiredText(20_000),
   image: imagePathSchema,
   link: externalLink,
-  images,
+  images: contentImagesSchema,
 } as const;
 
 const highlightFields = {
@@ -93,7 +93,7 @@ const highlightFields = {
   icon: optionalText(100),
   sort_order: z.number().int().min(-100_000).max(100_000),
   is_active: z.union([z.literal(0), z.literal(1)]),
-  images,
+  images: contentImagesSchema,
 } as const;
 
 const validateHighlightPeriod = (

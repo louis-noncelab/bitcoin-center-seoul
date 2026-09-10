@@ -151,7 +151,7 @@ test.describe.serial("events-only public pages", () => {
     const cards = page.locator(".highlight-card-link");
     await expect(cards).toHaveCount(12);
     const firstLinks = await cards.evaluateAll((links) => links.map((link) => link.getAttribute("href")));
-    await page.getByRole("navigation", { name: "활동 기록 페이지" }).getByRole("link", { name: "다음", exact: true }).click();
+    await page.getByRole("navigation", { name: "현장 스케치 페이지" }).getByRole("link", { name: "다음", exact: true }).click();
     // Then page two has separate records, its own metadata and query-preserving language navigation
     await expect(page).toHaveURL(/\/ko\/journal\?page=2$/);
     await expect(cards).toHaveCount(Math.min(12, records.length - 12));
@@ -162,10 +162,10 @@ test.describe.serial("events-only public pages", () => {
     await expect(page.locator('meta[property="og:url"]')).toHaveAttribute("content", /\/ko\/journal\?page=2$/);
     await page.getByRole("link", { name: /Switch to English/ }).click();
     await expect(page).toHaveURL(/\/en\/journal\?page=2$/);
-    await expect(page.getByRole("navigation", { name: "Journal pages" }).locator('[aria-current="page"]')).toHaveText("2");
+    await expect(page.getByRole("navigation", { name: "Highlights pagination" }).locator('[aria-current="page"]')).toHaveText("2");
     await page.goto(`/en/journal?page=${lastPage}`);
     await expect(cards).toHaveCount(records.length - (lastPage - 1) * 12);
-    await expect(page.getByRole("navigation", { name: "Journal pages" }).getByRole("link", { name: "Next", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("navigation", { name: "Highlights pagination" }).getByRole("link", { name: "Next", exact: true })).toHaveCount(0);
     await page.setViewportSize({ width: 375, height: 812 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });

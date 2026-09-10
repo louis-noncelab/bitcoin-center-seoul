@@ -7,8 +7,8 @@ import { centerMedia } from "./media";
 export const publicSections = [
   "about",
   "programs",
-  "experience",
   "journal",
+  "experience",
   "visit",
 ] as const;
 export type PublicSection = (typeof publicSections)[number];

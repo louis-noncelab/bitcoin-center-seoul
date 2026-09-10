@@ -50,6 +50,23 @@ function initialize(next: Database.Database, createLegacy: boolean): Database.Da
     assertColumns(next, "events", eventColumns);
     assertColumns(next, "highlights", highlightColumns);
     next.exec(`
+      CREATE TABLE IF NOT EXISTS center_status (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        status TEXT CHECK (status IN ('open', 'event', 'closed')),
+        selected_on TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS collection_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        kind TEXT NOT NULL CHECK (kind IN ('book', 'artwork')),
+        title TEXT NOT NULL, titleEn TEXT NOT NULL DEFAULT '',
+        creator TEXT NOT NULL DEFAULT '', creatorEn TEXT NOT NULL DEFAULT '',
+        description TEXT NOT NULL DEFAULT '', descriptionEn TEXT NOT NULL DEFAULT '',
+        images TEXT NOT NULL DEFAULT '[]',
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        is_active INTEGER NOT NULL DEFAULT 0 CHECK (is_active IN (0, 1)),
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
       CREATE TABLE IF NOT EXISTS notices (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         slug TEXT NOT NULL UNIQUE,

@@ -6,6 +6,7 @@ import { parseArgs } from "node:util";
 import Database from "better-sqlite3";
 import { z } from "zod";
 import { imagePathSchema } from "../src/lib/events-contract";
+import { imageReferences as contentImageReferences } from "../src/server/events/image-references";
 
 const absolutePath = z.string().min(1).refine((value) => path.isAbsolute(value) && !value.includes("\0")).transform((value) => path.resolve(value));
 const optionsSchema = z.discriminatedUnion("command", [
@@ -72,9 +73,7 @@ async function digest(filename: string): Promise<{ readonly bytes: number; reado
 
 function imageReferences(db: Database.Database): readonly string[] {
   if (db.pragma("integrity_check", { simple: true }) !== "ok") throw new BackupError("DATABASE_INTEGRITY_FAILED");
-  const hasImages = db.prepare("SELECT 1 FROM sqlite_schema WHERE type = 'table' AND name = 'content_images'").get();
-  const rows = db.prepare(`SELECT image AS path FROM events UNION SELECT image AS path FROM highlights${hasImages ? " UNION SELECT path FROM content_images" : ""}`).all();
-  return z.array(z.object({ path: imagePathSchema })).parse(rows).map((row) => row.path).filter(Boolean).sort();
+  return contentImageReferences(db);
 }
 
 async function backup(options: z.infer<typeof optionsSchema> & { readonly command: "backup" }): Promise<number> {

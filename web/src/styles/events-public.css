@@ -87,7 +87,7 @@
 }
 .journal-page-jump { font-size: var(--text-small); }
 .journal-page-links { gap: var(--space-1); }
-.journal-page-jump .form-control { inline-size: var(--space-20); }
+.journal-page-jump .form-control { inline-size: var(--space-16); }
 .journal-page-jump input { text-align: center; }
 .journal-pagination .button { min-inline-size: var(--control-height); }
 .journal-pagination .button[aria-label] { inline-size: var(--control-height); padding-inline: 0; border-radius: 50%; }
