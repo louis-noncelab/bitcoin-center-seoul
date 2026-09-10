@@ -1,10 +1,10 @@
 .wordmark-img {
   display: block;
-  height: 1.75rem;
+  height: var(--space-8);
   width: auto;
   max-inline-size: min(12rem, 48vw);
 }
 .wordmark-dark { display: none; }
 :root[data-theme="dark"] .wordmark-color { display: none; }
 :root[data-theme="dark"] .wordmark-dark { display: block; }
-@media (min-width: 768px) { .wordmark-img { height: 2rem; } }
+@media (min-width: 768px) { .wordmark-img { height: var(--space-10); } }

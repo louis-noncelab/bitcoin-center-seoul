@@ -7,7 +7,8 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import type { EventRecord, HighlightRecord } from "@/lib/events-contract";
 import { CenterPhoto } from "./center-photo";
-import { EventsCatalog, HighlightsCatalog, JournalPagination } from "./events-public";
+import { EventsCatalog, HighlightsCatalog } from "./events-public";
+import { JournalPagination } from "./journal-pagination";
 
 export function ProgramsContent({
   locale,
@@ -114,40 +115,35 @@ export function ExperienceContent({ locale }: { readonly locale: Locale }) {
 export function VisitDetails({ locale }: { readonly locale: Locale }) {
   const { visit } = centerContent[locale];
   return (
-    <div className="visit-details">
+    <dl className="visit-details">
       <div className="visit-address">
-        <p className="caption muted">{visit.address.label}</p>
-        <p className="visit-street">{visit.address.value}</p>
-        <p className="body-copy muted">{visit.address.note}</p>
-        {visit.mapLinks.map((link) => (
-          <ActionLink key={link.href} href={link.href}>
-            {link.label}
-            <ArrowUpRight className="icon" aria-hidden="true" />
-          </ActionLink>
-        ))}
+        <dt>{visit.address.label}</dt>
+        <dd>
+          <p className="visit-street">{visit.address.value}</p>
+          <p className="muted">{visit.address.note}</p>
+          <div className="visit-map"><iframe src={visit.mapEmbedSrc} title={locale === "ko" ? "비트코인 센터 서울 위치 지도" : "Bitcoin Center Seoul location map"} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen /></div>
+        </dd>
       </div>
-      <dl className="visit-facts">
-        <div>
-          <dt>{visit.hours.label}</dt>
-          <dd>
-            {visit.hours.lines.map((line) => (
-              <span key={line}>{line}</span>
-            ))}
-          </dd>
-        </div>
-        <div>
-          <dt>{visit.contact.label}</dt>
-          <dd>
-            <a href={visit.contact.email.href} className="contact-link">
-              <Mail className="icon" aria-hidden="true" />{visit.contact.email.label}
-            </a>
-            <a href={visit.contact.phone.href} className="contact-link">
-              <Phone className="icon" aria-hidden="true" />{visit.contact.phone.label}
-            </a>
-          </dd>
-        </div>
-      </dl>
-    </div>
+      <div>
+        <dt>{visit.hours.label}</dt>
+        <dd>
+          {visit.hours.lines.map((line, index) => (
+            <span key={line} className={index === 0 ? "visit-time" : "muted"}>{line}</span>
+          ))}
+        </dd>
+      </div>
+      <div>
+        <dt>{visit.contact.label}</dt>
+        <dd>
+          <a href={visit.contact.email.href} className="contact-link">
+            <Mail className="icon" aria-hidden="true" />{visit.contact.email.label}
+          </a>
+          <a href={visit.contact.phone.href} className="contact-link">
+            <Phone className="icon" aria-hidden="true" />{visit.contact.phone.label}
+          </a>
+        </dd>
+      </div>
+    </dl>
   );
 }
 

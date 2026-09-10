@@ -1,3 +1,5 @@
+@import "./markdown-editor.css";
+
 .events-admin-page { padding-block: var(--space-8) var(--space-12); }
 .events-admin-header { min-height: var(--header-height); border-bottom: 1px solid var(--line); }
 .events-admin-header .site-wordmark { display: inline-flex; align-items: center; width: 13rem; }
@@ -8,8 +10,6 @@
 .events-admin-page:has(> .events-login) > h1 { text-align: center; }
 .events-form h2, .events-admin-toolbar h2 { font-size: var(--text-subheading); }
 .events-form label { display: grid; align-content: start; gap: var(--space-2); font-size: var(--text-small); }
-.events-form input[type="checkbox"] { width: var(--space-5); height: var(--space-5); accent-color: var(--blue-ink); }
-.events-form input[type="checkbox"]:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); }
 .events-field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); }
 .events-editor-fields { display: grid; gap: var(--space-6); min-width: 0; margin: 0; padding: 0; border: 0; }
 .events-form .events-checkbox { display: flex; align-items: center; min-height: var(--control-height); }

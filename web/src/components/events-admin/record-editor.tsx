@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/primitives";
 import type { Locale } from "@/i18n/routing";
+import { contentTagsSchema, splitContentTags } from "@/lib/content-tags";
 import { EditorFields, type ContentKind, type ContentRecord } from "./editor-fields";
 import { GalleryField } from "./gallery-field";
 import { adminRequest, AdminRequestError, errorText, jsonBody } from "./request";
@@ -19,13 +20,20 @@ export function RecordEditor({ locale, kind, record, onSaved, onCancel, onDirty,
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const busy = useRef(false);
+  const uploads = useRef(0);
   const ko = locale === "ko";
+  function uploadPending(value: boolean) {
+    uploads.current += value ? 1 : -1;
+    setUploading(uploads.current > 0); onBusy(busy.current || uploads.current > 0);
+  }
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy.current || uploading) return;
+    if (busy.current || uploads.current > 0) return;
     const form = new FormData(event.currentTarget);
     const text = (name: string) => String(form.get(name) ?? "");
-    const common = { slug: text("slug"), title: text("title"), titleEn: text("titleEn"), description: text("description"), descriptionEn: text("descriptionEn"), date: text("date"), image: images[0] ?? "", images, link: text("link") };
+    const tags = contentTagsSchema.safeParse(splitContentTags(text("tags")));
+    if (!tags.success) { setError(tags.error.issues[0]?.message ?? "해시태그를 확인해 주세요."); return; }
+    const common = { slug: text("slug"), tags: tags.data, title: text("title"), titleEn: text("titleEn"), description: text("description"), descriptionEn: text("descriptionEn"), date: text("date"), image: images[0] ?? "", images, link: text("link") };
     const body = kind === "events"
       ? { ...common, time: text("time"), location: text("location"), locationEn: text("locationEn") }
       : { ...common, meta: text("meta"), metaEn: text("metaEn"), category: text("category"), categoryEn: text("categoryEn"), host: text("host"), hostEn: text("hostEn"), startDate: text("startDate"), endDate: text("endDate"), sort_order: Number(text("sort_order")), is_active: form.has("is_active") ? 1 : 0, icon: text("icon") };
@@ -42,8 +50,8 @@ export function RecordEditor({ locale, kind, record, onSaved, onCancel, onDirty,
     <form className="events-form events-editor" onSubmit={(event) => void submit(event)} onChange={onDirty}>
       <h2>{record ? (ko ? "내용 수정" : "Edit content") : (ko ? "새 항목 등록" : "Add content")}</h2>
       <fieldset disabled={pending} className="events-editor-fields">
-        <EditorFields locale={locale} kind={kind} record={record} />
-        <GalleryField locale={locale} images={images} onExpired={onExpired} onChange={(next) => { setImages(next); onDirty(); }} onPending={(value) => { setUploading(value); onBusy(value); }} />
+        <EditorFields locale={locale} kind={kind} record={record} onPending={uploadPending} onDirty={onDirty} onExpired={onExpired} />
+        <GalleryField locale={locale} images={images} onExpired={onExpired} onChange={(next) => { setImages(next); onDirty(); }} onPending={uploadPending} />
       </fieldset>
       {error && <p role="alert" className="events-error">{error}</p>}
       <div className="button-row">

@@ -91,18 +91,6 @@ export default async function SectionPage({ params, searchParams }: Props) {
           <p className="body-copy muted">{content.introduction}</p>
         </div>
         <SectionContent locale={locale} section={section} events={events} highlights={highlights} today={today} pagination={pagination} />
-        {section !== "visit" && (
-          <div className="detail-visit">
-            <Link
-              href="/visit"
-              locale={locale}
-              className="button"
-              data-variant="primary"
-            >
-              {centerContent[locale].hero.primaryLink.label}
-            </Link>
-          </div>
-        )}
         <PageMotion pageKey={`${locale}-${section}-${pagination.page}`} />
       </main>
       <SiteFooter locale={locale} />

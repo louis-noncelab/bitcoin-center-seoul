@@ -1,0 +1,5 @@
+.markdown-editor { display: grid; align-content: start; gap: var(--space-2); min-inline-size: 0; }
+.markdown-editor-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2) var(--space-3); }
+.markdown-editor[data-dragging] .form-control { outline: var(--focus-width) dashed var(--focus); outline-offset: var(--focus-offset); }
+.markdown-editor-status:empty { display: none; }
+.markdown-editor-retry { justify-self: start; }

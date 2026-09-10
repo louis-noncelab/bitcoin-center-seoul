@@ -47,7 +47,7 @@ const messages = {
     },
     media: {
       title: "미디어 프레임",
-      description: "실제 라운지와 비트코인 서가 사진으로 가로·세로 프레임을 비교합니다.",
+      description: "실제 라운지와 비트코인 서재 사진으로 가로·세로 프레임을 비교합니다.",
       landscape: "16:9 가로 프레임",
       portrait: "4:5 세로 프레임",
       pending: "기존 센터 사진. 최종 구도와 공개 권한은 출시 전에 확인합니다.",

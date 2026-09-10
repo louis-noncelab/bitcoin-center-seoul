@@ -48,10 +48,11 @@ test("keeps runtime database access fail closed and legacy compatible", () => {
     const events = listEvents();
     await login("local-test-password", "global");
     const verify = new Sqlite(process.env.BCS_LEGACY_TEST_PATH, { fileMustExist: true });
-    const after = JSON.stringify(verify.prepare("SELECT * FROM events WHERE id = 1").get());
+    const { tags, ...legacyAfter } = verify.prepare("SELECT * FROM events WHERE id = 1").get();
+    const after = JSON.stringify(legacyAfter);
     const additions = verify.prepare("SELECT count(*) AS count FROM sqlite_master WHERE type='table' AND name IN ('content_images','content_slugs','admin_sessions','admin_login_attempts')").get().count;
     verify.close();
-    if (events.length !== 1 || events[0].slug !== '' || before !== after || additions !== 4) process.exit(1);
+    if (events.length !== 1 || events[0].slug !== '' || tags !== '[]' || events[0].tags.length !== 0 || before !== after || additions !== 4) process.exit(1);
     process.stdout.write("ok");
   `;
 

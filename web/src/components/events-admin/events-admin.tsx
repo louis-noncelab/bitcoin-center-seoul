@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/primitives";
-import { Link } from "@/i18n/navigation";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
+import { Link, useRouter } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { eventRecordSchema, highlightRecordSchema } from "@/lib/events-contract";
 import type { ContentKind, ContentRecord } from "./editor-fields";
@@ -29,6 +30,9 @@ export function EventsAdmin({ locale }: { readonly locale: Locale }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const busy = useRef(false);
+  const editorBusyRef = useRef(false);
+  const router = useRouter();
+  const { confirm, dialog } = useConfirmation();
   const ko = locale === "ko";
   useEffect(() => {
     const abort = new AbortController();
@@ -52,21 +56,27 @@ export function EventsAdmin({ locale }: { readonly locale: Locale }) {
     window.addEventListener("beforeunload", prevent);
     return () => window.removeEventListener("beforeunload", prevent);
   }, [dirty]);
-  function canLeave() { return !editorBusy && (!dirty || window.confirm(ko ? "저장하지 않은 변경사항을 버릴까요?" : "Discard unsaved changes?")); }
+  async function canLeave() {
+    if (busy.current || editorBusyRef.current) return false;
+    const accepted = !dirty || await confirm({ title: ko ? "변경사항을 버릴까요?" : "Discard changes?", description: ko ? "저장하지 않은 변경사항은 사라집니다." : "Your unsaved changes will be lost.", confirmLabel: ko ? "버리기" : "Discard", cancelLabel: ko ? "취소" : "Cancel" });
+    return accepted && !busy.current && !editorBusyRef.current;
+  }
   function refresh() { setLoading(true); setError(""); setRevision((value) => value + 1); }
-  function pick(next: ContentKind) {
-    if (!canLeave()) return;
+  async function pick(next: ContentKind) {
+    if (!(await canLeave())) return;
     setDirty(false); setEditing(false); setSelected(null); setKind(next); setRecords([]); setNotice(""); refresh();
   }
   async function remove(record: ContentRecord) {
-    if (busy.current || !window.confirm(ko ? `“${record.title}” 항목을 삭제할까요?` : `Delete “${record.titleEn}”?`)) return;
+    if (busy.current || editorBusyRef.current) return;
+    const accepted = await confirm({ title: ko ? "항목 삭제" : "Delete content", description: ko ? `“${record.title}” 항목을 삭제할까요? 삭제한 내용은 복구할 수 없습니다.` : `Delete “${record.titleEn}”? This cannot be undone.`, confirmLabel: ko ? "삭제" : "Delete", cancelLabel: ko ? "취소" : "Cancel" });
+    if (!accepted || busy.current || editorBusyRef.current) return;
     busy.current = true; setPending(true); setError("");
     try { await adminRequest(`/api/admin/${kind}/${record.id}`, z.unknown(), { method: "DELETE" }); setNotice(ko ? "삭제했습니다." : "Deleted."); refresh(); }
     catch (caught) { setError(errorText(caught, locale)); if (caught instanceof AdminRequestError && caught.status === 401) setExpired(true); }
     finally { busy.current = false; setPending(false); }
   }
   async function logout() {
-    if (busy.current || !canLeave()) return;
+    if (!(await canLeave())) return;
     busy.current = true; setPending(true);
     try {
       await adminRequest("/api/admin/logout", z.unknown(), jsonBody({}));
@@ -78,11 +88,12 @@ export function EventsAdmin({ locale }: { readonly locale: Locale }) {
   if (!authenticated) return <><p className="events-error" role="alert">{error}</p><LoginForm locale={locale} onLogin={() => { setError(""); setLoading(true); setAuthenticated(true); }} /></>;
   return (
     <div className="events-admin-workspace">
+      {dialog}
       <div className="events-admin-toolbar">
         <nav aria-label={ko ? "콘텐츠 관리" : "Content management"} className="button-row">
-          <Button variant="secondary" aria-pressed={kind === "events"} disabled={pending || editorBusy} onClick={() => pick("events")}>{ko ? "행사" : "Events"}</Button>
-          <Button variant="secondary" aria-pressed={kind === "highlights"} disabled={pending || editorBusy} onClick={() => pick("highlights")}>{ko ? "하이라이트" : "Highlights"}</Button>
-          <Link href="/admin/notices" locale="ko" className="button" data-variant="secondary" onClick={(event) => { if (pending || !canLeave()) event.preventDefault(); }}>공지사항</Link>
+          <Button variant="secondary" aria-pressed={kind === "events"} disabled={pending || editorBusy} onClick={() => void pick("events")}>{ko ? "행사" : "Events"}</Button>
+          <Button variant="secondary" aria-pressed={kind === "highlights"} disabled={pending || editorBusy} onClick={() => void pick("highlights")}>{ko ? "하이라이트" : "Highlights"}</Button>
+          <Link href="/admin/notices" locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void canLeave().then((accepted) => { if (accepted) router.push("/admin/notices", { locale: "ko" }); }); }}>공지사항</Link>
         </nav>
         <Button variant="quiet" disabled={pending || editorBusy} onClick={() => void logout()}>{ko ? "로그아웃" : "Sign out"}</Button>
       </div>
@@ -90,8 +101,8 @@ export function EventsAdmin({ locale }: { readonly locale: Locale }) {
       {error && <p className="events-error" role="alert">{error}</p>}
       <p role="status">{notice}</p>
       {editing ? <RecordEditor key={`${kind}-${selected?.id ?? "new"}`} locale={locale} kind={kind} record={selected}
-        onDirty={() => setDirty(true)} onExpired={() => setExpired(true)} onBusy={setEditorBusy}
-        onCancel={() => { if (canLeave()) { setEditing(false); setDirty(false); } }}
+        onDirty={() => setDirty(true)} onExpired={() => setExpired(true)} onBusy={(value) => { editorBusyRef.current = value; setEditorBusy(value); }}
+        onCancel={() => { void canLeave().then((accepted) => { if (accepted) { setEditing(false); setDirty(false); } }); }}
         onSaved={() => { setEditing(false); setDirty(false); setNotice(ko ? "저장했습니다." : "Saved."); refresh(); }} /> : (
         <>
           <div className="events-admin-toolbar">

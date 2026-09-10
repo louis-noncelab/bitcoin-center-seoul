@@ -38,7 +38,7 @@ export default function proxy(request: NextRequest) {
       "object-src 'none'",
       "base-uri 'none'",
       "form-action 'self'",
-      "frame-src 'none'",
+      "frame-src https://www.google.com/maps/embed",
       "frame-ancestors 'none'",
       ...(secure ? ["upgrade-insecure-requests"] : []),
     ].join("; ");
@@ -49,6 +49,9 @@ export default function proxy(request: NextRequest) {
     response.headers.set("Content-Security-Policy", policy);
   }
 
+  if (/^\/(?:(?:ko|en|api)\/)?admin(?:\/|$)/.test(pathname)) {
+    response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  }
   if (secure) response.headers.set("Strict-Transport-Security", "max-age=31536000");
   return response;
 }

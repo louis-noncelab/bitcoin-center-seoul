@@ -11,7 +11,6 @@
 .wallet-options label { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-5); border: var(--border-width) solid var(--field-border); border-radius: var(--radius-control); cursor: pointer; }
 .wallet-options label:has(:checked) { border-color: var(--blue-ink); background: var(--selection); }
 .wallet-options label:has(:focus-visible) { outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); }
-.wallet-options input { accent-color: var(--blue-ink); flex-shrink: 0; inline-size: var(--space-5); block-size: var(--space-5); }
 .wallet-model { color: var(--blue-ink); font-weight: var(--weight-semibold); margin-block-end: var(--space-4); }
 .wallet-notice { padding: var(--space-5); background: var(--surface); border-inline-start: var(--space-1) solid var(--focus); margin-block-end: var(--space-6); }
 .wallet-instructions { padding-inline-start: var(--space-6); margin: 0; }

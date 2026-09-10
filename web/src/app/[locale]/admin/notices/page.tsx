@@ -8,7 +8,7 @@ import { routing } from "@/i18n/routing";
 import "@/styles/site.css";
 import "@/styles/events-admin.css";
 
-export const metadata = { title: "공지사항 관리 | Bitcoin Center Seoul", robots: { index: false, follow: false } };
+export const metadata = { title: "공지사항 관리 | Bitcoin Center Seoul" };
 
 export default async function AdminPage({ params }: { readonly params: Promise<{ locale: string }> }) {
   const { locale } = await params;

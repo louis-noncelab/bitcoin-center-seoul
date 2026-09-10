@@ -187,3 +187,18 @@ test.describe.serial("events-only public pages", () => {
   });
 
 });
+test("visit map replaces the address button and fits narrow and wide columns", async ({ page }) => {
+  for (const locale of ["ko", "en"]) {
+    await page.goto(`/${locale}/visit`, { waitUntil: "domcontentloaded" });
+    await expect(page.locator(".visit-address .button")).toHaveCount(0);
+    await expect(page.locator(".visit-map iframe")).toHaveAttribute("src", new RegExp(`^https://www\\.google\\.com/maps/embed\\?.*!1s${locale}`));
+    for (const width of [320, 768, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      const bounds = await page.locator(".visit-map").boundingBox();
+      const address = await page.locator(".visit-address dd").boundingBox();
+      expect(bounds?.width).toBeGreaterThan(0);
+      expect(bounds?.width).toBeCloseTo(address?.width ?? 0, 0);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    }
+  }
+});

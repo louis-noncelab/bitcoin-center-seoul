@@ -1,17 +1,23 @@
 import type { Locale } from "@/i18n/routing";
 import type { EventRecord, HighlightRecord } from "@/lib/events-contract";
-import { FormControl } from "@/components/ui/primitives";
+import { ChoiceControl, FormControl } from "@/components/ui/primitives";
+import { DateField } from "@/components/ui/date-field";
+import { MarkdownHelp } from "./markdown-help";
+import { MarkdownEditor } from "./markdown-editor";
+import { TagsField } from "./tags-field";
 
 export type ContentKind = "events" | "highlights";
 export type ContentRecord = EventRecord | HighlightRecord;
 
-export function EditorFields({ locale, kind, record }: {
+export function EditorFields({ locale, kind, record, onPending, onDirty, onExpired }: {
   readonly locale: Locale; readonly kind: ContentKind; readonly record: ContentRecord | null;
+  readonly onPending: (pending: boolean) => void; readonly onDirty: () => void; readonly onExpired: () => void;
 }) {
   const ko = locale === "ko";
   const event = record && "time" in record ? record : null;
   const highlight = record && "meta" in record ? record : null;
   function input(name: string, label: string, value = "", type = "text", required = false) {
+    if (type === "date") return <DateField key={name} name={name} label={label} defaultValue={value} required={required} onDirty={onDirty} />;
     const maximum = type === "url" ? 2048 : /^(location|host)/.test(name) ? 300 : /^(time|category)/.test(name) ? 100 : 200;
     return <label key={name}>{label}<FormControl><input name={name} defaultValue={value} type={type} required={required} maxLength={maximum} /></FormControl></label>;
   }
@@ -27,10 +33,12 @@ export function EditorFields({ locale, kind, record }: {
         <FormControl><input name="slug" aria-label="URL 슬러그" defaultValue={record?.slug ?? ""} required={!record} maxLength={100} pattern="(?=.*[a-z])[a-z0-9]+(-[a-z0-9]+)*" placeholder="bitcoin-developer-meetup" autoCapitalize="none" spellCheck={false} aria-describedby="slug-help" /></FormControl>
         <span id="slug-help" className="muted">/{locale}/{kind === "events" ? "programs" : "journal"}/ 뒤에 붙는 주소입니다. 영문 소문자·숫자·하이픈(-)을 사용해 주세요. 주소를 바꿔도 이전 링크는 새 주소로 연결됩니다.</span>
       </label>
+      <TagsField tags={record?.tags ?? []} />
       <div className="events-field-grid">
-        <label>{ko ? "설명 · 한국어" : "Description · Korean"}<FormControl><textarea name="description" defaultValue={record?.description ?? ""} rows={8} required maxLength={20000} /></FormControl></label>
-        <label>{ko ? "설명 · 영어" : "Description · English"}<FormControl><textarea name="descriptionEn" defaultValue={record?.descriptionEn ?? ""} rows={8} required maxLength={20000} /></FormControl></label>
+        <MarkdownEditor name="description" label="설명 · 한국어" defaultValue={record?.description ?? ""} required helpId="description-markdown-help" onPending={onPending} onDirty={onDirty} onExpired={onExpired} />
+        <MarkdownEditor name="descriptionEn" label="설명 · 영어" defaultValue={record?.descriptionEn ?? ""} required helpId="description-markdown-help" onPending={onPending} onDirty={onDirty} onExpired={onExpired} />
       </div>
+      <MarkdownHelp id="description-markdown-help" />
       {kind === "events" ? (
         <div className="events-field-grid">
           {input("date", ko ? "행사 날짜" : "Event date", date(event?.date), "date", true)}
@@ -53,7 +61,7 @@ export function EditorFields({ locale, kind, record }: {
             {input("hostEn", ko ? "주최 · 영어" : "Host · English", highlight?.hostEn ?? "Bitcoin Center Seoul")}
             <input name="sort_order" type="hidden" value={highlight?.sort_order ?? 0} />
           </div>
-          <label className="events-checkbox"><input name="is_active" type="checkbox" defaultChecked={highlight ? Boolean(highlight.is_active) : true} />{ko ? "공개" : "Published"}</label>
+          <label className="events-checkbox"><ChoiceControl name="is_active" type="checkbox" defaultChecked={highlight ? Boolean(highlight.is_active) : true} />{ko ? "공개" : "Published"}</label>
           <input name="icon" type="hidden" value={highlight?.icon ?? "calendar"} />
         </>
       )}

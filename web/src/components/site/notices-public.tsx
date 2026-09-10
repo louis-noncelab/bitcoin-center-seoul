@@ -8,6 +8,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { pageMetadata } from "@/content/site";
 import type { Locale } from "@/i18n/routing";
 import type { NoticeRecord } from "@/lib/notices-contract";
+import { markdownExcerpt } from "@/lib/markdown";
 import "@/styles/events-public.css";
 import "@/styles/site.css";
 import "@/styles/notices.css";
@@ -17,7 +18,7 @@ export function noticeText(locale: Locale, notice: NoticeRecord) {
 }
 export function noticesMetadata(locale: Locale, notice?: NoticeRecord): Metadata {
   const title = notice ? noticeText(locale, notice).title : locale === "ko" ? "공지사항" : "Notices";
-  const description = notice ? noticeText(locale, notice).description.slice(0, 200) : locale === "ko" ? "비트코인 센터 서울의 운영 소식과 안내입니다." : "News and updates from Bitcoin Center Seoul.";
+  const description = notice ? markdownExcerpt(noticeText(locale, notice).description) : locale === "ko" ? "비트코인 센터 서울의 운영 소식과 안내입니다." : "News and updates from Bitcoin Center Seoul.";
   const path = `/notices${notice ? `/${notice.slug}` : ""}`;
   const base = pageMetadata(locale);
   return { ...base, title: `${title} | Bitcoin Center Seoul`, description,
@@ -28,7 +29,8 @@ export function noticesMetadata(locale: Locale, notice?: NoticeRecord): Metadata
 }
 export function NoticesFrame({ locale, title, detail = false, children }: { readonly locale: Locale; readonly title: string; readonly detail?: boolean; readonly children: ReactNode }) {
   return <><SiteHeader locale={locale} /><main id="main" className="container detail-page event-page" tabIndex={-1}>
-    <div className="detail-heading"><ContentLink href={detail ? "/notices" : "/"} locale={locale} className="button" data-variant="secondary"><ArrowLeft className="icon" aria-hidden="true" />{detail ? locale === "ko" ? "공지사항으로" : "Back to notices" : locale === "ko" ? "홈으로" : "Back home"}</ContentLink><h1>{title}</h1></div>
+    <ContentLink href={detail ? "/notices" : "/"} locale={locale} className="button event-back" data-variant="secondary"><ArrowLeft className="icon" aria-hidden="true" />{detail ? locale === "ko" ? "공지사항으로" : "Back to notices" : locale === "ko" ? "홈으로" : "Back home"}</ContentLink>
+    <div className="detail-heading"><h1>{title}</h1></div>
     {children}<PageMotion pageKey={`${locale}-notices-${title}`} />
   </main><SiteFooter locale={locale} /></>;
 }

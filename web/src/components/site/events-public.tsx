@@ -1,20 +1,23 @@
 import { ArrowRight, ArrowUpRight, CalendarDays, Clock3, MapPin } from "lucide-react";
 import Image from "next/image";
-import { Fragment } from "react";
 import type { EventRecord, HighlightRecord } from "@/lib/events-contract";
+import { markdownExcerpt } from "@/lib/markdown";
 import { ContentLink } from "@/components/controls/content-link";
+import { MarkdownContent } from "@/components/site/markdown-content";
+import { ContentTags } from "@/components/site/content-tags";
+import { EventsCalendar } from "@/components/site/events-calendar";
 import type { Locale } from "@/i18n/routing";
 
 function text(locale: Locale, korean: string, english: string) {
   return locale === "ko" ? korean : english || korean;
 }
 
-function dateLabel(value: string, locale: Locale) {
+function dateLabel(value: string, locale: Locale, full = false) {
   if (!value) return "";
   const parsed = new Date(`${value.replaceAll(".", "-")}T00:00:00+09:00`);
   if (Number.isNaN(parsed.getTime())) return value;
   return new Intl.DateTimeFormat(locale === "ko" ? "ko-KR" : "en-GB", {
-    dateStyle: "long",
+    dateStyle: full ? "full" : "long",
     timeZone: "Asia/Seoul",
   }).format(parsed);
 }
@@ -58,44 +61,58 @@ function HighlightMeta({ highlight, locale }: { readonly highlight: HighlightRec
 }
 
 export function EventsCatalog({ events, locale, today }: { readonly events: readonly EventRecord[]; readonly locale: Locale; readonly today: string }) {
-  const normalizedDate = (event: EventRecord) => event.date.replaceAll(".", "-");
-  const upcoming = events
-    .filter((event) => normalizedDate(event) >= today)
-    .sort((left, right) => normalizedDate(left).localeCompare(normalizedDate(right)) || left.time.localeCompare(right.time) || left.id - right.id);
-  const past = events
-    .filter((event) => normalizedDate(event) < today)
-    .sort((left, right) => normalizedDate(right).localeCompare(normalizedDate(left)) || right.time.localeCompare(left.time) || right.id - left.id);
+  const byDate = new Map<string, EventRecord[]>();
+  for (const event of events) {
+    const date = event.date.trim().replaceAll(".", "-");
+    const group = byDate.get(date);
+    if (group) group.push(event);
+    else byDate.set(date, [event]);
+  }
+  const days = [...byDate].sort(([left], [right]) => left.localeCompare(right)).map(([date, records]) => ({
+    date, events: records.sort((left, right) => left.time.localeCompare(right.time) || left.id - right.id),
+  }));
+  const upcoming = days.filter(({ date }) => date >= today);
+  const past = days.filter(({ date }) => date < today).reverse();
   return (
     <div className="events-catalog" id="events">
-      <EventGroup id="upcoming-events" events={upcoming} locale={locale} title={locale === "ko" ? "다가오는 행사" : "Upcoming events"} empty={locale === "ko" ? "예정된 행사가 없습니다." : "There are no upcoming events."} />
-      {past.length > 0 && <EventGroup id="past-events" events={past} locale={locale} title={locale === "ko" ? "지난 행사" : "Past events"} />}
+      <EventsCalendar dates={days.map(({ date, events }) => ({ date, count: events.length }))} locale={locale} today={today} />
+      <div className="events-timeline">
+        <EventGroup id="upcoming-events" days={upcoming} locale={locale} title={locale === "ko" ? "다가오는 행사" : "Upcoming events"} empty={locale === "ko" ? "예정된 행사가 없습니다." : "There are no upcoming events."} />
+        {past.length > 0 && <EventGroup id="past-events" days={past} locale={locale} title={locale === "ko" ? "지난 행사" : "Past events"} />}
+      </div>
     </div>
   );
 }
 
-function EventGroup({ id, events, locale, title, empty }: { readonly id: string; readonly events: readonly EventRecord[]; readonly locale: Locale; readonly title: string; readonly empty?: string }) {
+function EventGroup({ id, days, locale, title, empty }: { readonly id: string; readonly days: readonly { readonly date: string; readonly events: readonly EventRecord[] }[]; readonly locale: Locale; readonly title: string; readonly empty?: string }) {
   return (
     <section className="catalog-group" aria-labelledby={id}>
       <h2 id={id}>{title}</h2>
-      {events.length === 0 ? <p className="catalog-empty muted">{empty}</p> : (
-        <div className="event-card-list">
-          {events.map((event) => {
-            const titleText = text(locale, event.title, event.titleEn);
-            const images = galleryImages(event);
-            return (
-              <ContentLink key={event.id} href={`/programs/${event.slug || event.id}`} locale={locale} className="event-card">
-                {images[0] && <span className="event-card-photo"><Image src={images[0]} alt="" fill sizes="(max-width: 767px) 100vw, 12rem" unoptimized /></span>}
-                <span className="event-card-copy">
-                  <EventMeta event={event} locale={locale} />
-                  <strong>{titleText}</strong>
-                  <span className="muted">{text(locale, event.description, event.descriptionEn)}</span>
-                </span>
-                <ArrowRight className="icon" aria-hidden="true" />
-              </ContentLink>
-            );
-          })}
-        </div>
-      )}
+      {days.length === 0 && <p className="catalog-empty muted">{empty}</p>}
+      {days.map(({ date, events }) => (
+        <section className="event-date-group" key={date} aria-labelledby={`events-on-${date}`}>
+          <h3 id={`events-on-${date}`} tabIndex={-1}><time dateTime={date}>{dateLabel(date, locale, true)}</time></h3>
+          <ul className="event-card-list">
+            {events.map((event) => {
+              const titleText = text(locale, event.title, event.titleEn);
+              const location = text(locale, event.location, event.locationEn);
+              const images = galleryImages(event);
+              return (
+                <li key={event.id}>
+                  <ContentLink href={`/programs/${event.slug || event.id}`} locale={locale} className="event-card">
+                    <span className="event-card-time">{event.time}</span>
+                    <span className="event-card-copy">
+                      <strong>{titleText}</strong>
+                      {location && <span className="event-card-location muted"><MapPin className="icon" aria-hidden="true" />{location}</span>}
+                    </span>
+                    {images[0] && <span className="event-card-photo"><Image src={images[0]} alt="" fill sizes="(max-width: 767px) 64px, 96px" unoptimized /></span>}
+                  </ContentLink>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
     </section>
   );
 }
@@ -112,7 +129,7 @@ export function HighlightsCatalog({ highlights, locale, preview = false }: { rea
           <article className="highlight-card" key={highlight.id} data-reveal-part={preview ? "" : undefined}>
             <ContentLink href={`/journal/${highlight.slug || highlight.id}`} locale={locale} className="highlight-card-link">
               {images[0] && <span className="highlight-card-photo"><Image src={images[0]} alt="" fill sizes="(max-width: 767px) 100vw, (max-width: 1119px) 50vw, 33vw" unoptimized /></span>}
-              <span className="highlight-card-copy"><HighlightMeta highlight={highlight} locale={locale} /><Title>{title}</Title><span className="muted">{text(locale, highlight.description, highlight.descriptionEn)}</span><span className="catalog-read">{locale === "ko" ? "기록 보기" : "Read story"}<ArrowRight className="icon" aria-hidden="true" /></span></span>
+              <span className="highlight-card-copy"><HighlightMeta highlight={highlight} locale={locale} /><Title>{title}</Title><span className="muted">{markdownExcerpt(text(locale, highlight.description, highlight.descriptionEn))}</span><span className="catalog-read">{locale === "ko" ? "기록 보기" : "Read story"}<ArrowRight className="icon" aria-hidden="true" /></span></span>
             </ContentLink>
           </article>
         );
@@ -129,7 +146,8 @@ export function EventDetail({ event, locale }: { readonly event: EventRecord; re
     <article className="event-detail">
       <PhotoGallery images={galleryImages(event)} title={title} locale={locale} />
       <EventMeta event={event} locale={locale} />
-      <p className="event-description">{text(locale, event.description, event.descriptionEn)}</p>
+      <ContentTags tags={event.tags} locale={locale} />
+      <MarkdownContent lang={locale === "en" && !event.descriptionEn ? "ko" : locale}>{text(locale, event.description, event.descriptionEn)}</MarkdownContent>
       {link && <a href={link} target="_blank" rel="noopener noreferrer" className="button" data-variant="primary">{locale === "ko" ? "외부 안내 열기" : "Open event link"}<ArrowUpRight className="icon" aria-hidden="true" /><span className="sr-only">{locale === "ko" ? " (새 창)" : " (new window)"}</span></a>}
     </article>
   );
@@ -142,7 +160,8 @@ export function HighlightDetail({ highlight, locale }: { readonly highlight: Hig
     <article className="event-detail">
       <PhotoGallery images={galleryImages(highlight)} title={title} locale={locale} />
       <HighlightMeta highlight={highlight} locale={locale} />
-      <p className="event-description">{text(locale, highlight.description, highlight.descriptionEn)}</p>
+      <ContentTags tags={highlight.tags} locale={locale} />
+      <MarkdownContent lang={locale === "en" && !highlight.descriptionEn ? "ko" : locale}>{text(locale, highlight.description, highlight.descriptionEn)}</MarkdownContent>
       {link && <a href={link} target="_blank" rel="noopener noreferrer" className="button" data-variant="secondary">{locale === "ko" ? "원문 보기" : "Read the original"}<ArrowUpRight className="icon" aria-hidden="true" /><span className="sr-only">{locale === "ko" ? " (새 창)" : " (new window)"}</span></a>}
     </article>
   );
@@ -160,23 +179,5 @@ function PhotoGallery({ images, title, locale }: { readonly images: readonly str
         ))}
       </div>
     </div>
-  );
-}
-
-export function JournalPagination({ locale, pagination: { page, totalPages } }: { readonly locale: Locale; readonly pagination: { readonly page: number; readonly totalPages: number } }) {
-  if (totalPages <= 1) return null;
-  const pages = [...new Set([1, page - 1, page, page + 1, totalPages])].filter((value) => value >= 1 && value <= totalPages).sort((left, right) => left - right);
-  const href = (value: number) => value === 1 ? "/journal" : `/journal?page=${value}`;
-  return (
-    <nav className="journal-pagination" aria-label={locale === "ko" ? "활동 기록 페이지" : "Journal pages"}>
-      {page > 1 && <ContentLink href={href(page - 1)} locale={locale} className="button" data-variant="quiet" rel="prev">{locale === "ko" ? "이전" : "Previous"}</ContentLink>}
-      {pages.map((value, index) => (
-        <Fragment key={value}>
-          {index > 0 && value - (pages[index - 1] ?? value) > 1 && <span aria-hidden="true">…</span>}
-          <ContentLink href={href(value)} locale={locale} className="button" data-variant="quiet" aria-label={locale === "ko" ? `${value}페이지` : `Page ${value}`} aria-current={value === page ? "page" : undefined}>{value}</ContentLink>
-        </Fragment>
-      ))}
-      {page < totalPages && <ContentLink href={href(page + 1)} locale={locale} className="button" data-variant="quiet" rel="next">{locale === "ko" ? "다음" : "Next"}</ContentLink>}
-    </nav>
   );
 }

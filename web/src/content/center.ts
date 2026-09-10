@@ -11,7 +11,6 @@ export type CenterLocaleContent = {
     readonly eyebrow: string;
     readonly title: string;
     readonly introduction: string;
-    readonly primaryLink: Link;
     readonly secondaryLink: Link;
   };
   readonly about: {
@@ -66,6 +65,7 @@ export type CenterLocaleContent = {
     };
     readonly website: Link;
     readonly mapLinks: readonly Link[];
+    readonly mapEmbedSrc: string;
   };
 };
 
@@ -84,14 +84,13 @@ export const centerContent = {
       title: "비트코인 센터 서울",
       introduction:
         "비트코인 강의와 밋업이 열리는 공간입니다. 책과 작품을 전시하고 하드웨어 지갑 체험존을 운영합니다.",
-      primaryLink: { label: "방문 안내", href: "#visit" },
       secondaryLink: { label: "프로그램 보기", href: "#programs" },
     },
     about: {
       eyebrow: "ABOUT",
       title: "비트코인 센터 서울",
       introduction:
-        "라운지와 비트코인 서가, 교실, 하드웨어 지갑 체험존이 있습니다.",
+        "라운지와 비트코인 서재, 홀, 하드웨어 지갑 체험존이 있습니다.",
       details: [
         "라운지에서 비트코인 책과 작품을 볼\u00a0수\u00a0있습니다.",
         "홀에서는 강의와 밋업이 열립니다.",
@@ -174,6 +173,7 @@ export const centerContent = {
       mapLinks: [
         { label: "Google 지도", href: "https://maps.app.goo.gl/n143j19LYrx3g8UF6" },
       ],
+      mapEmbedSrc: "https://www.google.com/maps/embed?pb=!1m5!3m3!1m2!1s0x357c99003a4d24f1%3A0xf0edd07ed772afe8!2z67mE7Yq47L2U7J24IOyEvO2EsCDshJzsmrggYml0Y29pbiBjZW50ZXIgc2VvdWw!5e0!3m2!1sko!2skr!4v1789005787721!5m2!1sko!2skr",
     },
   },
   en: {
@@ -190,14 +190,13 @@ export const centerContent = {
       title: "Bitcoin Center Seoul",
       introduction:
         "The center hosts Bitcoin classes and meetups. Visitors can browse the books, see the artwork and try hardware wallets.",
-      primaryLink: { label: "Plan your visit", href: "#visit" },
       secondaryLink: { label: "View programs", href: "#programs" },
     },
     about: {
       eyebrow: "ABOUT",
       title: "Bitcoin Center Seoul",
       introduction:
-        "The center has a lounge, a Bitcoin library, a classroom and a hardware wallet area.",
+        "The center has a lounge, a Bitcoin library, a hall and a hardware wallet area.",
       details: [
         "The lounge includes Bitcoin books and art.",
         "Classes and meetups take place in the hall.",
@@ -279,6 +278,7 @@ export const centerContent = {
       mapLinks: [
         { label: "Google Maps", href: "https://maps.app.goo.gl/n143j19LYrx3g8UF6" },
       ],
+      mapEmbedSrc: "https://www.google.com/maps/embed?pb=!1m5!3m3!1m2!1s0x357c99003a4d24f1%3A0xf0edd07ed772afe8!2z67mE7Yq47L2U7J24IOyEvO2EsCDshJzsmrggYml0Y29pbiBjZW50ZXIgc2VvdWw!5e0!3m2!1sen!2skr!4v1789005788876!5m2!1sen!2skr",
     },
   },
 } as const satisfies Record<Locale, CenterLocaleContent>;

@@ -1,3 +1,7 @@
+@import "./dialog.css";
+@import "./calendar.css";
+@import "./date-field.css";
+
 html {
   background: var(--canvas);
   scroll-padding-block-start: var(--space-8);
@@ -206,21 +210,50 @@ button:not(:disabled), summary {
 }
 
 .form-control > textarea { resize: vertical; }
-.form-control > select { padding-inline-end: var(--space-10); }
+.form-control > input[type="number"] { appearance: textfield; }
+.form-control > input[type="number"]::-webkit-inner-spin-button,
+.form-control > input[type="number"]::-webkit-outer-spin-button { appearance: none; margin: 0; }
 .form-control > :disabled { color: var(--muted); background: var(--surface); cursor: not-allowed; }
 .form-control > [aria-invalid="true"] { border-color: var(--danger); }
-.form-control > input[type="file"] { padding: calc(var(--space-2) - var(--border-width)); }
-.form-control > input::file-selector-button {
-  margin-inline-end: var(--space-3);
-  padding: var(--space-1) var(--space-3);
-  border: 0;
+
+.choice-control {
+  appearance: none;
+  display: inline-grid;
+  place-content: center;
+  flex-shrink: 0;
+  inline-size: var(--space-5);
+  block-size: var(--space-5);
+  margin: 0;
+  border: var(--border-width) solid var(--field-border);
   border-radius: var(--space-1);
-  color: var(--ink);
-  background: var(--surface);
-  font: inherit;
+  background: var(--canvas);
+  color: var(--action-ink);
   cursor: pointer;
 }
-.form-control > input:disabled::file-selector-button { color: var(--muted); cursor: not-allowed; }
+.choice-control::before {
+  content: "";
+  inline-size: var(--space-3);
+  block-size: var(--space-3);
+  background: currentColor;
+  clip-path: polygon(13% 40%, 39% 66%, 87% 13%, 100% 25%, 39% 91%, 0 53%);
+  transform: scale(0.5);
+  opacity: 0;
+}
+.choice-control[type="radio"] { border-radius: 50%; }
+.choice-control[type="radio"]::before { clip-path: none; border-radius: 50%; inline-size: var(--space-2); block-size: var(--space-2); }
+.choice-control:checked { border-color: var(--muted); background: var(--action); }
+.choice-control:checked::before { opacity: 1; transform: scale(1); }
+.choice-control:disabled { cursor: not-allowed; opacity: 0.55; }
+.choice-control:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); }
+@media (prefers-reduced-motion: no-preference) {
+  .choice-control { transition: border-color var(--duration-control), background-color var(--duration-control); }
+  .choice-control::before { transition: transform var(--duration-control) var(--ease-out), opacity var(--duration-control); }
+}
+@media (forced-colors: active) {
+  .choice-control { forced-color-adjust: none; background: Canvas; border-color: CanvasText; color: CanvasText; }
+  .choice-control:checked { background: Highlight; border-color: Highlight; color: HighlightText; }
+  .choice-control:focus-visible { outline-color: Highlight; }
+}
 
 .form-control::after {
   content: "";
@@ -361,7 +394,7 @@ button:not(:disabled), summary {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  html { scroll-behavior: smooth; }
+  html:has(:target) { scroll-behavior: smooth; }
 
   html.theme-changing, html.theme-changing body {
     transition: background-color var(--duration-theme) var(--ease-out), color var(--duration-theme) var(--ease-out);

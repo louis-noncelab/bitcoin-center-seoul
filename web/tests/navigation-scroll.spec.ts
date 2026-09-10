@@ -47,7 +47,7 @@ for (const locale of ["ko", "en"] as const) {
 test("history restores the previous reading position", async ({ page }) => {
   await page.goto("/ko/about");
   await page.evaluate(() => document.fonts.ready);
-  const nextPage = page.locator('.detail-visit a[href="/ko/visit"]');
+  const nextPage = page.locator('.footer-navigation a[href="/ko/visit"]');
   await nextPage.scrollIntoViewIfNeeded();
   await page.evaluate(() => document.fonts.ready);
   const previousScroll = await page.evaluate(() => window.scrollY);
@@ -92,6 +92,54 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
     await expect(page.locator(".footer-collaboration")).toHaveAttribute("href", "mailto:hello@noncelab.com");
   });
 }
+
+for (const locale of ["ko", "en"] as const) {
+  test(`${locale} journal can jump directly to a distant page without pre-scrolling`, async ({ page }) => {
+    // Given a reader at the pagination controls
+    await page.goto(`/${locale}/journal`);
+    const input = page.locator("#journal-page");
+    const lastPage = Number(await input.getAttribute("max"));
+    expect(lastPage).toBeGreaterThan(2);
+    await input.fill(String(lastPage));
+    const form = page.locator(".journal-page-jump");
+    await form.scrollIntoViewIfNeeded();
+    // When the native form navigates directly to the last page
+    const frames = await form.evaluate((element) => new Promise<{ y: number; url: string }[]>((resolve) => {
+      const samples = [{ y: scrollY, url: location.href }];
+      const start = performance.now();
+      function sample(now: number) {
+        samples.push({ y: scrollY, url: location.href });
+        if (now - start > 650) resolve(samples);
+        else requestAnimationFrame(sample);
+      }
+      requestAnimationFrame(sample);
+      if (element instanceof HTMLFormElement) element.requestSubmit();
+    }));
+    // Then the new page, selection and field agree, while the outgoing page stayed still
+    await expect(page).toHaveURL(new RegExp(`/${locale}/journal\\?page=${lastPage}$`));
+    await expect(input).toHaveValue(String(lastPage));
+    await expect(page.locator('.journal-pagination [aria-current="page"]')).toHaveText(String(lastPage));
+    await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+    const first = frames[0];
+    expect(first?.y).toBeGreaterThan(0);
+    if (first) expect(frames.filter(({ y, url }) => url === first.url && y !== first.y)).toEqual([]);
+  });
+}
+
+test("journal jump rejects out-of-range and fractional pages before navigation", async ({ page }) => {
+  // Given the current journal page and its native page bounds
+  await page.goto("/ko/journal");
+  const input = page.locator("#journal-page");
+  const lastPage = Number(await input.getAttribute("max"));
+  for (const value of ["0", String(lastPage + 1), "1.5", ""]) {
+    // When a reader submits an invalid page number
+    await input.fill(value);
+    await page.locator('.journal-page-jump button[type="submit"]').click();
+    // Then native validation keeps the reader on the current page
+    expect(await input.evaluate((element) => element instanceof HTMLInputElement && element.validity.valid)).toBe(false);
+    await expect(page).toHaveURL(/\/ko\/journal$/);
+  }
+});
 
 test("journal history returns to the card's reading position", async ({ page }) => {
   await page.goto("/ko/journal?page=2");

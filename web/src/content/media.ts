@@ -34,7 +34,7 @@ export const centerMedia = {
   community: {
     image: community,
     alt: {
-      ko: "센터 교실에서 강의를 듣는 참가자들과 오른쪽의 발표자",
+      ko: "센터 홀에서 강의를 듣는 참가자들과 오른쪽의 발표자",
       en: "Participants attending a class in the center, with the presenter on the right",
     },
     focalPosition: { landscape: "56% 55%", portrait: "68% 55%" },
@@ -43,8 +43,8 @@ export const centerMedia = {
   education: {
     image: education,
     alt: {
-      ko: "센터 교실에서 열린 비트코인 프로토콜 강의",
-      en: "A Bitcoin protocol course in the center classroom",
+      ko: "센터 홀에서 열린 비트코인 프로토콜 강의",
+      en: "A Bitcoin protocol course in the center hall",
     },
     focalPosition: { landscape: "60% 54%", portrait: "67% 54%" },
     recommendedAspectRatio: { landscape: "4 / 3", portrait: "4 / 5" },
@@ -61,7 +61,7 @@ export const centerMedia = {
   exhibition: {
     image: exhibition,
     alt: {
-      ko: "비트코인 도서와 백서 포스터가 있는 서가",
+      ko: "비트코인 도서와 백서 포스터가 있는 서재",
       en: "Numbered shelves of Bitcoin books beside a whitepaper poster",
     },
     focalPosition: { landscape: "54% 50%", portrait: "53% 52%" },

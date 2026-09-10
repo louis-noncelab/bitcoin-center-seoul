@@ -12,21 +12,22 @@ import {
 import { getDatabase } from "@/server/events/db";
 import { ApiError } from "@/server/events/errors";
 import { requireExistingImages } from "@/server/events/images";
+import { storedTagsSchema } from "@/server/events/tags";
 
-type EventRow = Omit<EventRecord, "images">;
-type HighlightRow = Omit<HighlightRecord, "images">;
+type EventRow = Omit<EventRecord, "images" | "tags"> & { readonly tags: string };
+type HighlightRow = Omit<HighlightRecord, "images" | "tags"> & { readonly tags: string };
 type ContentKind = "event" | "highlight";
 type Visibility = { readonly includeInactive?: boolean };
 
 const eventSelect = `
   SELECT id, title, titleEn, date, time, location, locationEn,
-         description, descriptionEn, image, link,
+         description, descriptionEn, image, link, tags,
          COALESCE((SELECT slug FROM content_slugs WHERE kind = 'event' AND content_id = events.id AND is_current = 1), '') AS slug
   FROM events`;
 const highlightSelect = `
   SELECT id, title, titleEn, meta, metaEn, category, categoryEn, date,
          startDate, endDate, host, hostEn, description, descriptionEn,
-         image, link, icon, sort_order, is_active,
+         image, link, icon, sort_order, is_active, tags,
          COALESCE((SELECT slug FROM content_slugs WHERE kind = 'highlight' AND content_id = highlights.id AND is_current = 1), '') AS slug
   FROM highlights`;
 const highlightOrder = `
@@ -43,12 +44,12 @@ function imagesFor(kind: ContentKind, contentId: number, legacyImage: string): s
 
 function eventFrom(row: EventRow): EventRecord {
   const images = imagesFor("event", row.id, row.image);
-  return eventRecordSchema.parse({ ...row, image: images[0] ?? "", link: normalizedLink(row.link), images });
+  return eventRecordSchema.parse({ ...row, tags: storedTagsSchema.parse(row.tags), image: images[0] ?? "", link: normalizedLink(row.link), images });
 }
 
 function highlightFrom(row: HighlightRow): HighlightRecord {
   const images = imagesFor("highlight", row.id, row.image);
-  return highlightRecordSchema.parse({ ...row, image: images[0] ?? "", link: normalizedLink(row.link), images });
+  return highlightRecordSchema.parse({ ...row, tags: storedTagsSchema.parse(row.tags), image: images[0] ?? "", link: normalizedLink(row.link), images });
 }
 
 function normalizedLink(link: string): string {
@@ -150,9 +151,9 @@ export function createEvent(input: EventInput): EventRecord {
   const create = db.transaction(() => {
     const image = input.images[0] ?? "";
     const result = db.prepare(`
-      INSERT INTO events (title, titleEn, date, time, location, locationEn, description, descriptionEn, image, link)
-      VALUES (@title, @titleEn, @date, @time, @location, @locationEn, @description, @descriptionEn, @image, @link)
-    `).run({ ...input, image });
+      INSERT INTO events (title, titleEn, date, time, location, locationEn, description, descriptionEn, image, link, tags)
+      VALUES (@title, @titleEn, @date, @time, @location, @locationEn, @description, @descriptionEn, @image, @link, @tags)
+    `).run({ ...input, image, tags: JSON.stringify(input.tags) });
     const id = Number(result.lastInsertRowid);
     replaceImages("event", id, input.images);
     setSlug("event", id, input.slug);
@@ -171,9 +172,9 @@ export function updateEvent(id: number, input: EventInput): EventRecord {
     const result = db.prepare(`
       UPDATE events SET title = @title, titleEn = @titleEn, date = @date, time = @time,
         location = @location, locationEn = @locationEn, description = @description,
-        descriptionEn = @descriptionEn, image = @image, link = @link, updated_at = CURRENT_TIMESTAMP
+        descriptionEn = @descriptionEn, image = @image, link = @link, tags = @tags, updated_at = CURRENT_TIMESTAMP
       WHERE id = @id
-    `).run({ ...input, id, image });
+    `).run({ ...input, id, image, tags: JSON.stringify(input.tags) });
     if (result.changes === 0) throw new ApiError(404, "NOT_FOUND", "행사를 찾을 수 없습니다.");
     replaceImages("event", id, input.images);
     setSlug("event", id, input.slug);
@@ -200,10 +201,10 @@ export function createHighlight(input: HighlightInput): HighlightRecord {
     const image = input.images[0] ?? "";
     const result = db.prepare(`
       INSERT INTO highlights (title, titleEn, meta, metaEn, category, categoryEn, date, startDate, endDate,
-        host, hostEn, description, descriptionEn, image, link, icon, sort_order, is_active)
+        host, hostEn, description, descriptionEn, image, link, icon, sort_order, is_active, tags)
       VALUES (@title, @titleEn, @meta, @metaEn, @category, @categoryEn, @date, @startDate, @endDate,
-        @host, @hostEn, @description, @descriptionEn, @image, @link, @icon, @sort_order, @is_active)
-    `).run({ ...input, image });
+        @host, @hostEn, @description, @descriptionEn, @image, @link, @icon, @sort_order, @is_active, @tags)
+    `).run({ ...input, image, tags: JSON.stringify(input.tags) });
     const id = Number(result.lastInsertRowid);
     replaceImages("highlight", id, input.images);
     setSlug("highlight", id, input.slug);
@@ -223,9 +224,9 @@ export function updateHighlight(id: number, input: HighlightInput): HighlightRec
       UPDATE highlights SET title = @title, titleEn = @titleEn, meta = @meta, metaEn = @metaEn,
         category = @category, categoryEn = @categoryEn, date = @date, startDate = @startDate, endDate = @endDate,
         host = @host, hostEn = @hostEn, description = @description, descriptionEn = @descriptionEn,
-        image = @image, link = @link, icon = @icon, sort_order = @sort_order, is_active = @is_active,
+        image = @image, link = @link, icon = @icon, sort_order = @sort_order, is_active = @is_active, tags = @tags,
         updated_at = CURRENT_TIMESTAMP WHERE id = @id
-    `).run({ ...input, id, image });
+    `).run({ ...input, id, image, tags: JSON.stringify(input.tags) });
     if (result.changes === 0) throw new ApiError(404, "NOT_FOUND", "하이라이트를 찾을 수 없습니다.");
     replaceImages("highlight", id, input.images);
     setSlug("highlight", id, input.slug);

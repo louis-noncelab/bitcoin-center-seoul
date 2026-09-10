@@ -1,11 +1,12 @@
 "use client";
 
 import Image from "next/image";
+import { ImagePlus } from "lucide-react";
 import { useRef, useState } from "react";
-import { z } from "zod";
-import { Button, FormControl } from "@/components/ui/primitives";
+import { Button } from "@/components/ui/primitives";
 import type { Locale } from "@/i18n/routing";
-import { adminRequest, AdminRequestError, errorText } from "./request";
+import { AdminRequestError } from "./request";
+import { imageUploadAccept, imageUploadErrorText, uploadImages } from "./image-upload";
 
 export function GalleryField({ locale, images, onChange, onPending, onExpired }: {
   readonly locale: Locale; readonly images: readonly string[];
@@ -14,20 +15,19 @@ export function GalleryField({ locale, images, onChange, onPending, onExpired }:
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const busy = useRef(false);
+  const picker = useRef<HTMLInputElement>(null);
   const ko = locale === "ko";
   async function upload(input: HTMLInputElement) {
     const files = Array.from(input.files ?? []);
     input.value = "";
     if (!files.length || busy.current) return;
-    if (images.length + files.length > 12 || files.some((file) => file.size > 10 * 1024 ** 2) || files.reduce((sum, file) => sum + file.size, 0) > 30 * 1024 ** 2) {
+    if (images.length + files.length > 12) {
       setError(ko ? "사진은 최대 12장, 각 10MB, 한 번에 총 30MB까지 올릴 수 있습니다." : "Use up to 12 images, 10MB each and 30MB per upload."); return;
     }
     busy.current = true; setPending(true); onPending(true); setError("");
-    const body = new FormData(); files.forEach((file) => body.append("files", file));
     try {
-      const result = await adminRequest("/api/admin/images", z.object({ images: z.array(z.string()) }), { method: "POST", body });
-      onChange([...images, ...result.images]);
-    } catch (caught) { setError(errorText(caught, locale)); if (caught instanceof AdminRequestError && caught.status === 401) onExpired(); }
+      onChange([...images, ...await uploadImages(files)]);
+    } catch (caught) { setError(imageUploadErrorText(caught, locale)); if (caught instanceof AdminRequestError && caught.status === 401) onExpired(); }
     finally { busy.current = false; setPending(false); onPending(false); }
   }
   function move(index: number, direction: number) {
@@ -38,7 +38,10 @@ export function GalleryField({ locale, images, onChange, onPending, onExpired }:
     <fieldset className="events-gallery-field" disabled={pending}>
       <legend>{ko ? "사진" : "Images"}</legend>
       <p className="muted">{ko ? "첫 번째 사진이 대표 이미지입니다. 최대 12장 · 각 10MB · 한 번에 30MB" : "The first image is the cover. Up to 12 images · 10MB each · 30MB per upload"}</p>
-      <label className="events-upload">{ko ? "사진 여러 장 선택" : "Choose images"}<FormControl><input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(event) => void upload(event.currentTarget)} disabled={pending || images.length >= 12} /></FormControl></label>
+      <div className="events-upload">
+        <Button variant="secondary" disabled={pending || images.length >= 12} onClick={() => picker.current?.click()}><ImagePlus className="icon" aria-hidden="true" />{ko ? "사진 여러 장 선택" : "Choose images"}</Button>
+        <input ref={picker} hidden type="file" aria-label={ko ? "사진 여러 장 선택" : "Choose images"} accept={imageUploadAccept} multiple onChange={(event) => void upload(event.currentTarget)} disabled={pending || images.length >= 12} />
+      </div>
       <p role="status">{pending ? (ko ? "사진 업로드 중…" : "Uploading images…") : (ko ? `${images.length}장 선택됨` : `${images.length} images selected`)}</p>
       {error && <p className="events-error" role="alert">{error}</p>}
       <ol className="events-gallery-editor">

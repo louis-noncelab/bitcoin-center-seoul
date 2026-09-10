@@ -37,8 +37,8 @@ export default async function EventPage({ params }: Props) {
     <>
       <SiteHeader locale={locale} section="programs" />
       <main id="main" className="container detail-page event-page" tabIndex={-1}>
+        <Link href="/programs" locale={locale} className="button event-back" data-variant="secondary"><ArrowLeft className="icon" aria-hidden="true" />{locale === "ko" ? "프로그램으로" : "Back to programs"}</Link>
         <div className="detail-heading">
-          <Link href="/programs" locale={locale} className="button" data-variant="secondary"><ArrowLeft className="icon" aria-hidden="true" />{locale === "ko" ? "프로그램으로" : "Back to programs"}</Link>
           <h1>{title}</h1>
         </div>
         <EventDetail event={event} locale={locale} />

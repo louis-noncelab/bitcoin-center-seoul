@@ -24,7 +24,7 @@ export function BackToTop({ locale }: { readonly locale: Locale }) {
       onClick={(event) => {
         event.preventDefault();
         document.getElementById("main")?.focus({ preventScroll: true });
-        window.scrollTo({ top: 0, behavior: "auto" });
+        window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
       }}>
       <ArrowUp className="icon" aria-hidden="true" />
     </ActionLink>

@@ -40,6 +40,13 @@ export function SiteFooter({ locale }: { readonly locale: Locale }) {
               ))}
             </ul>
           </nav>
+          <nav className="footer-commerce" aria-labelledby="footer-commerce-title">
+            <h2 id="footer-commerce-title" className="footer-label">{locale === "ko" ? "상점·밋업" : "Shop & meetups"}</h2>
+            <ul>
+              <li><a href="https://www.saturdayblock.com/shop?brand=bcs" target="_blank" rel="noopener noreferrer">{locale === "ko" ? "센터 상품" : "Center shop"}<ArrowUpRight className="icon" aria-hidden="true" /><span className="sr-only">{locale === "ko" ? " (새 창)" : " (new window)"}</span></a></li>
+              <li><a href="https://www.saturdayblock.com/meetup?brand=bcs" target="_blank" rel="noopener noreferrer">{locale === "ko" ? "밋업 신청" : "Join a meetup"}<ArrowUpRight className="icon" aria-hidden="true" /><span className="sr-only">{locale === "ko" ? " (새 창)" : " (new window)"}</span></a></li>
+            </ul>
+          </nav>
           <div className="footer-contact" role="group" aria-labelledby="footer-contact-title">
             <h2 id="footer-contact-title" className="footer-label">{locale === "ko" ? "문의하기" : "Contact"}</h2>
             <div className="footer-actions">

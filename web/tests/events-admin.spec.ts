@@ -52,7 +52,7 @@ for (const theme of ["light", "dark"]) {
     await expectSmoothFocus(page.getByLabel("관리자 비밀번호", { exact: true }));
     await login(page);
     await page.getByRole("button", { name: "새 항목 등록", exact: true }).click();
-    for (const field of [page.getByLabel("제목 · 한국어", { exact: true }), page.getByLabel("행사 날짜", { exact: true }), page.getByLabel("사진 여러 장 선택"), page.getByRole("button", { name: "저장", exact: true })]) {
+    for (const field of [page.getByLabel("제목 · 한국어", { exact: true }), page.getByLabel("행사 날짜", { exact: true }), page.getByRole("button", { name: "사진 여러 장 선택", exact: true }), page.getByRole("button", { name: "저장", exact: true })]) {
       expect((await field.boundingBox())?.height).toBe(48);
     }
     const description = page.getByLabel("설명 · 한국어", { exact: true });
@@ -134,8 +134,8 @@ test("행사 등록, 사진 두 장 업로드, 수정, 세션 만료 후 초안 
     expect(previousUrl.status()).toBe(308);
     expect(previousUrl.headers().location).toBe(`/en/programs/${slug}-updated`);
     expect(amended.images).toEqual([...initial.images].reverse());
-    page.once("dialog", (dialog) => void dialog.accept());
     await page.locator(".events-admin-list > li").filter({ hasText: title + " 수정" }).getByRole("button", { name: "삭제", exact: true }).click();
+    await page.getByRole("dialog", { name: "항목 삭제", exact: true }).getByRole("button", { name: "삭제", exact: true }).click();
     await expect(page.getByText("삭제했습니다.", { exact: true })).toBeVisible();
     expect((await page.request.get(`/api/events/${id}`)).status()).toBe(404);
   } finally {

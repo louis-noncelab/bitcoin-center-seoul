@@ -17,7 +17,8 @@ test("관리자가 공지를 비공개 저장, 발행, 수정하고 삭제한다
     await page.getByRole("button", { name: "공지 등록", exact: true }).click();
     await page.getByLabel("제목", { exact: true }).fill(title);
     await page.getByLabel("URL 슬러그", { exact: true }).fill(slug);
-    await page.getByLabel("본문", { exact: true }).fill("운영 안내입니다.\n<script>alert('plain text')</script>");
+    await expect(page.getByLabel("본문", { exact: true })).toHaveAttribute("aria-describedby", "notice-markdown-help");
+    await page.getByLabel("본문", { exact: true }).fill("# 운영 안내\n\n**휴무 일정**\n\n- 첫째 안내\n- 둘째 안내\n\n[방문 안내](/ko/visit)\n\n<script>alert('plain text')</script>");
     await page.getByRole("button", { name: "저장", exact: true }).click();
     await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
     const draft = z.object({ data: z.array(noticeRecordSchema) }).parse(await (await page.request.get("/api/admin/notices")).json()).data.find((record) => record.slug === slug);
@@ -35,6 +36,13 @@ test("관리자가 공지를 비공개 저장, 발행, 수정하고 삭제한다
     await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
     await expect(page.locator(".event-description")).toContainText("<script>alert('plain text')</script>");
     await expect(page.locator(".event-description script")).toHaveCount(0);
+    await expect(page.locator(".event-description").getByRole("heading", { name: "운영 안내", level: 2 })).toBeVisible();
+    await expect(page.locator(".event-description strong")).toHaveText("휴무 일정");
+    await expect(page.locator(".event-description li")).toHaveText(["첫째 안내", "둘째 안내"]);
+    await expect(page.locator(".event-description").getByRole("link", { name: "방문 안내" })).toHaveAttribute("href", "/ko/visit");
+    await expect(page.locator(".event-description")).toHaveAttribute("lang", "ko");
+    await expect(page.locator("main h1")).toHaveCount(1);
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /^운영 안내 휴무 일정 첫째 안내 둘째 안내 방문 안내 /);
     await page.goto("/ko/notices");
     await expect(page.getByRole("link", { name: new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) })).toBeVisible();
     await page.goto("/ko/admin/notices");
@@ -55,8 +63,8 @@ test("관리자가 공지를 비공개 저장, 발행, 수정하고 삭제한다
     await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
     expect((await page.request.get(`/ko/notices/${slug}`)).status()).toBe(404);
     expect((await page.request.get(`/api/notices/${slug}-updated`)).status()).toBe(404);
-    page.once("dialog", (dialog) => dialog.accept());
     await row.getByRole("button", { name: "삭제", exact: true }).click();
+    await page.getByRole("dialog", { name: "공지 삭제", exact: true }).getByRole("button", { name: "삭제", exact: true }).click();
     await expect(page.getByText("삭제했습니다.", { exact: true })).toBeVisible();
     id = undefined;
     await expect(row).toHaveCount(0);

@@ -37,8 +37,8 @@ export default async function HighlightPage({ params }: Props) {
     <>
       <SiteHeader locale={locale} section="journal" />
       <main id="main" className="container detail-page event-page" tabIndex={-1}>
+        <Link href="/journal" prefetch={false} locale={locale} className="button event-back" data-variant="secondary"><ArrowLeft className="icon" aria-hidden="true" />{locale === "ko" ? "활동 기록으로" : "Back to journal"}</Link>
         <div className="detail-heading">
-          <Link href="/journal" prefetch={false} locale={locale} className="button" data-variant="secondary"><ArrowLeft className="icon" aria-hidden="true" />{locale === "ko" ? "활동 기록으로" : "Back to journal"}</Link>
           <h1>{title}</h1>
         </div>
         <HighlightDetail highlight={highlight} locale={locale} />

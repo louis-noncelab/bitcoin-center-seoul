@@ -4,6 +4,10 @@ export function FormControl({ children }: { readonly children: ReactNode }) {
   return <span className="form-control">{children}</span>;
 }
 
+export function ChoiceControl({ className = "", ...props }: Omit<ComponentPropsWithRef<"input">, "type"> & { readonly type: "checkbox" | "radio" }) {
+  return <input className={`choice-control ${className}`} {...props} />;
+}
+
 type ActionVariant = "primary" | "secondary" | "quiet";
 
 type ButtonProps = ComponentPropsWithRef<"button"> & {

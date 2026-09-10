@@ -43,18 +43,22 @@ for (const [index, model] of models.entries()) {
   });
 }
 
-test("serves Korean guide metadata and redirects published legacy URLs locally", async ({ page }) => {
-  // Given: the originally published unprefixed guide URL.
-  await page.goto("/walletExperence");
-  // When: the locale-aware alias resolves.
-  await expect(page).toHaveURL(/\/ko\/experience\/wallet$/);
-  // Then: Korean content and canonical preview metadata are present.
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("하드월렛 체험하기");
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/ko\/experience\/wallet$/);
-  await expect(page.locator('link[hreflang="en"]')).toHaveAttribute("href", /\/en\/experience\/wallet$/);
-  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
-  await page.goto("/en/walletExperence");
-  await expect(page).toHaveURL(/\/en\/experience\/wallet$/);
+test.describe("Korean browser preference", () => {
+  test.use({ locale: "ko-KR" });
+
+  test("serves Korean guide metadata and redirects published legacy URLs locally", async ({ page }) => {
+    // Given: the originally published unprefixed guide URL.
+    await page.goto("/walletExperence");
+    // When: the locale-aware alias resolves.
+    await expect(page).toHaveURL(/\/ko\/experience\/wallet$/);
+    // Then: Korean content and canonical preview metadata are present.
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("하드월렛 체험하기");
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/ko\/experience\/wallet$/);
+    await expect(page.locator('link[hreflang="en"]')).toHaveAttribute("href", /\/en\/experience\/wallet$/);
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+    await page.goto("/en/walletExperence");
+    await expect(page).toHaveURL(/\/en\/experience\/wallet$/);
+  });
 });
 
 test("experience links open the local guide in both locales", async ({ page }) => {

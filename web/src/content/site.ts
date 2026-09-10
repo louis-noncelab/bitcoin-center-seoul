@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { Locale } from "@/i18n/routing";
+import { markdownExcerpt } from "@/lib/markdown";
 import { centerContent } from "./center";
 import { centerMedia } from "./media";
 
@@ -78,10 +79,11 @@ export function recordMetadata(
 ): Metadata {
   const metadata = pageMetadata(locale, section);
   const path = `/${section}/${identifier}`;
+  const excerpt = markdownExcerpt(description);
   return {
     ...metadata,
     title: `${title} | ${centerContent[locale].hero.title}`,
-    description,
+    description: excerpt,
     alternates: {
       canonical: `/${locale}${path}`,
       languages: {
@@ -93,13 +95,13 @@ export function recordMetadata(
     openGraph: {
       ...metadata.openGraph,
       title,
-      description,
+      description: excerpt,
       url: `/${locale}${path}`,
     },
     twitter: {
       card: "summary_large_image",
       title,
-      description,
+      description: excerpt,
     },
   };
 }

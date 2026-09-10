@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { contentTagsSchema } from "@/lib/content-tags";
 
 const requiredText = (maximum: number) => z.string().trim().min(1).max(maximum);
 const optionalText = (maximum: number) => z.string().trim().max(maximum);
@@ -6,7 +7,7 @@ export const contentSlugSchema = z.string().trim().toLowerCase().max(100).refine
   (value) => value === "" || (/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) && /[a-z]/.test(value)),
   "주소는 영문 소문자, 숫자, 하이픈으로 입력하고 영문자를 하나 이상 포함해주세요.",
 ).default("");
-const isCalendarDate = (value: string): boolean => {
+export const isCalendarDate = (value: string): boolean => {
   const match = /^(\d{4})[-.](\d{2})[-.](\d{2})$/.exec(value.trim());
   if (!match) return false;
   const year = Number(match[1]);
@@ -57,6 +58,7 @@ const images = z
 
 const eventFields = {
   slug: contentSlugSchema,
+  tags: contentTagsSchema,
   title: requiredText(200),
   titleEn: requiredText(200),
   date,
@@ -72,6 +74,7 @@ const eventFields = {
 
 const highlightFields = {
   slug: contentSlugSchema,
+  tags: contentTagsSchema,
   title: requiredText(200),
   titleEn: requiredText(200),
   meta: optionalText(200),

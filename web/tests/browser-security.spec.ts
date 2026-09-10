@@ -10,6 +10,33 @@ function scriptPolicy(policy: string) {
   return nonce;
 }
 
+test("HTML permits only the Google Maps embed endpoint for client navigation", async ({ request }) => {
+  for (const path of ["/ko/visit", "/en/visit", "/ko/about", "/ko/admin"]) {
+    const response = await request.get(path);
+    const policy = response.headers()["content-security-policy"] ?? "";
+    expect(policy.split(";").find((directive) => directive.trim().startsWith("frame-src "))?.trim())
+      .toBe("frame-src https://www.google.com/maps/embed");
+    scriptPolicy(policy);
+  }
+});
+
+test("admin pages and endpoints always opt out of search indexing", async ({ request }) => {
+  for (const path of ["/ko/admin", "/en/admin", "/ko/admin/notices", "/en/admin/notices"]) {
+    const response = await request.get(path);
+    expect(response.status()).toBe(200);
+    expect(response.headers()["x-robots-tag"]).toBe("noindex, nofollow");
+    expect(await response.text()).toMatch(/<meta name="robots" content="noindex, nofollow"\s*\/?\s*>/);
+  }
+  for (const path of ["/admin", "/admin/auth", "/ko/admin/missing", "/api/admin/session"]) {
+    const response = await request.get(path, { maxRedirects: 0 });
+    expect(response.headers()["x-robots-tag"], path).toBe("noindex, nofollow");
+  }
+  const publicPage = await request.get("/ko/about");
+  expect(publicPage.headers()["x-robots-tag"]).toBeUndefined();
+  const sitemap = await request.get("/sitemap.xml");
+  expect(await sitemap.text()).not.toMatch(/<loc>[^<]*\/admin(?:\/|<)/);
+});
+
 for (const path of ["/ko/about", "/en/about", "/ko/admin", "/ko/notices"]) {
   test(`HTML has fresh trusted nonces when requesting ${path}`, async ({ request }) => {
     // Given client-supplied headers that must never authorize a script

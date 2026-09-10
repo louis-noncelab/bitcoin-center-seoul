@@ -90,6 +90,14 @@ function initialize(next: Database.Database, createLegacy: boolean): Database.Da
     CREATE UNIQUE INDEX IF NOT EXISTS content_slugs_current
       ON content_slugs (kind, content_id) WHERE is_current = 1;
     `);
+    next.transaction(() => {
+      for (const table of ["events", "highlights", "notices"] as const) {
+        const columns = next.prepare<[], { readonly name: string }>(`PRAGMA table_info(${table})`).all();
+        if (!columns.some(({ name }) => name === "tags")) {
+          next.exec(`ALTER TABLE ${table} ADD COLUMN tags TEXT NOT NULL DEFAULT '[]'`);
+        }
+      }
+    }).immediate();
     const sessionColumns = next.prepare<[], { readonly name: string }>("PRAGMA table_info(admin_sessions)").all();
     if (!sessionColumns.some(({ name }) => name === "last_seen_at")) {
       next.exec("ALTER TABLE admin_sessions ADD COLUMN last_seen_at INTEGER NOT NULL DEFAULT 0");

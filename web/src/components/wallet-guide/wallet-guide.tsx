@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/primitives";
+import { Button, ChoiceControl } from "@/components/ui/primitives";
 import { guidePhases, walletCopy, walletModels, type PhoneOS, type WalletModel } from "@/content/wallet-guide";
 import type { Locale } from "@/i18n/routing";
 import appleQR from "../../../../public/images/experence/apple_download_qr.png";
@@ -63,7 +63,7 @@ export function WalletGuide({ locale }: { readonly locale: Locale }) {
             <div className="wallet-options">
               {(["android", "ios"] as const).map((value) => (
                 <label key={value}>
-                  <input type="radio" name="phone-os" value={value} checked={os === value} onChange={() => setOS(value)} />
+                  <ChoiceControl type="radio" name="phone-os" value={value} checked={os === value} onChange={() => setOS(value)} />
                   <span>{copy.phoneSelection[value]}</span>
                 </label>
               ))}
@@ -85,7 +85,7 @@ export function WalletGuide({ locale }: { readonly locale: Locale }) {
             <div className="wallet-options" data-models>
               {walletModels.map((value) => (
                 <label key={value}>
-                  <input type="radio" name="wallet-model" value={value} checked={model === value} onChange={() => setModel(value)} />
+                  <ChoiceControl type="radio" name="wallet-model" value={value} checked={model === value} onChange={() => setModel(value)} />
                   <span>{value}</span>
                 </label>
               ))}

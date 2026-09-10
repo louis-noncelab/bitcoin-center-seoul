@@ -38,9 +38,6 @@ export function Home({ locale, highlights }: { readonly locale: Locale; readonly
             <div className="hero-introduction">
               <p className="body-copy muted">{content.hero.introduction}</p>
               <div className="button-row">
-                <Link href="/visit" locale={locale} className="button" data-variant="primary">
-                  {content.hero.primaryLink.label}<ArrowRight className="icon" aria-hidden="true" />
-                </Link>
                 <Link href="/programs" locale={locale} className="button" data-variant="secondary">
                   {content.hero.secondaryLink.label}
                 </Link>
