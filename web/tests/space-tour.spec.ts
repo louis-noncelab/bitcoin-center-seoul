@@ -11,6 +11,12 @@ test("space films respect motion preferences, visibility and explicit pause", as
   await expect.poll(() => lounge.evaluate((film: HTMLVideoElement) => !film.paused && film.videoWidth === 640)).toBe(true);
   await expect(page.locator("video[src]")).toHaveCount(1);
 
+  const toggle = page.getByRole("tabpanel").getByRole("button");
+  await toggle.press("Enter");
+  await expect.poll(() => lounge.evaluate((film: HTMLVideoElement) => film.paused)).toBe(true);
+  await toggle.press("Enter");
+  await expect.poll(() => lounge.evaluate((film: HTMLVideoElement) => !film.paused)).toBe(true);
+
   // When: motion is reduced, including before an unvisited scene is chosen.
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect.poll(() => lounge.evaluate((film: HTMLVideoElement) => film.paused)).toBe(true);

@@ -86,7 +86,7 @@ export function SpaceFilm({ name, label, locale }: {
         <Button variant="quiet" className="space-film-toggle" disabled={!ready} aria-label={`${label} · ${action}`} onClick={() => {
           const film = video.current;
           if (!film) return;
-          if (playing) { intent.current = "pause"; film.pause(); }
+          if (!film.paused) { intent.current = "pause"; film.pause(); }
           else {
             intent.current = "play";
             if (error) { setError(false); film.load(); }
