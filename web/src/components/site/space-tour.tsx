@@ -18,8 +18,8 @@ const scenes = [
   },
   {
     id: "gallery", href: "/collection",
-    ko: { label: "전시", title: "작품으로 만나는 비트코인", description: "비트코인에서 영감을 얻은 작품들을 전시합니다. 공간을 둘러보며 작품마다 담긴 시선을 만나보세요.", action: "작품 둘러보기" },
-    en: { label: "Exhibition", title: "Bitcoin through art", description: "Discover works inspired by Bitcoin. Look around the space and explore the different perspectives in each piece.", action: "Explore art" },
+    ko: { label: "전시", title: "작품으로 만나는 비트코인", description: "비트코인에서 영감을 얻은 작품부터 굿즈와 보드게임까지. 공간 곳곳에 담긴 다양한 비트코인 문화를 만나보세요.", action: "작품 둘러보기" },
+    en: { label: "Exhibition", title: "Bitcoin through art", description: "From Bitcoin-inspired artworks to merchandise and board games. Discover the many expressions of Bitcoin culture around the center.", action: "Explore art" },
   },
 ] as const;
 

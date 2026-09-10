@@ -12,6 +12,14 @@ test("space films respect motion preferences, visibility and explicit pause", as
   await expect(page.locator("video[src]")).toHaveCount(1);
 
   const toggle = page.getByRole("tabpanel").getByRole("button");
+  await expect(toggle.locator("svg")).toHaveCount(0);
+  await toggle.hover();
+  await expect(toggle).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(toggle).toHaveCSS("border-width", "0px");
+  await expect(toggle).toHaveCSS("transform", "none");
+  await expect.poll(() => lounge.evaluate((film: HTMLVideoElement) => film.loop && film.duration > 20 && !film.controls)).toBe(true);
+  await lounge.evaluate((film: HTMLVideoElement) => { film.currentTime = film.duration - 0.2; });
+  await expect.poll(() => lounge.evaluate((film: HTMLVideoElement) => film.currentTime < 2 && !film.paused)).toBe(true);
   await toggle.press("Enter");
   await expect.poll(() => lounge.evaluate((film: HTMLVideoElement) => film.paused)).toBe(true);
   await toggle.press("Enter");

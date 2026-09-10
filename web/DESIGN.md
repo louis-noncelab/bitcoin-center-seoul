@@ -30,11 +30,12 @@ Reuse the existing neutral surfaces, Pretendard, controls and selection primitiv
   with its frame; its actual colors and watermark remain. No invented frames,
   faux grain, decorative subtitles or audio. Scene changes use a 500ms
   opacity dissolve with the existing image/exit tokens and selection lifecycle.
-  The owner requested removing the bottom control rail. A shared 48px icon control
-  sits inside the frame: visible on hover/focus while playing, and always available
-  when paused, on touch devices or after a playback error. Accessible bilingual
-  action labels and reduced-motion/no-JavaScript behavior remain intact.
-- Delivery: short H.264/yuv420p MP4 derivatives with fast-start and WebP posters,
+  The owner's latest revision removes every visible playback icon and the bottom
+  control rail. The unobstructed film loops automatically. A transparent native
+  button covers the frame for pointer/touch and keyboard pause/play, with an inset
+  focus outline and bilingual accessible action labels. No icon appears on hover,
+  focus, touch or pause. Reduced-motion/no-JavaScript behavior remains intact.
+- Delivery: H.264/yuv420p MP4 derivatives with fast-start and WebP posters,
   same-origin under `/images/space-tour/`; no remote video requests or new CSP
   allowance. Source URLs, cuts and sizes are recorded with the assets. No media
   source is attached until its scene is on screen or explicitly played.
@@ -48,9 +49,13 @@ Reuse the existing neutral surfaces, Pretendard, controls and selection primitiv
   Next.js video guidance. Adapt mechanisms only; no registry components copied.
 - Media provenance: the center's existing `BCS_480p.mov` at
   `https://bitcoin-center-seoul.s3.ap-northeast-2.amazonaws.com/BCS_480p.mov`.
-  Lounge starts at 110s, library at 81s, gallery at 70s. Each output is 5.5s,
-  640×360 at 24fps, with a 0.5s end-to-start dissolve. Playback speed is 80%
-  for lounge/library and 50% for the shorter camera pass over the artworks.
+  The whole 120s source was inspected before extending the original 5.5s clips.
+  Lounge (25.67s): source 109.5–116.5s hall, 23.5–31s front tables and projection,
+  36.5–46.5s lounge counter. Library (17.92s): 79–88.5s bookcase, 89.5–94.5s
+  reading table, 105.5–108.5s whitepaper displays. Exhibition (29.08s): 68.5–75s
+  artworks, 48–60s merchandise/mugs/board games, 61.3–67s display objects,
+  101–104.8s corridor painting. Each is 640×360 at 24fps and 90% source speed,
+  with 0.5s dissolves between shots and at the end-to-start loop boundary.
   H.264 CRF 22, yuv420p, fast-start, no audio; first-frame WebP poster quality 85.
   Original footage remains untouched; the derivatives preserve its watermark.
 - Verify both locales/themes, 375/768/1280 and wide layouts, pointer/keyboard,
