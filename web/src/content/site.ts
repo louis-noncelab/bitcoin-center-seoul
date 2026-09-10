@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { Locale } from "@/i18n/routing";
 import { markdownExcerpt } from "@/lib/markdown";
+import { publicIndexingEnabled } from "@/lib/public-indexing";
 import { centerContent } from "./center";
 import { centerMedia } from "./media";
 
@@ -35,7 +36,7 @@ export function pageMetadata(
     metadataBase: new URL(siteOrigin),
     title,
     description: content.introduction,
-    robots: { index: false, follow: false },
+    robots: { index: publicIndexingEnabled(), follow: publicIndexingEnabled() },
     alternates: {
       canonical: `/${locale}${path}`,
       languages: {
