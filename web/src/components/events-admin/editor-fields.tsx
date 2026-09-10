@@ -42,7 +42,10 @@ export function EditorFields({ locale, kind, record, onPending, onDirty, onExpir
       {kind === "events" ? (
         <div className="events-field-grid">
           {input("date", ko ? "행사 날짜" : "Event date", date(event?.date), "date", true)}
-          {input("time", ko ? "시간" : "Time", event?.time)}
+          <label>{ko ? "시간" : "Time"}
+            <FormControl><input name="time" defaultValue={event?.time ?? ""} maxLength={100} placeholder="14:00 ~ 16:00" aria-describedby="event-time-help" /></FormControl>
+            <span id="event-time-help" className="muted">{ko ? "한국 시간의 시작·종료 시각을 입력하면 ‘밋업 중’ 표시에 반영됩니다. 예: 19:00 ~ 21:00. 종료가 시작보다 이르면 다음 날 종료로 계산합니다." : "Enter start and end times in Korea time for the live status, e.g. 19:00 ~ 21:00. An earlier end time means the following day."}</span>
+          </label>
           {input("location", ko ? "장소 · 한국어" : "Location · Korean", event?.location)}
           {input("locationEn", ko ? "장소 · 영어" : "Location · English", event?.locationEn)}
         </div>

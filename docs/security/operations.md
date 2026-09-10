@@ -115,3 +115,9 @@ node --test tests/events-backup.mjs
 ```
 
 실제 SQLite 연결을 열어 WAL에만 최신 행사·공지·세션을 커밋한 채 CLI 백업을 실행한다. 비공개 도서·작품과 Markdown 이미지, 해시·권한·DB 무결성, 원본 보존, 임시 복구, 덮어쓰기 거부, 누락·심볼릭 링크·변조·manifest 경로 이탈, 도움말·잘못된 인자를 확인한다. 모든 데이터는 테스트별 임시 경로에 만들고 정리한다.
+
+## Operating status calendar maintenance
+
+The header uses server time in Asia/Seoul, daily 12:00–20:00 hours (Sunday included), and the registered events' start/end times. Korean public holidays are resolved locally with pinned `@hyunbinseo/holidays-kr` data; no runtime external calendar request, API key or visitor geolocation is required. Version 5.2027.1 includes published calendars through 2027, including substitute holidays, election days and announced temporary public holidays. Compare new versions with [KASA's official calendar](https://www.kasa.go.kr/prog/plcyBrf/brief/kor/sub01_01_04/view.do?plcyBrfNo=431) and the [dataset source](https://github.com/hyunbinseo/holidays-kr) when a new calendar or temporary holiday is announced, then update the pinned package and run `npm run test:status` before an approved deployment. Do not infer future unpublished calendars; unsupported years show the unavailable status until data is updated or today's administrator exception is set.
+
+The authenticated event admin's today's-operation controls store `open` or `closed` in `center_opening_overrides`, keyed by Seoul date. Automatic removes that date's exception. Normal operation enables standard hours and actual meetup windows, including on a holiday; temporary closure suppresses both. Dates are retained for overnight meetup eligibility, while the next day's regular opening reverts to its own calendar/exception. The SQLite backup includes these rows. Expired manual `center_status` rows from the earlier local-only prototype are not read or migrated into live status.

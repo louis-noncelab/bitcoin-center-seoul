@@ -10,6 +10,7 @@ import { centerContent } from "@/content/center";
 import type { PublicSection } from "@/content/site";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
+import { getCenterStatus } from "@/server/center-status";
 import "@/styles/navigation.css";
 
 const labels = {
@@ -31,7 +32,7 @@ const labels = {
   },
 } as const;
 
-export function SiteHeader({
+export async function SiteHeader({
   locale,
   section,
   home = false,
@@ -41,6 +42,7 @@ export function SiteHeader({
   readonly home?: boolean;
 }) {
   const t = labels[locale];
+  const initialStatus = await getCenterStatus().catch(() => null);
   const otherLocale = locale === "ko" ? "en" : "ko";
   const navigation = centerContent[locale].nav.filter(
     (item) => item.id !== "home",
@@ -77,7 +79,7 @@ export function SiteHeader({
           ))}
         </nav>
         <div className="header-controls">
-          <OperatingStatus locale={locale} />
+          <OperatingStatus locale={locale} initialStatus={initialStatus} />
           <Suspense fallback={<Link href={section ? `/${section}` : "/"} locale={otherLocale} hrefLang={otherLocale} lang={otherLocale} aria-label={t.language} className="button header-control language-control" data-variant="quiet">{otherLocale === "en" ? "EN" : "KO"}</Link>}>
             <LocaleLink locale={otherLocale} label={t.language} />
           </Suspense>

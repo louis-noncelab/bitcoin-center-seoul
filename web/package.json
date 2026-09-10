@@ -24,10 +24,12 @@
     "test:backup": "node --test tests/events-backup.mjs",
     "test:events": "playwright test --config playwright.events.config.ts",
     "test:markdown": "node --import tsx --test tests/markdown.mjs",
+    "test:status": "node --conditions=react-server --import tsx --test tests/center-schedule.mjs",
     "postinstall": "node scripts/patch-next-image-optimizer.mjs apply",
     "test:image-optimizer": "node --test tests/image-optimizer-abort.mjs"
   },
   "dependencies": {
+    "@hyunbinseo/holidays-kr": "5.2027.1",
     "better-sqlite3": "13.0.3",
     "lucide-react": "1.23.0",
     "mdast-util-from-markdown": "2.0.3",

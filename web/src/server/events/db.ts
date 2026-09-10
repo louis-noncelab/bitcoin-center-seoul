@@ -50,10 +50,9 @@ function initialize(next: Database.Database, createLegacy: boolean): Database.Da
     assertColumns(next, "events", eventColumns);
     assertColumns(next, "highlights", highlightColumns);
     next.exec(`
-      CREATE TABLE IF NOT EXISTS center_status (
-        id INTEGER PRIMARY KEY CHECK (id = 1),
-        status TEXT CHECK (status IN ('open', 'event', 'closed')),
-        selected_on TEXT NOT NULL
+      CREATE TABLE IF NOT EXISTS center_opening_overrides (
+        date TEXT PRIMARY KEY,
+        status TEXT NOT NULL CHECK (status IN ('open', 'closed'))
       );
       CREATE TABLE IF NOT EXISTS collection_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

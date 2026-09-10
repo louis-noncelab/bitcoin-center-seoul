@@ -1,5 +1,7 @@
 import type { Locale } from "@/i18n/routing";
 
+export const centerHours = { opens: "12:00", closes: "20:00" } as const;
+
 type Link = {
   readonly label: string;
   readonly href: string;
@@ -159,7 +161,7 @@ export const centerContent = {
       },
       hours: {
         label: "운영시간",
-        lines: ["12:00 ~ 20:00", "매일 운영 (법정 공휴일 휴무)", "대관 중 이용 불가"],
+        lines: [`${centerHours.opens} ~ ${centerHours.closes}`, "매일 운영 (법정 공휴일 휴무)", "대관 중 이용 불가"],
       },
       contact: {
         label: "문의",
@@ -264,7 +266,7 @@ export const centerContent = {
       },
       hours: {
         label: "Hours",
-        lines: ["12:00 - 20:00", "Open daily, except public holidays", "Unavailable during private rentals"],
+        lines: [`${centerHours.opens} - ${centerHours.closes}`, "Open daily, except public holidays", "Unavailable during private rentals"],
       },
       contact: {
         label: "Contact",
