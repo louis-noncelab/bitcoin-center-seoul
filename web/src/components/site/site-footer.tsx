@@ -21,11 +21,6 @@ export function SiteFooter({ locale }: { readonly locale: Locale }) {
               <dt className="sr-only">{visit.hours.label}</dt>
               {visit.hours.lines.map((line) => <dd key={line}>{line}</dd>)}
             </dl>
-            {visit.mapLinks.map((link) => (
-              <ActionLink key={link.href} href={link.href} className="footer-map">
-                {link.label}<ArrowUpRight className="icon" aria-hidden="true" />
-              </ActionLink>
-            ))}
           </div>
           <nav aria-labelledby="footer-navigation-title" className="footer-navigation">
             <h2 id="footer-navigation-title" className="footer-label">
