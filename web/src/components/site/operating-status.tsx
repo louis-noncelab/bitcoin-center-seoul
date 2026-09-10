@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AudioLines, Clock3, DoorOpen, Moon } from "lucide-react";
 import { z } from "zod";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { centerStatusSnapshotSchema, centerStatusLabels, type CenterStatus, type CenterStatusSnapshot } from "@/lib/center-status";
+
+const statusIcons = { open: DoorOpen, event: AudioLines, closed: Moon, unknown: Clock3 } as const;
 
 export function OperatingStatus({ locale, initialStatus }: { readonly locale: Locale; readonly initialStatus: CenterStatusSnapshot | null }) {
   const [status, setStatus] = useState<CenterStatus | null>(initialStatus?.status ?? null);
@@ -36,7 +39,8 @@ export function OperatingStatus({ locale, initialStatus }: { readonly locale: Lo
   }, []);
   const key = status ?? "unknown";
   const label = centerStatusLabels[locale][key];
+  const StatusIcon = statusIcons[key];
   return <Link href="/visit" locale={locale} className="operating-status" data-status={key} aria-label={`${label} · ${locale === "ko" ? "방문 안내" : "Visit information"}`}>
-    <span key={key} className="operating-status-content"><span className="operating-status-dot" aria-hidden="true" /><span>{label}</span></span>
+    <span key={key} className="operating-status-content"><StatusIcon className="icon operating-status-icon" aria-hidden="true" /><span>{label}</span></span>
   </Link>;
 }

@@ -20,6 +20,8 @@
   text-decoration: none;
 }
 
+.site-header .wordmark-img { max-inline-size: 100%; object-fit: contain; object-position: left; }
+
 .desktop-navigation {
   position: absolute;
   inset-inline-start: 50%;
@@ -59,6 +61,36 @@
 }
 
 .navigation-link:active { transform: scale(var(--press-scale)); }
+
+.navigation-feedback { position: relative; }
+.navigation-feedback::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: calc(-1 * var(--space-1));
+  block-size: var(--focus-width);
+  border-radius: var(--border-width);
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--duration-menu-enter) var(--ease-out);
+}
+.navigation-link:is([aria-current="page"], :focus-visible) .navigation-feedback::after,
+.navigation-feedback[data-pending="true"]::after { transform: scaleX(1); }
+.navigation-indicator {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-end: var(--space-2);
+  inline-size: var(--border-width);
+  block-size: var(--focus-width);
+  background: var(--blue-ink);
+  transform-origin: left;
+  opacity: 0;
+  pointer-events: none;
+  transition: transform var(--duration-menu-enter) var(--ease-out), opacity var(--duration-press) var(--ease-out);
+}
+.desktop-navigation[data-indicator-ready="true"] .navigation-link[aria-current="page"] .navigation-feedback::after,
+.desktop-navigation[data-indicator-ready="true"] .navigation-feedback[data-pending="true"]::after { opacity: 0; }
 
 .navigation-menu-icon {
   display: inline-grid;
@@ -125,6 +157,7 @@
 
 @media (hover: hover) {
   .navigation-link:hover { color: var(--blue-ink); }
+  .navigation-link:hover .navigation-feedback::after { transform: scaleX(1); }
   .desktop-navigation .navigation-link:is(:hover, [aria-current="page"]) { background: transparent; }
 }
 
@@ -150,24 +183,24 @@
   border-radius: var(--radius-control);
 }
 .operating-status-content { display: inline-flex; align-items: center; gap: var(--space-2); }
-.operating-status-dot { position: relative; flex: 0 0 var(--space-2); block-size: var(--space-2); border-radius: 50%; background: var(--muted); }
-.operating-status[data-status="open"] .operating-status-dot { background: var(--success); }
-.operating-status[data-status="event"] .operating-status-dot { background: var(--orange); }
+.operating-status-icon { flex: 0 0 var(--icon-size); transform-origin: center; }
+.operating-status[data-status="open"] .operating-status-icon { color: var(--success); }
+.operating-status[data-status="event"] .operating-status-icon { color: var(--orange); }
 .operating-status:is(:hover, :focus-visible) { color: var(--ink); }
 @media (max-width: 767px) {
-  .operating-status { inline-size: var(--space-16); flex: 0 0 var(--space-16); }
+  .operating-status { inline-size: calc(var(--space-16) + var(--space-3)); flex: 0 0 calc(var(--space-16) + var(--space-3)); }
   .operating-status-content { gap: var(--space-1); }
-  .operating-status-content > :last-child { max-inline-size: calc(var(--space-12) + var(--space-1)); }
+  .operating-status-content > :last-child { max-inline-size: calc(var(--space-12) + var(--space-1)); overflow-wrap: normal; }
 }
 @media (prefers-reduced-motion: no-preference) {
   .operating-status-content { animation: operating-status-arrive var(--duration-control) var(--ease-out); }
-  .operating-status:is([data-status="open"], [data-status="event"]) .operating-status-dot::after {
-    content: ""; position: absolute; inset: 0; border-radius: inherit; background: inherit;
-    animation: operating-status-ring var(--duration-reveal) var(--ease-out) both;
-  }
+  .operating-status[data-status="open"] .operating-status-icon { animation: operating-door var(--duration-status) var(--ease-out) 2; }
+  .operating-status[data-status="event"] .operating-status-icon path { transform-origin: center; animation: operating-activity var(--duration-status) ease-in-out 2; }
+  .operating-status[data-status="event"] .operating-status-icon path:nth-child(even) { animation-direction: reverse; }
 }
 @keyframes operating-status-arrive { from { opacity: 0; } to { opacity: 1; } }
-@keyframes operating-status-ring { from { transform: scale(1); opacity: 0.45; } to { transform: scale(2.5); opacity: 0; } }
+@keyframes operating-door { 0%, 100% { transform: perspective(80px) rotateY(0); } 45% { transform: perspective(80px) rotateY(-25deg); } }
+@keyframes operating-activity { 0%, 100% { transform: scaleY(1); } 35% { transform: scaleY(0.55); } 65% { transform: scaleY(0.8); } }
 
 @media (max-width: 767px) {
   .site-header { gap: var(--space-3); }
@@ -201,7 +234,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
-  .navigation-link, .navigation-feedback, .disclosure-panel,
+  .navigation-link, .navigation-feedback, .navigation-feedback::after, .navigation-indicator, .disclosure-panel,
   .navigation-trigger .navigation-menu-icon .icon { transition: none; }
   .navigation-link:active, .disclosure-panel[data-open],
   .navigation-trigger[aria-expanded] .navigation-menu-icon .icon { transform: none; }

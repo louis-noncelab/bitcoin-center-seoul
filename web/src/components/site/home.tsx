@@ -41,6 +41,9 @@ export function Home({ locale, highlights }: { readonly locale: Locale; readonly
                 <Link href="/programs" locale={locale} className="button" data-variant="secondary">
                   {content.hero.secondaryLink.label}
                 </Link>
+                <Link href="/about#space-tour" locale={locale} className="section-link">
+                  {locale === "ko" ? "공간 둘러보기" : "Inside the center"}<ArrowRight className="icon" aria-hidden="true" />
+                </Link>
               </div>
             </div>
           </div>

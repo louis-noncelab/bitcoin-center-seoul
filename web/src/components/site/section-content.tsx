@@ -8,6 +8,7 @@ import type { EventRecord, HighlightRecord } from "@/lib/events-contract";
 import { CenterPhoto } from "./center-photo";
 import { EventsCatalog, HighlightsCatalog } from "./events-public";
 import { JournalPagination } from "./journal-pagination";
+import { SpaceTour } from "./space-tour";
 
 export function ProgramsContent({ locale }: { readonly locale: Locale }) {
   const content = centerContent[locale].programs;
@@ -125,7 +126,7 @@ export function SectionContent({
     case "about":
       return (
         <div className="about-detail">
-          <CenterPhoto name="lounge" locale={locale} hero sizes="(max-width: 767px) 125vw, 100vw" />
+          <SpaceTour locale={locale} />
           <div className="about-notes">
             {content.about.details.map((detail) => (
               <p key={detail}>{detail}</p>

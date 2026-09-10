@@ -1,5 +1,59 @@
 # Bitcoin Center Seoul: public design revision
 
+## Current contract — navigation, status icons and space film, 2026-09-10
+
+The owner authorizes a cinematic use of the existing center footage and asks for
+animated navigation underlines and an icon instead of the operating-status dot.
+Reuse the existing neutral surfaces, Pretendard, controls and selection primitive.
+
+- Navigation: a text-width, 2px underline identifies the current destination.
+  On desktop one indicator glides to the pending link with the existing 280ms
+  menu curve; settled route, history, font/viewport changes and failed navigation
+  restore the actual current link. Hover/focus show a local underline. Mobile
+  disclosure and no-JavaScript use the same text-width underline without the
+  shared enhancement. Reduced motion changes its position immediately.
+- Status: 20px Lucide DoorOpen, AudioLines, Moon and Clock3 distinguish open,
+  meetup, closed and unavailable alongside the existing bilingual labels.
+  Success/orange/muted tokens retain their meanings. Opening and meetup icons
+  perform two gentle 2.4s cycles when the state appears, then settle; the state
+  remains legible and the icon never implies a loading spinner. Reduced motion
+  is static. Scheduling, polling and administrator exceptions are unchanged.
+- Film: the about page introduces a `SpaceTour` with the existing accessible
+  `SelectionTabs` for lounge, library and exhibition. Each selection combines a
+  real silent clip, a short description and a relevant program/collection link.
+  Home links directly to this section. This supersedes the historical still-only
+  video decision below; the high-resolution home photograph stays in place.
+- Composition: a centered 72rem tour measure, video up to 40rem wide (the actual
+  source is 640×360), an adjacent readable description, shared 32/40px gaps,
+  16:9 frame and 12px corners. Under 768px the image and description stack.
+  The film uses its actual colors and watermark; no invented frames, aggressive
+  upscale, faux grain, decorative subtitles or audio. Scene changes use a 500ms
+  opacity dissolve with the existing image/exit tokens and selection lifecycle.
+  Shared 48px play/pause control sits in a quiet
+  surface rail below the film with its name, outside the image.
+- Delivery: short H.264/yuv420p MP4 derivatives with fast-start and WebP posters,
+  same-origin under `/images/space-tour/`; no remote video requests or new CSP
+  allowance. Source URLs, cuts and sizes are recorded with the assets. No media
+  source is attached until its scene is on screen or explicitly played.
+  Offscreen/background video pauses. Reduced-motion users initially see the
+  poster and can explicitly play; changing the preference pauses playback.
+  Manual pause persists through visibility changes. Failed/autoplay-blocked
+  playback retains a poster, a useful label and a working retry/play action.
+  No-JavaScript retains the initial poster, description and destination.
+- References: beui.dev `tabs` and `animated-badge` source consulted for shared
+  selection and state-icon mechanisms; native media lifecycle follows installed
+  Next.js video guidance. Adapt mechanisms only; no registry components copied.
+- Media provenance: the center's existing `BCS_480p.mov` at
+  `https://bitcoin-center-seoul.s3.ap-northeast-2.amazonaws.com/BCS_480p.mov`.
+  Lounge starts at 110s, library at 81s, gallery at 70s. Each output is 5.5s,
+  640×360 at 24fps, with a 0.5s end-to-start dissolve. Playback speed is 80%
+  for lounge/library and 50% for the shorter camera pass over the artworks.
+  H.264 CRF 22, yuv420p, fast-start, no audio; first-frame WebP poster quality 85.
+  Original footage remains untouched; the derivatives preserve its watermark.
+- Verify both locales/themes, 375/768/1280 and wide layouts, pointer/keyboard,
+  history, motion frames, actual decoded playback, offscreen/background pause,
+  reduced motion, blocked/failed media and no-JavaScript. No auth/data changes.
+
 ## Current owner contract — events-only public surface, 2026-09-09
 
 The owner selected `63a08b95cb54e06d9a00c89ae14d8d9eb1851284`

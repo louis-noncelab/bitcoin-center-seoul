@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { LocaleLink } from "@/components/controls/locale-link";
 import { NavigationDisclosure } from "@/components/controls/navigation-disclosure";
 import { NavigationFeedback } from "@/components/controls/navigation-feedback";
+import { NavigationIndicator } from "@/components/controls/navigation-indicator";
 import { ThemeToggle } from "@/components/controls/theme-toggle";
 import { BrandWordmark } from "@/components/site/brand-wordmark";
 import { OperatingStatus } from "@/components/site/operating-status";
@@ -77,6 +78,7 @@ export async function SiteHeader({
               <NavigationFeedback label={item.label} />
             </Link>
           ))}
+          <NavigationIndicator />
         </nav>
         <div className="header-controls">
           <OperatingStatus locale={locale} initialStatus={initialStatus} />

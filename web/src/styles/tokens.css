@@ -88,6 +88,8 @@
   --ratio-portrait: 4 / 5;
   --ratio-square: 1 / 1;
   --hero-height: 30rem;
+  --tour-measure: 72rem;
+  --film-width: 40rem;
 
   --duration-marquee: 48s;
   --duration-press: 180ms;
@@ -101,6 +103,7 @@
   --duration-letter: 24ms;
   --duration-theme: 350ms;
   --duration-page: 380ms;
+  --duration-status: 2.4s;
   --reveal-distance: var(--space-6);
   --photo-scale: 1.025;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
