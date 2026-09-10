@@ -107,6 +107,12 @@ function initialize(next: Database.Database, createLegacy: boolean): Database.Da
       ON content_slugs (kind, content_id) WHERE is_current = 1;
     `);
     next.transaction(() => {
+      for (const table of ["events", "highlights", "notices", "collection_items"] as const) {
+        const columns = next.prepare<[], { readonly name: string }>(`PRAGMA table_info(${table})`).all();
+        if (!columns.some(({ name }) => name === "revision")) {
+          next.exec(`ALTER TABLE ${table} ADD COLUMN revision INTEGER NOT NULL DEFAULT 1`);
+        }
+      }
       for (const table of ["events", "highlights", "notices"] as const) {
         const columns = next.prepare<[], { readonly name: string }>(`PRAGMA table_info(${table})`).all();
         if (!columns.some(({ name }) => name === "tags")) {

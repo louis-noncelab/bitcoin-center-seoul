@@ -16,6 +16,7 @@ import {
   requireSameOrigin,
   setSessionCookie,
 } from "@/server/events/auth";
+import { expectedRevision } from "@/server/events/revision";
 import { ApiError } from "@/server/events/errors";
 import { getDatabase } from "@/server/events/db";
 import { imageReferences } from "@/server/events/image-references";
@@ -88,7 +89,7 @@ export async function adminEventPut(request: NextRequest, context: ItemContext):
   return route(async () => {
     requireSameOrigin(request);
     requireAdmin(request);
-    return dataResponse(updateEvent(await itemId(context), await jsonBody(request, eventInputSchema)));
+    return dataResponse(updateEvent(await itemId(context), await jsonBody(request, eventInputSchema), expectedRevision(request)));
   });
 }
 
@@ -96,7 +97,7 @@ export async function adminEventDelete(request: NextRequest, context: ItemContex
   return route(async () => {
     requireSameOrigin(request);
     requireAdmin(request);
-    deleteEvent(await itemId(context));
+    deleteEvent(await itemId(context), expectedRevision(request));
     return dataResponse({ deleted: true });
   });
 }
@@ -129,7 +130,7 @@ export async function adminHighlightPut(request: NextRequest, context: ItemConte
   return route(async () => {
     requireSameOrigin(request);
     requireAdmin(request);
-    return dataResponse(updateHighlight(await itemId(context), await jsonBody(request, highlightInputSchema)));
+    return dataResponse(updateHighlight(await itemId(context), await jsonBody(request, highlightInputSchema), expectedRevision(request)));
   });
 }
 
@@ -137,7 +138,7 @@ export async function adminHighlightDelete(request: NextRequest, context: ItemCo
   return route(async () => {
     requireSameOrigin(request);
     requireAdmin(request);
-    deleteHighlight(await itemId(context));
+    deleteHighlight(await itemId(context), expectedRevision(request));
     return dataResponse({ deleted: true });
   });
 }

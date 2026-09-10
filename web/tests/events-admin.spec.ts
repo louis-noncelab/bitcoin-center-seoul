@@ -1,3 +1,4 @@
+import { deleteContentFixture } from "./content-cleanup";
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
@@ -139,7 +140,7 @@ test("행사 등록, 사진 두 장 업로드, 수정, 세션 만료 후 초안 
     await expect(page.getByText("삭제했습니다.", { exact: true })).toBeVisible();
     expect((await page.request.get(`/api/events/${id}`)).status()).toBe(404);
   } finally {
-    if (id !== undefined) await page.request.delete(`/api/admin/events/${id}`, { headers: { origin: baseURL ?? "" } });
+    if (id !== undefined) await deleteContentFixture(page.request, `/api/admin/events/${id}`, baseURL ?? "");
   }
 });
 
@@ -178,6 +179,6 @@ test("하이라이트 기간과 비공개 상태를 저장하며 관리자 화�
     await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
     expect((await page.request.get(`/api/highlights/${id}`)).status()).toBe(200);
   } finally {
-    if (id !== undefined) await page.request.delete(`/api/admin/highlights/${id}`, { headers: { origin: baseURL ?? "" } });
+    if (id !== undefined) await deleteContentFixture(page.request, `/api/admin/highlights/${id}`, baseURL ?? "");
   }
 });

@@ -10,7 +10,7 @@ import { LoginForm } from "./login-form";
 import { GalleryField } from "./gallery-field";
 import { MarkdownEditor } from "./markdown-editor";
 import { MarkdownHelp } from "./markdown-help";
-import { adminRequest, AdminRequestError, errorText, jsonBody } from "./request";
+import { adminRequest, AdminRequestError, errorText, jsonBody, revisionHeaders } from "./request";
 
 export function CollectionAdmin() {
   const [records, setRecords] = useState<CollectionRecord[]>([]);
@@ -69,7 +69,7 @@ export function CollectionAdmin() {
     if (!input.success) { setError(input.error.issues[0]?.message ?? "입력 내용을 확인해 주세요."); return; }
     busy.current = true; setPending(true); setError("");
     try {
-      await adminRequest(`/api/admin/collection${selected ? `/${selected.id}` : ""}`, collectionRecordSchema, jsonBody(input.data, selected ? "PUT" : "POST"));
+      await adminRequest(`/api/admin/collection${selected ? `/${selected.id}` : ""}`, collectionRecordSchema, jsonBody(input.data, selected ? "PUT" : "POST", selected?.revision));
       setEditing(false); setDirty(false); setMessage("저장했습니다."); setRevision((value) => value + 1);
     } catch (caught) { handleError(caught); }
     finally { busy.current = false; setPending(false); }
@@ -80,7 +80,7 @@ export function CollectionAdmin() {
     if (!accepted || busy.current || uploads.current > 0) return;
     busy.current = true; setPending(true); setError("");
     try {
-      await adminRequest(`/api/admin/collection/${record.id}`, z.object({ deleted: z.literal(true) }), { method: "DELETE" });
+      await adminRequest(`/api/admin/collection/${record.id}`, z.object({ deleted: z.literal(true) }), { method: "DELETE", headers: revisionHeaders(record.revision) });
       setMessage("삭제했습니다."); setRevision((value) => value + 1);
     } catch (caught) { handleError(caught); }
     finally { busy.current = false; setPending(false); }
@@ -99,7 +99,7 @@ export function CollectionAdmin() {
     <div className="events-admin-toolbar"><nav aria-label="콘텐츠 관리" className="button-row">
       {[{ href: "/admin", label: "행사·하이라이트" }, { href: "/admin/notices", label: "공지사항" }].map(({ href, label }) => <Link key={href} href={href} locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void leave().then((accepted) => { if (accepted) router.push(href, { locale: "ko" }); }); }}>{label}</Link>)}
     </nav><Button variant="quiet" disabled={pending || uploading} onClick={() => void logout()}>로그아웃</Button></div>
-    {expired && <aside className="events-reauth"><p role="alert">세션이 만료되었습니다. 작성한 내용은 유지됩니다. 다시 로그인한 뒤 저장해 주세요.</p><LoginForm locale="ko" onLogin={() => { setExpired(false); setError(""); }} /></aside>}
+    {expired && <aside className="events-reauth"><p role="alert">세션이 만료되었습니다. 작성한 내용은 유지됩니다. 다시 로그인한 뒤 저장해 주세요.</p><LoginForm locale="ko" onLogin={() => { setExpired(false); setError(""); setRevision((value) => value + 1); }} /></aside>}
     {error && <p className="events-error" role="alert">{error}</p>}<p role="status">{message}</p>
     {editing ? <form className="events-form" key={selected?.id ?? "new"} onSubmit={(event) => void save(event)} onChange={() => setDirty(true)}>
       <h2>{selected ? "도서·작품 수정" : "도서·작품 등록"}</h2>
@@ -122,7 +122,7 @@ export function CollectionAdmin() {
         <p id="collection-order-help" className="muted">숫자가 작을수록 먼저 표시됩니다. 같은 순서에서는 최근 등록한 항목이 먼저 표시됩니다.</p>
         <label className="events-checkbox"><ChoiceControl type="checkbox" name="is_active" defaultChecked={Boolean(selected?.is_active)} />공개</label>
       </fieldset>
-      <div className="button-row"><Button type="submit" disabled={pending || uploading || expired}>{pending ? "저장 중…" : "저장"}</Button><Button variant="secondary" disabled={pending || uploading} onClick={() => { void leave().then((accepted) => { if (accepted) { setEditing(false); setDirty(false); } }); }}>취소</Button></div>
+      <div className="button-row"><Button type="submit" disabled={pending || uploading || expired}>{pending ? "저장 중…" : "저장"}</Button><Button variant="secondary" disabled={pending || uploading} onClick={() => { void leave().then((accepted) => { if (accepted) { setEditing(false); setDirty(false); setRevision((value) => value + 1); } }); }}>취소</Button></div>
     </form> : <>
       <div className="events-admin-toolbar"><h2>도서·작품 목록</h2><Button disabled={pending || expired} onClick={() => edit(null)}>도서·작품 등록</Button></div>
       <ul className="events-admin-list">{records.map((record) => <li key={record.id}><div><h3>{record.title}</h3><p className="muted">{record.kind === "book" ? "도서" : "작품"}{record.creator ? ` · ${record.creator}` : ""} · {record.is_active ? "공개" : "비공개"} · 순서 {record.sort_order}</p></div><div className="button-row">{Boolean(record.is_active) && <Link href={`/collection/${record.id}`} locale="ko" className="button" data-variant="quiet">보기</Link>}<Button variant="secondary" disabled={pending || expired} onClick={() => edit(record)}>수정</Button><Button variant="quiet" disabled={pending || expired} onClick={() => void remove(record)}>삭제</Button></div></li>)}{!records.length && <li>등록된 도서·작품이 없습니다.</li>}</ul>

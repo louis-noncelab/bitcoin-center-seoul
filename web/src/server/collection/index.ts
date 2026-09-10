@@ -1,5 +1,6 @@
 import "server-only";
 import { collectionRecordSchema, type CollectionInput, type CollectionRecord } from "@/lib/collection-contract";
+import { reserveRevision } from "@/server/events/revision";
 import { getDatabase } from "@/server/events/db";
 import { ApiError } from "@/server/events/errors";
 import { requireExistingImages } from "@/server/events/images";
@@ -16,10 +17,11 @@ export function getCollectionItem(id: number, includeInactive = false): Collecti
   return row ? fromRow(row) : null;
 }
 
-export function saveCollectionItem(input: CollectionInput, id?: number): CollectionRecord {
+export function saveCollectionItem(input: CollectionInput, id?: number, revision?: number): CollectionRecord {
   requireExistingImages(input.images);
   const db = getDatabase();
   return db.transaction(() => {
+    if (id !== undefined) reserveRevision("collection_items", id, revision);
     const values = { ...input, images: JSON.stringify(input.images) };
     let savedId = id;
     if (savedId === undefined) {
@@ -36,8 +38,10 @@ export function saveCollectionItem(input: CollectionInput, id?: number): Collect
   })();
 }
 
-export function deleteCollectionItem(id: number): void {
-  if (!getDatabase().prepare("DELETE FROM collection_items WHERE id = ?").run(id).changes) {
-    throw new ApiError(404, "NOT_FOUND", "도서·작품을 찾을 수 없습니다.");
-  }
+export function deleteCollectionItem(id: number, revision: number): void {
+  const db = getDatabase();
+  db.transaction(() => {
+    reserveRevision("collection_items", id, revision);
+    db.prepare("DELETE FROM collection_items WHERE id = ?").run(id);
+  })();
 }

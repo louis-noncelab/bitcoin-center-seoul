@@ -1,3 +1,4 @@
+import { deleteContentFixture } from "./content-cleanup";
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
@@ -69,7 +70,7 @@ test("관리자가 공지를 비공개 저장, 발행, 수정하고 삭제한다
     id = undefined;
     await expect(row).toHaveCount(0);
   } finally {
-    if (id) await page.request.delete(`/api/admin/notices/${id}`, { headers: { origin: baseURL ?? "" } });
+    if (id) await deleteContentFixture(page.request, `/api/admin/notices/${id}`, baseURL ?? "");
   }
 });
 

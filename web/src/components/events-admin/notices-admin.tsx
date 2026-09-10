@@ -11,7 +11,7 @@ import { LoginForm } from "./login-form";
 import { MarkdownHelp } from "./markdown-help";
 import { MarkdownEditor } from "./markdown-editor";
 import { TagsField } from "./tags-field";
-import { adminRequest, AdminRequestError, errorText, jsonBody } from "./request";
+import { adminRequest, AdminRequestError, errorText, jsonBody, revisionHeaders } from "./request";
 
 export function NoticesAdmin() {
   const [records, setRecords] = useState<NoticeRecord[]>([]);
@@ -53,7 +53,7 @@ export function NoticesAdmin() {
   }
   function uploadPending(value: boolean) { uploads.current += value ? 1 : -1; setUploading(uploads.current > 0); }
   function handleError(caught: unknown) {
-    setError(caught instanceof AdminRequestError && caught.status === 409 ? "이미 사용 중인 URL 슬러그입니다. 다른 주소를 입력해 주세요." : errorText(caught, "ko"));
+    setError(errorText(caught, "ko"));
     if (caught instanceof AdminRequestError && caught.status === 401) setExpired(true);
   }
   async function save(event: FormEvent<HTMLFormElement>) {
@@ -64,7 +64,7 @@ export function NoticesAdmin() {
     if (!input.success) { setError(input.error.issues.find((issue) => issue.path[0] === "tags")?.message ?? "제목, 본문과 URL 슬러그를 확인해 주세요."); return; }
     busy.current = true; setPending(true); setError("");
     try {
-      await adminRequest(`/api/admin/notices${selected ? `/${selected.id}` : ""}`, noticeRecordSchema, jsonBody(input.data, selected ? "PUT" : "POST"));
+      await adminRequest(`/api/admin/notices${selected ? `/${selected.id}` : ""}`, noticeRecordSchema, jsonBody(input.data, selected ? "PUT" : "POST", selected?.revision));
       setEditing(false); setDirty(false); setMessage("저장했습니다."); setRevision((value) => value + 1);
     } catch (caught) { handleError(caught); }
     finally { busy.current = false; setPending(false); }
@@ -75,7 +75,7 @@ export function NoticesAdmin() {
     if (!accepted || busy.current || uploads.current > 0) return;
     busy.current = true; setPending(true); setError("");
     try {
-      await adminRequest(`/api/admin/notices/${record.id}`, z.unknown(), { method: "DELETE" });
+      await adminRequest(`/api/admin/notices/${record.id}`, z.unknown(), { method: "DELETE", headers: revisionHeaders(record.revision) });
       setMessage("삭제했습니다."); setRevision((value) => value + 1);
     } catch (caught) { handleError(caught); }
     finally { busy.current = false; setPending(false); }
@@ -92,7 +92,7 @@ export function NoticesAdmin() {
   return <div className="events-admin-workspace">
     {dialog}
     <div className="events-admin-toolbar"><Link href="/admin" locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void leave().then((accepted) => { if (accepted) router.push("/admin", { locale: "ko" }); }); }}>행사·하이라이트 관리</Link><Button variant="quiet" disabled={pending || uploading} onClick={() => void logout()}>로그아웃</Button></div>
-    {expired && <aside className="events-reauth"><p role="alert">세션이 만료되었습니다. 작성한 내용은 유지됩니다. 다시 로그인한 뒤 저장해 주세요.</p><LoginForm locale="ko" onLogin={() => { setExpired(false); setError(""); }} /></aside>}
+    {expired && <aside className="events-reauth"><p role="alert">세션이 만료되었습니다. 작성한 내용은 유지됩니다. 다시 로그인한 뒤 저장해 주세요.</p><LoginForm locale="ko" onLogin={() => { setExpired(false); setError(""); setRevision((value) => value + 1); }} /></aside>}
     {error && <p className="events-error" role="alert">{error}</p>}<p role="status">{message}</p>
     {editing ? <form className="events-form" key={selected?.id ?? "new"} onSubmit={(event) => void save(event)} onChange={() => setDirty(true)}>
       <h2>{selected ? "공지 수정" : "공지 등록"}</h2>
@@ -107,7 +107,7 @@ export function NoticesAdmin() {
         <p className="muted">영어를 입력하지 않으면 영어 페이지에도 한국어 내용이 표시됩니다.</p>
         <label className="events-checkbox"><ChoiceControl name="is_active" type="checkbox" defaultChecked={Boolean(selected?.is_active)} />공개</label>
       </fieldset>
-      <div className="button-row"><Button type="submit" disabled={pending || expired || uploading}>{pending ? "저장 중…" : "저장"}</Button><Button variant="secondary" disabled={pending || uploading} onClick={() => { void leave().then((accepted) => { if (accepted) { setEditing(false); setDirty(false); } }); }}>취소</Button></div>
+      <div className="button-row"><Button type="submit" disabled={pending || expired || uploading}>{pending ? "저장 중…" : "저장"}</Button><Button variant="secondary" disabled={pending || uploading} onClick={() => { void leave().then((accepted) => { if (accepted) { setEditing(false); setDirty(false); setRevision((value) => value + 1); } }); }}>취소</Button></div>
     </form> : <>
       <div className="events-admin-toolbar"><h2>공지 목록</h2><Button disabled={pending || expired} onClick={() => { setSelected(null); setEditing(true); setMessage(""); setError(""); }}>공지 등록</Button></div>
       <ul className="events-admin-list">{records.map((record) => <li key={record.id}><div><h3>{record.title}</h3><p className="muted">{record.created_at.slice(0, 10)} · {record.is_active ? "공개" : "비공개"}</p></div><div className="button-row">{Boolean(record.is_active) && <Link href={`/notices/${record.slug}`} locale="ko" className="button" data-variant="quiet">보기</Link>}<Button variant="secondary" disabled={pending || expired} onClick={() => { setSelected(record); setEditing(true); setMessage(""); setError(""); }}>수정</Button><Button variant="quiet" disabled={pending || expired} onClick={() => void remove(record)}>삭제</Button></div></li>)}{!records.length && <li>등록된 공지가 없습니다.</li>}</ul>

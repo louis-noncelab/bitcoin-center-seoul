@@ -1,4 +1,5 @@
 import "server-only";
+import { reserveRevision } from "@/server/events/revision";
 import { getDatabase } from "@/server/events/db";
 import { ApiError } from "@/server/events/errors";
 import { noticeRecordSchema, type NoticeInput, type NoticeRecord } from "@/lib/notices-contract";
@@ -17,9 +18,10 @@ export function noticeBySlug(slug: string): NoticeRecord | null {
   const row = getDatabase().prepare("SELECT notices.* FROM notices JOIN notice_slugs ON notices.id = notice_slugs.notice_id WHERE notice_slugs.slug = ? AND is_active = 1").get(slug);
   return row ? noticeRowSchema.parse(row) : null;
 }
-export function saveNotice(input: NoticeInput, id?: number): NoticeRecord {
+export function saveNotice(input: NoticeInput, id?: number, revision?: number): NoticeRecord {
   const db = getDatabase();
   return db.transaction(() => {
+    if (id !== undefined) reserveRevision("notices", id, revision);
     if (id !== undefined && !getNotice(id, true)) throw new ApiError(404, "NOT_FOUND", "공지를 찾을 수 없습니다.");
     const owner = db.prepare<[string], { readonly notice_id: number }>("SELECT notice_id FROM notice_slugs WHERE slug = ?").get(input.slug);
     if (owner && owner.notice_id !== id) throw new ApiError(409, "SLUG_CONFLICT", "이미 사용 중인 URL 슬러그입니다.");
@@ -36,9 +38,10 @@ export function saveNotice(input: NoticeInput, id?: number): NoticeRecord {
     return saved;
   })();
 }
-export function deleteNotice(id: number): void {
+export function deleteNotice(id: number, revision: number): void {
   const db = getDatabase();
   db.transaction(() => {
+    reserveRevision("notices", id, revision);
     if (!db.prepare("DELETE FROM notices WHERE id = ?").run(id).changes) throw new ApiError(404, "NOT_FOUND", "공지를 찾을 수 없습니다.");
     db.prepare("DELETE FROM notice_slugs WHERE notice_id = ?").run(id);
   })();

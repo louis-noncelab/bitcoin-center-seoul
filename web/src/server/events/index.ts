@@ -12,6 +12,7 @@ import {
 import { getDatabase } from "@/server/events/db";
 import { ApiError } from "@/server/events/errors";
 import { requireExistingImages } from "@/server/events/images";
+import { reserveRevision } from "@/server/events/revision";
 import { storedTagsSchema } from "@/server/events/tags";
 
 type EventRow = Omit<EventRecord, "images" | "tags"> & { readonly tags: string };
@@ -20,12 +21,12 @@ type ContentKind = "event" | "highlight";
 type Visibility = { readonly includeInactive?: boolean };
 
 const eventSelect = `
-  SELECT id, title, titleEn, date, time, location, locationEn,
+  SELECT id, revision, title, titleEn, date, time, location, locationEn,
          description, descriptionEn, image, link, tags,
          COALESCE((SELECT slug FROM content_slugs WHERE kind = 'event' AND content_id = events.id AND is_current = 1), '') AS slug
   FROM events`;
 const highlightSelect = `
-  SELECT id, title, titleEn, meta, metaEn, category, categoryEn, date,
+  SELECT id, revision, title, titleEn, meta, metaEn, category, categoryEn, date,
          startDate, endDate, host, hostEn, description, descriptionEn,
          image, link, icon, sort_order, is_active, tags,
          COALESCE((SELECT slug FROM content_slugs WHERE kind = 'highlight' AND content_id = highlights.id AND is_current = 1), '') AS slug
@@ -164,10 +165,11 @@ export function createEvent(input: EventInput): EventRecord {
   return event;
 }
 
-export function updateEvent(id: number, input: EventInput): EventRecord {
+export function updateEvent(id: number, input: EventInput, revision: number): EventRecord {
   requireExistingImages(input.images);
   const db = getDatabase();
   db.transaction(() => {
+    reserveRevision("events", id, revision);
     const image = input.images[0] ?? "";
     const result = db.prepare(`
       UPDATE events SET title = @title, titleEn = @titleEn, date = @date, time = @time,
@@ -184,9 +186,10 @@ export function updateEvent(id: number, input: EventInput): EventRecord {
   return event;
 }
 
-export function deleteEvent(id: number): void {
+export function deleteEvent(id: number, revision: number): void {
   const db = getDatabase();
   db.transaction(() => {
+    reserveRevision("events", id, revision);
     const result = db.prepare<[number]>("DELETE FROM events WHERE id = ?").run(id);
     if (result.changes === 0) throw new ApiError(404, "NOT_FOUND", "행사를 찾을 수 없습니다.");
     db.prepare<[ContentKind, number]>("DELETE FROM content_images WHERE kind = ? AND content_id = ?").run("event", id);
@@ -215,10 +218,11 @@ export function createHighlight(input: HighlightInput): HighlightRecord {
   return highlight;
 }
 
-export function updateHighlight(id: number, input: HighlightInput): HighlightRecord {
+export function updateHighlight(id: number, input: HighlightInput, revision: number): HighlightRecord {
   requireExistingImages(input.images);
   const db = getDatabase();
   db.transaction(() => {
+    reserveRevision("highlights", id, revision);
     const image = input.images[0] ?? "";
     const result = db.prepare(`
       UPDATE highlights SET title = @title, titleEn = @titleEn, meta = @meta, metaEn = @metaEn,
@@ -236,9 +240,10 @@ export function updateHighlight(id: number, input: HighlightInput): HighlightRec
   return highlight;
 }
 
-export function deleteHighlight(id: number): void {
+export function deleteHighlight(id: number, revision: number): void {
   const db = getDatabase();
   db.transaction(() => {
+    reserveRevision("highlights", id, revision);
     const result = db.prepare<[number]>("DELETE FROM highlights WHERE id = ?").run(id);
     if (result.changes === 0) throw new ApiError(404, "NOT_FOUND", "하이라이트를 찾을 수 없습니다.");
     db.prepare<[ContentKind, number]>("DELETE FROM content_images WHERE kind = ? AND content_id = ?").run("highlight", id);
