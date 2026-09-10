@@ -1,7 +1,7 @@
 "use client";
 
 import { Menu, X } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { Button } from "../ui/primitives";
@@ -20,12 +20,14 @@ export function NavigationDisclosure({
   navigationLabel,
   locale,
   items,
+  footer,
 }: {
   readonly openLabel: string;
   readonly closeLabel: string;
   readonly navigationLabel: string;
   readonly locale?: Locale;
   readonly items: readonly NavigationItem[];
+  readonly footer?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const id = useId();
@@ -39,8 +41,19 @@ export function NavigationDisclosure({
         setOpen(false);
       }
     }
+    function dismissOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setOpen(false);
+        trigger.current?.focus({ preventScroll: true });
+      }
+    }
     document.addEventListener("pointerdown", dismissOutside);
-    return () => document.removeEventListener("pointerdown", dismissOutside);
+    document.addEventListener("keydown", dismissOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", dismissOutside);
+      document.removeEventListener("keydown", dismissOnEscape);
+    };
   }, [open]);
 
   return (
@@ -49,13 +62,6 @@ export function NavigationDisclosure({
       className="navigation-disclosure"
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
-      }}
-      onKeyDown={(event) => {
-        if (event.key === "Escape" && open) {
-          event.preventDefault();
-          setOpen(false);
-          trigger.current?.focus({ preventScroll: true });
-        }
       }}
     >
       <Button
@@ -102,6 +108,12 @@ export function NavigationDisclosure({
             </li>
           ))}
         </ul>
+        {open && footer && <div className="navigation-utilities" onClick={(event) => {
+          if (event.target instanceof Element && event.target.closest("a")) {
+            setOpen(false);
+            trigger.current?.focus({ preventScroll: true });
+          }
+        }}>{footer}</div>}
       </nav>
     </div>
   );
