@@ -57,7 +57,7 @@ export function Home({ locale, highlights }: { readonly locale: Locale; readonly
           <div className="section-heading" data-reveal-part>
             <h2 id="programs-title">{content.programs.title}</h2>
           </div>
-          <div data-reveal-part><ProgramsContent locale={locale} preview /></div>
+          <div data-reveal-part><ProgramsContent locale={locale} /></div>
         </SectionFrame>
         <SectionFrame id="journal" titleId="journal-title">
           <div className="journal-preview">

@@ -1,6 +1,5 @@
-import { ArrowRight, ArrowUpRight, Mail, Phone } from "lucide-react";
-import { SelectionTabs } from "@/components/controls/selection-tabs";
-import { ActionLink, MediaFrame } from "@/components/ui/primitives";
+import { ArrowRight, Mail, Phone } from "lucide-react";
+import { MediaFrame } from "@/components/ui/primitives";
 import { centerContent } from "@/content/center";
 import type { PublicSection } from "@/content/site";
 import { Link } from "@/i18n/navigation";
@@ -10,65 +9,18 @@ import { CenterPhoto } from "./center-photo";
 import { EventsCatalog, HighlightsCatalog } from "./events-public";
 import { JournalPagination } from "./journal-pagination";
 
-export function ProgramsContent({
-  locale,
-  heading: Heading = "h3",
-  preview = false,
-}: {
-  readonly locale: Locale;
-  readonly heading?: "h2" | "h3";
-  readonly preview?: boolean;
-}) {
-  const content = centerContent[locale];
-  const [meetups, education] = content.programs.categories;
+export function ProgramsContent({ locale }: { readonly locale: Locale }) {
+  const content = centerContent[locale].programs;
   return (
     <div className="program-explorer">
-      <SelectionTabs
-        label={content.nav[2].label}
-        orientation="horizontal"
-        action={preview ? <Link href="/programs" locale={locale} className="section-link">{locale === "ko" ? "프로그램 안내" : "Program details"}<ArrowRight className="icon" aria-hidden="true" /></Link> : undefined}
-        keyboardHint={
-          locale === "ko"
-            ? "좌우 방향키로 프로그램을 선택하세요."
-            : "Use the left and right arrow keys to select a program."
-        }
-        items={[
-          {
-            id: education.id,
-            label: education.title,
-            content: (
-              <>
-                <CenterPhoto name="education" locale={locale} />
-                <div className="program-description">
-                  <Heading>{locale === "ko" ? "비트코인 강의" : "Bitcoin classes"}</Heading>
-                  <p>{education.description}</p>
-                  <ActionLink href={`/${locale}/programs#events`} variant="secondary">
-                    {locale === "ko" ? "행사 일정 확인" : "Event schedule"}
-                    <ArrowUpRight className="icon" aria-hidden="true" />
-                  </ActionLink>
-                </div>
-              </>
-            ),
-          },
-          {
-            id: meetups.id,
-            label: meetups.title,
-            content: (
-              <>
-                <CenterPhoto name="community" locale={locale} sizes="(max-width: 767px) 100vw, 60vw" />
-                <div className="program-description">
-                  <Heading>{locale === "ko" ? "비트코인 밋업" : "Meetups at the center"}</Heading>
-                  <p>{meetups.description}</p>
-                  <ActionLink href={`/${locale}/programs#events`} variant="secondary">
-                    {locale === "ko" ? "행사 일정 확인" : "Event schedule"}
-                    <ArrowUpRight className="icon" aria-hidden="true" />
-                  </ActionLink>
-                </div>
-              </>
-            ),
-          },
-        ]}
-      />
+      <CenterPhoto name="education" locale={locale} sizes="(max-width: 767px) 100vw, 60vw" />
+      <div className="program-description">
+        <p>{content.description}</p>
+        <Link href="/programs#events" locale={locale} className="section-link">
+          {locale === "ko" ? "행사 일정 보기" : "View event schedule"}
+          <ArrowRight className="icon" aria-hidden="true" />
+        </Link>
+      </div>
     </div>
   );
 }
@@ -192,7 +144,7 @@ export function SectionContent({
         </div>
       );
     case "programs":
-      return <><ProgramsContent locale={locale} heading="h2" /><EventsCatalog events={events} locale={locale} today={today} /></>;
+      return <EventsCatalog events={events} locale={locale} today={today} />;
     case "experience":
       return <ExperienceContent locale={locale} />;
     case "journal":

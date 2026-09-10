@@ -25,11 +25,7 @@ export type CenterLocaleContent = {
     readonly eyebrow: string;
     readonly title: string;
     readonly introduction: string;
-    readonly categories: readonly {
-      readonly id: "meetups" | "education";
-      readonly title: string;
-      readonly description: string;
-    }[];
+    readonly description: string;
   };
   readonly experience: {
     readonly eyebrow: string;
@@ -104,20 +100,8 @@ export const centerContent = {
       title: "강의와 밋업",
       introduction:
         "입문 강의부터 개발자 과정까지 운영합니다. 강의와 모임의 일정은 행사 공지에서 확인할\u00a0수\u00a0있습니다.",
-      categories: [
-        {
-          id: "meetups",
-          title: "밋업",
-          description:
-            "비트코인 개발자 밋업, 월간 모임, 영화 상영이 열립니다.",
-        },
-        {
-          id: "education",
-          title: "교육",
-          description:
-            "비트코인 입문, 백서와 프로토콜, 셀프 커스터디, 개발 강의를 엽니다.",
-        },
-      ],
+      description:
+        "비트코인 입문, 백서와 프로토콜, 셀프 커스터디, 개발 강의를 엽니다. 개발자 밋업과 월간 모임, 영화 상영도 함께 진행합니다.",
     },
     experience: {
       eyebrow: "EXPERIENCE",
@@ -210,20 +194,8 @@ export const centerContent = {
       title: "Classes and meetups",
       introduction:
         "Courses cover Bitcoin basics and development. Check the event schedule for upcoming dates.",
-      categories: [
-        {
-          id: "meetups",
-          title: "Meetups",
-          description:
-            "The center holds developer meetups, monthly gatherings and film screenings.",
-        },
-        {
-          id: "education",
-          title: "Education",
-          description:
-            "Classes cover Bitcoin fundamentals, the whitepaper and protocol, self-custody and development.",
-        },
-      ],
+      description:
+        "Classes cover Bitcoin fundamentals, the whitepaper and protocol, self-custody and development. The center also hosts developer meetups, monthly gatherings and film screenings.",
     },
     experience: {
       eyebrow: "EXPERIENCE",

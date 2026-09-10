@@ -41,11 +41,6 @@
   to { opacity: 1; transform: translateX(0); }
 }
 
-@keyframes selection-copy-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 @keyframes selection-panel-out {
   from { opacity: 1; transform: translateX(0); }
   to { opacity: 0; transform: translateX(calc(-1 * var(--selection-offset))); }
@@ -81,14 +76,6 @@
     animation: selection-panel-out var(--duration-control) var(--ease-out) both;
   }
 
-  .program-explorer .selection-panel[data-motion="incoming"] { animation: none; }
-  .program-explorer .selection-panel[data-motion="incoming"] > .center-photo {
-    animation: selection-image-in var(--duration-image) var(--ease-out) both;
-  }
-
-  .program-explorer .selection-panel[data-motion="incoming"] > .program-description {
-    animation: selection-copy-in calc(var(--duration-control) - 40ms) 70ms var(--ease-out) both;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
