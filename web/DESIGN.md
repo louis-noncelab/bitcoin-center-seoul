@@ -23,14 +23,17 @@ Reuse the existing neutral surfaces, Pretendard, controls and selection primitiv
   real silent clip, a short description and a relevant program/collection link.
   Home links directly to this section. This supersedes the historical still-only
   video decision below; the high-resolution home photograph stays in place.
-- Composition: a centered 72rem tour measure, video up to 40rem wide (the actual
-  source is 640×360), an adjacent readable description, shared 32/40px gaps,
-  16:9 frame and 12px corners. Under 768px the image and description stack.
-  The film uses its actual colors and watermark; no invented frames, aggressive
-  upscale, faux grain, decorative subtitles or audio. Scene changes use a 500ms
+- Composition: after the owner's width revision, the tour fills the page content
+  width and aligns with the page heading. A 3:2 column split enlarges the video
+  alongside its description, with shared 32/40px gaps, 16:9 frame and 12px corners.
+  Under 768px the image and description stack. The real 640×360 footage scales
+  with its frame; its actual colors and watermark remain. No invented frames,
+  faux grain, decorative subtitles or audio. Scene changes use a 500ms
   opacity dissolve with the existing image/exit tokens and selection lifecycle.
-  Shared 48px play/pause control sits in a quiet
-  surface rail below the film with its name, outside the image.
+  The owner requested removing the bottom control rail. A shared 48px icon control
+  sits inside the frame: visible on hover/focus while playing, and always available
+  when paused, on touch devices or after a playback error. Accessible bilingual
+  action labels and reduced-motion/no-JavaScript behavior remain intact.
 - Delivery: short H.264/yuv420p MP4 derivatives with fast-start and WebP posters,
   same-origin under `/images/space-tour/`; no remote video requests or new CSP
   allowance. Source URLs, cuts and sizes are recorded with the assets. No media

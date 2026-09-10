@@ -70,21 +70,19 @@ export function SpaceFilm({ name, label, locale }: {
   const Icon = error ? RotateCcw : playing ? Pause : Play;
 
   return (
-    <figure className="space-film" data-ready={ready}>
+    <figure className="space-film" data-ready={ready} data-playing={playing}>
       <div className="space-film-viewport">
-      <Image src={`/images/space-tour/${name}.webp`} alt={label} width={640} height={360} unoptimized className="space-film-poster" aria-hidden={ready || undefined} />
-      <video
-        ref={video} width={640} height={360} muted playsInline loop preload="none"
-        poster={`/images/space-tour/${name}.webp`}
-        aria-label={`${label} · ${ko ? "소리 없는 공간 영상" : "Silent film of the space"}`}
-        aria-hidden={!ready}
-        onPlaying={() => { setPlaying(true); setError(false); }}
-        onPause={() => setPlaying(false)}
-        onError={() => { intent.current = "pause"; setPlaying(false); setError(true); }}
-      >{ko ? "이 브라우저는 영상 재생을 지원하지 않습니다." : "This browser does not support video playback."}</video>
-      </div>
-      <figcaption className="space-film-controls">
-        <span>{error ? (ko ? "영상을 불러오지 못했습니다." : "Video could not load.") : label}</span>
+        <Image src={`/images/space-tour/${name}.webp`} alt={label} width={640} height={360} unoptimized className="space-film-poster" aria-hidden={ready || undefined} />
+        <video
+          ref={video} width={640} height={360} muted playsInline loop preload="none"
+          poster={`/images/space-tour/${name}.webp`}
+          aria-label={`${label} · ${ko ? "소리 없는 공간 영상" : "Silent film of the space"}`}
+          aria-hidden={!ready}
+          onPlaying={() => { setPlaying(true); setError(false); }}
+          onPause={() => setPlaying(false)}
+          onError={() => { intent.current = "pause"; setPlaying(false); setError(true); }}
+        >{ko ? "이 브라우저는 영상 재생을 지원하지 않습니다." : "This browser does not support video playback."}</video>
+        {error && <span className="space-film-error" role="status">{ko ? "영상을 불러오지 못했습니다." : "Video could not load."}</span>}
         <Button variant="quiet" className="space-film-toggle" disabled={!ready} aria-label={`${label} · ${action}`} onClick={() => {
           const film = video.current;
           if (!film) return;
@@ -94,8 +92,8 @@ export function SpaceFilm({ name, label, locale }: {
             if (error) { setError(false); film.load(); }
             play();
           }
-        }}><Icon className="icon" aria-hidden="true" /><span>{action}</span></Button>
-      </figcaption>
+        }}><Icon className="icon" aria-hidden="true" /></Button>
+      </div>
     </figure>
   );
 }
