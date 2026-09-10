@@ -52,10 +52,12 @@ Reuse the existing neutral surfaces, Pretendard, controls and selection primitiv
   The whole 120s source was inspected before extending the original 5.5s clips.
   Lounge (25.67s): source 109.5–116.5s hall, 23.5–31s front tables and projection,
   36.5–46.5s lounge counter. Library (17.92s): 79–88.5s bookcase, 89.5–94.5s
-  reading table, 105.5–108.5s whitepaper displays. Exhibition (29.08s): 68.5–75s
-  artworks, 48–60s merchandise/mugs/board games, 61.3–67s display objects,
-  101–104.8s corridor painting. Each is 640×360 at 24fps and 90% source speed,
-  with 0.5s dissolves between shots and at the end-to-start loop boundary.
+  reading table, 105.5–108.5s whitepaper displays. Exhibition (33.21s) follows
+  the owner's revised order: board games → full display → merchandise → art.
+  Source 48–75s is one uninterrupted camera pass, without inserted effects or
+  reordered cuts; 101–104.8s adds the corridor painting at the end. Each is
+  640×360 at 24fps and 90% source speed, with 0.5s dissolves only between separate
+  shots and at the end-to-start loop boundary.
   H.264 CRF 22, yuv420p, fast-start, no audio; first-frame WebP poster quality 85.
   Original footage remains untouched; the derivatives preserve its watermark.
 - Verify both locales/themes, 375/768/1280 and wide layouts, pointer/keyboard,
