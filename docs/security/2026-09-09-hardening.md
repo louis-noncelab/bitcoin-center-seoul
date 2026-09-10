@@ -42,4 +42,4 @@ Codex Security Standard 감사는 수정 전 커밋 `727a88228c172bab7b5293bf1a4
 
 ## 검증 기록
 
-최종 빌드·타입·린트와 브라우저47개, 인증8개, 백업10개 검사가 통과했다. 전체 결과와 증거 경로는 [체크포인트의 보안 증분](../checkpoints/events-only.md#authorized-security-and-focus-increment--2026-09-09)에 기록했다. TypeScript 언어 서버의 빈 진단 알림 생략과 OMO의3초 신선도 대기 규칙 충돌을 별도 메모리 문서로 재현했다. 해당 훅의 timeout은 타입 오류가 아니며, 실제 TypeScript 컴파일러·ESLint·빌드 결과를 별도로 확인한다. 훅이나 전역 설정을 비활성화하지 않았다.
+당시 최종 빌드·타입·린트와 브라우저 47개, 인증 8개, 백업 10개 검사가 통과했다. 이는 해당 변경 시점의 결과이며 현재 릴리스의 검증을 대신하지 않는다. 재검증 명령은 [웹 실행 안내](../../web/README.md)와 [운영 절차](operations.md)를 따른다.

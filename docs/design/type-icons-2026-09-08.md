@@ -91,10 +91,8 @@ Directly inspected reference directories and representative files:
 
 ## Limitations
 
-This worker did not independently browser-test the change because the parent
-process was running the local preview. Lead verification of the current build,
-including actual font loading and the full screen matrix, is recorded in
-`docs/checkpoints/2026-09-08-validation.md`. Neither grants final visual approval.
+These are historical typography research notes, not current build verification.
+Use [the design contract](../../web/DESIGN.md) for the current visual requirements.
 
 The candidate notes and comparison introduction are localized by the active
 route. The paired Korean and English samples remain visible in both routes so

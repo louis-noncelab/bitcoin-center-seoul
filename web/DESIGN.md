@@ -349,7 +349,7 @@ Status: design candidate, not the owner's final visual approval.
   Adapt the interaction, not its dark slate palette or pill styling.
 - The owner's `enzomanuelmangano/demos` reference is a React Native/Expo
   workspace under its own Software License Agreement, NOT MIT. The earlier
-  license description was wrong (see handoff §4.5). Reuse no source code;
+  license description was wrong. Reuse no source code;
   independently implement quiet state transitions with existing web primitives.
   The original asset and motion research task IDs are `st_01a07fbc` and
   `st_01a07fbf`; their completed research is distinct from implementation status.

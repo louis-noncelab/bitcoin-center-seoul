@@ -128,7 +128,8 @@ npx tsc -p tsconfig.app.json --noEmit   # no typecheck script exists
 - `src/pages/Certificate.tsx` is a finished page (lists `public/certificate/BPEP-001-*.pdf`) with no route; `BPEP-002-*.pdf` files exist but aren't listed.
 - `HeroSection` poster `/images/thumnail/IMG_6227.jpg` is not in git -> 404 unless the file exists on the server.
 - `public/images/events/uploads/` (3 tracked files) is a leftover from an older upload path; current uploads go to `public/images/highlights/uploads/` (untracked, not ignored -> shows in `git status` on the server; survives `git reset --hard`).
-- `DEPLOY.md` documents an older local-SSH `deploy.sh` (EC2_IP / KEY_PATH); today's `deploy.sh` runs on the box. `README.md` is the stock Lovable readme.
+- `DEPLOY.md` is the new web service manual-release guide and links to `docs/security/operations.md`. Root `deploy.sh` remains the legacy on-host script. `README.md` indexes the current project documentation.
+- Keep temporary checkpoints, reviews and handoffs in ignored `.local/docs-archive/`; do not commit new session reports.
 - `sqlite3` is in dependencies but unused (driver is `better-sqlite3`); `crypto-browserify` / `stream-browserify` / `buffer` vite aliases are unused by `src/`.
 - `index.html` has `lang="en"` while the default UI is Korean; no `word-break: keep-all` anywhere, so long Korean strings wrap mid-word.
 - `lovable-tagger` runs only in dev mode; `.dark` and `sidebar-*` tokens are template residue.

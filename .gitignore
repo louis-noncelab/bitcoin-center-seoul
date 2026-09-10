@@ -47,7 +47,8 @@ scripts/rehost-backup-*.json
 # Local archives and generated review artifacts
 /.local/
 /OmO-session-*.html
-/docs/checkpoints/evidence/
+/docs/checkpoints/
+/docs/handoff/
 
 # Editor directories and files
 .vscode/*

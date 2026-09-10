@@ -1,93 +1,24 @@
-# 🚀 Bitcoin Center Seoul 배포 가이드
+# 수동 배포 안내
 
-## 📋 사전 준비
+배포 대상은 새 `web/` 서비스입니다. 현재는 로컬 검토본이며, 실제 서버 전환은 검토한 릴리스에 대한 별도 승인 후 진행합니다. 이 문서는 배포를 실행하지 않습니다.
 
-### 1. deploy.sh 설정
-`deploy.sh` 파일에서 다음 값들을 실제 값으로 변경해주세요:
+## 기준 문서와 설정
 
-```bash
-# 설정 (실제 값으로 변경해주세요)
-EC2_IP="3.34.123.45"  # 실제 EC2 퍼블릭 IP
-GITHUB_REPO="https://github.com/yourusername/bitcoin-center-seoul.git"  # 실제 GitHub 저장소 URL
-KEY_PATH="~/.ssh/bitcoin-center-seoul-key"  # SSH 키 경로
-```
+- [운영 절차](docs/security/operations.md): 데이터 경로·권한, 비밀번호 검증값, 프록시, 백업과 복구의 기준입니다.
+- [로컬 검증](web/README.md): 실행 방법과 검사 명령입니다.
+- [PM2 템플릿](web/deploy/ecosystem.config.cjs), [nginx 템플릿](web/deploy/nginx.conf.example): 호스트명·인증서·Node 실행 경로·데이터 경로를 실제 서버에 맞춰 검토해야 합니다.
 
-### 2. SSH 키 확인
-```bash
-# SSH 키가 있는지 확인
-ls -la ~/.ssh/bitcoin-center-seoul-key
+## 전환 순서
 
-# 없다면 생성
-ssh-keygen -t rsa -b 4096 -f ~/.ssh/bitcoin-center-seoul-key
-```
+1. 릴리스 커밋과 서버 설정을 확정합니다. 기존 서비스와 데이터 경로를 확인하고, 기존 환경변수 파일을 열거나 비밀값을 출력하지 않습니다.
+2. 운영 절차에 따라 최신 SQLite와 참조 이미지를 백업하고 `restore-check`로 복구 가능 여부를 확인합니다. 최종 데이터 복사·전환 동안 관리자 쓰기를 중지해 이후 변경이 누락되지 않도록 합니다. 로컬 검토용 `review -- import`는 운영 데이터 이전에 사용하지 않습니다.
+3. 배포 호스트와 같은 OS·아키텍처에서 `web/.nvmrc`의 Node 24와 잠금 파일로 `npm ci`, 검사, 빌드를 수행합니다. SQLite·Sharp를 포함한 macOS 산출물을 Linux에 그대로 배포하지 않습니다.
+4. 운영 절차에 따라 검증값 파일과 보호된 DB·이미지 경로를 준비합니다. standalone 서버에 `public`과 `.next/static`을 포함하고, 새 앱은 루프백에서 단일 프로세스로 실행합니다.
+5. `nginx -t`, HTTPS·신뢰 프록시 설정, 관리자 로그인·로그아웃·업로드, 공개 페이지·이미지·영상·운영 상태를 확인합니다. 공개 페이지의 noindex 해제는 정식 공개 시 검토하며 관리자·비공개 경로의 검색 차단은 유지합니다.
+6. 승인된 시점에 트래픽을 전환하고 오류와 백업 상태를 확인합니다. 문제가 생기면 운영 절차의 복구 기준에 따라 앱·DB·이미지를 함께 되돌립니다. 전환 후 생성된 데이터는 별도로 보존합니다.
 
-## 🎯 사용법
+## 기존 배포 파일
 
-### 소스코드 업데이트 후 배포
-```bash
-# 1. 소스코드 수정 후 GitHub에 push
-git add .
-git commit -m "업데이트 내용"
-git push origin main
+루트 `deploy.sh`는 EC2 안에서 `origin/main`으로 작업 트리를 초기화하고 기존 Vite 앱을 빌드하는 레거시 스크립트입니다. 새 `web/` 배포에 사용하지 않습니다. `upload-to-ec2.sh`도 `rsync --delete`로 운영 DB·업로드를 지울 수 있어 사용하지 않습니다.
 
-# 2. 배포 실행
-./deploy.sh
-```
-
-### 배포 과정
-1. ✅ **설정 확인** - EC2 IP와 GitHub URL 검증
-2. ✅ **EC2 연결 테스트** - SSH 연결 확인
-3. ✅ **GitHub에서 최신 코드 pull** - main 브랜치에서 최신 코드 가져오기
-4. ✅ **의존성 설치** - npm install
-5. ✅ **프로덕션 빌드** - npm run build
-6. ✅ **서비스 재시작** - PM2로 애플리케이션 재시작
-7. ✅ **상태 확인** - 서비스 및 웹사이트 접속 테스트
-
-## 🔧 문제 해결
-
-### EC2 연결 실패
-```bash
-# SSH 키 권한 확인
-chmod 600 ~/.ssh/bitcoin-center-seoul-key
-
-# EC2 보안 그룹에서 포트 22 열려있는지 확인
-```
-
-### 빌드 실패
-```bash
-# EC2에서 직접 확인
-ssh -i ~/.ssh/bitcoin-center-seoul-key ubuntu@YOUR_EC2_IP
-cd /var/www/bitcoin-center-seoul
-npm run build
-```
-
-### 서비스 재시작 실패
-```bash
-# PM2 상태 확인
-ssh -i ~/.ssh/bitcoin-center-seoul-key ubuntu@YOUR_EC2_IP 'pm2 status'
-
-# PM2 로그 확인
-ssh -i ~/.ssh/bitcoin-center-seoul-key ubuntu@YOUR_EC2_IP 'pm2 logs bitcoin-center-seoul'
-```
-
-## 📊 유용한 명령어
-
-```bash
-# 서비스 상태 확인
-ssh -i ~/.ssh/bitcoin-center-seoul-key ubuntu@YOUR_EC2_IP 'pm2 status'
-
-# 로그 실시간 확인
-ssh -i ~/.ssh/bitcoin-center-seoul-key ubuntu@YOUR_EC2_IP 'pm2 logs bitcoin-center-seoul --follow'
-
-# Nginx 재시작
-ssh -i ~/.ssh/bitcoin-center-seoul-key ubuntu@YOUR_EC2_IP 'sudo systemctl restart nginx'
-
-# 웹사이트 접속 테스트
-curl -I https://bitcoincenterseoul.com
-```
-
-## 🌐 접속 URL
-
-- **HTTPS**: https://bitcoincenterseoul.com
-- **WWW**: https://www.bitcoincenterseoul.com
-- **HTTP**: http://YOUR_EC2_IP (자동으로 HTTPS로 리다이렉트)
+GitHub Actions는 사용하지 않으며 기존 워크플로는 `.github/workflows/deploy.yml.disabled`로 보존합니다. 푸시는 배포 절차가 아닙니다.
