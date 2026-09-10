@@ -24,7 +24,7 @@ const help = `Usage:
   node --import tsx scripts/events-backup.ts restore-check --backup /private/backups/existing-directory
   node --import tsx scripts/events-backup.ts --help
 
-Node 22. No environment files are loaded. The output parent must already exist and be private (0700).
+Node 24. No environment files are loaded. The output parent must already exist and be private (0700).
 backup creates a new directory with an online SQLite snapshot, referenced images and a SHA-256 manifest.
 restore-check verifies and restores only inside a fresh temporary directory, then removes it. It never replaces an active database.
 `;
@@ -153,7 +153,7 @@ async function main(): Promise<void> {
     options: { database: { type: "string" }, images: { type: "string" }, output: { type: "string" }, backup: { type: "string" }, help: { type: "boolean" } },
   });
   if (values.help && positionals.length === 0) { process.stdout.write(help); return; }
-  if (process.versions.node.split(".")[0] !== "22") throw new BackupError("NODE_22_REQUIRED");
+  if (process.versions.node.split(".")[0] !== "24") throw new BackupError("NODE_24_REQUIRED");
   if (positionals.length !== 1) throw new BackupError("INVALID_ARGUMENTS");
   const options = optionsSchema.parse({ command: positionals[0], ...values });
   process.umask(0o077);

@@ -23,7 +23,7 @@ DB와 WAL은 같은 호스트의 로컬 영구 디스크에 둔다. NFS/SMB 같�
 
 ## 기존 관리자 비밀번호의 검증값 전환
 
-관리자가 입력하는 기존 비밀번호는 그대로 사용할 수 있다. 서버에는 원문 `ADMIN_PASSWORD` 대신 `ADMIN_PASSWORD_HASH`만 제공한다. Node 22에서 `web/` 기준으로 다음 도구를 실행하면 터미널 입력을 숨기고 새 `0600` 파일에 scrypt 검증값을 만든다. 기존 파일은 덮어쓰지 않는다.
+관리자가 입력하는 기존 비밀번호는 그대로 사용할 수 있다. 서버에는 원문 `ADMIN_PASSWORD` 대신 `ADMIN_PASSWORD_HASH`만 제공한다. Node 24에서 `web/` 기준으로 다음 도구를 실행하면 터미널 입력을 숨기고 새 `0600` 파일에 scrypt 검증값을 만든다. 기존 파일은 덮어쓰지 않는다.
 
 ```sh
 npm run admin:password -- --output /absolute/private/new-admin-password.env
@@ -35,7 +35,7 @@ PM2 예시는 Node의 명시적 `--env-file`로 운영자가 새로 만든 검�
 
 ## ingress 및 프로세스 템플릿
 
-검토 대상은 [`nginx.conf.example`](../../web/deploy/nginx.conf.example)과 [`ecosystem.config.cjs`](../../web/deploy/ecosystem.config.cjs)이다. 기존 루트 배포 파일과는 별개다. 호스트명·인증서·Node 22 실행 파일·서비스 계정·경로는 실제 호스트에 맞게 검토한다.
+검토 대상은 [`nginx.conf.example`](../../web/deploy/nginx.conf.example)과 [`ecosystem.config.cjs`](../../web/deploy/ecosystem.config.cjs)이다. 기존 루트 배포 파일과는 별개다. 호스트명·인증서·Node 24 실행 파일·서비스 계정·경로는 실제 호스트에 맞게 검토한다. PM2의 `interpreter`가 가리키는 실행 파일도 Node 24인지 확인한다.
 
 - 외부는 TLS가 설정된 nginx의 80/443만 접속한다. 앱은 `127.0.0.1:3100`에 바인딩한다. 방화벽과 보안 그룹에서도 앱 포트를 외부에 열지 않는다.
 - `APP_ORIGIN`은 실제 정규 HTTPS 출처와 정확히 일치해야 한다. HTTP는 루프백 검토 환경에서만 허용한다.
@@ -75,7 +75,7 @@ DB 전체를 보존하므로 행사·하이라이트·공지·도서·작품·�
 
 현재 앱은 업로드에 새 파일명을 사용하고 콘텐츠를 삭제해도 파일을 즉시 삭제하지 않는다. 이 불변성을 전제로 DB 스냅샷 후 이미지를 보존한다. 백업 도중 운영자가 이미지를 교체·정리하지 않는다. 향후 파일 삭제 기능을 넣으면 백업 보존기간과 실행 중 백업을 고려한 지연 삭제가 필요하다.
 
-Node 22와 이 프로젝트의 설치된 `tsx`·`better-sqlite3`가 있는 `web/`에서 실행한다. standalone 산출물만 있는 호스트에는 이 운영 도구와 검토된 의존성을 별도로 제공해야 한다. 도구는 `.env`나 런타임 설정 파일을 탐색하지 않고 명시한 절대 경로만 사용한다. 상위 백업 디렉터리는 먼저 `0700`으로 준비하고, 출력에는 매번 새로운 이름을 준다.
+Node 24와 이 프로젝트의 설치된 `tsx`·`better-sqlite3`가 있는 `web/`에서 실행한다. standalone 산출물만 있는 호스트에는 이 운영 도구와 검토된 의존성을 별도로 제공해야 한다. 도구는 `.env`나 런타임 설정 파일을 탐색하지 않고 명시한 절대 경로만 사용한다. 상위 백업 디렉터리는 먼저 `0700`으로 준비하고, 출력에는 매번 새로운 이름을 준다.
 
 ```sh
 node --import tsx scripts/events-backup.ts --help

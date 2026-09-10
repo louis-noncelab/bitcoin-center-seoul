@@ -1,3 +1,6 @@
+## Runtime — 2026-09-10
+The owner authorized Node 24 for the new web application. Use the version pinned in `.nvmrc`, npm and a fresh `npm ci` after switching major versions. Local review and backup tools enforce Node 24. This supersedes historical Node 22 references; the root legacy application and production runtime remain outside this local upgrade.
+
 ## Latest security increment — 2026-09-09
 The owner authorized implementing SQLite/security recommendations and smoother field focus. Keep SQLite (better-sqlite3 13.0.3, SQLite 3.53.4), use ADMIN_PASSWORD_HASH with the same password converted by the private scrypt CLI, and require validated trusted-proxy IP handling for remote admin login. No plaintext ADMIN_PASSWORD in the application environment. The generated loopback review credential remains only a test fixture. Follow docs/security/operations.md and docs/security/2026-09-09-hardening.md. Root legacy source remains preserved and excluded from the new service's runtime; its audit findings are not considered fixed on a still-legacy production server. No production changes, deployment, push or environment-file inspection. Only coordinator commits.
 

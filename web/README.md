@@ -22,11 +22,11 @@ npm run admin:password -- --output /absolute/private/new-admin-password.env
 
 ## 로컬 검토
 
-Node 22와 npm을 사용합니다. 기존 `.env`/`.env.local`은 열지 않습니다. `web/`에서 실행합니다.
+Node 24.21.0(`.nvmrc`)과 npm을 사용합니다. nvm을 사용한다면 `web/`에서 `nvm install`, `nvm use`로 버전을 맞춥니다. 기존 `.env`/`.env.local`은 열지 않습니다. 메이저 버전 전환 후에는 기존 `node_modules`를 재사용하지 않고 잠금 파일로 새로 설치합니다.
 
 ```sh
-export PATH="/opt/homebrew/opt/node@22/bin:$PATH"
-npm install
+node --version
+npm ci
 npm run review -- init
 npm run review -- import
 npm run review -- check
