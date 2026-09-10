@@ -37,10 +37,10 @@ const directory = mkdtempSync(join(tmpdir(), "bcs-content-tags-"));
 const origin = "http://127.0.0.1:3102";
 let session;
 
-function request(method, pathname, body) {
+function request(method, pathname, body, revision) {
   return new NextRequest(`${origin}${pathname}`, {
     method,
-    headers: { origin, cookie: `bcs_admin_session=${session}`, "content-type": "application/json" },
+    headers: { origin, cookie: `bcs_admin_session=${session}`, "content-type": "application/json", ...(revision === undefined ? {} : { "If-Match": `"${revision}"` }) },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
 }
@@ -125,12 +125,13 @@ for (const item of cases) {
     const published = await item.read(request("GET", `/api/${item.name}/${record.id}`), context);
     assert.equal(published.status, 200);
     assert.deepEqual((await published.json()).data.tags, record.tags);
-    const updated = await item.update(request("PUT", `/api/admin/${item.name}/${record.id}`, { ...item.input, tags: ["라이트닝", " #Lightning ", "lightning"] }), context);
+    const updated = await item.update(request("PUT", `/api/admin/${item.name}/${record.id}`, { ...item.input, tags: ["라이트닝", " #Lightning ", "lightning"] }, record.revision), context);
     assert.equal(updated.status, 200);
-    assert.deepEqual((await updated.json()).data.tags, ["라이트닝", "Lightning"]);
+    const saved = (await updated.json()).data;
+    assert.deepEqual(saved.tags, ["라이트닝", "Lightning"]);
     const reread = await item.read(request("GET", `/api/${item.name}/${record.id}`), context);
     assert.deepEqual((await reread.json()).data.tags, ["라이트닝", "Lightning"]);
-    const removed = await item.remove(request("DELETE", `/api/admin/${item.name}/${record.id}`), context);
+    const removed = await item.remove(request("DELETE", `/api/admin/${item.name}/${record.id}`, undefined, saved.revision), context);
     assert.equal(removed.status, 200);
   });
 
