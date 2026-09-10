@@ -56,7 +56,7 @@ test.describe.serial("events-only public pages", () => {
     await expect(page.locator('a[href*="/goods"], a[href*="/cart"], a[href*="/checkout"], a[href*="/account"], a[href*="/booking"], a[href*="/payments"]')).toHaveCount(0);
     await eventLink.click();
     await expect(page.getByRole("heading", { name: eventTitleKo, exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: /외부 안내 열기/ })).toHaveAttribute("href", "https://example.com/event");
+    await expect(page.getByRole("link", { name: /참여하기/ })).toHaveAttribute("href", "https://example.com/event");
   });
 
   test("shows only the active highlight and preserves its detail route across locales", async ({ page }) => {

@@ -148,7 +148,7 @@ export function EventDetail({ event, locale }: { readonly event: EventRecord; re
       <EventMeta event={event} locale={locale} />
       <ContentTags tags={event.tags} locale={locale} />
       <MarkdownContent lang={locale === "en" && !event.descriptionEn ? "ko" : locale}>{text(locale, event.description, event.descriptionEn)}</MarkdownContent>
-      {link && <a href={link} target="_blank" rel="noopener noreferrer" className="button" data-variant="primary">{locale === "ko" ? "외부 안내 열기" : "Open event link"}<ArrowUpRight className="icon" aria-hidden="true" /><span className="sr-only">{locale === "ko" ? " (새 창)" : " (new window)"}</span></a>}
+      {link && <a href={link} target="_blank" rel="noopener noreferrer" className="button" data-variant="primary">{locale === "ko" ? "참여하기" : "Join"}<ArrowUpRight className="icon" aria-hidden="true" /><span className="sr-only">{locale === "ko" ? " (새 창)" : " (new window)"}</span></a>}
     </article>
   );
 }
