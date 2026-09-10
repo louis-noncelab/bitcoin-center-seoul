@@ -39,7 +39,7 @@ Reuse the existing neutral surfaces, Pretendard, controls and selection primitiv
   opacity dissolve with the existing image/exit tokens and selection lifecycle.
   The owner's latest revision removes every visible playback icon and the bottom
   control rail. The unobstructed film loops automatically. A transparent native
-  button covers the frame for pointer/touch and keyboard pause/play, with an inset
+  button covers the frame for pointer/touch and keyboard pause/play, with an outer-frame
   focus outline and bilingual accessible action labels. No icon appears on hover,
   focus, touch or pause. Reduced-motion/no-JavaScript behavior remains intact.
 - Delivery: H.264/yuv420p MP4 derivatives with fast-start and WebP posters,
