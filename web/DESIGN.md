@@ -6,8 +6,8 @@ The owner authorizes a cinematic use of the existing center footage and asks for
 animated navigation underlines and an icon instead of the operating-status dot.
 Reuse the existing neutral surfaces, Pretendard, controls and selection primitive.
 
-- Neutral emphasis: the shared `--focus` token follows `--ink`, using charcoal
-  in light mode and off-white in dark mode. Reading progress, field underlines,
+- Blue emphasis: the shared `--focus` token follows `--blue-ink`, matching the
+  navigation indicator in both themes. Reading progress, field underlines,
   keyboard focus, calendar-today borders and notice rules use this same token.
 - Navigation: a text-width, 2px underline identifies the current destination.
   On desktop one indicator glides to the pending link with the existing 280ms
@@ -161,7 +161,7 @@ Use the existing footer anatomy with compact contact-column width; no invented
 social destinations or legal links from the reference.
 
 The progress line is fixed to the viewport's top edge, 3px high, using the
-contrast-safe neutral `--focus` token, and
+contrast-safe blue `--focus` token, and
 non-interactive. It reflects actual document scroll distance with a left-origin
 scale transform, including route/history changes, resizing and changing content
 height. No artificial easing, added scrolling, per-frame React render, loading
@@ -394,7 +394,7 @@ logo, not claimed as exact pixel samples. Final vector/icon files will follow.
 | orange | `#ff6b0a` | `#ff8a40` | Brand punctuation |
 | blue | `#6c9fd8` | `#8db8ea` | Wayfinding and selected details |
 | blue-ink | `#32699f` | `#a4c8ed` | Accessible blue text |
-| focus | `var(--ink)` | `var(--ink)` | Keyboard focus and progress |
+| focus | `var(--blue-ink)` | `var(--blue-ink)` | Keyboard focus and progress |
 
 Large bright color fields are not the main composition. Primary actions should
 have strong contrast; do not put small white text on the orange token.

@@ -9,7 +9,7 @@
   --orange: #ff7609;
   --blue: #76adeb;
   --blue-ink: #32699f;
-  --focus: var(--ink);
+  --focus: var(--blue-ink);
   --danger: #a32d2b;
   --success: #286138;
   --selection: color-mix(in srgb, var(--blue) 16%, var(--canvas));
@@ -129,7 +129,7 @@
   --action-hover: #d5dccd;
   --blue: #8db8ea;
   --blue-ink: #a4c8ed;
-  --focus: var(--ink);
+  --focus: var(--blue-ink);
   --danger: #ffa9a5;
   --success: #a1d2a3;
   --shadow-card: 0 2px 8px color-mix(in srgb, #000 20%, transparent);
