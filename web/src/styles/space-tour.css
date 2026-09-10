@@ -23,7 +23,7 @@
 .space-film .space-film-toggle { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; padding: 0; border: 0; border-radius: var(--radius); background: transparent; box-shadow: none; transform: none; outline-offset: calc(-1 * (var(--focus-width) + var(--focus-offset))); }
 .space-film-error { position: absolute; inset-inline: var(--space-3); inset-block-end: var(--space-3); padding: var(--space-2) var(--space-3); border-radius: var(--radius-control); background: var(--surface); font-size: var(--text-caption); }
 .space-film[data-ready="false"] :is(video, .space-film-toggle) { visibility: hidden; }
-.space-tour .keyboard-hint { margin-block-start: var(--space-4); }
+.space-tour .keyboard-hint { display: none; }
 @media (prefers-reduced-motion: no-preference) {
   .space-tour .selection-panel[data-motion="incoming"] { animation: space-scene-in var(--duration-image) var(--ease-out) both; }
   .space-tour .selection-panel[data-motion="outgoing"] { animation: space-scene-out var(--duration-control) var(--ease-out) both; }

@@ -48,11 +48,11 @@ test("keeps runtime database access fail closed and legacy compatible", () => {
     const events = listEvents();
     await login("local-test-password", "global");
     const verify = new Sqlite(process.env.BCS_LEGACY_TEST_PATH, { fileMustExist: true });
-    const { tags, ...legacyAfter } = verify.prepare("SELECT * FROM events WHERE id = 1").get();
+    const { tags, revision, ...legacyAfter } = verify.prepare("SELECT * FROM events WHERE id = 1").get();
     const after = JSON.stringify(legacyAfter);
     const additions = verify.prepare("SELECT count(*) AS count FROM sqlite_master WHERE type='table' AND name IN ('content_images','content_slugs','admin_sessions','admin_login_attempts')").get().count;
     verify.close();
-    if (events.length !== 1 || events[0].slug !== '' || tags !== '[]' || events[0].tags.length !== 0 || before !== after || additions !== 4) process.exit(1);
+    if (revision !== 1 || events[0].revision !== 1 || events.length !== 1 || events[0].slug !== '' || tags !== '[]' || events[0].tags.length !== 0 || before !== after || additions !== 4) process.exit(1);
     process.stdout.write("ok");
   `;
 
@@ -109,28 +109,29 @@ test("preserves slug aliases, ownership, visibility and transactional legacy wri
       assert.equal(list().find(row => row.id === first.id).slug, 'first-name');
       assert.throws(() => create({ ...input, slug:'first-name' }), collision);
       assert.equal(list().length, 2);
-      assert.throws(() => update(second.id, { ...input, title:'Must rollback', slug:'first-name' }), collision);
+      assert.throws(() => update(second.id, { ...input, title:'Must rollback', slug:'first-name' }, get(second.id, { includeInactive:true }).revision), collision);
       assert.equal(get(second.id).title, input.title);
+      assert.equal(get(second.id).revision, second.revision);
       assert.equal(get(second.id).slug, 'second-name');
-      update(first.id, { ...input, slug:'renamed' });
+      update(first.id, { ...input, slug:'renamed' }, get(first.id, { includeInactive:true }).revision);
       assert.equal(byPath('first-name').slug, 'renamed');
       assert.equal(byPath('renamed').id, first.id);
-      assert.throws(() => update(second.id, { ...input, slug:'first-name' }), collision);
-      update(first.id, { ...input, slug:'' });
+      assert.throws(() => update(second.id, { ...input, slug:'first-name' }, get(second.id, { includeInactive:true }).revision), collision);
+      update(first.id, { ...input, slug:'' }, get(first.id, { includeInactive:true }).revision);
       assert.equal(byPath('first-name').slug, '');
       assert.equal(byPath('renamed').id, first.id);
       assert.throws(() => create({ ...input, slug:'renamed' }), collision);
-      update(first.id, { ...input, slug:'first-name' });
+      update(first.id, { ...input, slug:'first-name' }, get(first.id, { includeInactive:true }).revision);
       assert.equal(byPath('renamed').slug, 'first-name');
       for (const value of ['', '../first-name', "' OR 1=1--", '0', '1e0', '9007199254740992', 'not-found']) assert.equal(byPath(value), null);
       if (kind === 'Highlight') {
-        update(first.id, { ...input, slug:'private-name', is_active:0 });
+        update(first.id, { ...input, slug:'private-name', is_active:0 }, get(first.id, { includeInactive:true }).revision);
         assert.equal(byPath('private-name'), null);
         assert.equal(byPath('first-name'), null);
         assert.equal(byPath(String(first.id)), null);
         assert.equal(byPath('first-name', { includeInactive:true }).id, first.id);
       }
-      remove(first.id);
+      remove(first.id, get(first.id, { includeInactive:true }).revision);
       assert.equal(byPath('first-name', { includeInactive:true }), null);
       assert.equal(getDatabase().prepare('SELECT count(*) AS count FROM content_slugs WHERE kind = ? AND content_id = ?').get(kind.toLowerCase(), first.id).count, 0);
       assert.equal(create({ ...input, slug:'first-name' }).slug, 'first-name');
@@ -178,7 +179,7 @@ test("validates all 40 verified source highlights", () => {
   const results = rows.map((row) => {
     const fields = Object.fromEntries(Object.entries(row).filter(([key]) => key !== "created_at" && key !== "updated_at"));
     const images = typeof row.image === "string" && row.image !== "" ? [row.image] : [];
-    return highlightRecordSchema.safeParse({ ...fields, images }).success;
+    return highlightRecordSchema.safeParse({ ...fields, images, revision: 1 }).success;
   });
 
   // Then all source records remain representable without rewriting them
@@ -328,6 +329,7 @@ test.describe.serial("events-only HTTP API", () => {
 
     // When the event is edited with an explicitly empty gallery
     const updated = await admin.put(`/api/admin/events/${event.id}`, {
+      headers: { "If-Match": `"${event.revision}"` },
       data: { ...payload, slug: `${payload.slug}-edited`, description: "수정", images: [], image: "" },
     });
 
@@ -335,7 +337,7 @@ test.describe.serial("events-only HTTP API", () => {
     expect((await updated.json()).data).toMatchObject({ slug: `${payload.slug}-edited`, description: "수정", image: "", images: [] });
 
     // When the event is deleted
-    const deleted = await admin.delete(`/api/admin/events/${event.id}`);
+    const deleted = await admin.delete(`/api/admin/events/${event.id}`, { headers: { "If-Match": `"${event.revision + 1}"` } });
 
     // Then the public detail route returns a stable not-found error
     expect(deleted.status()).toBe(200);
@@ -380,12 +382,13 @@ test.describe.serial("events-only HTTP API", () => {
 
     // When the highlight is activated
     await admin.put(`/api/admin/highlights/${highlight.id}`, {
+      headers: { "If-Match": `"${highlight.revision}"` },
       data: { ...payload, is_active: 1 },
     });
 
     // Then it becomes public
     expect((await admin.get(`/api/highlights/${highlight.id}`)).status()).toBe(200);
-    await admin.delete(`/api/admin/highlights/${highlight.id}`);
+    await admin.delete(`/api/admin/highlights/${highlight.id}`, { headers: { "If-Match": `"${highlight.revision + 1}"` } });
   });
 
   test("rate limits password attempts even when forwarding headers rotate", async () => {

@@ -13,6 +13,7 @@ export const noticeInputSchema = z.object({
 }).strict();
 export const noticeRecordSchema = noticeInputSchema.extend({
   id: z.number().int().positive(),
+  revision: z.number().int().positive(),
   created_at: z.string(),
   updated_at: z.string(),
 });

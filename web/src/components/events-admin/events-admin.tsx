@@ -11,7 +11,7 @@ import type { ContentKind, ContentRecord } from "./editor-fields";
 import { CenterStatusAdmin } from "./center-status-admin";
 import { LoginForm } from "./login-form";
 import { RecordEditor } from "./record-editor";
-import { adminRequest, AdminRequestError, errorText, jsonBody } from "./request";
+import { adminRequest, AdminRequestError, errorText, jsonBody, revisionHeaders } from "./request";
 
 const sessionSchema = z.object({ authenticated: z.boolean() });
 const listSchema = z.array(z.union([eventRecordSchema, highlightRecordSchema]));
@@ -72,7 +72,7 @@ export function EventsAdmin({ locale }: { readonly locale: Locale }) {
     const accepted = await confirm({ title: ko ? "항목 삭제" : "Delete content", description: ko ? `“${record.title}” 항목을 삭제할까요? 삭제한 내용은 복구할 수 없습니다.` : `Delete “${record.titleEn}”? This cannot be undone.`, confirmLabel: ko ? "삭제" : "Delete", cancelLabel: ko ? "취소" : "Cancel" });
     if (!accepted || busy.current || editorBusyRef.current) return;
     busy.current = true; setPending(true); setError("");
-    try { await adminRequest(`/api/admin/${kind}/${record.id}`, z.unknown(), { method: "DELETE" }); setNotice(ko ? "삭제했습니다." : "Deleted."); refresh(); }
+    try { await adminRequest(`/api/admin/${kind}/${record.id}`, z.unknown(), { method: "DELETE", headers: revisionHeaders(record.revision) }); setNotice(ko ? "삭제했습니다." : "Deleted."); refresh(); }
     catch (caught) { setError(errorText(caught, locale)); if (caught instanceof AdminRequestError && caught.status === 401) setExpired(true); }
     finally { busy.current = false; setPending(false); }
   }
@@ -105,7 +105,7 @@ export function EventsAdmin({ locale }: { readonly locale: Locale }) {
       {!editing && <CenterStatusAdmin disabled={pending || expired} onExpired={() => setExpired(true)} onBusy={(value) => { editorBusyRef.current = value; setEditorBusy(value); }} />}
       {editing ? <RecordEditor key={`${kind}-${selected?.id ?? "new"}`} locale={locale} kind={kind} record={selected}
         onDirty={() => setDirty(true)} onExpired={() => setExpired(true)} onBusy={(value) => { editorBusyRef.current = value; setEditorBusy(value); }}
-        onCancel={() => { void canLeave().then((accepted) => { if (accepted) { setEditing(false); setDirty(false); } }); }}
+        onCancel={() => { void canLeave().then((accepted) => { if (accepted) { setEditing(false); setDirty(false); refresh(); } }); }}
         onSaved={() => { setEditing(false); setDirty(false); setNotice(ko ? "저장했습니다." : "Saved."); refresh(); }} /> : (
         <>
           <div className="events-admin-toolbar">

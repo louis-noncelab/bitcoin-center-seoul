@@ -19,6 +19,7 @@ const coverError = { message: "공개하려면 대표 이미지를 한 장 이�
 export const collectionInputSchema = collectionFields.refine(hasPublicCover, coverError);
 export const collectionRecordSchema = collectionFields.extend({
   id: z.number().int().positive(),
+  revision: z.number().int().positive(),
   created_at: z.string(),
   updated_at: z.string(),
 }).refine(hasPublicCover, coverError);

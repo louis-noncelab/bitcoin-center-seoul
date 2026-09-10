@@ -39,7 +39,7 @@ export function RecordEditor({ locale, kind, record, onSaved, onCancel, onDirty,
       : { ...common, meta: text("meta"), metaEn: text("metaEn"), category: text("category"), categoryEn: text("categoryEn"), host: text("host"), hostEn: text("hostEn"), startDate: text("startDate"), endDate: text("endDate"), sort_order: Number(text("sort_order")), is_active: form.has("is_active") ? 1 : 0, icon: text("icon") };
     busy.current = true; setPending(true); onBusy(true); setError("");
     try {
-      await adminRequest(`/api/admin/${kind}${record ? `/${record.id}` : ""}`, z.unknown(), jsonBody(body, record ? "PUT" : "POST"));
+      await adminRequest(`/api/admin/${kind}${record ? `/${record.id}` : ""}`, z.unknown(), jsonBody(body, record ? "PUT" : "POST", record?.revision));
       onSaved();
     } catch (caught) {
       setError(errorText(caught, locale));

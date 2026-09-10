@@ -117,6 +117,7 @@ const validateHighlightPeriod = (
 export const eventRecordSchema = z
   .object({
     id: z.number().int().positive(),
+    revision: z.number().int().positive(),
     ...eventFields,
   })
   .strict();
@@ -124,6 +125,7 @@ export const eventRecordSchema = z
 export const highlightRecordSchema = z
   .object({
     id: z.number().int().positive(),
+    revision: z.number().int().positive(),
     ...highlightFields,
   })
   .strict()

@@ -1,3 +1,4 @@
+import { deleteContentFixture } from "./content-cleanup";
 import { expect, test } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
@@ -36,7 +37,7 @@ test("collection APIs enforce authentication, origin, bounded input and private 
     expect(await (await request.get("/sitemap.xml")).text()).not.toContain(`/collection/${draft.id}<`);
     expect((await request.get("/ko/admin/collection")).headers()["x-robots-tag"]).toContain("noindex");
   } finally {
-    expect((await request.delete(`/api/admin/collection/${draft.id}`, { headers })).status()).toBe(200);
+    expect((await request.delete(`/api/admin/collection/${draft.id}`, { headers: { ...headers, "If-Match": `"${draft.revision}"` } })).status()).toBe(200);
   }
 });
 
@@ -72,9 +73,9 @@ test("admin uploads, publishes, browses, edits and deletes a collection item", a
     expect(item).toMatchObject({ kind: "artwork", sort_order: -10, is_active: 1 });
     expect(item.images).toHaveLength(2);
     expect(await (await page.request.get("/sitemap.xml")).text()).toContain(`/collection/${id}</loc>`);
-    const { id: savedId, created_at, updated_at, ...input } = item;
+    const { id: savedId, created_at, updated_at, revision, ...input } = item;
     expect(savedId).toBe(id); expect(created_at).toBeTruthy(); expect(updated_at).toBeTruthy();
-    expect((await page.request.put(`/api/admin/collection/${id}`, { headers, data: { ...input, images: [item.images[0], item.images[0]] } })).status()).toBe(400);
+    expect((await page.request.put(`/api/admin/collection/${id}`, { headers: { ...headers, "If-Match": `"${revision}"` }, data: { ...input, images: [item.images[0], item.images[0]] } })).status()).toBe(400);
     await page.goto("/en/collection");
     const gallery = page.getByRole("tabpanel", { name: "All", exact: true });
     await expect(gallery.getByRole("heading", { name: title, exact: true })).toBeVisible();
@@ -115,7 +116,7 @@ test("admin uploads, publishes, browses, edits and deletes a collection item", a
     expect((await page.request.get(`/api/collection/${id}`)).status()).toBe(404);
     id = undefined;
   } finally {
-    if (id) await page.request.delete(`/api/admin/collection/${id}`, { headers });
+    if (id) await deleteContentFixture(page.request, `/api/admin/collection/${id}`, baseURL ?? "");
   }
 });
 
@@ -136,36 +137,40 @@ test("private and deleted images cannot be downloaded or retained through the im
     expect((await request.get(image)).status()).toBe(200);
     const created = await request.post("/api/admin/collection", { headers, data: input });
     expect(created.status()).toBe(201);
-    const id: number = (await created.json()).data.id;
+    const record = (await created.json()).data;
+    const id: number = record.id;
+    let revision: number = record.revision;
     ids.push(id);
     expect((await anonymous.get(image)).status()).toBe(404);
-    expect((await request.put(`/api/admin/collection/${id}`, { headers, data: { ...input, is_active: 1 } })).status()).toBe(200);
+    expect((await request.put(`/api/admin/collection/${id}`, { headers: { ...headers, "If-Match": `"${revision++}"` }, data: { ...input, is_active: 1 } })).status()).toBe(200);
     const publicImage = await anonymous.get(image);
     expect(publicImage.status()).toBe(200);
     expect(publicImage.headers()["cache-control"]).toContain("no-store");
     expect((await anonymous.get(`/_next/image?url=${encodeURIComponent(image)}&w=640&q=75`)).status()).toBe(400);
     const shared = await request.post("/api/admin/collection", { headers, data: { ...input, is_active: 1 } });
     expect(shared.status()).toBe(201);
-    const sharedId: number = (await shared.json()).data.id;
+    const sharedRecord = (await shared.json()).data;
+    const sharedId: number = sharedRecord.id;
     ids.push(sharedId);
-    expect((await request.put(`/api/admin/collection/${id}`, { headers, data: input })).status()).toBe(200);
+    expect((await request.put(`/api/admin/collection/${id}`, { headers: { ...headers, "If-Match": `"${revision++}"` }, data: input })).status()).toBe(200);
     expect((await anonymous.get(image)).status()).toBe(200);
-    expect((await request.delete(`/api/admin/collection/${sharedId}`, { headers })).status()).toBe(200);
+    expect((await request.delete(`/api/admin/collection/${sharedId}`, { headers: { ...headers, "If-Match": `"${sharedRecord.revision}"` } })).status()).toBe(200);
     expect((await anonymous.get(image)).status()).toBe(404);
-    expect((await request.put(`/api/admin/collection/${id}`, { headers, data: { ...input, images: [], description: `![사진][photo]\n\n[photo]: ${image}`, is_active: 0 } })).status()).toBe(200);
+    expect((await request.put(`/api/admin/collection/${id}`, { headers: { ...headers, "If-Match": `"${revision++}"` }, data: { ...input, images: [], description: `![사진][photo]\n\n[photo]: ${image}`, is_active: 0 } })).status()).toBe(200);
     expect((await anonymous.get(image)).status()).toBe(404);
-    expect((await request.delete(`/api/admin/collection/${id}`, { headers })).status()).toBe(200);
+    expect((await request.delete(`/api/admin/collection/${id}`, { headers: { ...headers, "If-Match": `"${revision}"` } })).status()).toBe(200);
     expect((await anonymous.get(image)).status()).toBe(404);
     const notice = { slug: `image-check-${randomUUID()}`, title: "검증용 본문 사진", description: `![사진][photo]\n\n[photo]: ${image}`, is_active: 1 };
     const publishedNotice = await request.post("/api/admin/notices", { headers, data: notice });
     expect(publishedNotice.status()).toBe(201);
-    noticeId = (await publishedNotice.json()).data.id;
+    const noticeRecord = (await publishedNotice.json()).data;
+    noticeId = noticeRecord.id;
     expect((await anonymous.get(image)).status()).toBe(200);
-    expect((await request.put(`/api/admin/notices/${noticeId}`, { headers, data: { ...notice, is_active: 0 } })).status()).toBe(200);
+    expect((await request.put(`/api/admin/notices/${noticeId}`, { headers: { ...headers, "If-Match": `"${noticeRecord.revision}"` }, data: { ...notice, is_active: 0 } })).status()).toBe(200);
     expect((await anonymous.get(image)).status()).toBe(404);
   } finally {
-    for (const id of ids) await request.delete(`/api/admin/collection/${id}`, { headers });
-    if (noticeId) await request.delete(`/api/admin/notices/${noticeId}`, { headers });
+    for (const id of ids) await deleteContentFixture(request, `/api/admin/collection/${id}`, baseURL ?? "");
+    if (noticeId) await deleteContentFixture(request, `/api/admin/notices/${noticeId}`, baseURL ?? "");
     await anonymous.dispose();
   }
 });

@@ -2,6 +2,7 @@ import "server-only";
 import type { NextRequest } from "next/server";
 import { noticeInputSchema } from "@/lib/notices-contract";
 import { requireAdmin, requireSameOrigin } from "@/server/events/auth";
+import { expectedRevision } from "@/server/events/revision";
 import { ApiError } from "@/server/events/errors";
 import { dataResponse, itemId, jsonBody, route, type ItemContext } from "@/server/events/http";
 import { deleteNotice, listNotices, noticeBySlug, saveNotice } from "@/server/notices";
@@ -26,12 +27,12 @@ export async function adminNoticesPost(request: NextRequest) {
 export async function adminNoticePut(request: NextRequest, context: ItemContext) {
   return route(async () => {
     requireSameOrigin(request); requireAdmin(request);
-    return dataResponse(saveNotice(await jsonBody(request, noticeInputSchema), await itemId(context)));
+    return dataResponse(saveNotice(await jsonBody(request, noticeInputSchema), await itemId(context), expectedRevision(request)));
   });
 }
 export async function adminNoticeDelete(request: NextRequest, context: ItemContext) {
   return route(async () => {
     requireSameOrigin(request); requireAdmin(request);
-    deleteNotice(await itemId(context)); return dataResponse({ deleted: true });
+    deleteNotice(await itemId(context), expectedRevision(request)); return dataResponse({ deleted: true });
   });
 }
