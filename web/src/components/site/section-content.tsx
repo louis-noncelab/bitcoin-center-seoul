@@ -127,21 +127,18 @@ export function SectionContent({
       return (
         <div className="about-detail">
           <SpaceTour locale={locale} />
-          <div className="about-notes">
-            {content.about.details.map((detail) => (
-              <p key={detail}>{detail}</p>
-            ))}
-          </div>
-          <MediaFrame
-            ratio="landscape"
-            caption={
-              locale === "ko"
-                ? "센터에 전시된 비트코인 작품"
-                : "Bitcoin artwork on display"
-            }
-          >
-            <CenterPhoto name="gallery" locale={locale} sizes="(max-width: 767px) 134vw, 100vw" />
-          </MediaFrame>
+          <section className="about-gallery section-frame" aria-labelledby="about-gallery-title">
+            <h2 id="about-gallery-title" data-reveal-part>{content.about.galleryTitle}</h2>
+            <div className="about-gallery-grid">
+              {content.about.spaces.map((space) => (
+                <div key={space.photo} data-reveal-part>
+                  <MediaFrame caption={<><h3>{space.title}</h3><p>{space.description}</p></>}>
+                    <CenterPhoto name={space.photo} locale={locale} sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 33vw" />
+                  </MediaFrame>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
       );
     case "programs":

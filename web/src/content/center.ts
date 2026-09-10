@@ -1,4 +1,5 @@
 import type { Locale } from "@/i18n/routing";
+import type { CenterMediaKey } from "./media";
 
 export const centerHours = { opens: "12:00", closes: "20:00" } as const;
 
@@ -19,7 +20,12 @@ export type CenterLocaleContent = {
     readonly eyebrow: string;
     readonly title: string;
     readonly introduction: string;
-    readonly details: readonly string[];
+    readonly galleryTitle: string;
+    readonly spaces: readonly {
+      readonly photo: CenterMediaKey;
+      readonly title: string;
+      readonly description: string;
+    }[];
   };
   readonly programs: {
     readonly eyebrow: string;
@@ -89,10 +95,14 @@ export const centerContent = {
       title: "비트코인 센터 서울",
       introduction:
         "라운지와 비트코인 서재, 홀, 하드웨어 지갑 체험존이 있습니다.",
-      details: [
-        "라운지에서 비트코인 도서·작품을 볼\u00a0수\u00a0있습니다.",
-        "홀에서는 강의와 밋업이 열립니다.",
-        "하드웨어 지갑 체험존도 이용할\u00a0수\u00a0있습니다.",
+      galleryTitle: "센터의 공간",
+      spaces: [
+        { photo: "gallery", title: "작품", description: "비트코인을 주제로 한 그림과 판화입니다." },
+        { photo: "retail", title: "굿즈", description: "비트코인 굿즈와 다양한 소품을 전시합니다." },
+        { photo: "experience", title: "하드웨어 지갑 체험존", description: "테스트 비트코인으로 지갑을 체험합니다." },
+        { photo: "exhibition", title: "서재", description: "비트코인 백서와 관련 도서를 비치했습니다." },
+        { photo: "lounge", title: "라운지", description: "창가 좌석과 소파가 있는 휴식 공간입니다." },
+        { photo: "community", title: "홀", description: "비트코인 강의와 밋업이 열리는 공간입니다." },
       ],
     },
     programs: {
@@ -183,10 +193,14 @@ export const centerContent = {
       title: "Bitcoin Center Seoul",
       introduction:
         "The center has a lounge, a Bitcoin library, a hall and a hardware wallet area.",
-      details: [
-        "The lounge includes Bitcoin books and art.",
-        "Classes and meetups take place in the hall.",
-        "Hardware wallets are available to try in the demo area.",
+      galleryTitle: "Spaces at the center",
+      spaces: [
+        { photo: "gallery", title: "Art", description: "Discover paintings and prints inspired by Bitcoin." },
+        { photo: "retail", title: "Merchandise", description: "Browse Bitcoin merchandise and a variety of small objects." },
+        { photo: "experience", title: "Hardware wallet area", description: "Try hardware wallets using test bitcoin." },
+        { photo: "exhibition", title: "Library", description: "Explore the Bitcoin whitepaper and books on economics and technology." },
+        { photo: "lounge", title: "Lounge", description: "Relax and share a conversation on the sofa or by the windows." },
+        { photo: "community", title: "Hall", description: "The hall hosts Bitcoin classes, meetups and community gatherings." },
       ],
     },
     programs: {

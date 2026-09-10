@@ -67,6 +67,14 @@ Reuse the existing neutral surfaces, Pretendard, controls and selection primitiv
 - Verify both locales/themes, 375/768/1280 and wide layouts, pointer/keyboard,
   history, motion frames, actual decoded playback, offscreen/background pause,
   reduced motion, blocked/failed media and no-JavaScript. No auth/data changes.
+- About gallery: the owner asks to show the full variety of the center below
+  the film. Replace the single artwork plate and repeated short notes with six
+  captioned originals: art, merchandise, hardware wallets, library, lounge and
+  hall. Reuse CenterPhoto and MediaFrame, 16:9 photographs, shared corners and
+  neutral typography. Three equal columns on desktop, two below 1024px and one
+  below 768px; each photograph has a bilingual title, description and alt text.
+  Reuse the existing once-per-viewport entrance with reduced-motion and no-JS
+  visibility. These are static photographs, with no new carousel or media files.
 
 ## Current owner contract — events-only public surface, 2026-09-09
 
