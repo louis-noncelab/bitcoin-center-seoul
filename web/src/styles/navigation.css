@@ -75,12 +75,12 @@
   transform-origin: left;
   transition: transform var(--duration-menu-enter) var(--ease-out);
 }
-.navigation-link:is([aria-current="page"], :focus-visible) .navigation-feedback::after,
+.navigation-link[aria-current="page"] .navigation-feedback::after,
 .navigation-feedback[data-pending="true"]::after { transform: scaleX(1); }
 .navigation-indicator {
   position: absolute;
   inset-inline-start: 0;
-  inset-block-end: var(--space-2);
+  inset-block-end: calc(-1 * var(--space-1));
   inline-size: var(--border-width);
   block-size: var(--focus-width);
   background: var(--blue-ink);
@@ -89,8 +89,7 @@
   pointer-events: none;
   transition: transform var(--duration-menu-enter) var(--ease-out), opacity var(--duration-press) var(--ease-out);
 }
-.desktop-navigation[data-indicator-ready="true"] .navigation-link[aria-current="page"] .navigation-feedback::after,
-.desktop-navigation[data-indicator-ready="true"] .navigation-feedback[data-pending="true"]::after { opacity: 0; }
+.desktop-navigation[data-indicator-ready="true"] .navigation-feedback::after { display: none; }
 
 .navigation-menu-icon {
   display: inline-grid;
@@ -157,7 +156,6 @@
 
 @media (hover: hover) {
   .navigation-link:hover { color: var(--blue-ink); }
-  .navigation-link:hover .navigation-feedback::after { transform: scaleX(1); }
   .desktop-navigation .navigation-link:is(:hover, [aria-current="page"]) { background: transparent; }
 }
 

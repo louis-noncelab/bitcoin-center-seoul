@@ -9,9 +9,13 @@ Reuse the existing neutral surfaces, Pretendard, controls and selection primitiv
 - Navigation: a text-width, 2px underline identifies the current destination.
   On desktop one indicator glides to the pending link with the existing 280ms
   menu curve; settled route, history, font/viewport changes and failed navigation
-  restore the actual current link. Hover/focus show a local underline. Mobile
-  disclosure and no-JavaScript use the same text-width underline without the
-  shared enhancement. Reduced motion changes its position immediately.
+  restore the actual current link. Only one underline is visible: hover changes
+  text color and keyboard focus retains its outline. Mobile disclosure and
+  no-JavaScript use a current-label underline without the shared enhancement.
+  Both paths use the label's baseline and the same gap. The initial position is
+  measured before paint without an entrance from the left; page-header remounts
+  hand off the currently painted transform so cached navigation and history keep
+  moving from the previous position. Reduced motion changes position immediately.
 - Status: 20px Lucide DoorOpen, AudioLines, Moon and Clock3 distinguish open,
   meetup, closed and unavailable alongside the existing bilingual labels.
   Success/orange/muted tokens retain their meanings. Opening and meetup icons
