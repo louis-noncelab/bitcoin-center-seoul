@@ -1,0 +1,5 @@
+.notices-list { display: grid; list-style: none; padding: 0; margin: 0; }
+.notices-list > li { border-top: 1px solid var(--line); padding-block: var(--space-6); }
+.notices-list a { display: grid; gap: var(--space-3); min-height: var(--control-height); }
+.notices-list h2 { font-size: var(--text-title); font-weight: var(--weight-medium); }
+.notices-list a:hover { color: var(--blue-ink); }

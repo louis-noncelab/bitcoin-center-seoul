@@ -1,8 +1,26 @@
+## Latest owner additions — 2026-09-09
+The owner also authorizes notices draft/publish/edit/delete, editable URL slugs, journal pagination and the local wallet learning guide. Public pages stay bilingual; administration stays Korean-only. SQLite/password compatibility and the no-deployment boundaries still apply.
+
+## Current owner decision — 2026-09-09 events-only reset
+
+The owner explicitly selected base commit `63a08b95cb54e06d9a00c89ae14d8d9eb1851284` and authorized restoring current public design changes while limiting functionality to event/highlight display and admin create/edit/delete with multiple image uploads. Keep Next.js/React/TypeScript and the existing SQLite schema/ADMIN_PASSWORD compatibility. No shop, checkout, cart, payments, booking, customer accounts, PostgreSQL migration, or unrelated administration in this increment. This supersedes older scope instructions below. Existing root legacy application and runtime/production data stay untouched. No push, deployment, GitHub Actions, real payments, refunds or operational email. Never inspect existing .env/.env.local; never output secret values. Only coordinator stages/commits.
+
+Recovery point: `backup/center-web-before-events-only-20260909-175952`, commit `b1cc3f81190f06fb53da668c003421f479854543`. Independent verified bundle and public assets are at `/Users/max/noncelab/center/bitcoin-center-seoul-backups/20260909-175952`. This snapshot is WIP, not a release.
+
 # PROJECT KNOWLEDGE BASE
 
 **Generated:** 2026-09-07
 **Commit:** 0a19953
 **Branch:** main
+
+## REDESIGN EXECUTION — 2026-09-08
+
+- Work on `redesign/center-web`. The approved target stack is Next.js, React, TypeScript, Tailwind CSS, PostgreSQL, and Prisma.
+- Build the new public frontend in `web/` first, isolated from the existing Vite/Express application. Design approval precedes backend implementation and SQLite migration.
+- **Do not enable, run, or depend on GitHub Actions.** Preserve the historical automatic deployment file as `.github/workflows/deploy.yml.disabled`; the owner explicitly requested disabling it, not deleting it.
+- Run type, lint, browser, dependency, and security checks locally. Repeat authentication/session/authorization checks when those boundaries change. Production deployment remains a separate, explicitly approved manual operation.
+- Design: cinematic but understated, gallery-like and welcoming, using real center photography. Light is the default with a dark switch; use the supplied logo's orange and blue identity. Keep Korean/English pages and restrained, reduced-motion-safe interaction.
+- Do not copy the reference project's multi-brand scope, Vercel-specific security defaults, or unresolved security issues into the center.
 
 ## OVERVIEW
 Public site for Bitcoin Center Seoul (Mapo): Lovable-scaffolded Vite + React 18 + shadcn/Tailwind SPA, plus an Express + better-sqlite3 backend (`server.js`, `database.js`) that serves `/api/*`, `public/`, and the built `dist/`. Runs under PM2 on one EC2 box behind nginx.
@@ -16,7 +34,7 @@ bitcoin-center-seoul/
 ├── ecosystem.config.cjs    # PM2 (live). ecosystem.config.js = dead duplicate with hardcoded cwd
 ├── deploy.sh               # runs ON the EC2 box: reset to origin/main, npm install, build, pm2 restart
 ├── upload-to-ec2.sh        # local rsync --delete to EC2 (destructive, see ANTI-PATTERNS); setup-ec2-git.sh = first clone
-├── .github/workflows/deploy.yml  # push main -> ssh EC2 -> same steps as deploy.sh
+├── .github/workflows/deploy.yml.disabled  # original workflow retained, not an active GitHub Actions file
 ├── public/                 # certificate/*.pdf, images/ (server writes uploads here too)
 ├── prompt.txt              # orphan Korean event copy, unreferenced
 └── src/
@@ -42,7 +60,7 @@ bitcoin-center-seoul/
 | Highlight ordering | `server.js:13` `highlightOrder` | `COALESCE(endDate, startDate, REPLACE(date,'.','-')) DESC` |
 | Design tokens | `src/index.css :root`, `tailwind.config.ts` | `bitcoin` / `bitcoin-dark` / `bitcoin-light` |
 | Hardware-wallet demo flow | `src/pages/WalletExperience.tsx` | 984 lines; `step` x `phoneOS` x `WalletType` state |
-| Deploy | `.github/workflows/deploy.yml`, `deploy.sh` | secrets `EC2_HOST`, `EC2_SSH_KEY`; app dir `/var/www/bitcoin-center-seoul` |
+| Deploy | `deploy.sh` (legacy manual script) | app dir `/var/www/bitcoin-center-seoul`; no GitHub Actions; explicit approval required |
 
 ## CODE MAP
 Refs = import sites counted with rg (LSP unavailable: `node_modules` absent locally).
@@ -75,7 +93,7 @@ Refs = import sites counted with rg (LSP unavailable: `node_modules` absent loca
 - Never add a `<Route>` below `path="*"` (`src/App.tsx:29`).
 - Never call a mutating endpoint with bare `fetch`; use `adminFetch` from `src/lib/admin.ts` so `x-admin-token` is sent (server answers 401 otherwise). GETs are still public; there is still no rate limiting, CORS config, or body validation.
 - Never put the admin password back in the client. It lives in `.env` `ADMIN_PASSWORD`; without `.env` the server falls back to `LEGACY_ADMIN_PASSWORD` and logs a warning - delete that fallback once prod has `.env`.
-- Never run `./upload-to-ec2.sh` against production: its `rsync --delete` excludes only `node_modules/.git/dist/.env/*.log`, so it deletes the server's `data/` (live DB) and `public/images/highlights/uploads/`. Deploy by pushing `main` or running `deploy.sh` on the box.
+- Never run `./upload-to-ec2.sh` against production: its `rsync --delete` excludes only `node_modules/.git/dist/.env/*.log`, so it deletes the server's `data/` (live DB) and `public/images/highlights/uploads/`. Deployment is manual and requires explicit approval; pushing a branch is not a deployment procedure.
 - Never rename `/walletExperence` without a redirect; it is the published URL.
 - Never commit `data/` or `*.db` (gitignored). Root `events.db` is a historical artifact, not the runtime DB.
 - Never edit `ecosystem.config.js`; `.cjs` is the one PM2 loads.
@@ -99,8 +117,8 @@ npm run build                    # -> dist/
 npm run serve                    # build && node server.js (production-like)
 npm run lint                     # eslint .
 npx tsc -p tsconfig.app.json --noEmit   # no typecheck script exists
-# deploy: git push origin main   -> .github/workflows/deploy.yml
-# manual on EC2: cd /var/www/bitcoin-center-seoul && ./deploy.sh
+# No GitHub Actions. Review a manual deployment procedure before an approved release.
+# Legacy manual script on EC2: cd /var/www/bitcoin-center-seoul && ./deploy.sh
 ```
 
 ## NOTES
@@ -110,7 +128,8 @@ npx tsc -p tsconfig.app.json --noEmit   # no typecheck script exists
 - `src/pages/Certificate.tsx` is a finished page (lists `public/certificate/BPEP-001-*.pdf`) with no route; `BPEP-002-*.pdf` files exist but aren't listed.
 - `HeroSection` poster `/images/thumnail/IMG_6227.jpg` is not in git -> 404 unless the file exists on the server.
 - `public/images/events/uploads/` (3 tracked files) is a leftover from an older upload path; current uploads go to `public/images/highlights/uploads/` (untracked, not ignored -> shows in `git status` on the server; survives `git reset --hard`).
-- `DEPLOY.md` documents an older local-SSH `deploy.sh` (EC2_IP / KEY_PATH); today's `deploy.sh` runs on the box. `README.md` is the stock Lovable readme.
+- `DEPLOY.md` is the new web service manual-release guide and links to `docs/security/operations.md`. Root `deploy.sh` remains the legacy on-host script. `README.md` indexes the current project documentation.
+- Keep temporary checkpoints, reviews and handoffs in ignored `.local/docs-archive/`; do not commit new session reports.
 - `sqlite3` is in dependencies but unused (driver is `better-sqlite3`); `crypto-browserify` / `stream-browserify` / `buffer` vite aliases are unused by `src/`.
 - `index.html` has `lang="en"` while the default UI is Korean; no `word-break: keep-all` anywhere, so long Korean strings wrap mid-word.
 - `lovable-tagger` runs only in dev mode; `.dark` and `sidebar-*` tokens are template residue.

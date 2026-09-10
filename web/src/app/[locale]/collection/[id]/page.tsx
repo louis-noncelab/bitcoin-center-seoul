@@ -1,0 +1,34 @@
+import { notFound } from "next/navigation";
+import { connection } from "next/server";
+import { hasLocale } from "next-intl";
+import { cache } from "react";
+import { CollectionFrame, collectionCopy, collectionMetadata, collectionText } from "@/components/site/collection-public";
+import { PhotoGallery } from "@/components/site/events-public";
+import { MarkdownContent } from "@/components/site/markdown-content";
+import { routing } from "@/i18n/routing";
+import { getCollectionItem } from "@/server/collection";
+
+type Props = { readonly params: Promise<{ locale: string; id: string }> };
+const readItem = cache(async (value: string) => {
+  if (!/^[1-9]\d*$/.test(value) || !Number.isSafeInteger(Number(value))) notFound();
+  await connection();
+  const item = getCollectionItem(Number(value));
+  if (!item) notFound();
+  return item;
+});
+export async function generateMetadata({ params }: Props) {
+  const { locale, id } = await params;
+  if (!hasLocale(routing.locales, locale)) notFound();
+  return collectionMetadata(locale, await readItem(id));
+}
+export default async function CollectionDetailPage({ params }: Props) {
+  const { locale, id } = await params;
+  if (!hasLocale(routing.locales, locale)) notFound();
+  const item = await readItem(id);
+  const content = collectionText(locale, item);
+  return <CollectionFrame locale={locale} title={content.title} detail><article className="event-detail">
+    <PhotoGallery images={item.images} title={content.title} locale={locale} />
+    <div className="collection-detail-meta"><p className="caption muted">{collectionCopy[locale][item.kind]}</p>{content.creator && <p lang={locale === "en" && !item.creatorEn ? "ko" : locale}>{content.creator}</p>}</div>
+    {content.description && <MarkdownContent lang={locale === "en" && !item.descriptionEn ? "ko" : locale}>{content.description}</MarkdownContent>}
+  </article></CollectionFrame>;
+}

@@ -23,6 +23,15 @@ data/
 *.db
 *.sqlite
 *.sqlite3
+*.db-wal
+*.db-shm
+*.db-journal
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-journal
+*.sqlite3-wal
+*.sqlite3-shm
+*.sqlite3-journal
 
 # Runtime uploads written by server.js (POST /api/images; older path kept for existing files)
 public/images/uploads/
@@ -31,6 +40,15 @@ scripts/rehost-backup-*.json
 
 # Agent tooling state
 .omo/
+/.superpowers/sdd/
+/.codegraph
+/.claude/settings.local.json
+
+# Local archives and generated review artifacts
+/.local/
+/OmO-session-*.html
+/docs/checkpoints/
+/docs/handoff/
 
 # Editor directories and files
 .vscode/*

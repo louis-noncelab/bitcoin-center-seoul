@@ -1,0 +1,38 @@
+html:has(.site-dialog[open]) { overflow: hidden; }
+.site-dialog {
+  inline-size: min(calc(100vw - var(--space-8)), var(--measure-short));
+  max-inline-size: calc(100vw - var(--space-8));
+  max-block-size: calc(100dvh - var(--space-8));
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-panel);
+  background: var(--canvas);
+  color: var(--ink);
+  box-shadow: var(--shadow-disclosure);
+  overflow: auto;
+  opacity: 0;
+  transform: translateY(var(--space-2));
+  transition: opacity var(--duration-control) var(--ease-out), transform var(--duration-control) var(--ease-out), display var(--duration-control) allow-discrete, overlay var(--duration-control) allow-discrete;
+}
+.site-dialog[open] { opacity: 1; transform: none; }
+.site-dialog::backdrop {
+  background: color-mix(in srgb, var(--canvas) 76%, transparent);
+  opacity: 0;
+  transition: opacity var(--duration-control) var(--ease-out), display var(--duration-control) allow-discrete, overlay var(--duration-control) allow-discrete;
+}
+.site-dialog[open]::backdrop { opacity: 1; }
+.dialog-surface { display: grid; gap: var(--space-4); padding: var(--space-6); }
+.dialog-surface > h2 { font-size: var(--text-subheading); line-height: var(--leading-heading); }
+.dialog-surface > p { font-size: var(--text-small); line-height: var(--leading-body); overflow-wrap: anywhere; }
+.dialog-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: var(--space-3); }
+@starting-style {
+  .site-dialog[open] { opacity: 0; transform: translateY(var(--space-2)); }
+  .site-dialog[open]::backdrop { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-dialog, .site-dialog::backdrop { transition: none; transform: none; }
+}
+@media (forced-colors: active) {
+  .site-dialog { border: var(--border-width) solid CanvasText; }
+}

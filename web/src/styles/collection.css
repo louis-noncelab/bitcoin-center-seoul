@@ -1,0 +1,21 @@
+.collection-browser .selection-layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
+.collection-browser .selection-list { display: flex; flex-wrap: wrap; gap: var(--space-2); border-block-end: var(--border-width) solid var(--line); padding-block-end: var(--space-3); }
+.collection-browser .selection-tab { justify-content: center; text-align: center; inline-size: auto; min-inline-size: var(--space-20); min-block-size: var(--control-height); padding: var(--space-2) var(--space-4); border-radius: var(--radius-control); }
+.collection-browser .selection-tab[aria-selected="true"] { color: var(--action-ink); background: var(--action); }
+.collection-browser .selection-tab[aria-selected="true"] .selection-label { color: inherit; }
+.collection-browser :is(.selection-background, .selection-arrow) { display: none; }
+.collection-browser .selection-panels { background: transparent; }
+.collection-browser .selection-panel { padding: 0; min-block-size: 0; }
+.collection-browser .catalog-empty { max-inline-size: none; padding-block-start: 0; border-block-start: 0; text-align: center; }
+.collection-browser .keyboard-hint { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.collection-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-8) var(--space-6); }
+.collection-card { min-inline-size: 0; }
+.collection-image { display: flex; align-items: center; justify-content: center; aspect-ratio: var(--ratio-portrait); padding: var(--space-8); background: var(--canvas); }
+.collection-image img { display: block; inline-size: 100%; block-size: 100%; object-fit: contain; }
+.collection-creator { font-size: var(--text-small); }
+.collection-detail-meta { display: grid; gap: var(--space-2); }
+@media (max-width: 1119px) { .collection-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 767px) {
+  .collection-grid { grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
+  .collection-image { padding: var(--space-6); }
+}

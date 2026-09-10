@@ -1,0 +1,85 @@
+import { test, expect } from "@playwright/test";
+import { readFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
+import { z } from "zod";
+import { noticeRecordSchema } from "../src/lib/notices-contract";
+
+test("관리자가 공지를 비공개 저장, 발행, 수정하고 삭제한다", async ({ page, baseURL }) => {
+  const title = `[검토] 공지 ${randomUUID()}`;
+  const slug = `notice-${randomUUID()}`;
+  let id: number | undefined;
+  const { ADMIN_PASSWORD } = z.object({ ADMIN_PASSWORD: z.string() }).parse(JSON.parse(await readFile(new URL("../.local/events-review/runtime.json", import.meta.url), "utf8")));
+  await page.goto("/ko/admin/notices");
+  await page.getByLabel("관리자 비밀번호", { exact: true }).fill(ADMIN_PASSWORD);
+  await page.getByRole("button", { name: "로그인", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "공지 목록", exact: true })).toBeVisible();
+  try {
+    await page.getByRole("button", { name: "공지 등록", exact: true }).click();
+    await page.getByLabel("제목", { exact: true }).fill(title);
+    await page.getByLabel("URL 슬러그", { exact: true }).fill(slug);
+    await expect(page.getByLabel("본문", { exact: true })).toHaveAttribute("aria-describedby", "notice-markdown-help");
+    await page.getByLabel("본문", { exact: true }).fill("# 운영 안내\n\n**휴무 일정**\n\n- 첫째 안내\n- 둘째 안내\n\n[방문 안내](/ko/visit)\n\n<script>alert('plain text')</script>");
+    await page.getByRole("button", { name: "저장", exact: true }).click();
+    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    const draft = z.object({ data: z.array(noticeRecordSchema) }).parse(await (await page.request.get("/api/admin/notices")).json()).data.find((record) => record.slug === slug);
+    expect(draft).toBeDefined();
+    if (!draft) throw new Error("Notice draft missing");
+    id = draft.id;
+    expect((await page.request.get(`/api/notices/${slug}`)).status()).toBe(404);
+    expect((await page.request.get(`/ko/notices/${slug}`)).status()).toBe(404);
+    const row = page.locator(".events-admin-list > li").filter({ hasText: title });
+    await row.getByRole("button", { name: "수정", exact: true }).click();
+    await page.getByLabel("공개", { exact: true }).check();
+    await page.getByRole("button", { name: "저장", exact: true }).click();
+    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    await page.goto(`/en/notices/${slug}`);
+    await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
+    await expect(page.locator(".event-description")).toContainText("<script>alert('plain text')</script>");
+    await expect(page.locator(".event-description script")).toHaveCount(0);
+    await expect(page.locator(".event-description").getByRole("heading", { name: "운영 안내", level: 2 })).toBeVisible();
+    await expect(page.locator(".event-description strong")).toHaveText("휴무 일정");
+    await expect(page.locator(".event-description li")).toHaveText(["첫째 안내", "둘째 안내"]);
+    await expect(page.locator(".event-description").getByRole("link", { name: "방문 안내" })).toHaveAttribute("href", "/ko/visit");
+    await expect(page.locator(".event-description")).toHaveAttribute("lang", "ko");
+    await expect(page.locator("main h1")).toHaveCount(1);
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /^운영 안내 휴무 일정 첫째 안내 둘째 안내 방문 안내 /);
+    await page.goto("/ko/notices");
+    await expect(page.getByRole("link", { name: new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) })).toBeVisible();
+    await page.goto("/ko/admin/notices");
+    await row.getByRole("button", { name: "수정", exact: true }).click();
+    await page.getByLabel("URL 슬러그", { exact: true }).fill(`${slug}-updated`);
+    await page.getByLabel("제목", { exact: true }).fill(`${title} 수정`);
+    await page.getByRole("button", { name: "저장", exact: true }).click();
+    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    const redirected = await page.request.get(`/ko/notices/${slug}`, { maxRedirects: 0 });
+    expect(redirected.status()).toBe(308);
+    expect(redirected.headers()["location"]).toContain(`${slug}-updated`);
+    const input = { slug: draft.slug, title: draft.title, description: draft.description, is_active: 1 };
+    const collision = await page.request.post("/api/admin/notices", { headers: { origin: baseURL ?? "" }, data: { ...input, is_active: 1 } });
+    expect(collision.status()).toBe(409);
+    await row.getByRole("button", { name: "수정", exact: true }).click();
+    await page.getByLabel("공개", { exact: true }).uncheck();
+    await page.getByRole("button", { name: "저장", exact: true }).click();
+    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    expect((await page.request.get(`/ko/notices/${slug}`)).status()).toBe(404);
+    expect((await page.request.get(`/api/notices/${slug}-updated`)).status()).toBe(404);
+    await row.getByRole("button", { name: "삭제", exact: true }).click();
+    await page.getByRole("dialog", { name: "공지 삭제", exact: true }).getByRole("button", { name: "삭제", exact: true }).click();
+    await expect(page.getByText("삭제했습니다.", { exact: true })).toBeVisible();
+    id = undefined;
+    await expect(row).toHaveCount(0);
+  } finally {
+    if (id) await page.request.delete(`/api/admin/notices/${id}`, { headers: { origin: baseURL ?? "" } });
+  }
+});
+
+test("공지는 인증과 같은 출처를 요구하고 잘못된 입력을 거절한다", async ({ request, baseURL }) => {
+  const input = { slug: `notice-${randomUUID()}`, title: "검토", description: "검토 공지", is_active: 1 };
+  expect((await request.get("/api/admin/notices")).status()).toBe(401);
+  expect((await request.post("/api/admin/notices", { headers: { origin: baseURL ?? "" }, data: input })).status()).toBe(401);
+  const { ADMIN_PASSWORD } = z.object({ ADMIN_PASSWORD: z.string() }).parse(JSON.parse(await readFile(new URL("../.local/events-review/runtime.json", import.meta.url), "utf8")));
+  expect((await request.post("/api/admin/login", { headers: { origin: baseURL ?? "" }, data: { password: ADMIN_PASSWORD } })).ok()).toBeTruthy();
+  expect((await request.post("/api/admin/notices", { headers: { origin: "https://invalid.example" }, data: input })).status()).toBe(403);
+  expect((await request.post("/api/admin/notices", { headers: { origin: baseURL ?? "" }, data: { ...input, slug: "../escape" } })).status()).toBe(400);
+  expect((await request.post("/api/admin/notices", { headers: { origin: baseURL ?? "" }, data: { ...input, description: "" } })).status()).toBe(400);
+});

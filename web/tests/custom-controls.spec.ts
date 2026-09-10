@@ -1,0 +1,54 @@
+import { test, expect } from "@playwright/test";
+import { readFile } from "node:fs/promises";
+import { z } from "zod";
+
+for (const theme of ["light", "dark"]) {
+  test(`공통 날짜 선택과 체크박스는 키보드로 조작되고 잘못된 날짜를 막는다 · ${theme}`, async ({ page, baseURL }) => {
+    const { ADMIN_PASSWORD } = z.object({ ADMIN_PASSWORD: z.string() }).parse(JSON.parse(await readFile(new URL("../.local/events-review/runtime.json", import.meta.url), "utf8")));
+    const session = await page.request.post("/api/admin/login", { headers: { origin: baseURL ?? "" }, data: { password: ADMIN_PASSWORD } });
+    expect(session.ok()).toBe(true);
+    await page.addInitScript((value) => localStorage.setItem("bcs-theme", value), theme);
+    await page.goto("/ko/admin");
+    await page.getByRole("button", { name: "새 항목 등록", exact: true }).click();
+    const input = page.getByLabel("행사 날짜", { exact: true });
+    await expect(input).toHaveAttribute("type", "text");
+    await input.fill("2024-02-28");
+    const trigger = page.getByRole("button", { name: "행사 날짜 달력 열기", exact: true });
+    await trigger.click();
+    const dialog = page.getByRole("dialog", { name: "행사 날짜 선택", exact: true });
+    await expect(dialog).toBeVisible();
+    await dialog.locator('[data-calendar-date="2024-02-29"]').click();
+    await expect(input).toHaveValue("2024-02-29");
+    await expect(dialog).not.toBeVisible();
+    await expect(trigger).toBeFocused();
+    await input.fill("2025-02-29");
+    await input.blur();
+    await expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(await input.evaluate((element: HTMLInputElement) => element.checkValidity())).toBe(false);
+    await expect(page.getByText("날짜를 연도-월-일 형식으로 입력해 주세요. 예: 2026-09-10", { exact: true })).toBeVisible();
+    await input.fill("2025-02-28");
+    expect(await input.evaluate((element: HTMLInputElement) => element.checkValidity())).toBe(true);
+    await trigger.click();
+    await dialog.getByRole("button", { name: "닫기", exact: true }).focus();
+    await page.keyboard.press("Tab");
+    expect(await dialog.evaluate((element) => element.contains(document.activeElement))).toBe(true);
+    await page.keyboard.press("Escape");
+    await expect(dialog).not.toBeVisible();
+    await expect(trigger).toBeFocused();
+    await page.getByRole("button", { name: "취소", exact: true }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "버리기", exact: true }).click();
+    await page.getByRole("button", { name: "하이라이트", exact: true }).click();
+    await page.getByRole("button", { name: "새 항목 등록", exact: true }).click();
+    const checkbox = page.getByRole("checkbox", { name: "공개", exact: true });
+    await expect(checkbox).toBeChecked();
+    await expect(checkbox).toHaveCSS("appearance", "none");
+    await checkbox.focus();
+    await page.keyboard.press("Space");
+    await expect(checkbox).not.toBeChecked();
+    await page.keyboard.press("Space");
+    await expect(checkbox).toBeChecked();
+    await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
+    await expect(checkbox).toHaveCSS("outline-style", "solid");
+    expect(await checkbox.evaluate((element) => getComputedStyle(element, "::before").opacity)).toBe("1");
+  });
+}

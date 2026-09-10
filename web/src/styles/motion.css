@@ -1,0 +1,90 @@
+.selection-panels {
+  position: relative;
+  isolation: isolate;
+  --selection-offset: var(--reveal-distance);
+}
+
+.selection-panels[data-direction="backward"] {
+  --selection-offset: calc(-1 * var(--reveal-distance));
+}
+
+.selection-panel[data-motion="outgoing"] {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: var(--layer-label);
+  pointer-events: none;
+}
+
+@keyframes center-content-arrival {
+  from { opacity: 0; transform: translateY(var(--space-5)); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes center-photo-arrival {
+  from { transform: scale(1.035); }
+  to { transform: scale(1); }
+}
+
+@keyframes center-letter-arrival {
+  from { opacity: 0; transform: translateY(0.45em); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes center-detail-arrival {
+  from { transform: translateY(var(--space-5)); }
+  to { transform: translateY(0); }
+}
+
+@keyframes selection-image-in {
+  from { opacity: 0; transform: translateX(var(--selection-offset)); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes selection-panel-out {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(calc(-1 * var(--selection-offset))); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-introduction,
+  .detail-heading,
+  .detail-heading + div {
+    animation: center-content-arrival var(--duration-image) var(--ease-out) both;
+  }
+
+  .hero-letter {
+    animation: center-letter-arrival var(--duration-reveal) var(--ease-out) both;
+    animation-delay: calc(var(--letter-index) * var(--duration-letter));
+  }
+
+  .hero-introduction { animation-delay: 140ms; }
+  .hero-photo .center-photo {
+    animation: center-photo-arrival calc(var(--duration-reveal) + 100ms) var(--ease-out) both;
+  }
+
+  .detail-heading + div {
+    animation-name: center-detail-arrival;
+    animation-delay: 100ms;
+  }
+
+  .selection-panel[data-motion="incoming"] {
+    animation: selection-image-in var(--duration-control) var(--ease-out) both;
+  }
+
+  .selection-panel[data-motion="outgoing"] {
+    animation: selection-panel-out var(--duration-control) var(--ease-out) both;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .selection-panel[data-motion="outgoing"] { display: none; }
+  .selection-background { transform: none !important; }
+}
+
+@media (max-width: 767px) {
+  .selection-panels { --selection-offset: var(--space-4); }
+  .selection-panels[data-direction="backward"] { --selection-offset: calc(-1 * var(--space-4)); }
+}
+.selection-heading { display: contents; }
