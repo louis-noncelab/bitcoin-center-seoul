@@ -26,6 +26,7 @@ module.exports = {
       BCS_EVENTS_DB: "/var/lib/bitcoin-center-seoul/events.db",
       BCS_EVENTS_UPLOADS: "/var/lib/bitcoin-center-seoul/images",
       BCS_TRUST_PROXY: "true",
+      BCS_PUBLIC_INDEXING: "true",
       __NEXT_PROCESSED_ENV: "true",
     },
   }],

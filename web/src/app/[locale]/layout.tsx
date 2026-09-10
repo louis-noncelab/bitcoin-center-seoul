@@ -8,11 +8,13 @@ import { ReadingProgress } from "@/components/controls/reading-progress";
 import { ThemeProvider } from "@/components/controls/theme-provider";
 import { DevelopmentTools } from "@/components/development-tools";
 import { routing } from "@/i18n/routing";
+import { publicIndexingEnabled } from "@/lib/public-indexing";
 import "../globals.css";
 
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-};
+export function generateMetadata(): Metadata {
+  const enabled = publicIndexingEnabled();
+  return { robots: { index: enabled, follow: enabled } };
+}
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));

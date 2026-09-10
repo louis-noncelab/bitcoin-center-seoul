@@ -10,6 +10,7 @@ Next.js 공개 사이트와 한국어 콘텐츠 관리 화면입니다. 공개 �
 - `BCS_EVENTS_UPLOADS`: `/images/` 아래 상대 경로에 대응하는 이미지 폴더의 절대 경로.
 - `ADMIN_PASSWORD_HASH`: 기존 관리자 비밀번호로 만든 scrypt 검증값. 앱은 원문 `ADMIN_PASSWORD`를 받지 않습니다.
 - `APP_ORIGIN`: 사이트의 정확한 HTTPS origin. 루프백 검토 환경에서만 HTTP를 허용합니다.
+- `BCS_PUBLIC_INDEXING`: 정식 공개 시 `true`로 설정합니다. 미설정 시 검색을 차단하며 관리자 경로는 이 설정과 관계없이 차단합니다.
 - `BCS_TRUST_PROXY`: 운영에서 `true`로 설정하고, 외부 접근이 차단된 앱 앞의 nginx가 `X-BCS-Client-IP`를 실제 연결 IP로 덮어써야 합니다. 설정되지 않은 운영 로그인은 거부됩니다.
 
 기존 비밀번호를 변경할 필요 없이 다음 도구로 검증값을 만듭니다. 입력은 화면에 표시되지 않으며 새 비공개 파일(0600)에만 기록합니다. 이 파일의 `ADMIN_PASSWORD_HASH`를 앱에 제공하고 원문 환경변수는 제거합니다.
