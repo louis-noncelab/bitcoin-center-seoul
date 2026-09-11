@@ -51,12 +51,12 @@ test("admin uploads, publishes, browses, edits and deletes a collection item", a
   await page.goto("/ko/admin/collection");
   await page.getByLabel("관리자 비밀번호", { exact: true }).fill(password);
   await page.getByRole("button", { name: "로그인", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "도서·작품 목록" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "도서·작품·보드게임 목록" })).toBeVisible();
   try {
-    await page.getByRole("button", { name: "도서·작품 등록", exact: true }).click();
+    await page.getByRole("button", { name: "항목 등록", exact: true }).click();
     await page.getByRole("radio", { name: "작품", exact: true }).check();
     await page.getByLabel("제목", { exact: true }).fill(title);
-    await page.getByLabel("저자·작가 (선택)", { exact: true }).fill("검증용 작가");
+    await page.getByLabel("저자·제작사 (선택)", { exact: true }).fill("검증용 작가");
     await page.getByLabel("소개 (선택)", { exact: true }).fill("## 작품 소개\n\n**강조 문장**\n\n<script>window.testInjected=true</script>");
     await page.getByLabel("공개", { exact: true }).check();
     await page.getByRole("button", { name: "저장", exact: true }).click();
@@ -111,7 +111,7 @@ test("admin uploads, publishes, browses, edits and deletes a collection item", a
     expect((await page.request.get(`/en/collection/${id}`)).status()).toBe(404);
     expect(await (await page.request.get("/sitemap.xml")).text()).not.toContain(`/collection/${id}</loc>`);
     await row.getByRole("button", { name: "삭제", exact: true }).click();
-    await page.getByRole("dialog", { name: "도서·작품 삭제", exact: true }).getByRole("button", { name: "삭제", exact: true }).click();
+    await page.getByRole("dialog", { name: "항목 삭제", exact: true }).getByRole("button", { name: "삭제", exact: true }).click();
     await expect(page.getByText("삭제했습니다.", { exact: true })).toBeVisible();
     expect((await page.request.get(`/api/collection/${id}`)).status()).toBe(404);
     id = undefined;
@@ -172,5 +172,78 @@ test("private and deleted images cannot be downloaded or retained through the im
     for (const id of ids) await deleteContentFixture(request, `/api/admin/collection/${id}`, baseURL ?? "");
     if (noticeId) await deleteContentFixture(request, `/api/admin/notices/${noticeId}`, baseURL ?? "");
     await anonymous.dispose();
+  }
+});
+
+test("board games publish to their own page and stay out of the books & art collection", async ({ request, baseURL }) => {
+  if (!password) throw new Error("Run through npm run review -- test.");
+  const headers = { origin: baseURL ?? "" };
+  await request.post("/api/admin/login", { headers, data: { password } });
+  const png = await sharp({ create: { width: 400, height: 300, channels: 3, background: "#e8d8c3" } }).png().toBuffer();
+  const upload = await request.post("/api/admin/images", { headers, multipart: { file: { name: "boardgame.png", mimeType: "image/png", buffer: png } } });
+  expect(upload.status()).toBe(200);
+  const image: string = (await upload.json()).data.images[0];
+  const title = `검증용 보드게임 ${randomUUID()}`;
+  const created = await request.post("/api/admin/collection", { headers, data: { kind: "boardgame", title, images: [image], is_active: 1 } });
+  expect(created.status()).toBe(201);
+  const record = z.object({ data: collectionRecordSchema }).parse(await created.json()).data;
+  try {
+    const list = await request.get("/ko/experience/board-game");
+    expect(list.status()).toBe(200);
+    expect(await list.text()).toContain(title);
+    expect(await (await request.get("/ko/collection")).text()).not.toContain(title);
+    expect((await request.get(`/ko/experience/board-game/${record.id}`)).status()).toBe(200);
+    expect((await request.get(`/ko/collection/${record.id}`)).status()).toBe(404);
+    const map = await (await request.get("/sitemap.xml")).text();
+    expect(map).toContain(`/experience/board-game/${record.id}</loc>`);
+    expect(map).not.toContain(`/collection/${record.id}</loc>`);
+  } finally {
+    await deleteContentFixture(request, `/api/admin/collection/${record.id}`, baseURL ?? "");
+  }
+});
+
+test("전시 페이지는 도서·작품, 보드게임, 하드웨어 지갑 체험 순으로 안내한다", async ({ page }) => {
+  await page.goto("/ko/experience");
+  const cards = page.locator(".experience-gallery > *");
+  await expect(cards).toHaveCount(3);
+  await expect(cards.locator("strong")).toHaveText(["도서·작품", "보드게임", "하드웨어 지갑 체험"]);
+  await expect(cards.nth(1).getByRole("link", { name: "보드게임 둘러보기", exact: true })).toHaveAttribute("href", "/ko/experience/board-game");
+  await expect(cards.nth(1).getByRole("img", { name: "흰색 선반에 놓인 비트코인 보드게임", exact: true })).toBeVisible();
+});
+
+test("관리자가 보드게임을 등록하면 보드게임 페이지에만 공개된다", async ({ page, baseURL }) => {
+  if (!password) throw new Error("Run through npm run review -- test.");
+  const title = `검증용 보드게임 ${randomUUID()}`;
+  let id: number | undefined;
+  const image = await sharp({ create: { width: 400, height: 600, channels: 3, background: "#d8dcd3" } }).png().toBuffer();
+  await page.goto("/ko/admin/collection");
+  await page.getByLabel("관리자 비밀번호", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "로그인", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "도서·작품·보드게임 목록" })).toBeVisible();
+  try {
+    await page.getByRole("button", { name: "항목 등록", exact: true }).click();
+    await page.getByRole("radio", { name: "보드게임", exact: true }).check();
+    await page.getByLabel("제목", { exact: true }).fill(title);
+    await page.locator('.events-gallery-field input[type="file"]').setInputFiles([{ name: "boardgame.png", mimeType: "image/png", buffer: image }]);
+    await expect(page.locator(".events-gallery-editor img")).toHaveCount(1);
+    await page.getByLabel("공개", { exact: true }).check();
+    await page.getByRole("button", { name: "저장", exact: true }).click();
+    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    const item = listSchema.parse(await (await page.request.get("/api/admin/collection")).json()).data.find((record) => record.title === title);
+    if (!item) throw new Error("Saved collection item missing.");
+    id = item.id;
+    expect(item).toMatchObject({ kind: "boardgame", is_active: 1 });
+    await page.goto("/ko/experience/board-game");
+    await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
+    await page.goto("/ko/collection");
+    await expect(page.getByRole("heading", { name: title, exact: true })).toHaveCount(0);
+    await page.goto("/ko/admin/collection");
+    const row = page.locator(".events-admin-list > li").filter({ hasText: title });
+    await row.getByRole("button", { name: "삭제", exact: true }).click();
+    await page.getByRole("dialog", { name: "항목 삭제", exact: true }).getByRole("button", { name: "삭제", exact: true }).click();
+    await expect(page.getByText("삭제했습니다.", { exact: true })).toBeVisible();
+    id = undefined;
+  } finally {
+    if (id) await deleteContentFixture(page.request, `/api/admin/collection/${id}`, baseURL ?? "");
   }
 });

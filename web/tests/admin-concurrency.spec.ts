@@ -1,11 +1,11 @@
 import { expect, test } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 
-for (const kind of ["events", "highlights", "notices", "book", "artwork"] as const) {
+for (const kind of ["events", "highlights", "notices", "book", "artwork", "boardgame"] as const) {
   test(`${kind}: stale editor keeps its draft and can reopen the latest save`, async ({ browser, baseURL }) => {
     const password = process.env.ADMIN_PASSWORD;
     if (!password || !baseURL) throw new Error("Use npm run review -- test.");
-    const endpoint = kind === "book" || kind === "artwork" ? "collection" : kind;
+    const endpoint = kind === "book" || kind === "artwork" || kind === "boardgame" ? "collection" : kind;
     const headers = { origin: baseURL };
     const a = await browser.newContext({ baseURL });
     const b = await browser.newContext({ baseURL });

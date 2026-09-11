@@ -1,5 +1,5 @@
 import "server-only";
-import { collectionRecordSchema, type CollectionInput, type CollectionRecord } from "@/lib/collection-contract";
+import { collectionRecordSchema, type CollectionInput, type CollectionKind, type CollectionRecord } from "@/lib/collection-contract";
 import { reserveRevision } from "@/server/events/revision";
 import { getDatabase } from "@/server/events/db";
 import { ApiError } from "@/server/events/errors";
@@ -8,12 +8,15 @@ import { requireExistingImages } from "@/server/events/images";
 type CollectionRow = Omit<CollectionRecord, "images"> & { readonly images: string };
 const fromRow = (row: CollectionRow): CollectionRecord => collectionRecordSchema.parse({ ...row, images: JSON.parse(row.images) });
 
-export function listCollection(includeInactive = false): CollectionRecord[] {
-  return getDatabase().prepare<[], CollectionRow>(`SELECT * FROM collection_items ${includeInactive ? "" : "WHERE is_active = 1"} ORDER BY sort_order ASC, id DESC`).all().map(fromRow);
+const kindFilter = (kinds?: readonly CollectionKind[]) =>
+  kinds ? ` AND kind IN (${kinds.map((kind) => `'${kind}'`).join(", ")})` : "";
+
+export function listCollection(includeInactive = false, kinds?: readonly CollectionKind[]): CollectionRecord[] {
+  return getDatabase().prepare<[], CollectionRow>(`SELECT * FROM collection_items WHERE 1 = 1 ${includeInactive ? "" : "AND is_active = 1"}${kindFilter(kinds)} ORDER BY sort_order ASC, id DESC`).all().map(fromRow);
 }
 
-export function getCollectionItem(id: number, includeInactive = false): CollectionRecord | null {
-  const row = getDatabase().prepare<[number], CollectionRow>(`SELECT * FROM collection_items WHERE id = ? ${includeInactive ? "" : "AND is_active = 1"}`).get(id);
+export function getCollectionItem(id: number, includeInactive = false, kinds?: readonly CollectionKind[]): CollectionRecord | null {
+  const row = getDatabase().prepare<[number], CollectionRow>(`SELECT * FROM collection_items WHERE id = ? ${includeInactive ? "" : "AND is_active = 1"}${kindFilter(kinds)}`).get(id);
   return row ? fromRow(row) : null;
 }
 
@@ -30,10 +33,10 @@ export function saveCollectionItem(input: CollectionInput, id?: number, revision
     } else {
       const result = db.prepare(`UPDATE collection_items SET kind=@kind,title=@title,titleEn=@titleEn,creator=@creator,creatorEn=@creatorEn,
         description=@description,descriptionEn=@descriptionEn,images=@images,sort_order=@sort_order,is_active=@is_active,updated_at=CURRENT_TIMESTAMP WHERE id=@id`).run({ ...values, id: savedId });
-      if (!result.changes) throw new ApiError(404, "NOT_FOUND", "도서·작품을 찾을 수 없습니다.");
+      if (!result.changes) throw new ApiError(404, "NOT_FOUND", "항목을 찾을 수 없습니다.");
     }
     const saved = getCollectionItem(savedId, true);
-    if (!saved) throw new ApiError(500, "SAVE_FAILED", "도서·작품을 저장하지 못했습니다.");
+    if (!saved) throw new ApiError(500, "SAVE_FAILED", "항목을 저장하지 못했습니다.");
     return saved;
   })();
 }
