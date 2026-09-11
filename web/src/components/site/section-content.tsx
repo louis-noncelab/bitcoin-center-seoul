@@ -9,6 +9,7 @@ import { CenterPhoto } from "./center-photo";
 import { EventsCatalog, HighlightsCatalog } from "./events-public";
 import { JournalPagination } from "./journal-pagination";
 import { SpaceTour } from "./space-tour";
+import "@/styles/reviews.css";
 
 export function ProgramsContent({ locale }: { readonly locale: Locale }) {
   const content = centerContent[locale].programs;
@@ -139,6 +140,10 @@ export function SectionContent({
               ))}
             </div>
           </section>
+          <div className="section-frame about-reviews-link">
+            <p>{locale === "ko" ? "다녀간 사람들에게는 어떤 공간이었을까요?" : "What was it like for the people who visited?"}</p>
+            <Link href="/reviews" locale={locale} className="section-link">{locale === "ko" ? "방문 후기 둘러보기" : "Explore visitor stories"}<ArrowRight className="icon" aria-hidden="true" /></Link>
+          </div>
         </div>
       );
     case "programs":

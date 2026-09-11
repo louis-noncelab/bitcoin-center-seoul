@@ -29,6 +29,7 @@ export function SiteFooter({ locale }: { readonly locale: Locale }) {
             <ul>
               <li><Link href="/notices" locale={locale}>{locale === "ko" ? "공지사항" : "Notices"}</Link></li>
               <li><Link href="/collection" locale={locale}>{locale === "ko" ? "도서·작품" : "Books & art"}</Link></li>
+              <li><Link href="/reviews" locale={locale}>{locale === "ko" ? "방문 후기" : "Visitor stories"}</Link></li>
               {content.nav.filter((item) => item.id !== "home").map((item) => (
                 <li key={item.id}>
                   <Link href={`/${item.id}`} prefetch={item.id === "journal" ? false : undefined} locale={locale}>{item.label}</Link>

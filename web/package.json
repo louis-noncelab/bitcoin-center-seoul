@@ -21,6 +21,8 @@
     "admin:password": "node --import tsx scripts/admin-password.ts",
     "test:security": "node --conditions=react-server --import tsx --test tests/admin-security.mjs",
     "backup": "node --import tsx scripts/events-backup.ts",
+    "test:reviews": "node --conditions=react-server --import tsx --test tests/reviews-db.mjs tests/reviews-import.mjs",
+    "reviews:import": "node --conditions=react-server --import tsx scripts/reviews-import.ts",
     "test:backup": "node --test tests/events-backup.mjs",
     "test:events": "playwright test --config playwright.events.config.ts",
     "test:markdown": "node --import tsx --test tests/markdown.mjs",

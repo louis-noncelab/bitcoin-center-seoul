@@ -65,3 +65,16 @@ npm run audit
 
 ## 공지사항
 `/ko/admin/notices`에서 공지를 등록·수정·삭제합니다. 새 공지는 비공개로 저장되며 공개 체크 후 저장하면 `/ko/notices`와 `/en/notices`에 표시됩니다. 영어 제목·본문은 선택이며 미입력 시 한국어를 표시합니다. URL 슬러그를 바꿔도 이전 주소가 연결됩니다. 기존 SQLite에 notices/notice_slugs 테이블만 추가하며 기존 비밀번호와 데이터는 유지합니다.
+
+## 콘텐츠와 이미지
+
+관리자가 등록하는 후기·행사·현장 스케치·공지·도서·작품은 SQLite에 저장하며 사진은 `BCS_EVENTS_UPLOADS`에 둡니다. 실제 콘텐츠, 수집 사진, DB, 배포용 데이터 묶음은 Git에 넣지 않습니다. 로고·폰트·공간 소개용 고정 사진과 영상은 UI 자산으로 관리합니다. 페이지 조회나 앱 재시작은 콘텐츠를 자동 등록하지 않습니다.
+
+후기를 처음 반영할 때는 별도로 받은 `reviews.json`과 `images/` 폴더를 사용합니다. 아래 명령은 환경 파일을 읽지 않으며 `--apply` 없이는 검사만 수행합니다. 운영 반영 전 SQLite와 참조 사진을 백업하고 `restore-check`를 통과시켜야 합니다. 기존 기록이 다르거나 사진 경로가 충돌하면 덮어쓰지 않고 중단합니다.
+
+```sh
+npm run reviews:import -- --bundle /absolute/private/reviews-bundle --db /absolute/events.db --uploads /absolute/images
+npm run reviews:import -- --bundle /absolute/private/reviews-bundle --db /absolute/events.db --uploads /absolute/images --apply
+```
+
+데이터 형식은 `{version:1,reviews:[{key,...ReviewInput}],selection:{featured_key,home_keys}}`입니다. `key`는 가져오기 묶음의 고유 키이며, 사진 경로 `/images/uploads/example.webp`는 묶음의 `images/uploads/example.webp`에 대응합니다. 수정은 관리자에서 하며 같은 묶음을 다시 적용해도 기록을 중복 생성하지 않습니다.

@@ -1,5 +1,5 @@
 import type { StaticImageData } from "next/image";
-import education from "../../../public/images/highlights/events/bitcoin-protocol-course-3-2026-05-17.jpg";
+import education from "../../../public/images/what-we-do/protocol-course.jpg";
 import community from "../../../public/images/what-we-do/community.jpg";
 import exhibition from "../../../public/images/what-we-do/exhibition.jpeg";
 import experience from "../../../public/images/what-we-do/experience.jpeg";

@@ -152,17 +152,20 @@ test("offers help and rejects invalid arguments without application configuratio
   assert.equal(fs.existsSync(f.output), false);
 });
 
-test("backs up collection and inline Markdown images, including unpublished items", (t) => {
+test("backs up collection, visitor reviews and inline Markdown images, including unpublished items", (t) => {
   const f = fixture(t);
   const cover = "/images/uploads/2026-09/cover.webp";
   const inline = "/images/uploads/2026-09/inline.webp";
-  for (const url of [cover, inline]) fs.writeFileSync(path.join(f.images, url.slice("/images/".length)), "backup-fixture");
+  const review = "/images/uploads/2026-09/review.webp";
+  for (const url of [cover, inline, review]) fs.writeFileSync(path.join(f.images, url.slice("/images/".length)), "backup-fixture");
   f.db.exec("CREATE TABLE collection_items (id INTEGER PRIMARY KEY, images TEXT, description TEXT, descriptionEn TEXT, is_active INTEGER)");
   f.db.prepare("INSERT INTO collection_items VALUES (1, ?, ?, '', 0)").run(JSON.stringify([cover]), `![사진][photo]\n\n[photo]: ${inline}`);
+  f.db.exec("CREATE TABLE visit_reviews (id INTEGER PRIMARY KEY, image TEXT, is_active INTEGER)");
+  f.db.prepare("INSERT INTO visit_reviews VALUES (1, ?, 0)").run(review);
   const result = f.backup();
   assert.equal(result.status, 0, result.stderr);
   const manifest = JSON.parse(fs.readFileSync(path.join(f.output, "manifest.json"), "utf8"));
-  assert.deepEqual(manifest.files.map(({ path }) => path).sort(), ["events.db", image.slice(1), cover.slice(1), inline.slice(1)].sort());
+  assert.deepEqual(manifest.files.map(({ path }) => path).sort(), ["events.db", image.slice(1), cover.slice(1), inline.slice(1), review.slice(1)].sort());
   const restored = f.run("restore-check", "--backup", f.output);
   assert.equal(restored.status, 0, restored.stderr);
 });

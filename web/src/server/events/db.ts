@@ -50,6 +50,27 @@ function initialize(next: Database.Database, createLegacy: boolean): Database.Da
     assertColumns(next, "events", eventColumns);
     assertColumns(next, "highlights", highlightColumns);
     next.exec(`
+      CREATE TABLE IF NOT EXISTS visit_reviews (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        kind TEXT NOT NULL CHECK (kind IN ('blog', 'cafe', 'video', 'note')),
+        url TEXT NOT NULL, author TEXT NOT NULL, date TEXT NOT NULL DEFAULT '',
+        title TEXT NOT NULL, titleEn TEXT NOT NULL DEFAULT '',
+        summary TEXT NOT NULL, summaryEn TEXT NOT NULL DEFAULT '',
+        feature_title TEXT NOT NULL DEFAULT '', feature_titleEn TEXT NOT NULL DEFAULT '',
+        image TEXT NOT NULL DEFAULT '', sort_order INTEGER NOT NULL DEFAULT 0,
+        is_active INTEGER NOT NULL DEFAULT 0 CHECK (is_active IN (0, 1)),
+        revision INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS review_selection (
+        id INTEGER PRIMARY KEY CHECK (id = 1), featured_id INTEGER,
+        home_ids TEXT NOT NULL DEFAULT '[]', revision INTEGER NOT NULL DEFAULT 1
+      );
+      CREATE TABLE IF NOT EXISTS review_slugs (
+        slug TEXT PRIMARY KEY, review_id INTEGER NOT NULL
+      );
+      INSERT OR IGNORE INTO review_selection (id, featured_id, home_ids, revision) VALUES (1, NULL, '[]', 1);
       CREATE TABLE IF NOT EXISTS center_opening_overrides (
         date TEXT PRIMARY KEY,
         status TEXT NOT NULL CHECK (status IN ('open', 'closed'))
@@ -107,6 +128,12 @@ function initialize(next: Database.Database, createLegacy: boolean): Database.Da
       ON content_slugs (kind, content_id) WHERE is_current = 1;
     `);
     next.transaction(() => {
+      const reviewColumns = next.prepare<[], { readonly name: string }>("PRAGMA table_info(visit_reviews)").all();
+      for (const name of ["slug", "description", "descriptionEn"] as const) {
+        if (!reviewColumns.some((column) => column.name === name)) {
+          next.exec(`ALTER TABLE visit_reviews ADD COLUMN ${name} TEXT NOT NULL DEFAULT ''`);
+        }
+      }
       for (const table of ["events", "highlights", "notices", "collection_items"] as const) {
         const columns = next.prepare<[], { readonly name: string }>(`PRAGMA table_info(${table})`).all();
         if (!columns.some(({ name }) => name === "revision")) {

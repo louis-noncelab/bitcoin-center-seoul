@@ -35,7 +35,10 @@ data/
 
 # Runtime uploads written by server.js (POST /api/images; older path kept for existing files)
 public/images/uploads/
-public/images/highlights/uploads/
+public/images/highlights/
+public/images/events/uploads/
+web/src/assets/reviews/
+web/src/content/visit-reviews-seed.ts
 scripts/rehost-backup-*.json
 
 # Agent tooling state
@@ -49,6 +52,7 @@ scripts/rehost-backup-*.json
 /OmO-session-*.html
 /docs/checkpoints/
 /docs/handoff/
+/test-results/
 
 # Editor directories and files
 .vscode/*
