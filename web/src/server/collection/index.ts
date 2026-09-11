@@ -1,5 +1,6 @@
 import "server-only";
 import { collectionRecordSchema, type CollectionInput, type CollectionKind, type CollectionRecord } from "@/lib/collection-contract";
+import { contentSlugSchema } from "@/lib/events-contract";
 import { reserveRevision } from "@/server/events/revision";
 import { getDatabase } from "@/server/events/db";
 import { ApiError } from "@/server/events/errors";
@@ -20,18 +21,41 @@ export function getCollectionItem(id: number, includeInactive = false, kinds?: r
   return row ? fromRow(row) : null;
 }
 
+export function getCollectionByPath(value: string, includeInactive = false, kinds?: readonly CollectionKind[]): CollectionRecord | null {
+  if (/^[1-9]\d*$/.test(value)) {
+    const id = Number(value);
+    return Number.isSafeInteger(id) ? getCollectionItem(id, includeInactive, kinds) : null;
+  }
+  const slug = contentSlugSchema.safeParse(value);
+  if (!slug.success || slug.data === "") return null;
+  const row = getDatabase().prepare<[string], CollectionRow>(`SELECT * FROM collection_items WHERE slug = ? ${includeInactive ? "" : "AND is_active = 1"}${kindFilter(kinds)}`).get(slug.data);
+  return row ? fromRow(row) : null;
+}
+
+export function collectionHref(record: CollectionRecord): string {
+  const base = record.kind === "boardgame" ? "/experience/board-game" : "/collection";
+  return `${base}/${record.slug || record.id}`;
+}
+
+function assertSlugAvailable(slug: string, id?: number): void {
+  if (!slug) return;
+  const owner = getDatabase().prepare<[string], { readonly id: number }>("SELECT id FROM collection_items WHERE slug = ?").get(slug);
+  if (owner && owner.id !== id) throw new ApiError(409, "SLUG_CONFLICT", "다른 항목에서 사용 중인 주소입니다. 다른 주소를 입력해 주세요.");
+}
+
 export function saveCollectionItem(input: CollectionInput, id?: number, revision?: number): CollectionRecord {
   requireExistingImages(input.images);
   const db = getDatabase();
   return db.transaction(() => {
     if (id !== undefined) reserveRevision("collection_items", id, revision);
+    assertSlugAvailable(input.slug, id);
     const values = { ...input, images: JSON.stringify(input.images) };
     let savedId = id;
     if (savedId === undefined) {
-      savedId = Number(db.prepare(`INSERT INTO collection_items (kind,title,titleEn,creator,creatorEn,description,descriptionEn,images,sort_order,is_active)
-        VALUES (@kind,@title,@titleEn,@creator,@creatorEn,@description,@descriptionEn,@images,@sort_order,@is_active)`).run(values).lastInsertRowid);
+      savedId = Number(db.prepare(`INSERT INTO collection_items (kind,slug,title,titleEn,creator,creatorEn,description,descriptionEn,images,sort_order,is_active)
+        VALUES (@kind,@slug,@title,@titleEn,@creator,@creatorEn,@description,@descriptionEn,@images,@sort_order,@is_active)`).run(values).lastInsertRowid);
     } else {
-      const result = db.prepare(`UPDATE collection_items SET kind=@kind,title=@title,titleEn=@titleEn,creator=@creator,creatorEn=@creatorEn,
+      const result = db.prepare(`UPDATE collection_items SET kind=@kind,slug=@slug,title=@title,titleEn=@titleEn,creator=@creator,creatorEn=@creatorEn,
         description=@description,descriptionEn=@descriptionEn,images=@images,sort_order=@sort_order,is_active=@is_active,updated_at=CURRENT_TIMESTAMP WHERE id=@id`).run({ ...values, id: savedId });
       if (!result.changes) throw new ApiError(404, "NOT_FOUND", "항목을 찾을 수 없습니다.");
     }

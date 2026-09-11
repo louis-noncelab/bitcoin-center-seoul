@@ -31,6 +31,7 @@ export const boardGameCopy = {
 const sectionCopy = (locale: Locale, section: CollectionSection) => (section === "boardgame" ? boardGameCopy[locale] : collectionCopy[locale]);
 const sectionPath = (section: CollectionSection) => (section === "boardgame" ? "/experience/board-game" : "/collection");
 const recordSection = (record: CollectionRecord): CollectionSection => (record.kind === "boardgame" ? "boardgame" : "library");
+export const collectionHref = (record: CollectionRecord) => `${sectionPath(recordSection(record))}/${record.slug || record.id}`;
 
 export function collectionText(locale: Locale, record: CollectionRecord) {
   return { title: locale === "en" ? record.titleEn || record.title : record.title, creator: locale === "en" ? record.creatorEn || record.creator : record.creator, description: locale === "en" ? record.descriptionEn || record.description : record.description };
@@ -41,7 +42,7 @@ export function collectionMetadata(locale: Locale, section: CollectionSection, r
   const content = record ? collectionText(locale, record) : copy;
   const title = content.title;
   const description = record ? markdownExcerpt(collectionText(locale, record).description) || `${title} | ${copy.title}` : copy.introduction;
-  const path = `${sectionPath(record ? recordSection(record) : section)}${record ? `/${record.id}` : ""}`;
+  const path = `${sectionPath(record ? recordSection(record) : section)}${record ? `/${record.slug || record.id}` : ""}`;
   const base = pageMetadata(locale, "experience");
   const images = record?.images[0] ? [{ url: record.images[0], alt: title }] : undefined;
   return { ...base, title: `${title} | Bitcoin Center Seoul`, description,
@@ -69,7 +70,7 @@ export function CollectionGrid({ records, locale, empty }: { readonly records: r
     const excerpt = markdownExcerpt(content.description);
     const meta = record.kind === "boardgame" ? "" : [copy[record.kind], content.creator].filter(Boolean).join(" · ");
     return <article className="review-card highlight-card" key={record.id}>
-      <ContentLink href={`${sectionPath(recordSection(record))}/${record.id}`} locale={locale} className="review-card-link highlight-card-link">
+      <ContentLink href={collectionHref(record)} locale={locale} className="review-card-link highlight-card-link">
         {record.images[0] && <span className="review-card-image highlight-card-photo collection-card-photo"><Image src={record.images[0]} alt="" fill sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 33vw" unoptimized /></span>}
         <div className="review-card-content highlight-card-copy">
           <h2 lang={locale === "en" && !record.titleEn ? "ko" : locale}>{content.title}</h2>
