@@ -12,7 +12,7 @@ import { JournalPagination } from "./journal-pagination";
 import { SpaceTour } from "./space-tour";
 import "@/styles/reviews.css";
 
-export function ProgramsContent({ locale, highlights }: { readonly locale: Locale; readonly highlights: readonly HighlightRecord[] }) {
+export function ProgramsContent({ locale, highlights, nextEvent }: { readonly locale: Locale; readonly highlights: readonly HighlightRecord[]; readonly nextEvent: EventRecord | null }) {
   const content = centerContent[locale].programs;
   const photographs = [25, 5, 38].flatMap(id => {
     const record = highlights.find(item => item.id === id);
@@ -20,10 +20,16 @@ export function ProgramsContent({ locale, highlights }: { readonly locale: Local
     return record && src ? [{ src, alt: locale === "en" ? record.titleEn || record.title : record.title }] : [];
   });
   return (
-    <div className="program-explorer">
+    <div className="program-explorer" data-upcoming={!!nextEvent}>
       <PhotoSlideshow locale={locale} photos={["education", "community", ...photographs]} />
       <div className="program-description">
         <p>{content.description}</p>
+        {nextEvent && <Link href={`/programs/${nextEvent.slug || nextEvent.id}`} locale={locale} className="program-next">
+          <span className="caption muted">{locale === "ko" ? "다가오는 행사" : "Coming up"}</span>
+          <time dateTime={nextEvent.date.trim().replaceAll(".", "-")}>{nextEvent.date.trim().replaceAll("-", ".")}{nextEvent.time ? ` · ${nextEvent.time}` : ""}</time>
+          <h3>{locale === "en" ? nextEvent.titleEn || nextEvent.title : nextEvent.title}</h3>
+          <span className="section-link">{locale === "ko" ? "행사 자세히 보기" : "Event details"}<ArrowRight className="icon" aria-hidden="true" /></span>
+        </Link>}
         <Link href="/programs#events" locale={locale} className="section-link">
           {locale === "ko" ? "행사 일정 보기" : "View event schedule"}
           <ArrowRight className="icon" aria-hidden="true" />
@@ -80,6 +86,10 @@ export function VisitDetails({ locale }: { readonly locale: Locale }) {
   const { visit } = centerContent[locale];
   return (
     <div className="visit-layout">
+      <section className="visit-first" aria-labelledby="visit-first-title">
+        <h2 id="visit-first-title">{locale === "ko" ? "처음 방문하시나요?" : "Your first visit"}</h2>
+        <dl>{visit.firstVisit.map(item => <div key={item.question}><dt>{item.question}</dt><dd>{item.answer}</dd></div>)}</dl>
+      </section>
       <div className="visit-map"><iframe src={visit.mapEmbedSrc} title={locale === "ko" ? "비트코인 센터 서울 위치 지도" : "Bitcoin Center Seoul location map"} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen /></div>
       <dl className="visit-details">
       <div className="visit-address">

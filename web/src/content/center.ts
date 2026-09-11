@@ -53,6 +53,7 @@ export type CenterLocaleContent = {
     readonly eyebrow: string;
     readonly title: string;
     readonly introduction: string;
+    readonly firstVisit: readonly { readonly question: string; readonly answer: string }[];
     readonly address: {
       readonly label: string;
       readonly value: string;
@@ -148,6 +149,11 @@ export const centerContent = {
       title: "비트코인 센터 서울 방문 안내",
       introduction:
         "홍대입구역 6번 출구에서 걸어서 3분 거리입니다. 대관 중에는 공간을 이용할\u00a0수\u00a0없습니다.",
+      firstVisit: [
+        { question: "예약이 필요한가요?", answer: "일반 방문은 예약 없이 오시면 됩니다. 강의·밋업 참여는 행사별 안내를 확인해주세요." },
+        { question: "입장료가 있나요?", answer: "입장료는 3,000 sats입니다." },
+        { question: "지갑 체험은 언제 할 수 있나요?", answer: "입장 후 언제든 하드웨어 지갑 체험존을 이용할 수 있습니다." },
+      ],
       address: {
         label: "주소",
         value: "서울시 마포구 신촌로2안길 30 2층",
@@ -245,6 +251,11 @@ export const centerContent = {
       title: "Visit Bitcoin Center Seoul",
       introduction:
         "The center is a three-minute walk from Hongik University Station Exit 6. It is unavailable during private rentals.",
+      firstVisit: [
+        { question: "Do I need a reservation?", answer: "No reservation is needed for a regular visit. For classes and meetups, check the individual event details." },
+        { question: "Is there an admission fee?", answer: "Admission is 3,000 sats." },
+        { question: "When can I try the wallets?", answer: "You can use the hardware wallet demo area at any time after admission." },
+      ],
       address: {
         label: "Address",
         value: "30, Sinchon-ro 2an\u2011gil, Mapo-gu, Seoul, 2F",

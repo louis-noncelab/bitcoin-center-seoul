@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { hasLocale } from "next-intl";
 import { notFound } from "next/navigation";
 import { PageMotion } from "@/components/site/page-motion";
-import { ReviewsCatalog, ReviewsFeature, ReviewsJump, reviewFilters } from "@/components/site/reviews-public";
+import { ReviewsCatalog, ReviewsFeature, reviewFilters } from "@/components/site/reviews-public";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { reviewCopy } from "@/content/review-copy";
@@ -42,7 +42,7 @@ export default async function ReviewsPage({ params, searchParams }: Props) {
   return <><SiteHeader locale={locale} /><main id="main" tabIndex={-1} className="container detail-page reviews-page">
     <div className="detail-heading reviews-heading">
       <Link href="/about" locale={locale} className="button" data-variant="secondary"><ArrowLeft className="icon" aria-hidden="true" />{t.back}</Link>
-      <div className="reviews-heading-row"><div><h1>{t.title}</h1><p className="reviews-introduction">{t.introduction}<br />{t.description}</p></div><ReviewsJump locale={locale} /></div>
+      <div className="reviews-heading-row"><div><h1>{t.title}</h1><p className="reviews-introduction">{t.introduction}<br />{t.description}</p></div></div>
     </div>
     <ReviewsFeature locale={locale} review={featured ? visitReview(featured) : null} /><ReviewsCatalog locale={locale} filter={filter} reviews={reviews} />
     <PageMotion pageKey={`${locale}-reviews`} />

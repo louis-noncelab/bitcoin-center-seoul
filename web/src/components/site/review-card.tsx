@@ -16,10 +16,9 @@ export function ReviewCard({ review, locale, compact = false }: { readonly revie
           </div> : <div className="review-card-paper"><h3>{review.title[locale]}</h3></div>
         )}
         <div className="review-card-content">
-          {review.date && <div className="review-card-meta"><time dateTime={review.date}>{review.date.replaceAll("-", ".")}</time></div>}
           {(review.image || compact) && <h3>{review.title[locale]}</h3>}
           <p className="review-card-summary">{review.summary[locale]}</p>
-          <div className="review-card-end"><span className="review-author">{review.author}</span><span className="review-read">{review.slug ? t.read : review.kind === "video" ? t.watch : t.source}{review.slug ? <ArrowRight className="icon" aria-hidden="true" /> : <ArrowUpRight className="icon" aria-hidden="true" />}</span></div>
+          <div className="review-card-end"><span className="review-author"><span>{review.author}</span>{review.date && <time dateTime={review.date}>{review.date.replaceAll("-", ".")}</time>}</span><span className="review-read">{review.slug ? t.read : review.kind === "video" ? t.watch : t.source}{review.slug ? <ArrowRight className="icon" aria-hidden="true" /> : <ArrowUpRight className="icon" aria-hidden="true" />}</span></div>
           {!review.slug && <span className="sr-only"> ({t.window})</span>}
         </div>
       </a>

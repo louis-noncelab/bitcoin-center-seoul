@@ -3,15 +3,7 @@
 @import "./events-catalog.css";
 
 .catalog-empty { padding-block: var(--space-6); border-block: var(--border-width) solid var(--line); }
-.highlight-card-photo {
-  position: relative;
-  display: block;
-  flex-shrink: 0;
-  overflow: hidden;
-  aspect-ratio: var(--ratio-landscape);
-  background: var(--surface);
-}
-.highlight-card-photo img { object-fit: cover; }
+.highlight-card-photo { flex-shrink: 0; }
 .catalog-read .icon { transition: transform var(--duration-control) var(--ease-out); }
 
 .event-meta {
@@ -23,22 +15,10 @@
 }
 .event-meta > span { display: inline-flex; align-items: center; gap: var(--space-2); }
 
-.highlights-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-10) var(--space-6);
-}
-.highlight-card { min-inline-size: 0; }
-.highlight-card-link { display: flex; flex-direction: column; block-size: 100%; overflow: hidden; border: var(--border-width) solid var(--line); border-radius: var(--radius-panel); background: var(--surface); box-shadow: var(--shadow-card); color: var(--ink); text-decoration: none; }
-.highlight-card-copy { display: flex; flex: 1; flex-direction: column; gap: var(--space-2); padding: var(--space-5); }
-.highlight-card-copy :is(h2, h3) { font-size: var(--text-subheading); font-weight: var(--weight-medium); }
-.highlight-card-copy > .muted {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  font-size: var(--text-small);
-}
+.highlight-card-copy h2 { font-size: var(--text-title); line-height: var(--leading-small); font-weight: var(--weight-semibold); text-wrap: pretty; }
+.highlight-card-summary { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.highlight-card .review-card-end > p { min-inline-size: 0; text-wrap: pretty; }
+.highlight-card .review-read .icon { transition: transform var(--duration-control) var(--ease-out); }
 .catalog-read { display: inline-flex; align-items: center; gap: var(--space-2); min-block-size: var(--control-height); margin-block-start: auto; color: var(--muted); font-size: var(--text-small); font-weight: var(--weight-medium); }
 
 .event-page:has(> .event-detail) > .detail-heading, .event-page > .event-detail { max-inline-size: var(--measure); margin-inline: auto; }
@@ -54,21 +34,16 @@
 .gallery-photo img { display: block; inline-size: 100%; block-size: auto; max-block-size: 70svh; object-fit: contain; }
 
 @media (hover: hover) {
-  .highlight-card-link:hover .catalog-read .icon { transform: translateX(var(--space-1)); }
-}
-
-@media (max-width: 1119px) {
-  .highlights-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .highlight-card-link:hover .review-read .icon { transform: translateX(var(--space-1)); }
 }
 
 @media (max-width: 767px) {
-  .highlights-grid, .photo-gallery-grid { grid-template-columns: minmax(0, 1fr); gap: var(--space-8); }
-  .highlight-card-copy { padding: var(--space-4); }
+  .photo-gallery-grid { grid-template-columns: minmax(0, 1fr); gap: var(--space-8); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .catalog-read .icon { transition: none; }
-  .highlight-card-link:hover .catalog-read .icon { transform: none; }
+  .catalog-read .icon, .highlight-card .review-read .icon { transition: none; }
+  .highlight-card-link:hover .review-read .icon { transform: none; }
 }
 
 .journal-pagination {
@@ -99,9 +74,5 @@
   .detail-journal .journal-results, .event-page .detail-heading, .event-detail { animation: content-page-fade var(--duration-control) var(--ease-out) both; }
 }
 
-@media (hover: hover) and (prefers-reduced-motion: no-preference) {
-  .highlight-card-link { transition: transform var(--duration-control) var(--ease-out), box-shadow var(--duration-control) var(--ease-out); }
-  .highlight-card-link:is(:hover, :focus-visible) { transform: translateY(calc(-1 * var(--space-1))); box-shadow: var(--shadow-disclosure); }
-}
 
 @keyframes content-page-fade { from { opacity: 0; } to { opacity: 1; } }

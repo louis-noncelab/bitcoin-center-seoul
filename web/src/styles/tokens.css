@@ -15,6 +15,8 @@
   --selection: color-mix(in srgb, var(--blue) 16%, var(--canvas));
   --action: #e2e6dc;
   --action-ink: #20211f;
+  --media-control-ink: #fafaf8;
+  --media-control-shadow: #20211f;
   --action-hover: #d5dccd;
   --shadow-card: 0 2px 8px color-mix(in srgb, #000 6%, transparent);
   --shadow-disclosure: 0 16px 40px color-mix(in srgb, var(--ink) 10%, transparent);

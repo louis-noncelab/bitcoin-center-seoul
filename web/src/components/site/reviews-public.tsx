@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { ArrowDown, ArrowRight, ArrowUpRight, Plus, Minus } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Plus, Minus } from "lucide-react";
 import { reviewCopy } from "@/content/review-copy";
 import { type VisitReview } from "@/content/visit-reviews";
 import { Link } from "@/i18n/navigation";
@@ -51,8 +51,4 @@ export function ReviewsCatalog({ locale, filter, reviews }: { readonly locale: L
     </div>
     <div className="review-visit"><div><h2>{t.visit}</h2><p>{t.visitCopy}</p></div><Link href="/visit" locale={locale} className="button" data-variant="secondary">{t.visitLink}<ArrowRight className="icon" aria-hidden="true" /></Link></div>
   </section>;
-}
-
-export function ReviewsJump({ locale }: { readonly locale: Locale }) {
-  return <a href="#review-list" className="section-link">{locale === "ko" ? "후기 모아보기" : "Browse all stories"}<ArrowDown className="icon" aria-hidden="true" /></a>;
 }

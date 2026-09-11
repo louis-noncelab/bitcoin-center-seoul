@@ -155,3 +155,26 @@ for (const locale of ["ko", "en"] as const) {
     await expect(trigger).toBeHidden();
   });
 }
+
+for (const locale of ["ko", "en"] as const) {
+  test(`${locale} home photos remain navigable with reduced motion and lead to visit terms`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto(`/${locale}`);
+    const hero = page.locator(".hero-photo");
+    const photos = hero.locator(".photo-slide");
+    const previous = hero.locator(".photo-controls button").first();
+    await previous.click();
+    await expect(photos.last()).toHaveAttribute("data-active", "true");
+    await previous.press("ArrowRight");
+    await expect(photos.first()).toHaveAttribute("data-active", "true");
+    expect(await photos.first().evaluate(element => getComputedStyle(element).animationName)).toBe("none");
+    const order = await page.locator("main > .container > section").evaluateAll(elements => elements.map(element => element.id));
+    if (order.includes("reviews")) expect(order.indexOf("reviews")).toBeLessThan(order.indexOf("journal"));
+    await page.locator(".hero-visit-link").click();
+    await expect(page).toHaveURL(`/${locale}/visit`);
+    await expect(page.locator(".visit-first dd")).toHaveCount(3);
+    await expect(page.locator(".visit-first")).toContainText("3,000 sats");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
+  });
+}
