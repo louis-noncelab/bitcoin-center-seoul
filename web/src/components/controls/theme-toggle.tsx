@@ -1,8 +1,8 @@
 "use client";
 
 import { Moon } from "lucide-react";
-import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
+import { useTheme } from "@/components/controls/theme-provider";
 import { Button } from "../ui/primitives";
 
 const subscribe = () => () => {};

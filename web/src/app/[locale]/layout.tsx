@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { locale as getRootLocale } from "next/root-params";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
@@ -10,6 +10,7 @@ import { ThemeProvider } from "@/components/controls/theme-provider";
 import { DevelopmentTools } from "@/components/development-tools";
 import { routing } from "@/i18n/routing";
 import { publicIndexingEnabled } from "@/lib/public-indexing";
+import { parseSiteTheme, themeCookieName } from "@/lib/theme-cookie";
 import "../globals.css";
 
 export function generateMetadata(): Metadata {
@@ -28,13 +29,13 @@ export default async function LocaleLayout({
 }) {
   const locale = await getRootLocale();
   if (!hasLocale(routing.locales, locale)) notFound();
-  const nonce = (await headers()).get("x-nonce") ?? "";
+  const theme = parseSiteTheme((await cookies()).get(themeCookieName)?.value);
 
   return (
-    <html lang={locale} data-scroll-behavior="smooth" suppressHydrationWarning>
+    <html lang={locale} data-theme={theme} data-scroll-behavior="smooth" suppressHydrationWarning>
       <body>
         <NextIntlClientProvider locale={locale} messages={null}>
-          <ThemeProvider nonce={nonce}>
+          <ThemeProvider defaultTheme={theme}>
             <ReadingProgress />
             {children}
             <CursorFollower />
