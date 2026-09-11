@@ -1,5 +1,33 @@
 # Bitcoin Center Seoul: public design revision
 
+## Home video selection — 2026-09-11
+
+The decorative reading-progress line mixes 35% `--ink` with `--canvas` for a quiet neutral gray;
+keyboard focus retains its stronger `--focus` contrast.
+
+After journal, `영상 속 센터` / `The center on film` presents three owner-selected
+Original Money videos: center visit, team day, founder interview. Use a 3:2
+desktop player/list split, stacked below 1024px; list rows pair a 16:9 thumbnail
+with the full title and channel. Preserve existing canvas, selection, line,
+radius, shadow, spacing and type tokens. Selection uses a blue-tinted surface;
+hover adds the shared shadow without moving text. Keyboard focus stays visible.
+The player preserves 16:9 with a 200px minimum height for YouTube controls.
+Same-origin thumbnails load lazily. Only explicit play mounts a privacy-enhanced
+YouTube iframe; selecting another item stops playback and shows its poster.
+Poster and list links work without JavaScript. No duplicate title or YouTube
+link below the player, and no duration badges on thumbnails. On desktop the
+list stretches to the player's height, distributing three rows evenly; extra
+items scroll within it. Stacked layouts cap the list at 24rem and scroll when
+needed. List focus outlines sit inside rows to avoid scroll clipping.
+Both locales label controls; English editorial titles identify the
+Korean-language videos. Selection fades the keyed large thumbnail in over the
+existing 240ms control duration/ease-out; card background, border and shadow
+transition with the same timing. Text, play control and geometry stay fixed.
+Rapid selection replaces the current fade immediately; no timers or input delay.
+Reduced motion disables both effects. Mechanism reference: beui.dev action-swap,
+adapting keyed opacity state changes only. No new dependency or page-load playback;
+reuse existing reduced-motion-safe section entrances.
+
 ## Current contract — navigation, status icons and space film, 2026-09-10
 
 The owner authorizes a cinematic use of the existing center footage and asks for

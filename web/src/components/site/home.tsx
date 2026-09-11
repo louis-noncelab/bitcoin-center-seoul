@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import type { HighlightRecord } from "@/lib/events-contract";
 import { CenterPhoto } from "./center-photo";
+import { CenterVideos } from "./center-videos";
 import { HighlightsCatalog } from "./events-public";
 import { PageMotion } from "./page-motion";
 import { ExperienceContent, ProgramsContent } from "./section-content";
@@ -73,6 +74,12 @@ export function Home({ locale, highlights }: { readonly locale: Locale; readonly
             </div>
             <HighlightsCatalog highlights={highlights} locale={locale} preview />
           </div>
+        </SectionFrame>
+        <SectionFrame id="videos" titleId="videos-title">
+          <div className="section-heading" data-reveal-part>
+            <h2 id="videos-title">{locale === "ko" ? "영상 속 센터" : "The center on film"}</h2>
+          </div>
+          <CenterVideos locale={locale} />
         </SectionFrame>
         <SectionFrame id="experience" titleId="experience-title">
           <div className="section-heading" data-reveal-part>

@@ -38,7 +38,7 @@ export default function proxy(request: NextRequest) {
       "object-src 'none'",
       "base-uri 'none'",
       "form-action 'self'",
-      "frame-src https://www.google.com/maps/embed",
+      "frame-src https://www.google.com/maps/embed https://www.youtube-nocookie.com/embed/",
       "frame-ancestors 'none'",
       ...(secure ? ["upgrade-insecure-requests"] : []),
     ].join("; ");

@@ -26,7 +26,7 @@
   inset-inline: 0;
   block-size: var(--reading-progress-height);
   z-index: var(--layer-progress);
-  background: var(--focus);
+  background: color-mix(in srgb, var(--ink) 35%, var(--canvas));
   transform: scaleX(0);
   transform-origin: left;
   pointer-events: none;
