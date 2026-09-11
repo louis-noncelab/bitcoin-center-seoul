@@ -11,7 +11,7 @@ import { ReviewsEditor, reviewKindLabels } from "./reviews-editor";
 import { ReviewsSelection } from "./reviews-selection";
 import { adminRequest, AdminRequestError, errorText, jsonBody, revisionHeaders } from "./request";
 
-const navigation = [{ href: "/admin", label: "행사·하이라이트" }, { href: "/admin/notices", label: "공지사항" }, { href: "/admin/collection", label: "도서·작품" }] as const;
+const navigation = [{ href: "/admin", label: "행사·하이라이트" }, { href: "/admin/notices", label: "공지사항" }, { href: "/admin/collection", label: "도서·작품·보드게임" }] as const;
 
 export function ReviewsAdmin() {
   const [records, setRecords] = useState<ReviewRecord[]>([]);

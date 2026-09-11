@@ -8,9 +8,9 @@ import { routing } from "@/i18n/routing";
 import "@/styles/site.css";
 import "@/styles/events-admin.css";
 
-export const metadata = { title: "도서·작품 관리 | Bitcoin Center Seoul" };
+export const metadata = { title: "도서·작품·보드게임 관리 | Bitcoin Center Seoul" };
 export default async function CollectionAdminPage({ params }: { readonly params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
-  return <><header className="container events-admin-toolbar events-admin-header" lang="ko"><ActionLink href="/ko" variant="quiet" className="site-wordmark" aria-label="비트코인 센터 서울 홈"><BrandWordmark /></ActionLink><ThemeToggle label="다크 모드" /></header><main id="main" lang="ko" tabIndex={-1} className="container events-admin-page"><h1>도서·작품 관리</h1><CollectionAdmin /></main></>;
+  return <><header className="container events-admin-toolbar events-admin-header" lang="ko"><ActionLink href="/ko" variant="quiet" className="site-wordmark" aria-label="비트코인 센터 서울 홈"><BrandWordmark /></ActionLink><ThemeToggle label="다크 모드" /></header><main id="main" lang="ko" tabIndex={-1} className="container events-admin-page"><h1>도서·작품·보드게임 관리</h1><CollectionAdmin /></main></>;
 }

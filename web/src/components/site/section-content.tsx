@@ -41,43 +41,24 @@ export function ProgramsContent({ locale, highlights, nextEvent }: { readonly lo
 
 export function ExperienceContent({ locale }: { readonly locale: Locale }) {
   const content = centerContent[locale].experience;
+  const cards = {
+    exhibition: { link: { label: locale === "ko" ? "도서·작품 둘러보기" : "Explore books & art", href: "/collection" }, photo: "exhibition" as const },
+    boardgame: { link: content.boardGameLink, photo: "boardgame" as const },
+    wallet: { link: content.walletExperienceLink, photo: "experience" as const },
+  };
   return (
     <div className="experience-gallery">
-      <div data-reveal-part>
-        <MediaFrame
-          ratio="landscape"
-          caption={
-            <>
-              <strong>{content.areas[0].title}</strong>
-              <span>{content.areas[0].description}</span>
-            </>
-          }
-        >
-          <CenterPhoto name="exhibition" locale={locale} sizes="(max-width: 767px) 134vw, 67vw" />
-        </MediaFrame>
-        <Link href="/collection" locale={locale} className="section-link collection-entry">{locale === "ko" ? "도서·작품 둘러보기" : "Explore books & art"}<ArrowRight className="icon" aria-hidden="true" /></Link>
-      </div>
-      <div className="experience-object" data-reveal-part>
-        <MediaFrame
-          ratio="landscape"
-          caption={
-            <>
-              <strong>{content.areas[1].title}</strong>
-              <span>{content.areas[1].description}</span>
-            </>
-          }
-        >
-          <CenterPhoto
-            name="experience"
-            locale={locale}
-            sizes="(max-width: 767px) 100vw, 50vw"
-          />
-        </MediaFrame>
-        <Link className="section-link collection-entry" locale={locale} href={content.walletExperienceLink.href}>
-          {content.walletExperienceLink.label}
-          <ArrowRight className="icon" aria-hidden="true" />
-        </Link>
-      </div>
+      {content.areas.map((area) => {
+        const card = cards[area.id];
+        return (
+          <div key={area.id} className={area.id === "wallet" ? "experience-object" : undefined} data-reveal-part>
+            <MediaFrame ratio="landscape" caption={<><strong>{area.title}</strong><span>{area.description}</span></>}>
+              <CenterPhoto name={card.photo} locale={locale} sizes="(max-width: 767px) 100vw, 33vw" />
+            </MediaFrame>
+            <Link href={card.link.href} locale={locale} className="section-link collection-entry">{card.link.label}<ArrowRight className="icon" aria-hidden="true" /></Link>
+          </div>
+        );
+      })}
     </div>
   );
 }

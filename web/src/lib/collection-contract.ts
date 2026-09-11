@@ -1,8 +1,11 @@
 import { z } from "zod";
 import { contentImagesSchema } from "@/lib/events-contract";
 
+export const collectionKinds = ["book", "artwork", "boardgame"] as const;
+export const libraryKinds = ["book", "artwork"] as const;
+
 const collectionFields = z.object({
-  kind: z.enum(["book", "artwork"]),
+  kind: z.enum(collectionKinds),
   title: z.string().trim().min(1, "제목을 입력해 주세요.").max(200),
   titleEn: z.string().trim().max(200).default(""),
   creator: z.string().trim().max(200).default(""),
@@ -24,4 +27,5 @@ export const collectionRecordSchema = collectionFields.extend({
   updated_at: z.string(),
 }).refine(hasPublicCover, coverError);
 export type CollectionInput = z.infer<typeof collectionInputSchema>;
+export type CollectionKind = (typeof collectionKinds)[number];
 export type CollectionRecord = z.infer<typeof collectionRecordSchema>;

@@ -77,7 +77,7 @@ function initialize(next: Database.Database, createLegacy: boolean): Database.Da
       );
       CREATE TABLE IF NOT EXISTS collection_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        kind TEXT NOT NULL CHECK (kind IN ('book', 'artwork')),
+        kind TEXT NOT NULL CHECK (kind IN ('book', 'artwork', 'boardgame')),
         title TEXT NOT NULL, titleEn TEXT NOT NULL DEFAULT '',
         creator TEXT NOT NULL DEFAULT '', creatorEn TEXT NOT NULL DEFAULT '',
         description TEXT NOT NULL DEFAULT '', descriptionEn TEXT NOT NULL DEFAULT '',
@@ -146,6 +146,7 @@ function initialize(next: Database.Database, createLegacy: boolean): Database.Da
           next.exec(`ALTER TABLE ${table} ADD COLUMN tags TEXT NOT NULL DEFAULT '[]'`);
         }
       }
+      widenCollectionKinds(next);
     }).immediate();
     const sessionColumns = next.prepare<[], { readonly name: string }>("PRAGMA table_info(admin_sessions)").all();
     if (!sessionColumns.some(({ name }) => name === "last_seen_at")) {
@@ -159,6 +160,31 @@ function initialize(next: Database.Database, createLegacy: boolean): Database.Da
     if (next.open) next.close();
     throw error;
   }
+}
+
+// SQLite cannot widen a CHECK constraint in place, so rebuild the table once when 'boardgame' is missing.
+function widenCollectionKinds(db: Database.Database): void {
+  const table = db.prepare<[], { readonly sql: string }>("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'collection_items'").get();
+  if (!table || table.sql.includes("boardgame")) return;
+  db.exec(`
+    CREATE TABLE collection_items_rebuilt (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      kind TEXT NOT NULL CHECK (kind IN ('book', 'artwork', 'boardgame')),
+      title TEXT NOT NULL, titleEn TEXT NOT NULL DEFAULT '',
+      creator TEXT NOT NULL DEFAULT '', creatorEn TEXT NOT NULL DEFAULT '',
+      description TEXT NOT NULL DEFAULT '', descriptionEn TEXT NOT NULL DEFAULT '',
+      images TEXT NOT NULL DEFAULT '[]',
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      is_active INTEGER NOT NULL DEFAULT 0 CHECK (is_active IN (0, 1)),
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      revision INTEGER NOT NULL DEFAULT 1
+    );
+    INSERT INTO collection_items_rebuilt (id, kind, title, titleEn, creator, creatorEn, description, descriptionEn, images, sort_order, is_active, created_at, updated_at, revision)
+      SELECT id, kind, title, titleEn, creator, creatorEn, description, descriptionEn, images, sort_order, is_active, created_at, updated_at, revision FROM collection_items;
+    DROP TABLE collection_items;
+    ALTER TABLE collection_items_rebuilt RENAME TO collection_items;
+  `);
 }
 
 function assertColumns(

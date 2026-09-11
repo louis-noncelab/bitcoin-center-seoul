@@ -3,6 +3,7 @@ import education from "../../../public/images/what-we-do/protocol-course.jpg";
 import community from "../../../public/images/what-we-do/community.jpg";
 import exhibition from "../../../public/images/what-we-do/exhibition.jpeg";
 import experience from "../../../public/images/what-we-do/experience.jpeg";
+import boardgame from "../../../public/images/what-we-do/boardgame.jpeg";
 import gallery from "../../../public/images/what-we-do/gallery.jpeg";
 import lounge from "../../../public/images/what-we-do/lounge.jpeg";
 import retail from "../../../public/images/what-we-do/retail.jpeg";
@@ -66,6 +67,15 @@ export const centerMedia = {
     },
     focalPosition: { landscape: "54% 50%", portrait: "53% 52%" },
     recommendedAspectRatio: { landscape: "3 / 2", portrait: "4 / 5" },
+  },
+  boardgame: {
+    image: boardgame,
+    alt: {
+      ko: "흰색 선반에 놓인 비트코인 보드게임",
+      en: "Bitcoin board games displayed on white shelves",
+    },
+    focalPosition: { landscape: "50% 48%", portrait: "50% 48%" },
+    recommendedAspectRatio: { landscape: "4 / 3", portrait: "4 / 3" },
   },
   gallery: {
     image: gallery,

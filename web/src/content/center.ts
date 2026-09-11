@@ -38,11 +38,12 @@ export type CenterLocaleContent = {
     readonly title: string;
     readonly introduction: string;
     readonly areas: readonly {
-      readonly id: "exhibition" | "wallet";
+      readonly id: "exhibition" | "wallet" | "boardgame";
       readonly title: string;
       readonly description: string;
     }[];
     readonly walletExperienceLink: Link;
+    readonly boardGameLink: Link;
   };
   readonly journal: {
     readonly eyebrow: string;
@@ -116,15 +117,21 @@ export const centerContent = {
     },
     experience: {
       eyebrow: "EXPERIENCE",
-      title: "전시와 지갑 체험",
+      title: "전시와 체험",
       introduction:
-        "비트코인 도서·작품을 전시합니다. 체험존에서는 하드웨어 지갑을 사용해 볼\u00a0수\u00a0있습니다.",
+        "비트코인 도서·작품을 전시합니다. 체험존에서 하드웨어 지갑을 써 보고, 보드게임도 즐길\u00a0수\u00a0있습니다.",
       areas: [
         {
           id: "exhibition",
           title: "도서·작품",
           description:
             "비트코인 백서와 관련 도서, 비트코인을 주제로 한 작품을 전시합니다.",
+        },
+        {
+          id: "boardgame",
+          title: "보드게임",
+          description:
+            "센터에 비치된 보드게임을 즐길 수 있습니다.",
         },
         {
           id: "wallet",
@@ -136,6 +143,10 @@ export const centerContent = {
       walletExperienceLink: {
         label: "지갑 체험 가이드",
         href: "/experience/wallet",
+      },
+      boardGameLink: {
+        label: "보드게임 둘러보기",
+        href: "/experience/board-game",
       },
     },
     journal: {
@@ -219,15 +230,21 @@ export const centerContent = {
     },
     experience: {
       eyebrow: "EXPERIENCE",
-      title: "Exhibitions and wallet demos",
+      title: "Exhibitions and experiences",
       introduction:
-        "Bitcoin books and art are on display. You can try hardware wallets in the demo area.",
+        "Bitcoin books and art are on display. You can try hardware wallets in the demo area and play the board games kept at the center.",
       areas: [
         {
           id: "exhibition",
           title: "Books and art",
           description:
             "Bitcoin books, a whitepaper display and Bitcoin-themed art.",
+        },
+        {
+          id: "boardgame",
+          title: "Board games",
+          description:
+            "Board games are kept at the center.",
         },
         {
           id: "wallet",
@@ -239,6 +256,10 @@ export const centerContent = {
       walletExperienceLink: {
         label: "Wallet experience guide",
         href: "/experience/wallet",
+      },
+      boardGameLink: {
+        label: "Browse board games",
+        href: "/experience/board-game",
       },
     },
     journal: {
