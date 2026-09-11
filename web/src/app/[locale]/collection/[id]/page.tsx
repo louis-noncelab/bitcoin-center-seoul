@@ -7,13 +7,12 @@ import { PhotoGallery } from "@/components/site/events-public";
 import { MarkdownContent } from "@/components/site/markdown-content";
 import { routing } from "@/i18n/routing";
 import { libraryKinds } from "@/lib/collection-contract";
-import { getCollectionItem } from "@/server/collection";
+import { getCollectionByPath } from "@/server/collection";
 
 type Props = { readonly params: Promise<{ locale: string; id: string }> };
 const readItem = cache(async (value: string) => {
-  if (!/^[1-9]\d*$/.test(value) || !Number.isSafeInteger(Number(value))) notFound();
   await connection();
-  const item = getCollectionItem(Number(value), false, libraryKinds);
+  const item = getCollectionByPath(value, false, libraryKinds);
   if (!item) notFound();
   return item;
 });

@@ -13,7 +13,7 @@ import { MarkdownHelp } from "./markdown-help";
 import { adminRequest, AdminRequestError, errorText, jsonBody, revisionHeaders } from "./request";
 
 const kindLabels = { book: "도서", artwork: "작품", boardgame: "보드게임" } as const;
-const viewHref = (record: CollectionRecord) => (record.kind === "boardgame" ? `/experience/board-game/${record.id}` : `/collection/${record.id}`);
+const viewHref = (record: CollectionRecord) => (record.kind === "boardgame" ? `/experience/board-game/${record.slug || record.id}` : `/collection/${record.slug || record.id}`);
 
 export function CollectionAdmin() {
   const [records, setRecords] = useState<CollectionRecord[]>([]);
@@ -112,6 +112,8 @@ export function CollectionAdmin() {
           <label>제목<FormControl><input name="title" required maxLength={200} defaultValue={selected?.title ?? ""} /></FormControl></label>
           <label>저자·제작사 (선택)<FormControl><input name="creator" maxLength={200} defaultValue={selected?.creator ?? ""} /></FormControl></label>
         </div>
+        <label>URL 슬러그 (공개 보드게임 필수)<FormControl><input name="slug" defaultValue={selected?.slug ?? ""} maxLength={100} pattern="(?=.*[a-z])[a-z0-9]+(-[a-z0-9]+)*" autoCapitalize="none" spellCheck={false} placeholder="bitcoin-larp" aria-describedby="collection-slug-help" /></FormControl></label>
+        <p id="collection-slug-help" className="muted">/experience/board-game/ 또는 /collection/ 뒤에 붙는 주소입니다. 영문 소문자·숫자·하이픈을 사용해 주세요.</p>
         <GalleryField locale="ko" images={images} onChange={(next) => { setImages(next); setDirty(true); }} onPending={uploadPending} onExpired={() => setExpired(true)} />
         <MarkdownEditor name="description" label="소개 (선택)" defaultValue={selected?.description ?? ""} rows={6} helpId="collection-markdown-help" onPending={uploadPending} onDirty={() => setDirty(true)} onExpired={() => setExpired(true)} />
         <div className="events-field-grid">

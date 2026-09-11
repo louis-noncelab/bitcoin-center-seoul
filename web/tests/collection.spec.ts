@@ -184,7 +184,7 @@ test("board games publish to their own page and stay out of the books & art coll
   expect(upload.status()).toBe(200);
   const image: string = (await upload.json()).data.images[0];
   const title = `검증용 보드게임 ${randomUUID()}`;
-  const created = await request.post("/api/admin/collection", { headers, data: { kind: "boardgame", title, images: [image], is_active: 1 } });
+  const created = await request.post("/api/admin/collection", { headers, data: { kind: "boardgame", slug: `board-game-${randomUUID().slice(0, 8)}`, title, images: [image], is_active: 1 } });
   expect(created.status()).toBe(201);
   const record = z.object({ data: collectionRecordSchema }).parse(await created.json()).data;
   try {
@@ -192,10 +192,11 @@ test("board games publish to their own page and stay out of the books & art coll
     expect(list.status()).toBe(200);
     expect(await list.text()).toContain(title);
     expect(await (await request.get("/ko/collection")).text()).not.toContain(title);
-    expect((await request.get(`/ko/experience/board-game/${record.id}`)).status()).toBe(200);
+    expect((await request.get(`/ko/experience/board-game/${record.slug}`)).status()).toBe(200);
+    expect((await request.get(`/ko/experience/board-game/${record.id}`, { maxRedirects: 0 })).status()).toBe(308);
     expect((await request.get(`/ko/collection/${record.id}`)).status()).toBe(404);
     const map = await (await request.get("/sitemap.xml")).text();
-    expect(map).toContain(`/experience/board-game/${record.id}</loc>`);
+    expect(map).toContain(`/experience/board-game/${record.slug}</loc>`);
     expect(map).not.toContain(`/collection/${record.id}</loc>`);
   } finally {
     await deleteContentFixture(request, `/api/admin/collection/${record.id}`, baseURL ?? "");
@@ -224,6 +225,7 @@ test("관리자가 보드게임을 등록하면 보드게임 페이지에만 공
     await page.getByRole("button", { name: "항목 등록", exact: true }).click();
     await page.getByRole("radio", { name: "보드게임", exact: true }).check();
     await page.getByLabel("제목", { exact: true }).fill(title);
+    await page.getByLabel("URL 슬러그 (공개 보드게임 필수)", { exact: true }).fill(`board-game-${randomUUID().slice(0, 8)}`);
     await page.locator('.events-gallery-field input[type="file"]').setInputFiles([{ name: "boardgame.png", mimeType: "image/png", buffer: image }]);
     await expect(page.locator(".events-gallery-editor img")).toHaveCount(1);
     await page.getByLabel("공개", { exact: true }).check();

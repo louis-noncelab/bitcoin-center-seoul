@@ -78,6 +78,7 @@ function initialize(next: Database.Database, createLegacy: boolean): Database.Da
       CREATE TABLE IF NOT EXISTS collection_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         kind TEXT NOT NULL CHECK (kind IN ('book', 'artwork', 'boardgame')),
+        slug TEXT NOT NULL DEFAULT '',
         title TEXT NOT NULL, titleEn TEXT NOT NULL DEFAULT '',
         creator TEXT NOT NULL DEFAULT '', creatorEn TEXT NOT NULL DEFAULT '',
         description TEXT NOT NULL DEFAULT '', descriptionEn TEXT NOT NULL DEFAULT '',
@@ -147,6 +148,11 @@ function initialize(next: Database.Database, createLegacy: boolean): Database.Da
         }
       }
       widenCollectionKinds(next);
+      const collectionColumns = next.prepare<[], { readonly name: string }>("PRAGMA table_info(collection_items)").all();
+      if (!collectionColumns.some(({ name }) => name === "slug")) {
+        next.exec("ALTER TABLE collection_items ADD COLUMN slug TEXT NOT NULL DEFAULT ''");
+      }
+      next.exec("CREATE UNIQUE INDEX IF NOT EXISTS collection_items_slug ON collection_items (slug) WHERE slug != ''");
     }).immediate();
     const sessionColumns = next.prepare<[], { readonly name: string }>("PRAGMA table_info(admin_sessions)").all();
     if (!sessionColumns.some(({ name }) => name === "last_seen_at")) {
