@@ -4,8 +4,8 @@ import { SectionFrame } from "@/components/ui/primitives";
 import { centerContent } from "@/content/center";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import type { HighlightRecord } from "@/lib/events-contract";
-import { CenterPhoto } from "./center-photo";
+import type { EventRecord, HighlightRecord } from "@/lib/events-contract";
+import { PhotoSlideshow } from "./photo-slideshow";
 import { CenterVideos } from "./center-videos";
 import { ReviewsPreview } from "./reviews-preview";
 import { HighlightsCatalog } from "./events-public";
@@ -20,7 +20,7 @@ function titleLetters(word: string, offset: number) {
   ));
 }
 
-export function Home({ locale, highlights }: { readonly locale: Locale; readonly highlights: readonly HighlightRecord[] }) {
+export function Home({ locale, highlights, nextEvent }: { readonly locale: Locale; readonly highlights: readonly HighlightRecord[]; readonly nextEvent: EventRecord | null }) {
   const content = centerContent[locale];
   const words: readonly [string, string, string] = locale === "ko" ? ["비트코인", "센터", "서울"] : ["Bitcoin", "Center", "Seoul"];
   return (
@@ -47,13 +47,15 @@ export function Home({ locale, highlights }: { readonly locale: Locale; readonly
                   {locale === "ko" ? "공간 둘러보기" : "Inside the center"}<ArrowRight className="icon" aria-hidden="true" />
                 </Link>
               </div>
+              <Link href="/visit" locale={locale} className="section-link hero-visit-link">
+                <span>{content.visit.address.note}</span>
+                <span>{locale === "ko" ? "운영시간" : "Regular hours"} {content.visit.hours.lines[0]}<ArrowRight className="icon" aria-hidden="true" /></span>
+              </Link>
             </div>
           </div>
           <figure className="hero-figure">
-            <div className="hero-photo">
-              <CenterPhoto name="lounge" locale={locale} hero sizes="(max-width: 767px) 134vw, (min-width: 1280px) 800px, (min-width: 1024px) 66vw, 100vw" />
-            </div>
-            <figcaption className="sr-only">{locale === "ko" ? "비트코인 센터 서울 라운지" : "The lounge at Bitcoin Center Seoul"}</figcaption>
+            <PhotoSlideshow locale={locale} photos={["lounge", "community", "exhibition", "gallery"]} hero />
+            <figcaption className="sr-only">{locale === "ko" ? "비트코인 센터 서울의 공간과 강의" : "Spaces and classes at Bitcoin Center Seoul"}</figcaption>
           </figure>
         </div>
       </section>
@@ -62,8 +64,9 @@ export function Home({ locale, highlights }: { readonly locale: Locale; readonly
           <div className="section-heading" data-reveal-part>
             <h2 id="programs-title">{content.programs.title}</h2>
           </div>
-          <div data-reveal-part><ProgramsContent locale={locale} /></div>
+          <div data-reveal-part><ProgramsContent locale={locale} highlights={highlights} nextEvent={nextEvent} /></div>
         </SectionFrame>
+        <ReviewsPreview locale={locale} />
         <SectionFrame id="journal" titleId="journal-title">
           <div className="journal-preview">
             <div className="journal-heading" data-reveal-part>
@@ -82,7 +85,6 @@ export function Home({ locale, highlights }: { readonly locale: Locale; readonly
           </div>
           <CenterVideos locale={locale} />
         </SectionFrame>
-        <ReviewsPreview locale={locale} />
         <SectionFrame id="experience" titleId="experience-title">
           <div className="section-heading" data-reveal-part>
             <h2 id="experience-title">{content.experience.title}</h2>

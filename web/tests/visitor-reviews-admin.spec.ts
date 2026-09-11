@@ -173,7 +173,7 @@ test("article editor publishes inline photos, SEO, redirects and hides the detai
     await card.click();
     await expect(page).toHaveURL(`/ko/reviews/${slug}`);
     await expect(page.locator(".review-story .markdown-content img")).toHaveCount(2);
-    await expect(page.getByRole("link", { name: /원문에서 전체 후기 읽기/ })).toHaveAttribute("href", "https://example.com/original");
+    await expect(page.locator(".review-story-source a")).toHaveAttribute("href", "https://example.com/original");
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `https://bitcoincenterseoul.com/ko/reviews/${slug}`);
     await expect(page.locator('link[hreflang="en"]')).toHaveAttribute("href", `https://bitcoincenterseoul.com/en/reviews/${slug}`);
     const graph = JSON.parse(await page.locator('script[type="application/ld+json"]').last().textContent() ?? "null");

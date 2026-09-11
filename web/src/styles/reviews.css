@@ -28,16 +28,14 @@
 .review-card-image img { object-fit: cover; }
 .review-play { display: grid; place-items: center; position: absolute; inset: 0; margin: auto; inline-size: var(--space-12); block-size: var(--space-12); border-radius: 50%; background: var(--canvas); color: var(--ink); }
 .review-play .icon { fill: currentColor; }
-.review-card-paper { display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-4); aspect-ratio: var(--ratio-landscape); padding: var(--space-6); background: var(--surface); border-start-start-radius: var(--radius-panel); border-start-end-radius: var(--radius-panel); }
-.review-card-paper > span { color: var(--muted); font-size: var(--text-caption); letter-spacing: var(--tracking-label); }
+.review-card-paper { display: flex; flex-direction: column; justify-content: flex-end; gap: var(--space-4); aspect-ratio: var(--ratio-landscape); padding: var(--space-6); background: var(--surface); border-start-start-radius: var(--radius-panel); border-start-end-radius: var(--radius-panel); }
 .review-card .review-card-paper > h3 { font-size: var(--text-subheading); line-height: var(--leading-heading); font-weight: var(--weight-medium); text-wrap: balance; }
-.review-card-content { display: flex; flex-direction: column; flex: 1; gap: var(--space-3); padding: var(--space-6); }
-.review-card-meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); color: var(--muted); font-size: var(--text-caption); }
-.review-card-meta > span { font-size: var(--text-caption); letter-spacing: var(--tracking-label); }
+.review-card-content { display: flex; flex-direction: column; flex: 1; gap: var(--space-3); padding: var(--space-4) var(--space-6) var(--space-6); }
 .review-card h3 { font-size: var(--text-title); line-height: var(--leading-small); font-weight: var(--weight-semibold); text-wrap: pretty; }
 .review-card-summary { font-size: var(--text-small); line-height: var(--leading-body); color: var(--muted); text-wrap: pretty; }
 .review-card-end { margin-block-start: auto; padding-block-start: var(--space-5); display: flex; align-items: end; justify-content: space-between; gap: var(--space-3); font-size: var(--text-caption); }
-.review-author { min-inline-size: 0; overflow-wrap: anywhere; }
+.review-author { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-2); min-inline-size: 0; overflow-wrap: anywhere; }
+.review-author time { color: var(--muted); white-space: nowrap; }
 .review-read { display: inline-flex; align-items: center; gap: var(--space-1); flex-shrink: 0; }
 .review-results { animation: review-arrive var(--duration-control) var(--ease-out); }
 @keyframes review-arrive { from { opacity: 0; } to { opacity: 1; } }
@@ -56,9 +54,8 @@
 .reviews-preview .section-heading { margin-block-end: var(--space-6); }
 .reviews-preview .section-heading p { margin-block-start: var(--space-3); }
 .review-card-compact h3 { font-size: var(--text-subheading); font-weight: var(--weight-medium); }
-.review-card-compact .review-card-content { padding: var(--space-8); gap: var(--space-4); }
-.review-card-compact .review-card-end { border-block-start: var(--border-width) solid var(--line); margin-block-start: var(--space-4); }
-.review-card-compact .review-card-summary { flex: 1; }
+.review-card-compact .review-card-content { padding: var(--space-4) var(--space-8) var(--space-8); }
+.review-card-compact .review-card-end { border-block-start: var(--border-width) solid var(--line); margin-block-start: auto; }
 .about-reviews-link { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-4); }
 .about-reviews-link p { color: var(--muted); }
 :is(.review-card-link, .review-feature-photo, .review-filter, .review-more > summary):focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); }
@@ -73,7 +70,7 @@
   .review-feature-copy { gap: var(--space-4); }
   .review-feature-copy h2 { font-size: var(--text-heading); }
   .reviews-heading-row { align-items: start; }
-  .reviews-preview .review-grid { grid-template-columns: minmax(0, 1fr); }
+  :is(.reviews-preview, .journal-preview) .review-grid { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 767px) {
   .reviews-heading { padding-block-end: var(--space-6); }
@@ -87,7 +84,7 @@
   .review-filters { gap: var(--space-1); margin-block-end: var(--space-6); }
   .review-filter { padding-inline: var(--space-3); }
   .review-grid { grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
-  .review-card-compact .review-card-content { padding: var(--space-6); }
+  .review-card-compact .review-card-content { padding: var(--space-4) var(--space-6) var(--space-6); }
   .review-visit { flex-direction: column; align-items: start; padding: var(--space-6); gap: var(--space-6); }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -95,13 +92,19 @@
   .review-card, .review-filter { transition: none; }
 }
 
-.review-story { max-inline-size: var(--measure); margin-inline: auto; display: grid; gap: var(--space-8); }
+.review-story { max-inline-size: var(--measure); margin-inline: auto; padding-block-start: var(--space-4); display: grid; gap: var(--space-6); }
 .review-story-heading { display: grid; gap: var(--space-4); }
 .review-story-heading h1 { font-size: var(--text-heading); line-height: var(--leading-heading); text-wrap: balance; }
 .review-story-summary { color: var(--muted); text-wrap: pretty; }
 .review-story-cover { overflow: hidden; border-radius: var(--radius); background: var(--surface); }
 .review-story-cover img { display: block; inline-size: 100%; block-size: auto; max-block-size: 70svh; object-fit: contain; }
-.review-story-source { display: grid; justify-items: start; gap: var(--space-3); padding-block-start: var(--space-6); border-block-start: var(--border-width) solid var(--line); }
+.review-story-source { display: grid; justify-items: start; }
 .review-story .markdown-content blockquote { border-color: var(--line); }
 .review-related { margin-block-start: var(--space-12); }
 .review-related > h2 { margin-block-end: var(--space-6); }
+
+@media (max-width: 767px) {
+  :is(.reviews-preview, .journal-preview) .review-card-content { padding: var(--space-3) var(--space-5) var(--space-5); gap: var(--space-2); }
+  :is(.reviews-preview, .journal-preview) .review-card-summary { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  :is(.reviews-preview, .journal-preview) .review-card-end { margin-block-start: auto; padding-block-start: var(--space-3); }
+}

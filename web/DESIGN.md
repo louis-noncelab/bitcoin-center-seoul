@@ -12,6 +12,24 @@ Editable short English slugs keep historical redirects; hidden/body-less pages r
 404 and stay out of the sitemap. Canonical, hreflang, share metadata and factual
 Article/BreadcrumbList data follow the article's current slug and publication state.
 
+## Home hero slideshow — 2026-09-11
+
+Keep the existing hero frame and responsive crop. Cycle the existing lounge,
+community, library and gallery photographs every 6 seconds, with a 1400ms crossfade
+and a restrained 7400ms scale/pan (1.04–1.1 scale, ±0.5% horizontal travel).
+The programs section reuses the slideshow with the education and community
+photographs, but slides right-to-left over 700ms every 5 seconds with no scale or pan to reduce competing
+motion. Only the first hero photograph is preloaded; wait for the next image to load before
+advancing. Pause outside the viewport and in hidden tabs. The owner removed the
+visible pause icon; a localized text control appears only on keyboard focus.
+Reduced motion disables automatic transitions and animation; manual photo navigation remains available.
+Programs also use three curated public highlight photographs (25, 5, 38),
+resolved from live records so hidden or removed posts are excluded. Uploads remain
+outside Git. On fine-pointer devices, a 24px translucent circle with an ink border
+and canvas outer edge stays visible across light/dark photographs and follows the
+cursor across the site, using one fixed overlay, a damped spring and no per-frame React state.
+Keep the native cursor; hide the decoration on exit, touch and reduced motion.
+
 ## Visitor reviews — local candidate, 2026-09-11
 
 A dedicated `/reviews` archive brings together the report's actual Hongdae visitor
@@ -722,3 +740,25 @@ Standalone administrator sign-in refinement: center the login form horizontally 
 - Registered meetup start/end times take precedence over ordinary opening hours on eligible operating dates, including before noon, after 20:00 and across midnight. An overnight meetup retains its starting date's eligibility; an explicit current-day closure still takes priority. Equal, missing or ambiguous time ranges do not imply a meetup. Admin time guidance explains the format and next-day end rule.
 - The existing authenticated admin offers today's `자동 / 정상 운영 / 임시 휴무` exception. Normal operation enables ordinary hours and meetups on a holiday; it does not mean open for 24 hours. Temporary closure also suppresses meetups. Exceptions are stored by Seoul date so an overnight holiday exception survives midnight, while the following day's ordinary hours revert to automatic policy. No weekly Sunday closure or manual forced meetup state exists.
 - Motion reference: https://beui.dev/r/animated-badge/raw (read 2026-09-10), adapting keyed label changes and reduced-motion gating only. State text fades in over duration-control; an open/event dot emits one scale/opacity ring over duration-reveal when the state changes. No continuous pulse or spatial label jump; reduced motion is static. Reuse CSS and existing primitives, with no new dependency.
+
+## First-visit flow — 2026-09-11
+
+Home order: hero, programs, visitor stories, highlights, videos, exhibition.
+The hero links to visit details with station access and regular hours. Programs
+use balanced columns, a smaller photo when no event is scheduled, and the nearest
+upcoming event's date/title when available. Reuse public event records and Seoul dates.
+Photo controls use transparent 48px native buttons at the left/right vertical
+midpoints, with only chevrons visible. Photo index stays screen-reader-only.
+Use --media-control-ink (#fafaf8) and --media-control-shadow (#20211f) for legibility
+on photographs in either theme. Keyboard arrows and touch swipes remain available; previous/next motion follows the selected direction, using existing tokens.
+Manual navigation works with reduced motion; automatic playback stops while focused.
+Mobile home summaries are clamped to two lines; full text stays on detail pages.
+Footer links keep 48px targets with tighter spacing and participation links in two columns.
+Visit guidance states the owner-confirmed terms: no reservation for ordinary visits,
+admission of 3,000 sats required, wallet demos available at any time after admission.
+The owner confirmed the admission amount; no payment-method policy is inferred.
+
+Public navigation uses a 72px desktop / 56px mobile height, with 44px / 36px
+wordmarks. Admin header dimensions are unchanged. Highlight cards reuse the review
+card's surface, image ratio, content spacing and footer structure. Titles and
+summaries precede metadata; home previews share the same responsive treatment.

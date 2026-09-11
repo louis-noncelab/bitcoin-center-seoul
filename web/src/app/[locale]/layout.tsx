@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { locale as getRootLocale } from "next/root-params";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import type { ReactNode } from "react";
+import { CursorFollower } from "@/components/controls/cursor-follower";
 import { ReadingProgress } from "@/components/controls/reading-progress";
 import { ThemeProvider } from "@/components/controls/theme-provider";
 import { DevelopmentTools } from "@/components/development-tools";
@@ -36,6 +37,7 @@ export default async function LocaleLayout({
           <ThemeProvider nonce={nonce}>
             <ReadingProgress />
             {children}
+            <CursorFollower />
           </ThemeProvider>
         </NextIntlClientProvider>
         <DevelopmentTools />

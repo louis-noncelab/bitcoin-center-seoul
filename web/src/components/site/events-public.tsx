@@ -1,5 +1,6 @@
 import { ArrowRight, ArrowUpRight, CalendarDays, Clock3, MapPin } from "lucide-react";
 import Image from "next/image";
+import "@/styles/reviews.css";
 import type { EventRecord, HighlightRecord } from "@/lib/events-contract";
 import { markdownExcerpt } from "@/lib/markdown";
 import { ContentLink } from "@/components/controls/content-link";
@@ -49,13 +50,18 @@ function EventMeta({ event, locale }: { readonly event: EventRecord; readonly lo
   );
 }
 
-function HighlightMeta({ highlight, locale }: { readonly highlight: HighlightRecord; readonly locale: Locale }) {
+function HighlightMeta({ highlight, locale, compact = false }: { readonly highlight: HighlightRecord; readonly locale: Locale; readonly compact?: boolean }) {
   const start = highlight.startDate || highlight.date;
   const end = highlight.endDate;
-  const period = [dateLabel(start, locale), end && end !== start ? dateLabel(end, locale) : ""].filter(Boolean).join(" – ");
+  const normalizedStart = start.replaceAll(".", "-");
+  const normalizedEnd = end?.replaceAll(".", "-") ?? "";
+  const compactDate = (value: string) => value.replaceAll("-", ".");
+  const period = compact
+    ? [compactDate(normalizedStart), normalizedEnd && normalizedEnd !== normalizedStart ? compactDate(normalizedEnd).replace(`${normalizedStart.slice(0, 4)}.`, "") : ""].filter(Boolean).join("–")
+    : [dateLabel(start, locale), normalizedEnd && normalizedEnd !== normalizedStart ? dateLabel(end, locale) : ""].filter(Boolean).join(" – ");
   return (
     <p className="caption muted">
-      {[text(locale, highlight.category, highlight.categoryEn), period, text(locale, highlight.host, highlight.hostEn)].filter(Boolean).join(" · ")}
+      {[text(locale, highlight.category, highlight.categoryEn), period, compact ? "" : text(locale, highlight.host, highlight.hostEn)].filter(Boolean).join(" · ")}
     </p>
   );
 }
@@ -121,15 +127,19 @@ export function HighlightsCatalog({ highlights, locale, preview = false }: { rea
   const shown = preview ? highlights.slice(0, 3) : highlights;
   const Title = preview ? "h3" : "h2";
   return (
-    <div className="highlights-grid">
+    <div className="review-grid highlights-grid">
       {shown.map((highlight) => {
         const title = text(locale, highlight.title, highlight.titleEn);
         const images = galleryImages(highlight);
         return (
-          <article className="highlight-card" key={highlight.id} data-reveal-part={preview ? "" : undefined}>
-            <ContentLink href={`/journal/${highlight.slug || highlight.id}`} locale={locale} className="highlight-card-link">
-              {images[0] && <span className="highlight-card-photo"><Image src={images[0]} alt="" fill sizes="(max-width: 767px) 100vw, (max-width: 1119px) 50vw, 33vw" unoptimized /></span>}
-              <span className="highlight-card-copy"><HighlightMeta highlight={highlight} locale={locale} /><Title>{title}</Title><span className="muted">{markdownExcerpt(text(locale, highlight.description, highlight.descriptionEn))}</span><span className="catalog-read">{locale === "ko" ? "자세히 보기" : "View details"}<ArrowRight className="icon" aria-hidden="true" /></span></span>
+          <article className={`review-card highlight-card${preview ? " review-card-compact" : ""}`} key={highlight.id} data-reveal-part={preview ? "" : undefined}>
+            <ContentLink href={`/journal/${highlight.slug || highlight.id}`} locale={locale} className="review-card-link highlight-card-link">
+              {images[0] && <span className="review-card-image highlight-card-photo"><Image src={images[0]} alt="" fill sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 33vw" unoptimized /></span>}
+              <div className="review-card-content highlight-card-copy">
+                <Title>{title}</Title>
+                <p className="review-card-summary highlight-card-summary">{markdownExcerpt(text(locale, highlight.description, highlight.descriptionEn))}</p>
+                <div className="review-card-end"><HighlightMeta highlight={highlight} locale={locale} compact /><span className="review-read">{locale === "ko" ? "자세히 보기" : "View details"}<ArrowRight className="icon" aria-hidden="true" /></span></div>
+              </div>
             </ContentLink>
           </article>
         );
@@ -162,7 +172,7 @@ export function HighlightDetail({ highlight, locale }: { readonly highlight: Hig
       <HighlightMeta highlight={highlight} locale={locale} />
       <ContentTags tags={highlight.tags} locale={locale} />
       <MarkdownContent lang={locale === "en" && !highlight.descriptionEn ? "ko" : locale}>{text(locale, highlight.description, highlight.descriptionEn)}</MarkdownContent>
-      {link && <a href={link} target="_blank" rel="noopener noreferrer" className="button" data-variant="secondary">{locale === "ko" ? "원문 보기" : "Read the original"}<ArrowUpRight className="icon" aria-hidden="true" /><span className="sr-only">{locale === "ko" ? " (새 창)" : " (new window)"}</span></a>}
+      {link && <a href={link} target="_blank" rel="noopener noreferrer" className="source-link">{locale === "ko" ? "원문 보기" : "Read the original"}<ArrowUpRight className="icon" aria-hidden="true" /><span className="sr-only">{locale === "ko" ? " (새 창)" : " (new window)"}</span></a>}
     </article>
   );
 }
