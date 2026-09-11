@@ -49,6 +49,16 @@ export async function SiteHeader({
     (item) => item.id !== "home",
   );
 
+  const utilities = (
+    <>
+      <OperatingStatus locale={locale} initialStatus={initialStatus} />
+      <Suspense fallback={<Link href={section ? `/${section}` : "/"} locale={otherLocale} hrefLang={otherLocale} lang={otherLocale} aria-label={t.language} className="button header-control language-control" data-variant="quiet">{otherLocale === "en" ? "EN" : "KO"}</Link>}>
+        <LocaleLink locale={otherLocale} label={t.language} />
+      </Suspense>
+      <ThemeToggle label={t.theme} />
+    </>
+  );
+
   return (
     <>
       <ActionLink href="#main" className="skip-link">
@@ -81,17 +91,14 @@ export async function SiteHeader({
           <NavigationIndicator />
         </nav>
         <div className="header-controls">
-          <OperatingStatus locale={locale} initialStatus={initialStatus} />
-          <Suspense fallback={<Link href={section ? `/${section}` : "/"} locale={otherLocale} hrefLang={otherLocale} lang={otherLocale} aria-label={t.language} className="button header-control language-control" data-variant="quiet">{otherLocale === "en" ? "EN" : "KO"}</Link>}>
-            <LocaleLink locale={otherLocale} label={t.language} />
-          </Suspense>
-          <ThemeToggle label={t.theme} />
+          <div className="header-utilities">{utilities}</div>
           <div className="mobile-navigation">
             <NavigationDisclosure
               openLabel={t.open}
               closeLabel={t.close}
               navigationLabel={t.navigation}
               locale={locale}
+              footer={utilities}
               items={navigation.map((item) => ({
                 href: `/${item.id}`,
                 label: item.label,

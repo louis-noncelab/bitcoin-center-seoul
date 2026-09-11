@@ -13,9 +13,12 @@ Reuse the existing neutral surfaces, Pretendard, controls and selection primitiv
   On desktop one indicator glides to the pending link with the existing 280ms
   menu curve; settled route, history, font/viewport changes and failed navigation
   restore the actual current link. Only one underline is visible: hover changes
-  text color and keyboard focus retains its outline. Mobile disclosure and
-  no-JavaScript use a current-label underline without the shared enhancement.
-  Both paths use the label's baseline and the same gap. The initial position is
+  text color and keyboard focus retains its outline. Below 1200px the header
+  shows only the wordmark and menu trigger. The disclosure places operating
+  status, language and theme controls beneath its links and a divider. Mobile
+  current/pending/focused links use the shared selection background across the
+  whole rounded row, without an underline. The panel scrolls on short screens.
+  Desktop no-JavaScript links retain the current-label underline. The initial position is
   measured before paint without an entrance from the left; page-header remounts
   hand off the currently painted transform so cached navigation and history keep
   moving from the previous position. Reduced motion changes position immediately.

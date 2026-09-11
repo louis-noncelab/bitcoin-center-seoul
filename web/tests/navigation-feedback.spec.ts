@@ -14,7 +14,7 @@ for (const locale of ["ko", "en"] as const) {
     });
 
     // When a different destination is selected.
-    await panel.locator(`a[href="/${locale}/visit"]`).click();
+    await panel.locator(`.navigation-link[href="/${locale}/visit"]`).click();
 
     // Then it navigates without a document reload and reports the new page.
     await expect(page).toHaveURL(`/${locale}/visit`);
@@ -114,3 +114,44 @@ test("a pending destination shows feedback until navigation commits", async ({ p
     await page.unrouteAll({ behavior: "wait" });
   }
 });
+
+for (const locale of ["ko", "en"] as const) {
+  test(`${locale} mobile utilities live below the navigation with filled selection`, async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto(`/${locale}/about?source=menu#space-tour`);
+    const header = page.locator(".site-header");
+    await expect(header.locator(".operating-status:visible")).toHaveCount(0);
+    await expect(header.locator(".language-control:visible")).toHaveCount(0);
+    await expect(header.locator(".theme-toggle:visible")).toHaveCount(0);
+    const trigger = header.locator(".navigation-trigger");
+    await trigger.click();
+    const panel = header.locator(".disclosure-panel");
+    const footer = panel.locator(".navigation-utilities");
+    await expect(footer.locator(".operating-status")).toBeVisible();
+    const current = panel.locator('.navigation-link[aria-current="page"]');
+    expect(await current.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
+    expect(await current.locator(".navigation-feedback").evaluate((element) => getComputedStyle(element, "::after").display)).toBe("none");
+    const listBox = await panel.locator("ul").boundingBox();
+    const footerBox = await footer.boundingBox();
+    if (!listBox || !footerBox) throw new Error("Menu layout unavailable");
+    expect(footerBox.y).toBeGreaterThanOrEqual(listBox.y + listBox.height);
+    const theme = footer.locator(".theme-toggle");
+    const before = await theme.getAttribute("aria-pressed");
+    await theme.click();
+    await expect(theme).toHaveAttribute("aria-pressed", before === "true" ? "false" : "true");
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+    const other = locale === "ko" ? "en" : "ko";
+    await footer.locator(".language-control").click();
+    await expect(page).toHaveURL(new RegExp(`/${other}/about\\?source=menu#space-tour$`));
+    await expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await trigger.click();
+    await page.keyboard.press("Escape");
+    await expect(trigger).toBeFocused();
+    await expect(panel).toHaveAttribute("inert", "");
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await expect(header.locator(".operating-status:visible")).toHaveCount(1);
+    await expect(header.locator(".language-control:visible")).toHaveCount(1);
+    await expect(header.locator(".theme-toggle:visible")).toHaveCount(1);
+    await expect(trigger).toBeHidden();
+  });
+}
