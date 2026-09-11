@@ -10,13 +10,41 @@ function scriptPolicy(policy: string) {
   return nonce;
 }
 
-test("HTML permits only the Google Maps embed endpoint for client navigation", async ({ request }) => {
+test("HTML permits only Maps and privacy-enhanced YouTube embed endpoints for client navigation", async ({ request }) => {
   for (const path of ["/ko/visit", "/en/visit", "/ko/about", "/ko/admin"]) {
     const response = await request.get(path);
     const policy = response.headers()["content-security-policy"] ?? "";
     expect(policy.split(";").find((directive) => directive.trim().startsWith("frame-src "))?.trim())
-      .toBe("frame-src https://www.google.com/maps/embed");
+      .toBe("frame-src https://www.google.com/maps/embed https://www.youtube-nocookie.com/embed/");
     scriptPolicy(policy);
+  }
+});
+
+test("home videos load third-party frames only after play and stop when selection changes", async ({ page }) => {
+  const embeds: string[] = [];
+  await page.route("https://www.youtube-nocookie.com/embed/**", async (route) => {
+    embeds.push(route.request().url());
+    await route.fulfill({ contentType: "text/html", body: "<!doctype html><title>Player boundary fixture</title>" });
+  });
+  for (const locale of ["ko", "en"]) {
+    await page.goto(`/${locale}`);
+    const section = page.locator("#videos");
+    const rows = section.locator(".center-videos-item");
+    await expect(rows).toHaveCount(3);
+    await expect(section.locator("iframe")).toHaveCount(0);
+    const before = embeds.length;
+    await rows.nth(1).click();
+    await expect(rows.nth(1)).toHaveAttribute("aria-current", "true");
+    await expect(section.locator("iframe")).toHaveCount(0);
+    expect(embeds).toHaveLength(before);
+    await section.locator(".center-videos-poster").focus();
+    await page.keyboard.press("Enter");
+    await expect(section.locator("iframe")).toHaveAttribute("src", /\/oJNES8yse00\?autoplay=1/);
+    await expect.poll(() => embeds.length).toBe(before + 1);
+    await expect(section.locator("iframe")).toBeFocused();
+    await rows.nth(2).click();
+    await expect(section.locator("iframe")).toHaveCount(0);
+    await expect(section.locator(".center-videos-poster")).toHaveAttribute("href", "https://www.youtube.com/watch?v=lIuNoBffEMo");
   }
 });
 
