@@ -26,6 +26,13 @@
 .event-back { margin-block-start: var(--space-6); padding-inline: 0; color: var(--muted); }
 .event-back[data-variant="secondary"] { border: 0; }
 .event-back[data-variant="secondary"]:is(:hover, :focus-visible) { color: var(--blue-ink); background: transparent; }
+@media (hover: hover) {
+  .button.event-back[data-variant="secondary"]:not(:disabled):hover {
+    background: transparent;
+    transform: none;
+    box-shadow: none;
+  }
+}
 .event-detail { inline-size: 100%; max-inline-size: var(--measure); display: grid; justify-items: start; gap: var(--space-6); }
 .event-description { max-inline-size: var(--measure); text-wrap: pretty; }
 .photo-gallery { inline-size: 100%; }
