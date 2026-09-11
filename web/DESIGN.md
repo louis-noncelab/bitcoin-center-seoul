@@ -17,7 +17,10 @@ Reuse the existing neutral surfaces, Pretendard, controls and selection primitiv
   shows only the wordmark and menu trigger. The disclosure places operating
   status, language and theme controls beneath its links and a divider. Mobile
   current/pending/focused links use the shared selection background across the
-  whole rounded row, without an underline. The panel scrolls on short screens.
+  whole rounded row, without an underline. On hover-capable devices, menu rows
+  gain the shared subtle card shadow; non-selected rows use the neutral surface
+  background, while current/focused/pending rows keep the blue selection fill.
+  No positional movement is added. The panel scrolls on short screens.
   Desktop no-JavaScript links retain the current-label underline. The initial position is
   measured before paint without an entrance from the left; page-header remounts
   hand off the currently painted transform so cached navigation and history keep
