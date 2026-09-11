@@ -13,6 +13,7 @@ import { SiteFooter } from "./site-footer";
 import { PageMotion } from "./page-motion";
 import "@/styles/site.css";
 import "@/styles/events-public.css";
+import "@/styles/reviews.css";
 import "@/styles/collection.css";
 
 export type CollectionSection = "library" | "boardgame";
@@ -52,27 +53,29 @@ export function collectionMetadata(locale: Locale, section: CollectionSection, r
 
 export function CollectionFrame({ locale, section, title, detail = false, children }: { readonly locale: Locale; readonly section: CollectionSection; readonly title: string; readonly detail?: boolean; readonly children: ReactNode }) {
   const copy = sectionCopy(locale, section);
-  return <><SiteHeader locale={locale} section="experience" /><main id="main" tabIndex={-1} className={`container detail-page ${detail ? "event-page" : "collection-page"}`}>
+  return <><SiteHeader locale={locale} section="experience" /><main id="main" tabIndex={-1} className={`container detail-page ${detail ? "event-page" : "detail-journal"}`}>
     <ContentLink href={detail ? sectionPath(section) : "/experience"} locale={locale} className="button event-back" data-variant="secondary"><ArrowLeft className="icon" aria-hidden="true" />{detail ? copy.back : locale === "ko" ? "전시·체험으로" : "Back to exhibitions"}</ContentLink>
     <div className="detail-heading"><h1>{title}</h1>{!detail && <p className="body-copy muted">{copy.introduction}</p>}</div>
-    {children}<PageMotion pageKey={`${locale}-collection-${title}`} />
+    {detail ? children : <div className="journal-results">{children}</div>}
+    <PageMotion pageKey={`${locale}-collection-${title}`} />
   </main><SiteFooter locale={locale} /></>;
 }
 
 export function CollectionGrid({ records, locale, empty }: { readonly records: readonly CollectionRecord[]; readonly locale: Locale; readonly empty?: string }) {
   const copy = collectionCopy[locale];
   if (!records.length) return <p className="catalog-empty muted">{empty ?? copy.empty}</p>;
-  return <div className="collection-grid">{records.map((record) => {
+  return <div className="review-grid highlights-grid">{records.map((record) => {
     const content = collectionText(locale, record);
-    return <article key={record.id} className="collection-card">
-      <ContentLink href={`${sectionPath(recordSection(record))}/${record.id}`} locale={locale} className="highlight-card-link">
-        <span className="collection-image">{record.images[0] && <Image src={record.images[0]} alt={content.title} width={600} height={800} unoptimized />}</span>
-        <span className="highlight-card-copy">
-          <span className="caption muted">{copy[record.kind]}</span>
+    const excerpt = markdownExcerpt(content.description);
+    const meta = record.kind === "boardgame" ? "" : [copy[record.kind], content.creator].filter(Boolean).join(" · ");
+    return <article className="review-card highlight-card" key={record.id}>
+      <ContentLink href={`${sectionPath(recordSection(record))}/${record.id}`} locale={locale} className="review-card-link highlight-card-link">
+        {record.images[0] && <span className="review-card-image highlight-card-photo collection-card-photo"><Image src={record.images[0]} alt="" fill sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 33vw" unoptimized /></span>}
+        <div className="review-card-content highlight-card-copy">
           <h2 lang={locale === "en" && !record.titleEn ? "ko" : locale}>{content.title}</h2>
-          {content.creator && <span className="collection-creator muted" lang={locale === "en" && !record.creatorEn ? "ko" : locale}>{content.creator}</span>}
-          <span className="catalog-read">{copy.view}<ArrowRight className="icon" aria-hidden="true" /></span>
-        </span>
+          {excerpt && <p className="review-card-summary highlight-card-summary">{excerpt}</p>}
+          <div className="review-card-end">{meta ? <p>{meta}</p> : <span />}<span className="review-read">{copy.view}<ArrowRight className="icon" aria-hidden="true" /></span></div>
+        </div>
       </ContentLink>
     </article>;
   })}</div>;

@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { hasLocale } from "next-intl";
 import { cache } from "react";
-import { CollectionFrame, collectionCopy, collectionMetadata, collectionText } from "@/components/site/collection-public";
+import { CollectionFrame, collectionMetadata, collectionText } from "@/components/site/collection-public";
 import { PhotoGallery } from "@/components/site/events-public";
 import { MarkdownContent } from "@/components/site/markdown-content";
 import { routing } from "@/i18n/routing";
@@ -29,7 +29,7 @@ export default async function BoardGameDetailPage({ params }: Props) {
   const content = collectionText(locale, item);
   return <CollectionFrame locale={locale} section="boardgame" title={content.title} detail><article className="event-detail">
     <PhotoGallery images={item.images} title={content.title} locale={locale} />
-    <div className="collection-detail-meta"><p className="caption muted">{collectionCopy[locale][item.kind]}</p>{content.creator && <p lang={locale === "en" && !item.creatorEn ? "ko" : locale}>{content.creator}</p>}</div>
+    {content.creator && <div className="collection-detail-meta"><p lang={locale === "en" && !item.creatorEn ? "ko" : locale}>{content.creator}</p></div>}
     {content.description && <MarkdownContent lang={locale === "en" && !item.descriptionEn ? "ko" : locale}>{content.description}</MarkdownContent>}
   </article></CollectionFrame>;
 }
