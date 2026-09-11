@@ -1,23 +1,51 @@
+<div align="center">
+  <a href="https://bitcoincenterseoul.com/ko">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="web/public/brand/bcs-horizontal-color-dark.png" />
+      <img src="web/public/brand/bcs-horizontal-color.png" width="280" alt="Bitcoin Center Seoul" />
+    </picture>
+  </a>
+
 # Bitcoin Center Seoul
 
 **비트코인을 배우고, 만나고, 직접 경험하는 공간.**
 
-서울 마포에 있는 비트코인 센터 서울의 웹사이트입니다. 강의와 밋업, 현장 스케치, 도서와 작품, 하드웨어 지갑 체험을 소개하고 관리자가 콘텐츠와 운영 상태를 관리합니다.
+서울 마포의 비트코인 센터 서울 · Bitcoin Center Seoul, Mapo, Seoul
+
+[웹사이트](https://bitcoincenterseoul.com/ko) · [English](https://bitcoincenterseoul.com/en) · [방문 안내](https://bitcoincenterseoul.com/ko/visit) · [방문 후기](https://bitcoincenterseoul.com/ko/reviews)
+
+</div>
+
+[![비트코인 도서와 작품, 소파와 창가 좌석이 있는 센터 라운지](public/images/what-we-do/lounge.jpeg)](https://bitcoincenterseoul.com/ko/about)
+
+강의를 듣고, 책을 읽고, 지갑을 직접 다뤄보는 곳. 이 저장소는 센터의 공간과 활동을 소개하는 한국어·영어 웹사이트와 콘텐츠 관리 도구를 담고 있습니다.
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://bitcoincenterseoul.com/ko/programs"><img src="public/images/what-we-do/community.jpg" alt="센터 홀에서 진행 중인 강의" width="100%" /></a>
+      <p><strong>함께 배우는 시간</strong><br /><a href="https://bitcoincenterseoul.com/ko/programs">강의와 밋업 일정 →</a></p>
+    </td>
+    <td width="50%" valign="top">
+      <a href="https://bitcoincenterseoul.com/ko/collection"><img src="public/images/what-we-do/experience.jpeg" alt="센터에 전시된 하드웨어 지갑" width="100%" /></a>
+      <p><strong>직접 경험하는 비트코인</strong><br /><a href="https://bitcoincenterseoul.com/ko/collection">전시·체험 둘러보기 →</a></p>
+    </td>
+  </tr>
+</table>
 
 [개발 안내](web/README.md) · [디자인 기준](web/DESIGN.md) · [배포 안내](DEPLOY.md) · [운영 절차](docs/security/operations.md)
-
-> 운영 사이트: https://bitcoincenterseoul.com · 배포는 검증된 커밋으로 수동 진행합니다. 운영 데이터와 업로드 파일은 코드 릴리스와 분리합니다.
 
 ## 사이트에서 만나는 것들
 
 | 영역 | 내용 |
 | --- | --- |
-| 센터 소개 | 실제 공간 영상과 사진으로 둘러보는 라운지·서재·전시 |
-| 프로그램 | 강의·밋업 일정과 행사별 상세 안내 |
-| 현장 스케치 | 센터에서 열린 행사와 모임을 사진과 글로 소개 |
-| 전시·체험 | 도서·작품 갤러리와 단계별 하드웨어 지갑 체험 안내 |
-| 방문 안내 | 지도, 주소, 운영시간, 연락처와 현재 운영 상태 |
-| 방문 후기 | 방문자의 이야기를 사진·본문·원문 링크로 소개 |
+| [센터 소개](https://bitcoincenterseoul.com/ko/about) | 실제 공간 영상과 사진으로 둘러보는 라운지·서재·전시 |
+| [프로그램](https://bitcoincenterseoul.com/ko/programs) | 강의·밋업 일정과 행사별 상세 안내 |
+| [현장 스케치](https://bitcoincenterseoul.com/ko/journal) | 센터에서 열린 행사와 모임을 사진과 글로 소개 |
+| [전시·체험](https://bitcoincenterseoul.com/ko/collection) | 도서·작품 갤러리와 단계별 하드웨어 지갑 체험 안내 |
+| [방문 안내](https://bitcoincenterseoul.com/ko/visit) | 지도, 주소, 운영시간, 연락처와 현재 운영 상태 |
+| [방문 후기](https://bitcoincenterseoul.com/ko/reviews) | 방문자의 이야기를 사진·본문·원문 링크로 소개 |
+| [공지사항](https://bitcoincenterseoul.com/ko/notices) | 운영 소식과 센터 이용 안내 |
 | 관리자 | 행사·현장 스케치·방문 후기·공지·도서·작품 편집, 사진 업로드와 운영 예외 설정 |
 
 한국어·영어와 라이트·다크 모드를 지원합니다. 실제 센터 사진, 일관된 카드와 타이포그래피, 움직임 줄이기 설정을 고려한 모션을 사용합니다.
@@ -32,7 +60,7 @@
 | 웹 | Next.js · React · TypeScript |
 | 스타일·모션 | Tailwind CSS · Motion |
 | 데이터·이미지 | SQLite · better-sqlite3 · Sharp |
-| 운영 구성 | 단일 호스트 · nginx · PM2 · 수동 배포 |
+| 운영 구성 | 단일 호스트 · nginx · systemd · 수동 배포 |
 
 정확한 런타임 버전은 [web/.nvmrc](web/.nvmrc), 의존성 버전은 [web/package.json](web/package.json)과 잠금 파일을 기준으로 합니다. 기존 SQLite 콘텐츠를 유지하며 결제·상점·회원·자체 예약은 현재 범위에 포함하지 않습니다.
 
