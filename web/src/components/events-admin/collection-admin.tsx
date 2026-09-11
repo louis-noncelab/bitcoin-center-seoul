@@ -97,7 +97,7 @@ export function CollectionAdmin() {
   return <div className="events-admin-workspace">
     {dialog}
     <div className="events-admin-toolbar"><nav aria-label="콘텐츠 관리" className="button-row">
-      {[{ href: "/admin", label: "행사·하이라이트" }, { href: "/admin/notices", label: "공지사항" }].map(({ href, label }) => <Link key={href} href={href} locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void leave().then((accepted) => { if (accepted) router.push(href, { locale: "ko" }); }); }}>{label}</Link>)}
+      {[{ href: "/admin", label: "행사·하이라이트" }, { href: "/admin/notices", label: "공지사항" }, { href: "/admin/reviews", label: "방문 후기" }].map(({ href, label }) => <Link key={href} href={href} locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void leave().then((accepted) => { if (accepted) router.push(href, { locale: "ko" }); }); }}>{label}</Link>)}
     </nav><Button variant="quiet" disabled={pending || uploading} onClick={() => void logout()}>로그아웃</Button></div>
     {expired && <aside className="events-reauth"><p role="alert">세션이 만료되었습니다. 작성한 내용은 유지됩니다. 다시 로그인한 뒤 저장해 주세요.</p><LoginForm locale="ko" onLogin={() => { setExpired(false); setError(""); setRevision((value) => value + 1); }} /></aside>}
     {error && <p className="events-error" role="alert">{error}</p>}<p role="status">{message}</p>

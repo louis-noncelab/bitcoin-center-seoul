@@ -1,5 +1,51 @@
 # Bitcoin Center Seoul: public design revision
 
+## Visitor review articles — 2026-09-11
+
+Reviews with editorial body content open a readable article before the original source.
+Reuse the highlight detail's centered measure, Markdown rendering, site header/footer,
+neutral source attribution and existing ReviewCard grid for related stories. Keep the
+original author and source date separate from the center's editorial credit. No ratings
+or decorative quotes. Body-less records retain the original external link. The admin
+reuses MarkdownEditor for Korean/English text and cursor-position image attachments.
+Editable short English slugs keep historical redirects; hidden/body-less pages return
+404 and stay out of the sitemap. Canonical, hreflang, share metadata and factual
+Article/BreadcrumbList data follow the article's current slug and publication state.
+
+## Visitor reviews — local candidate, 2026-09-11
+
+A dedicated `/reviews` archive brings together the report's actual Hongdae visitor
+blogs, community posts, videos and short posts. Home shows three selections with original-source 16:9 thumbnails after videos;
+about and footer link to the archive without another main-navigation item.
+The page opens with a quiet editorial heading and a 7:5 photo/experience feature,
+then a 3-column grid (2 on tablet, 1 on mobile). Real source images use a consistent
+16:9 frame; text-only posts retain a typographic surface rather than a fake photo.
+Use existing canvas, surface, line, ink, type, radius, spacing and shadow tokens.
+ReviewCard owns source, author, date, title, editorial summary and original link;
+ReviewFeature owns one verified quote and source photograph; attribution sits beside
+the photo. The owner removed the photo overlay bar, cafe login badges and bottom
+summary/operating-info note and the decorative blue quotation mark. No stars,
+ratings, invented endorsements, attribution-free quotes or copied full articles.
+Filter links select all/blog/cafe/video/note with the existing action selection surface;
+URL state supports reload/back/no-JavaScript. Twelve items precede a native details
+expansion for the remaining entries. All sources remain available without scripts.
+Links open their original platform in a labeled new tab, including video originals.
+Hover adds the existing shadow without moving text; filtered grids use the existing
+240ms opacity transition, disabled for reduced motion. Existing PageMotion handles
+section entrances. Keyboard outlines and 48px controls reuse shared primitives.
+Photos and report-based summaries are local review material; provenance and any
+unverified venue claims are recorded before release. No runtime scraping or new
+third-party embeds. English descriptions are editorial translations, not quotations.
+Personas: a hesitant solo visitor, a returning participant browsing all sources,
+and an English/mobile reader. They must find original context without login here.
+
+Visitor reviews are managed in the existing Korean admin workspace: title, author,
+source URL and kind, optional date and thumbnail, bilingual summaries, visibility and
+order. A separate selection form chooses one photo-backed feature and up to three
+home cards. Existing form controls, image upload, confirmation and feedback styles
+apply; no new visual tokens. Hidden or deleted selections never render publicly.
+Record and selection revisions protect concurrent edits, keeping unsaved input on conflict.
+
 ## Home video selection — 2026-09-11
 
 The decorative reading-progress line mixes 35% `--ink` with `--canvas` for a quiet neutral gray;

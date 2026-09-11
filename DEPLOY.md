@@ -22,3 +22,9 @@
 루트 `deploy.sh`는 EC2 안에서 `origin/main`으로 작업 트리를 초기화하고 기존 Vite 앱을 빌드하는 레거시 스크립트입니다. 새 `web/` 배포에 사용하지 않습니다. `upload-to-ec2.sh`도 `rsync --delete`로 운영 DB·업로드를 지울 수 있어 사용하지 않습니다.
 
 GitHub Actions는 사용하지 않으며 기존 워크플로는 `.github/workflows/deploy.yml.disabled`로 보존합니다. 푸시는 배포 절차가 아닙니다.
+
+## 콘텐츠 반영
+
+코드 릴리스에는 운영 DB·업로드·후기 초기 데이터를 포함하지 않습니다. 기존 `/var/lib/bitcoin-center-seoul/events.db`와 `images/`를 유지하며 초기 후기는 개발 안내의 명시적 `reviews:import`로 반영합니다. 먼저 별도 DB 사본에서 가져오기와 재실행을 검증하고, 운영에서는 관리자 쓰기를 중지한 상태로 최신 백업·복구 검증 후 반영합니다. 구 버전 앱으로 되돌릴 때 새 후기는 보존하고, DB 복구가 필요한 경우 반영 이후 데이터를 별도로 보관합니다.
+
+동일 잠금 파일·Node ABI의 호환성을 확인한 릴리스는 이전 릴리스의 검증된 Linux 네이티브 의존성을 재사용할 수 있습니다. 새 JavaScript 산출물과 정적 파일을 분리해 전송하고, 격리된 Linux 서비스에서 SQLite·Sharp·공개 페이지를 확인한 뒤 전환합니다. 의존성 또는 ABI가 바뀌면 Linux에서 다시 설치·검증합니다.

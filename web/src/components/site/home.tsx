@@ -7,6 +7,7 @@ import type { Locale } from "@/i18n/routing";
 import type { HighlightRecord } from "@/lib/events-contract";
 import { CenterPhoto } from "./center-photo";
 import { CenterVideos } from "./center-videos";
+import { ReviewsPreview } from "./reviews-preview";
 import { HighlightsCatalog } from "./events-public";
 import { PageMotion } from "./page-motion";
 import { ExperienceContent, ProgramsContent } from "./section-content";
@@ -81,6 +82,7 @@ export function Home({ locale, highlights }: { readonly locale: Locale; readonly
           </div>
           <CenterVideos locale={locale} />
         </SectionFrame>
+        <ReviewsPreview locale={locale} />
         <SectionFrame id="experience" titleId="experience-title">
           <div className="section-heading" data-reveal-part>
             <h2 id="experience-title">{content.experience.title}</h2>

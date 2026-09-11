@@ -11,7 +11,7 @@ export function expectedRevision(request: Request): number {
   return revision;
 }
 
-export function reserveRevision(table: "events" | "highlights" | "notices" | "collection_items", id: number, revision: number | undefined): void {
+export function reserveRevision(table: "events" | "highlights" | "notices" | "collection_items" | "visit_reviews" | "review_selection", id: number, revision: number | undefined): void {
   const db = getDatabase();
   if (!db.inTransaction) throw new ApiError(500, "TRANSACTION_REQUIRED", "저장 트랜잭션이 필요합니다.");
   if (revision === undefined) throw new ApiError(428, "REVISION_REQUIRED", "최신 내용을 불러온 뒤 다시 시도해주세요.");
