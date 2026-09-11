@@ -96,6 +96,9 @@
   --duration-menu-enter: 280ms;
   --duration-menu-exit: 200ms;
   --duration-image: 500ms;
+  --duration-hero-fade: 1400ms;
+  --duration-photo-slide: 700ms;
+  --duration-hero-drift: 7400ms;
   --duration-reveal: 600ms;
   --duration-stagger: 80ms;
   --duration-letter: 24ms;

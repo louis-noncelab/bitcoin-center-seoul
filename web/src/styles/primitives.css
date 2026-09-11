@@ -291,6 +291,18 @@ button:not(:disabled), summary {
   text-decoration-thickness: var(--border-width);
 }
 
+.source-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--control-height);
+  color: var(--ink);
+  font-size: var(--text-small);
+  text-decoration: none;
+  text-underline-offset: var(--space-1);
+}
+.source-link:is(:hover, :focus-visible) { text-decoration: underline; }
+
 .section-link {
   display: inline-flex;
   align-items: center;
@@ -406,3 +418,6 @@ button:not(:disabled), summary {
 
   html.theme-changing :is(img, video, picture, canvas, iframe) { transition: none !important; }
 }
+
+.cursor-follower { display: none; position: fixed; inset-block-start: 0; inset-inline-start: 0; z-index: calc(var(--layer-skip) + 1); inline-size: var(--space-6); block-size: var(--space-6); margin: calc(var(--space-3) * -1); border: var(--border-width) solid var(--ink); border-radius: 50%; background: color-mix(in srgb, var(--canvas) 24%, transparent); box-shadow: 0 0 0 var(--border-width) var(--canvas); pointer-events: none; transition: opacity var(--duration-control); }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) { .cursor-follower { display: block; } }

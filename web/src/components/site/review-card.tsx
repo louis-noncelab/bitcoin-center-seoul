@@ -1,13 +1,11 @@
 import Image from "next/image";
 import { ArrowRight, ArrowUpRight, Play } from "lucide-react";
-import { reviewPlatforms } from "@/lib/reviews-contract";
 import type { VisitReview } from "@/content/visit-reviews";
 import { reviewCopy } from "@/content/review-copy";
 import type { Locale } from "@/i18n/routing";
 
 export function ReviewCard({ review, locale, compact = false }: { readonly review: VisitReview; readonly locale: Locale; readonly compact?: boolean }) {
   const t = reviewCopy[locale];
-  const platform = reviewPlatforms[review.kind];
   return (
     <article className={`review-card${compact ? " review-card-compact" : ""}`} data-review-id={review.id}>
       <a className="review-card-link" href={review.slug ? `/${locale}/reviews/${review.slug}` : review.url} target={review.slug ? undefined : "_blank"} rel={review.slug ? undefined : "noopener noreferrer"}>
@@ -15,10 +13,10 @@ export function ReviewCard({ review, locale, compact = false }: { readonly revie
           review.image ? <div className="review-card-image">
             <Image src={review.image} alt={`${review.author}${t.photo}`} fill unoptimized sizes={compact ? "(max-width: 1023px) 100vw, 33vw" : "(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 33vw"} />
             {review.kind === "video" && <span className="review-play" aria-hidden="true"><Play className="icon" /></span>}
-          </div> : <div className="review-card-paper"><span>{platform}</span><h3>{review.title[locale]}</h3></div>
+          </div> : <div className="review-card-paper"><h3>{review.title[locale]}</h3></div>
         )}
         <div className="review-card-content">
-          <div className="review-card-meta"><span>{platform}</span>{review.date && <time dateTime={review.date}>{review.date.replaceAll("-", ".")}</time>}</div>
+          {review.date && <div className="review-card-meta"><time dateTime={review.date}>{review.date.replaceAll("-", ".")}</time></div>}
           {(review.image || compact) && <h3>{review.title[locale]}</h3>}
           <p className="review-card-summary">{review.summary[locale]}</p>
           <div className="review-card-end"><span className="review-author">{review.author}</span><span className="review-read">{review.slug ? t.read : review.kind === "video" ? t.watch : t.source}{review.slug ? <ArrowRight className="icon" aria-hidden="true" /> : <ArrowUpRight className="icon" aria-hidden="true" />}</span></div>

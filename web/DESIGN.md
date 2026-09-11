@@ -12,6 +12,24 @@ Editable short English slugs keep historical redirects; hidden/body-less pages r
 404 and stay out of the sitemap. Canonical, hreflang, share metadata and factual
 Article/BreadcrumbList data follow the article's current slug and publication state.
 
+## Home hero slideshow — 2026-09-11
+
+Keep the existing hero frame and responsive crop. Cycle the existing lounge,
+community, library and gallery photographs every 6 seconds, with a 1400ms crossfade
+and a restrained 7400ms scale/pan (1.04–1.1 scale, ±0.5% horizontal travel).
+The programs section reuses the slideshow with the education and community
+photographs, but slides right-to-left over 700ms every 5 seconds with no scale or pan to reduce competing
+motion. Only the first hero photograph is preloaded; wait for the next image to load before
+advancing. Pause outside the viewport and in hidden tabs. The owner removed the
+visible pause icon; a localized text control appears only on keyboard focus.
+Reduced motion holds the first photo without animation.
+Programs also use three curated public highlight photographs (25, 5, 38),
+resolved from live records so hidden or removed posts are excluded. Uploads remain
+outside Git. On fine-pointer devices, a 24px translucent circle with an ink border
+and canvas outer edge stays visible across light/dark photographs and follows the
+cursor across the site, using one fixed overlay, a damped spring and no per-frame React state.
+Keep the native cursor; hide the decoration on exit, touch and reduced motion.
+
 ## Visitor reviews — local candidate, 2026-09-11
 
 A dedicated `/reviews` archive brings together the report's actual Hongdae visitor

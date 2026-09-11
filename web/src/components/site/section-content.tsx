@@ -6,16 +6,22 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import type { EventRecord, HighlightRecord } from "@/lib/events-contract";
 import { CenterPhoto } from "./center-photo";
+import { PhotoSlideshow } from "./photo-slideshow";
 import { EventsCatalog, HighlightsCatalog } from "./events-public";
 import { JournalPagination } from "./journal-pagination";
 import { SpaceTour } from "./space-tour";
 import "@/styles/reviews.css";
 
-export function ProgramsContent({ locale }: { readonly locale: Locale }) {
+export function ProgramsContent({ locale, highlights }: { readonly locale: Locale; readonly highlights: readonly HighlightRecord[] }) {
   const content = centerContent[locale].programs;
+  const photographs = [25, 5, 38].flatMap(id => {
+    const record = highlights.find(item => item.id === id);
+    const src = record?.images[0] || record?.image;
+    return record && src ? [{ src, alt: locale === "en" ? record.titleEn || record.title : record.title }] : [];
+  });
   return (
     <div className="program-explorer">
-      <CenterPhoto name="education" locale={locale} sizes="(max-width: 767px) 100vw, 60vw" />
+      <PhotoSlideshow locale={locale} photos={["education", "community", ...photographs]} />
       <div className="program-description">
         <p>{content.description}</p>
         <Link href="/programs#events" locale={locale} className="section-link">

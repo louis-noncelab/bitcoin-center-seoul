@@ -162,7 +162,7 @@ export function HighlightDetail({ highlight, locale }: { readonly highlight: Hig
       <HighlightMeta highlight={highlight} locale={locale} />
       <ContentTags tags={highlight.tags} locale={locale} />
       <MarkdownContent lang={locale === "en" && !highlight.descriptionEn ? "ko" : locale}>{text(locale, highlight.description, highlight.descriptionEn)}</MarkdownContent>
-      {link && <a href={link} target="_blank" rel="noopener noreferrer" className="button" data-variant="secondary">{locale === "ko" ? "원문 보기" : "Read the original"}<ArrowUpRight className="icon" aria-hidden="true" /><span className="sr-only">{locale === "ko" ? " (새 창)" : " (new window)"}</span></a>}
+      {link && <a href={link} target="_blank" rel="noopener noreferrer" className="source-link">{locale === "ko" ? "원문 보기" : "Read the original"}<ArrowUpRight className="icon" aria-hidden="true" /><span className="sr-only">{locale === "ko" ? " (새 창)" : " (new window)"}</span></a>}
     </article>
   );
 }

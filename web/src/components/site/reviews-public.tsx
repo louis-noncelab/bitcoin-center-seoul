@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { reviewPlatforms } from "@/lib/reviews-contract";
 import { ArrowDown, ArrowRight, ArrowUpRight, Plus, Minus } from "lucide-react";
 import { reviewCopy } from "@/content/review-copy";
 import { type VisitReview } from "@/content/visit-reviews";
@@ -13,17 +12,16 @@ export type ReviewFilter = (typeof reviewFilters)[number];
 export function ReviewsFeature({ locale, review }: { readonly locale: Locale; readonly review: VisitReview | null }) {
   const t = reviewCopy[locale];
   if (!review?.image) return null;
-  const platform = reviewPlatforms[review.kind];
   const featuredLink = locale === "ko" ? `${review.author}님의 방문기 읽기` : `Read ${review.author}’s story`;
   return <section className="review-feature section-frame" aria-labelledby="review-feature-title">
-    <a className="review-feature-photo" href={review.slug ? `/${locale}/reviews/${review.slug}` : review.url} target={review.slug ? undefined : "_blank"} rel={review.slug ? undefined : "noopener noreferrer"} aria-label={`${review.author} · ${platform} · ${featuredLink}${review.slug ? "" : ` (${t.window})`}`} data-reveal-part>
+    <a className="review-feature-photo" href={review.slug ? `/${locale}/reviews/${review.slug}` : review.url} target={review.slug ? undefined : "_blank"} rel={review.slug ? undefined : "noopener noreferrer"} aria-label={`${featuredLink}${review.slug ? "" : ` (${t.window})`}`} data-reveal-part>
       <Image src={review.image} alt={`${review.author}${t.photo}`} fill unoptimized loading="eager" fetchPriority="high" sizes="(max-width: 767px) 100vw, 58vw" />
     </a>
     <div className="review-feature-copy" data-reveal-part>
       <p className="review-eyebrow">{t.featured}</p>
       <h2 id="review-feature-title">{review.featureTitle[locale]}</h2>
       <p className="review-feature-context">{review.summary[locale]}</p>
-      <p className="review-feature-author">{review.author}<span>{platform}{review.date ? ` · ${review.date.replaceAll("-", ".")}` : ""}</span></p>
+      <p className="review-feature-author">{review.author}{review.date && <span><time dateTime={review.date}>{review.date.replaceAll("-", ".")}</time></span>}</p>
       <a className="section-link" href={review.slug ? `/${locale}/reviews/${review.slug}` : review.url} target={review.slug ? undefined : "_blank"} rel={review.slug ? undefined : "noopener noreferrer"}>{featuredLink}{review.slug ? <ArrowRight className="icon" aria-hidden="true" /> : <ArrowUpRight className="icon" aria-hidden="true" />}{!review.slug && <span className="sr-only"> ({t.window})</span>}</a>
     </div>
   </section>;

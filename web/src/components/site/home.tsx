@@ -5,7 +5,7 @@ import { centerContent } from "@/content/center";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import type { HighlightRecord } from "@/lib/events-contract";
-import { CenterPhoto } from "./center-photo";
+import { PhotoSlideshow } from "./photo-slideshow";
 import { CenterVideos } from "./center-videos";
 import { ReviewsPreview } from "./reviews-preview";
 import { HighlightsCatalog } from "./events-public";
@@ -50,10 +50,8 @@ export function Home({ locale, highlights }: { readonly locale: Locale; readonly
             </div>
           </div>
           <figure className="hero-figure">
-            <div className="hero-photo">
-              <CenterPhoto name="lounge" locale={locale} hero sizes="(max-width: 767px) 134vw, (min-width: 1280px) 800px, (min-width: 1024px) 66vw, 100vw" />
-            </div>
-            <figcaption className="sr-only">{locale === "ko" ? "비트코인 센터 서울 라운지" : "The lounge at Bitcoin Center Seoul"}</figcaption>
+            <PhotoSlideshow locale={locale} photos={["lounge", "community", "exhibition", "gallery"]} hero />
+            <figcaption className="sr-only">{locale === "ko" ? "비트코인 센터 서울의 공간과 강의" : "Spaces and classes at Bitcoin Center Seoul"}</figcaption>
           </figure>
         </div>
       </section>
@@ -62,7 +60,7 @@ export function Home({ locale, highlights }: { readonly locale: Locale; readonly
           <div className="section-heading" data-reveal-part>
             <h2 id="programs-title">{content.programs.title}</h2>
           </div>
-          <div data-reveal-part><ProgramsContent locale={locale} /></div>
+          <div data-reveal-part><ProgramsContent locale={locale} highlights={highlights} /></div>
         </SectionFrame>
         <SectionFrame id="journal" titleId="journal-title">
           <div className="journal-preview">
