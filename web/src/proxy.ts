@@ -16,7 +16,7 @@ export default function proxy(request: NextRequest) {
   let response: NextResponse;
 
   if (
-    /^\/(?:api|_next|dev-tools|images|brand|fonts)(?:\/|$)/.test(pathname)
+    /^\/(?:api|_next|dev-tools|images|brand|fonts|certificate)(?:\/|$)/.test(pathname)
     || /^\/(?:robots\.txt|sitemap\.xml|favicon\.ico|icon\.png|apple-icon\.png)$/.test(pathname)
   ) {
     response = NextResponse.next();
@@ -49,7 +49,7 @@ export default function proxy(request: NextRequest) {
     response.headers.set("Content-Security-Policy", policy);
   }
 
-  if (/^\/(?:(?:ko|en|api)\/)?admin(?:\/|$)/.test(pathname)) {
+  if (/^\/(?:(?:ko|en|api)\/)?admin(?:\/|$)/.test(pathname) || /^\/certificate(?:\/|$)/.test(pathname)) {
     response.headers.set("X-Robots-Tag", "noindex, nofollow");
   }
   if (secure) response.headers.set("Strict-Transport-Security", "max-age=31536000");
