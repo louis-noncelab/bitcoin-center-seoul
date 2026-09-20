@@ -19,6 +19,7 @@ async function scrollFrames(page: Page) {
 for (const locale of ["ko", "en"] as const) {
   for (const reducedMotion of ["no-preference", "reduce"] as const) {
     test(`${locale} navigation keeps the page top with motion ${reducedMotion}`, async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 1000 });
       await page.emulateMedia({ reducedMotion });
       await page.goto(`/${locale}`);
       await page.evaluate(() => document.fonts.ready);
