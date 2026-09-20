@@ -1,0 +1,6 @@
+.button.event-booking-link { display: flex; justify-content: space-between; gap: var(--space-3); inline-size: 100%; min-block-size: var(--control-height); padding: var(--space-3) var(--space-4); border: 0; background: var(--orange); color: var(--action-ink); font-size: var(--text-small); font-weight: var(--weight-semibold); text-align: start; overflow-wrap: anywhere; }
+.event-booking-provider { display: inline-flex; flex-shrink: 0; align-items: center; gap: var(--space-1); font-size: var(--text-caption); font-weight: var(--weight-medium); }
+.home-calendar-event-list .event-booking-link, .event-card-list .event-booking-link { margin-block-start: var(--space-2); }
+@media (hover: hover) {
+  .button.event-booking-link:not(:disabled):hover { color: var(--action-ink); background: color-mix(in srgb, var(--orange) 88%, white); transform: none; box-shadow: none; }
+}

@@ -5,6 +5,7 @@ import { ContentLink } from "@/components/controls/content-link";
 import { PageMotion } from "@/components/site/page-motion";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
+import { NewsNavigation } from "@/components/site/news-content";
 import { pageMetadata } from "@/content/site";
 import type { Locale } from "@/i18n/routing";
 import type { NoticeRecord } from "@/lib/notices-contract";
@@ -28,9 +29,10 @@ export function noticesMetadata(locale: Locale, notice?: NoticeRecord): Metadata
   };
 }
 export function NoticesFrame({ locale, title, detail = false, children }: { readonly locale: Locale; readonly title: string; readonly detail?: boolean; readonly children: ReactNode }) {
-  return <><SiteHeader locale={locale} /><main id="main" className="container detail-page event-page" tabIndex={-1}>
-    <ContentLink href={detail ? "/notices" : "/"} locale={locale} className="button event-back" data-variant="secondary"><ArrowLeft className="icon" aria-hidden="true" />{detail ? locale === "ko" ? "공지사항으로" : "Back to notices" : locale === "ko" ? "홈으로" : "Back home"}</ContentLink>
+  return <><SiteHeader locale={locale} section="news" /><main id="main" className="container detail-page event-page" tabIndex={-1}>
+    <ContentLink href={detail ? "/notices" : "/news"} locale={locale} className="button event-back" data-variant="secondary"><ArrowLeft className="icon" aria-hidden="true" />{detail ? locale === "ko" ? "공지사항으로" : "Back to notices" : locale === "ko" ? "소식으로" : "Back to news"}</ContentLink>
     <div className="detail-heading"><h1>{title}</h1></div>
+    {!detail && <NewsNavigation locale={locale} current="notices" />}
     {children}<PageMotion pageKey={`${locale}-notices-${title}`} />
   </main><SiteFooter locale={locale} /></>;
 }

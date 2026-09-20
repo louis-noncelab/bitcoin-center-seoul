@@ -9,6 +9,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { recordMetadata } from "@/content/site";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
+import { seoulDate } from "@/lib/center-status";
 import { getEventByPath } from "@/server/events";
 import "@/styles/events-public.css";
 import "@/styles/site.css";
@@ -41,7 +42,7 @@ export default async function EventPage({ params }: Props) {
         <div className="detail-heading">
           <h1>{title}</h1>
         </div>
-        <EventDetail event={event} locale={locale} />
+        <EventDetail event={event} locale={locale} today={seoulDate()} />
         <PageMotion pageKey={`${locale}-program-${event.id}`} />
       </main>
       <SiteFooter locale={locale} />

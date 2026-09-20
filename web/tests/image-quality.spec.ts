@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { z } from "zod";
 
 const staticPhotos = [
-  { path: "/ko", selector: ".hero-photo img" },
+  { path: "/ko", selector: ".home-space-collage img" },
   { path: "/ko/about", selector: ".about-detail .media-frame img" },
   { path: "/ko/experience", selector: ".experience-gallery > :first-child img" },
   { path: "/ko/experience", selector: ".experience-object img" },

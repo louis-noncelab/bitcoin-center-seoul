@@ -8,20 +8,21 @@ for (const locale of ["ko", "en"] as const) {
     const menu = page.locator(".navigation-disclosure > button");
     await menu.click();
     const panel = page.locator(".disclosure-panel");
-    await expect(panel.locator('[aria-current="page"]')).toHaveAttribute("href", `/${locale}/about`);
+    await expect(panel.locator('.navigation-group-toggle[data-current]')).toHaveText(locale === "ko" ? "공간과 체험" : "Space & experiences");
     await page.evaluate(() => {
       document.documentElement.dataset.navigationSession = "client";
     });
 
     // When a different destination is selected.
-    await panel.locator(`.navigation-link[href="/${locale}/visit"]`).click();
+    await panel.getByRole("button", { name: locale === "ko" ? "방문 안내" : "Visit", exact: true }).click();
+    await panel.locator(`.navigation-submenu a[href="/${locale}/visit"]`).click();
 
     // Then it navigates without a document reload and reports the new page.
     await expect(page).toHaveURL(`/${locale}/visit`);
     await expect(page.locator("html")).toHaveAttribute("data-navigation-session", "client");
     await expect(menu).toHaveAttribute("aria-expanded", "false");
     await menu.click();
-    await expect(panel.locator('[aria-current="page"]')).toHaveAttribute("href", `/${locale}/visit`);
+    await expect(panel.locator('.navigation-group-toggle[data-current]')).toHaveText(locale === "ko" ? "방문 안내" : "Visit");
   });
 }
 
@@ -34,7 +35,7 @@ test("closing the menu immediately removes interaction while its exit finishes",
   const menu = page.locator(".navigation-disclosure > button");
   const panel = page.locator(".disclosure-panel");
   await menu.click();
-  await panel.locator("a").first().focus();
+  await panel.locator(".navigation-group-toggle").first().focus();
 
   // When Escape closes the disclosure.
   await page.keyboard.press("Escape");
@@ -45,7 +46,7 @@ test("closing the menu immediately removes interaction while its exit finishes",
   await expect(panel).toHaveAttribute("aria-hidden", "true");
   await expect(panel).toHaveAttribute("inert", "");
   expect(await panel.evaluate((element) => getComputedStyle(element).visibility)).toBe("visible");
-  await panel.locator("a").first().evaluate((element) => element.focus());
+  await panel.locator(".navigation-group-toggle").first().evaluate((element) => element.focus());
   await expect(menu).toBeFocused();
   await panel.evaluate((element) => element.getAnimations().forEach((animation) => animation.finish()));
   await expect(panel).toBeHidden();
@@ -99,12 +100,13 @@ test("a pending destination shows feedback until navigation commits", async ({ p
     await route.continue();
   });
   try {
+    await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto("/ko/about");
     const destination = page.locator('.desktop-navigation a[href="/ko/visit"]');
     await destination.click({ noWaitAfter: true });
 
     await expect(destination.locator('[data-pending="true"]')).toBeVisible();
-    await expect(page.locator('.desktop-navigation [aria-current="page"]')).toHaveAttribute("href", "/ko/about");
+    await expect(page.locator('.desktop-navigation [aria-current="page"]')).toHaveAttribute("href", "/ko/experience");
     releaseResponse?.();
     await expect(page).toHaveURL("/ko/visit");
     await expect(destination).toHaveAttribute("aria-current", "page");
@@ -128,9 +130,10 @@ for (const locale of ["ko", "en"] as const) {
     const panel = header.locator(".disclosure-panel");
     const footer = panel.locator(".navigation-utilities");
     await expect(footer.locator(".operating-status")).toBeVisible();
-    const current = panel.locator('.navigation-link[aria-current="page"]');
-    expect(await current.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
-    expect(await current.locator(".navigation-feedback").evaluate((element) => getComputedStyle(element, "::after").display)).toBe("none");
+    const current = panel.locator('.navigation-group-toggle[data-current]');
+    await expect(current).toHaveText(locale === "ko" ? "공간과 체험" : "Space & experiences");
+    await current.click();
+    await expect(current).toHaveAttribute("aria-expanded", "true");
     const listBox = await panel.locator("ul").boundingBox();
     const footerBox = await footer.boundingBox();
     if (!listBox || !footerBox) throw new Error("Menu layout unavailable");
@@ -161,17 +164,10 @@ for (const locale of ["ko", "en"] as const) {
     await page.setViewportSize({ width: 390, height: 900 });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto(`/${locale}`);
-    const hero = page.locator(".hero-photo");
-    const photos = hero.locator(".photo-slide");
-    const previous = hero.locator(".photo-controls button").first();
-    await previous.click();
-    await expect(photos.last()).toHaveAttribute("data-active", "true");
-    await previous.press("ArrowRight");
-    await expect(photos.first()).toHaveAttribute("data-active", "true");
+    const photos = page.locator(".home-space-collage img");
+    await expect(photos).toHaveCount(2);
     expect(await photos.first().evaluate(element => getComputedStyle(element).animationName)).toBe("none");
-    const order = await page.locator("main > .container > section").evaluateAll(elements => elements.map(element => element.id));
-    if (order.includes("reviews")) expect(order.indexOf("reviews")).toBeLessThan(order.indexOf("journal"));
-    await page.locator(".hero-visit-link").click();
+    await page.locator(".home-space-visit-action").click();
     await expect(page).toHaveURL(`/${locale}/visit`);
     await expect(page.locator(".visit-first dd")).toHaveCount(3);
     await expect(page.locator(".visit-first")).toContainText("3,000 sats");

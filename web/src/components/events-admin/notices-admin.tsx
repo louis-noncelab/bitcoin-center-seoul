@@ -12,6 +12,7 @@ import { MarkdownHelp } from "./markdown-help";
 import { MarkdownEditor } from "./markdown-editor";
 import { TagsField } from "./tags-field";
 import { adminRequest, AdminRequestError, errorText, jsonBody, revisionHeaders } from "./request";
+import "@/styles/news.css";
 
 export function NoticesAdmin() {
   const [records, setRecords] = useState<NoticeRecord[]>([]);
@@ -91,6 +92,10 @@ export function NoticesAdmin() {
   if (!authenticated) return <><p className="events-error" role="alert">{error}</p><LoginForm locale="ko" onLogin={() => { setError(""); setRevision((value) => value + 1); }} /></>;
   return <div className="events-admin-workspace">
     {dialog}
+    <div className="news-admin-guide">
+      <p>공개한 공지는 공지사항과 소식에 반영됩니다. 홈에는 공지와 현장 스케치를 합쳐 최근 2개 소식이 표시됩니다. 비공개 공지는 제외됩니다.</p>
+      <Link href="/news" locale="ko" prefetch={false} onNavigate={(event) => { event.preventDefault(); void leave().then((accepted) => { if (accepted) router.push("/news", { locale: "ko" }); }); }}>공개 소식 보기</Link>
+    </div>
     <div className="events-admin-toolbar"><Link href="/admin" locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void leave().then((accepted) => { if (accepted) router.push("/admin", { locale: "ko" }); }); }}>행사·하이라이트 관리</Link><Link href="/admin/collection" locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void leave().then((accepted) => { if (accepted) router.push("/admin/collection", { locale: "ko" }); }); }}>도서·작품·보드게임</Link><Link href="/admin/reviews" locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void leave().then((accepted) => { if (accepted) router.push("/admin/reviews", { locale: "ko" }); }); }}>방문 후기</Link><Button variant="quiet" disabled={pending || uploading} onClick={() => void logout()}>로그아웃</Button></div>
     {expired && <aside className="events-reauth"><p role="alert">세션이 만료되었습니다. 작성한 내용은 유지됩니다. 다시 로그인한 뒤 저장해 주세요.</p><LoginForm locale="ko" onLogin={() => { setExpired(false); setError(""); setRevision((value) => value + 1); }} /></aside>}
     {error && <p className="events-error" role="alert">{error}</p>}<p role="status">{message}</p>

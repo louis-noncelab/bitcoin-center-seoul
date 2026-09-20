@@ -58,11 +58,11 @@ test("server-rendered content remains visible without JavaScript", async ({ brow
     await page.goto("/ko");
 
     // Then the photograph and first program are available without hydration.
-    await expect(page.locator(".hero-photo .center-photo")).toHaveCSS("opacity", "1");
-    await expect(page.locator("#hero-title")).toBeVisible();
+    await expect(page.locator(".home-space-figure .center-photo").first()).toHaveCSS("opacity", "1");
+    await expect(page.getByRole("heading", { level: 2, name: "공간 둘러보기" })).toBeVisible();
     await expect(page.locator(".site-footer")).toBeVisible();
-    await expect(page.locator(".program-explorer").getByRole("tabpanel")).toHaveCount(1);
-    await expect(page.locator(".program-explorer .selection-panel").first()).toBeVisible();
+    await expect(page.locator(".home-collection")).toBeVisible();
+    await expect(page.locator(".home-goods")).toBeVisible();
   } finally {
     await context.close();
   }

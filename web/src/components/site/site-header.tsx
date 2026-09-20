@@ -7,7 +7,10 @@ import { ThemeToggle } from "@/components/controls/theme-toggle";
 import { BrandWordmark } from "@/components/site/brand-wordmark";
 import { OperatingStatus } from "@/components/site/operating-status";
 import { ActionLink } from "@/components/ui/primitives";
-import { centerContent } from "@/content/center";
+import {
+  publicNavigation,
+  type PublicNavigationSection,
+} from "@/content/public-navigation";
 import type { PublicSection } from "@/content/site";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
@@ -39,20 +42,38 @@ export async function SiteHeader({
   home = false,
 }: {
   readonly locale: Locale;
-  readonly section?: PublicSection;
+  readonly section?: PublicSection | PublicNavigationSection;
   readonly home?: boolean;
 }) {
   const t = labels[locale];
   const initialStatus = await getCenterStatus().catch(() => null);
   const otherLocale = locale === "ko" ? "en" : "ko";
-  const navigation = centerContent[locale].nav.filter(
-    (item) => item.id !== "home",
-  );
+  const navigation = publicNavigation(locale);
+  const activeSection =
+    section === "journal"
+      ? "news"
+      : section === "about"
+        ? "experience"
+        : section;
 
   const utilities = (
     <>
       <OperatingStatus locale={locale} initialStatus={initialStatus} />
-      <Suspense fallback={<Link href={section ? `/${section}` : "/"} locale={otherLocale} hrefLang={otherLocale} lang={otherLocale} aria-label={t.language} className="button header-control language-control" data-variant="quiet">{otherLocale === "en" ? "EN" : "KO"}</Link>}>
+      <Suspense
+        fallback={
+          <Link
+            href={section ? `/${section}` : "/"}
+            locale={otherLocale}
+            hrefLang={otherLocale}
+            lang={otherLocale}
+            aria-label={t.language}
+            className="button header-control language-control"
+            data-variant="quiet"
+          >
+            {otherLocale === "en" ? "EN" : "KO"}
+          </Link>
+        }
+      >
         <LocaleLink locale={otherLocale} label={t.language} />
       </Suspense>
       <ThemeToggle label={t.theme} />
@@ -79,10 +100,10 @@ export async function SiteHeader({
           {navigation.map((item) => (
             <Link
               key={item.id}
-              href={`/${item.id}`}
-              prefetch={item.id === "journal" ? false : undefined}
+              href={item.href}
+              prefetch={item.id === "news" ? false : undefined}
               locale={locale}
-              aria-current={section === item.id ? "page" : undefined}
+              aria-current={activeSection === item.id ? "page" : undefined}
               className="navigation-link"
             >
               <NavigationFeedback label={item.label} />
@@ -100,9 +121,10 @@ export async function SiteHeader({
               locale={locale}
               footer={utilities}
               items={navigation.map((item) => ({
-                href: `/${item.id}`,
+                href: item.href,
                 label: item.label,
-                current: section === item.id,
+                current: activeSection === item.id,
+                children: item.children,
               }))}
             />
           </div>

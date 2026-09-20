@@ -12,6 +12,7 @@ import { CenterStatusAdmin } from "./center-status-admin";
 import { LoginForm } from "./login-form";
 import { RecordEditor } from "./record-editor";
 import { adminRequest, AdminRequestError, errorText, jsonBody, revisionHeaders } from "./request";
+import "@/styles/news.css";
 
 const sessionSchema = z.object({ authenticated: z.boolean() });
 const listSchema = z.array(z.union([eventRecordSchema, highlightRecordSchema]));
@@ -97,9 +98,11 @@ export function EventsAdmin({ locale }: { readonly locale: Locale }) {
           <Link href="/admin/notices" locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void canLeave().then((accepted) => { if (accepted) router.push("/admin/notices", { locale: "ko" }); }); }}>공지사항</Link>
           <Link href="/admin/collection" locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void canLeave().then((accepted) => { if (accepted) router.push("/admin/collection", { locale: "ko" }); }); }}>도서·작품·보드게임</Link>
           <Link href="/admin/reviews" locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void canLeave().then((accepted) => { if (accepted) router.push("/admin/reviews", { locale: "ko" }); }); }}>방문 후기</Link>
+          <Link href="/news" locale="ko" prefetch={false} className="button" data-variant="quiet" onNavigate={(event) => { event.preventDefault(); void canLeave().then((accepted) => { if (accepted) router.push("/news", { locale: "ko" }); }); }}>공개 소식 보기</Link>
         </nav>
         <Button variant="quiet" disabled={pending || editorBusy} onClick={() => void logout()}>{ko ? "로그아웃" : "Sign out"}</Button>
       </div>
+      {kind === "highlights" && <p className="news-admin-guide">공개한 하이라이트는 소식의 ‘현장 스케치’에 반영됩니다. 첫 번째 사진은 ‘사진과 영상’의 대표 이미지로 사용됩니다. 최근 소식과 사진 일부는 홈에도 표시됩니다. 비공개 항목은 제외됩니다.</p>}
       {expired && <aside className="events-reauth"><p role="alert">{ko ? "세션이 만료되었습니다. 작성한 내용은 유지됩니다. 다시 로그인한 뒤 저장해 주세요." : "Your session expired. Your draft is preserved. Sign in again to save."}</p><LoginForm locale={locale} onLogin={() => { setExpired(false); setError(""); refresh(); }} /></aside>}
       {error && <p className="events-error" role="alert">{error}</p>}
       <p role="status">{notice}</p>

@@ -6,6 +6,12 @@ import { eventRecordSchema, highlightRecordSchema } from "../src/lib/events-cont
 
 const runtimeSchema = z.object({ ADMIN_PASSWORD: z.string().min(1) });
 const responseSchema = <T extends z.ZodType>(schema: T) => z.object({ data: schema });
+const seoulToday = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" }).format(new Date());
+const futureEventDate = (() => {
+  const date = new Date(`${seoulToday}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + 2);
+  return date.toISOString().slice(0, 10);
+})();
 
 test.describe.serial("events-only public pages", () => {
   let admin: APIRequestContext;
@@ -25,7 +31,7 @@ test.describe.serial("events-only public pages", () => {
     expect((await admin.post("/api/admin/login", { data: { password: runtime.ADMIN_PASSWORD } })).ok()).toBeTruthy();
 
     const event = responseSchema(eventRecordSchema).parse(await (await admin.post("/api/admin/events", { data: {
-      slug: `${eventSlug}-old`, title: eventTitleKo, titleEn: eventTitleEn, date: "2026-10-31", time: "19:00", location: "비트코인 센터 서울", locationEn: "Bitcoin Center Seoul", description: "외부 안내 링크가 있는 공개 행사입니다.", descriptionEn: "A public event with an external information link.", image: "", link: "https://example.com/event", images: [],
+      slug: `${eventSlug}-old`, title: eventTitleKo, titleEn: eventTitleEn, date: futureEventDate, time: "19:00", location: "비트코인 센터 서울", locationEn: "Bitcoin Center Seoul", description: "외부 안내 링크가 있는 공개 행사입니다.", descriptionEn: "A public event with an external information link.", image: "", link: "https://example.com/event", images: [],
     } })).json()).data;
     const { id: createdEventId, ...eventInput } = event;
     eventId = createdEventId;
@@ -49,14 +55,19 @@ test.describe.serial("events-only public pages", () => {
     // Given a published event created through the real admin API
     // When a Korean visitor opens the program list and detail
     await page.goto("/ko/programs");
-    const eventLink = page.getByRole("link").filter({ hasText: eventTitleKo });
+    const eventLink = page.locator(`.event-card[href="/ko/programs/${eventSlug}"]`);
 
     // Then the record is linked by its canonical slug and commerce is absent
+    await expect(eventLink).toHaveCount(1);
     await expect(eventLink).toHaveAttribute("href", `/ko/programs/${eventSlug}`);
-    await expect(page.locator('a[href*="/goods"], a[href*="/cart"], a[href*="/checkout"], a[href*="/account"], a[href*="/booking"], a[href*="/payments"]')).toHaveCount(0);
+    await expect(page.locator('a[href*="/cart"], a[href*="/checkout"], a[href*="/account"], a[href*="/booking"], a[href*="/payments"]')).toHaveCount(0);
     await eventLink.click();
     await expect(page.getByRole("heading", { name: eventTitleKo, exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: /참여하기/ })).toHaveAttribute("href", "https://example.com/event");
+    const booking = page.locator(".event-detail a.event-booking-link");
+    await expect(booking).toHaveAccessibleName(`${eventTitleKo} 예약하기 외부 사이트 (새 창)`);
+    await expect(booking).toHaveAttribute("href", "https://example.com/event");
+    await expect(booking).toHaveAttribute("target", "_blank");
+    await expect(booking).toHaveAttribute("rel", /^(?=.*\bnoopener\b)(?=.*\bnoreferrer\b).+$/);
   });
 
   test("shows only the active highlight and preserves its detail route across locales", async ({ page }) => {

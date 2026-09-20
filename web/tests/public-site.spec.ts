@@ -10,8 +10,9 @@ const pages = [
   "/experience",
   "/journal",
   "/visit",
+  "/goods",
 ] as const;
-const removedPages = ["/goods", "/design-system"] as const;
+const removedPages = ["/design-system"] as const;
 const publicRowsSchema = z.object({ data: z.array(z.object({ id: z.number().int().positive() })) });
 
 async function publicDetailPaths(request: APIRequestContext) {
@@ -102,9 +103,10 @@ test("mobile navigation, locale and theme preserve a usable destination", async 
   await page.keyboard.press("Escape");
   await expect(menu).toBeFocused();
   await menu.click();
+  await page.locator(".disclosure-panel").getByRole("button", { name: "공간과 체험", exact: true }).click();
   await page
     .locator(".disclosure-panel")
-    .getByRole("link", { name: "전시·체험", exact: true })
+    .getByRole("link", { name: "공간과 체험 안내", exact: true })
     .click();
   await expect(page).toHaveURL(/\/ko\/experience$/);
   await page
@@ -160,7 +162,10 @@ test("public metadata, search policy and unknown routes have explicit behavior",
   const sitemap = await request.get("/sitemap.xml");
   expect(sitemap.status()).toBe(200);
   const detailPaths = await publicDetailPaths(request);
-  expect((await sitemap.text()).match(/<loc>/g)).toHaveLength((pages.length + detailPaths.length) * 2);
+  const sitemapText = await sitemap.text();
+  for (const locale of ["ko", "en"]) {
+    for (const pathname of [...pages, ...detailPaths]) expect(sitemapText).toContain(`https://bitcoincenterseoul.com/${locale}${pathname}</loc>`);
+  }
   for (const locale of ["ko", "en"]) {
     for (const path of removedPages) {
       expect((await request.get(`/${locale}${path}`)).status()).toBe(404);
