@@ -1,100 +1,124 @@
-import { ArrowRight } from "lucide-react";
-import type { CSSProperties } from "react";
-import { SectionFrame } from "@/components/ui/primitives";
+import { ArrowRight, CalendarDays, LibraryBig, MapPin } from "lucide-react";
 import { centerContent } from "@/content/center";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import type { EventRecord, HighlightRecord } from "@/lib/events-contract";
-import { PhotoSlideshow } from "./photo-slideshow";
-import { CenterVideos } from "./center-videos";
-import { ReviewsPreview } from "./reviews-preview";
-import { HighlightsCatalog } from "./events-public";
+import type { HighlightRecord } from "@/lib/events-contract";
+import type { HomeEvent } from "@/lib/home-events";
+import type { NewsItem } from "@/lib/news";
+import type { CollectionRecord } from "@/lib/collection-contract";
+import { UpcomingEvents } from "./upcoming-events";
+import { HomeEventCalendar } from "./home-event-calendar";
+import { CenterPhoto } from "./center-photo";
+import { HomeDiscovery } from "./home-discovery";
+import { HomeNews } from "./news-content";
 import { PageMotion } from "./page-motion";
-import { ExperienceContent, ProgramsContent } from "./section-content";
+import { ReviewsPreview } from "./reviews-preview";
+import "@/styles/home-space.css";
 
-function titleLetters(word: string, offset: number) {
-  return Array.from(word, (letter, index) => (
-    <span className="hero-letter" style={{ "--letter-index": offset + index } as CSSProperties} key={index}>
-      {letter}
-    </span>
-  ));
-}
-
-export function Home({ locale, highlights, nextEvent }: { readonly locale: Locale; readonly highlights: readonly HighlightRecord[]; readonly nextEvent: EventRecord | null }) {
+export function Home({
+  locale,
+  highlights,
+  news,
+  events,
+  upcoming,
+  today,
+  collection,
+}: {
+  readonly locale: Locale;
+  readonly highlights: readonly HighlightRecord[];
+  readonly news: readonly NewsItem[];
+  readonly events: readonly HomeEvent[];
+  readonly upcoming: readonly HomeEvent[];
+  readonly today: string;
+  readonly collection: readonly CollectionRecord[];
+}) {
   const content = centerContent[locale];
-  const words: readonly [string, string, string] = locale === "ko" ? ["비트코인", "센터", "서울"] : ["Bitcoin", "Center", "Seoul"];
   return (
     <main id="main" tabIndex={-1} className="site-main">
-      <section className="home-hero container" aria-labelledby="hero-title" id="home">
-        <div className="hero-heading">
-          <div className="hero-copy" id="about">
-            <div className="hero-title">
-              <h1 id="hero-title" aria-label={words.join(" ")}>
-                <span className="hero-name" aria-hidden="true">
-                  <span className="hero-word">{titleLetters(words[0], 0)}</span>{" "}
-                  <span className="hero-word">{titleLetters(words[1], words[0].length)}</span>
-                </span>{" "}
-                <span className="hero-city" aria-hidden="true">{titleLetters(words[2], words[0].length + words[1].length)}</span>
-              </h1>
+      <h1 className="sr-only">{content.hero.title}</h1>
+      <UpcomingEvents events={upcoming} locale={locale} today={today} />
+      <div className="container">
+        <nav
+          className="home-quick"
+          aria-label={locale === "ko" ? "빠른 메뉴" : "Quick links"}
+        >
+          <a href="#home-calendar">
+            <CalendarDays aria-hidden="true" />
+            {locale === "ko" ? "전체 일정" : "All events"}
+          </a>
+          <Link href="/collection" locale={locale}>
+            <LibraryBig aria-hidden="true" />
+            {locale === "ko" ? "컬렉션" : "Collection"}
+          </Link>
+          <Link href="/visit" locale={locale}>
+            <MapPin aria-hidden="true" />
+            {locale === "ko" ? "방문 안내" : "Visit"}
+          </Link>
+        </nav>
+        <HomeEventCalendar events={events} locale={locale} today={today} />
+        <HomeNews items={news} highlights={highlights} locale={locale} />
+        <ReviewsPreview locale={locale} />
+        <HomeDiscovery collection={collection} locale={locale} />
+      </div>
+      <section
+        className="home-space container"
+        aria-labelledby="home-space-title"
+        id="home"
+      >
+        <div className="home-space-heading" id="about">
+          <h2 id="home-space-title" className="home-section-title">
+            {locale === "ko" ? "공간 둘러보기" : "Inside the center"}
+          </h2>
+        </div>
+        <div className="home-space-layout">
+          <figure className="home-space-figure">
+            <div className="home-space-collage">
+              <CenterPhoto
+                name="exhibition"
+                locale={locale}
+                sizes="(max-width: 767px) 120vw, 90vw"
+              />
+              <CenterPhoto
+                name="lounge"
+                locale={locale}
+                sizes="(max-width: 767px) 100vw, 800px"
+              />
             </div>
-            <div className="hero-introduction">
-              <p className="body-copy muted">{content.hero.introduction}</p>
-              <div className="button-row">
-                <Link href="/programs" locale={locale} className="button" data-variant="secondary">
-                  {content.hero.secondaryLink.label}
-                </Link>
-                <Link href="/about#space-tour" locale={locale} className="section-link">
-                  {locale === "ko" ? "공간 둘러보기" : "Inside the center"}<ArrowRight className="icon" aria-hidden="true" />
-                </Link>
-              </div>
-              <Link href="/visit" locale={locale} className="section-link hero-visit-link">
-                <span>{content.visit.address.note}</span>
-                <span>{locale === "ko" ? "운영시간" : "Regular hours"} {content.visit.hours.lines[0]}<ArrowRight className="icon" aria-hidden="true" /></span>
+            <figcaption className="sr-only">
+              {locale === "ko"
+                ? "비트코인 센터 서울의 공간과 강의"
+                : "Spaces and classes at Bitcoin Center Seoul"}
+            </figcaption>
+          </figure>
+          <div className="home-space-copy">
+            <p className="body-copy muted">{content.hero.introduction}</p>
+            <div className="home-space-visit-note muted">
+              <span>{content.visit.address.note}</span>
+              <span>
+                {locale === "ko" ? "운영시간" : "Regular hours"}{" "}
+                {content.visit.hours.lines[0]}
+              </span>
+            </div>
+            <div className="home-space-actions">
+              <Link
+                href="/visit"
+                locale={locale}
+                className="section-link home-space-visit-action"
+              >
+                {locale === "ko" ? "방문 안내" : "Visit"}
+              </Link>
+              <Link
+                href="/about#space-tour"
+                locale={locale}
+                className="section-link"
+              >
+                {locale === "ko" ? "공간 상세 보기" : "Explore the space"}
+                <ArrowRight className="icon" aria-hidden="true" />
               </Link>
             </div>
           </div>
-          <figure className="hero-figure">
-            <PhotoSlideshow locale={locale} photos={["lounge", "community", "exhibition", "gallery"]} hero />
-            <figcaption className="sr-only">{locale === "ko" ? "비트코인 센터 서울의 공간과 강의" : "Spaces and classes at Bitcoin Center Seoul"}</figcaption>
-          </figure>
         </div>
       </section>
-      <div className="container">
-        <SectionFrame id="programs" titleId="programs-title">
-          <div className="section-heading" data-reveal-part>
-            <h2 id="programs-title">{content.programs.title}</h2>
-          </div>
-          <div data-reveal-part><ProgramsContent locale={locale} highlights={highlights} nextEvent={nextEvent} /></div>
-        </SectionFrame>
-        <ReviewsPreview locale={locale} />
-        <SectionFrame id="journal" titleId="journal-title">
-          <div className="journal-preview">
-            <div className="journal-heading" data-reveal-part>
-              <h2 id="journal-title">{content.journal.title}</h2>
-              <p className="body-copy muted">{content.journal.introduction}</p>
-              <Link href="/journal" prefetch={false} locale={locale} className="section-link">
-                {locale === "ko" ? "현장 스케치 보기" : "View highlights"}<ArrowRight className="icon" aria-hidden="true" />
-              </Link>
-            </div>
-            <HighlightsCatalog highlights={highlights} locale={locale} preview />
-          </div>
-        </SectionFrame>
-        <SectionFrame id="videos" titleId="videos-title">
-          <div className="section-heading" data-reveal-part>
-            <h2 id="videos-title">{locale === "ko" ? "영상 속 센터" : "The center on film"}</h2>
-          </div>
-          <CenterVideos locale={locale} />
-        </SectionFrame>
-        <SectionFrame id="experience" titleId="experience-title">
-          <div className="section-heading" data-reveal-part>
-            <h2 id="experience-title">{content.experience.title}</h2>
-            <Link href="/experience" locale={locale} className="section-link">
-              {locale === "ko" ? "전시·체험 안내" : "Exhibition details"}<ArrowRight className="icon" aria-hidden="true" />
-            </Link>
-          </div>
-          <ExperienceContent locale={locale} />
-        </SectionFrame>
-      </div>
       <PageMotion pageKey={`${locale}-home`} />
     </main>
   );

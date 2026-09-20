@@ -8,9 +8,14 @@ import { SiteHeader } from "@/components/site/site-header";
 import { pageMetadata } from "@/content/site";
 import { routing } from "@/i18n/routing";
 import { listEvents, listHighlights } from "@/server/events";
+import { homeEvents, upcomingHomeEvents } from "@/lib/home-events";
+import { buildNewsFeed } from "@/lib/news";
+import { listNotices } from "@/server/notices";
+import { listCollection } from "@/server/collection";
 import "@/styles/events-public.css";
 import "@/styles/site.css";
 import "@/styles/site-sections.css";
+import "@/styles/home-expanded.css";
 
 type Props = { readonly params: Promise<{ locale: string }> };
 
@@ -25,16 +30,26 @@ export default async function HomePage({ params }: Props) {
   if (!hasLocale(routing.locales, locale)) notFound();
   await connection();
   const highlights = await listHighlights();
-  const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
-  const nextEvent = listEvents()
-    .filter(event => event.date.trim().replaceAll(".", "-") >= today)
-    .sort((a, b) => a.date.trim().replaceAll(".", "-").localeCompare(b.date.trim().replaceAll(".", "-")) || a.time.localeCompare(b.time) || a.id - b.id)[0] ?? null;
+  const news = buildNewsFeed(listNotices(), highlights);
+  const today = new Date().toLocaleDateString("sv-SE", {
+    timeZone: "Asia/Seoul",
+  });
+  const events = homeEvents(listEvents());
+  const upcoming = upcomingHomeEvents(events, today);
   return (
-    <>
+    <div className="home-expanded">
       <SiteHeader locale={locale} home />
-      <Home locale={locale} highlights={highlights} nextEvent={nextEvent} />
+      <Home
+        locale={locale}
+        highlights={highlights}
+        news={news}
+        events={events}
+        upcoming={upcoming}
+        today={today}
+        collection={listCollection(false)}
+      />
       <SiteFooter locale={locale} />
       <OrganizationJsonLd locale={locale} />
-    </>
+    </div>
   );
 }

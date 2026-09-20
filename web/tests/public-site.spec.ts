@@ -10,9 +10,10 @@ const pages = [
   "/experience",
   "/journal",
   "/visit",
+  "/goods",
 ] as const;
-const removedPages = ["/goods", "/design-system"] as const;
-const publicRowsSchema = z.object({ data: z.array(z.object({ id: z.number().int().positive() })) });
+const removedPages = ["/design-system"] as const;
+const publicRowsSchema = z.object({ data: z.array(z.object({ id: z.number().int().positive(), slug: z.string() })) });
 
 async function publicDetailPaths(request: APIRequestContext) {
   const [events, highlights] = await Promise.all([
@@ -24,8 +25,8 @@ async function publicDetailPaths(request: APIRequestContext) {
   const eventRows = publicRowsSchema.parse(await events.json()).data;
   const highlightRows = publicRowsSchema.parse(await highlights.json()).data;
   return [
-    ...eventRows.map(({ id }) => `/programs/${id}`),
-    ...highlightRows.map(({ id }) => `/journal/${id}`),
+    ...eventRows.map(({ id, slug }) => `/programs/${slug || id}`),
+    ...highlightRows.map(({ id, slug }) => `/journal/${slug || id}`),
   ];
 }
 
@@ -34,14 +35,11 @@ for (const locale of ["ko", "en"] as const) {
     for (const width of [375, 768, 1280]) {
       for (const path of pages) {
         test(`${locale}${path || "/home"} ${theme} at ${width}px`, async ({
-          page,
+          page, context, baseURL,
         }) => {
           await page.setViewportSize({ width, height: 900 });
           await page.emulateMedia({ reducedMotion: "reduce" });
-          await page.addInitScript(
-            (value) => localStorage.setItem("bcs-theme", value),
-            theme,
-          );
+          await context.addCookies([{ name: "bcs-theme", value: theme, url: baseURL ?? "http://127.0.0.1:3100" }]);
           const errors: string[] = [];
           page.on("pageerror", (error) => errors.push(error.message));
 
@@ -102,34 +100,37 @@ test("mobile navigation, locale and theme preserve a usable destination", async 
   await page.keyboard.press("Escape");
   await expect(menu).toBeFocused();
   await menu.click();
+  await page.locator(".disclosure-panel").getByRole("button", { name: "공간과 체험", exact: true }).click();
   await page
     .locator(".disclosure-panel")
-    .getByRole("link", { name: "전시·체험", exact: true })
+    .getByRole("link", { name: "공간과 체험 안내", exact: true })
     .click();
   await expect(page).toHaveURL(/\/ko\/experience$/);
+  await page.getByRole("button", { name: "메뉴", exact: true }).click();
   await page
     .getByRole("link", { name: "EN · Switch to English", exact: true })
     .click();
   await expect(page).toHaveURL(/\/en\/experience$/);
+  await page.getByRole("button", { name: "Menu", exact: true }).click();
   await page.getByRole("button", { name: "Dark mode", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await expect(
     page.getByRole("link", { name: "Wallet experience guide" }),
-  ).toHaveAttribute("href", "https://bitcoincenterseoul.com/walletExperence");
+  ).toHaveAttribute("href", "/en/experience/wallet");
 });
 
-test("program tabs support keyboard selection with reduced motion", async ({
+test("space tabs support keyboard selection with reduced motion", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto("/ko/programs");
+  await page.goto("/ko/about#space-tour");
   const first = page.getByRole("tab").first();
   await expect(page.getByRole("tablist")).toHaveAttribute("aria-orientation", "horizontal");
   await first.focus();
   await page.keyboard.press("ArrowRight");
-  await expect(page.getByRole("tab").last()).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab").nth(1)).toHaveAttribute("aria-selected", "true");
   await page.keyboard.press("ArrowLeft");
   await expect(first).toHaveAttribute("aria-selected", "true");
   await page.keyboard.press("End");
@@ -160,7 +161,10 @@ test("public metadata, search policy and unknown routes have explicit behavior",
   const sitemap = await request.get("/sitemap.xml");
   expect(sitemap.status()).toBe(200);
   const detailPaths = await publicDetailPaths(request);
-  expect((await sitemap.text()).match(/<loc>/g)).toHaveLength((pages.length + detailPaths.length) * 2);
+  const sitemapText = await sitemap.text();
+  for (const locale of ["ko", "en"]) {
+    for (const pathname of [...pages, ...detailPaths]) expect(sitemapText).toContain(`https://bitcoincenterseoul.com/${locale}${pathname}</loc>`);
+  }
   for (const locale of ["ko", "en"]) {
     for (const path of removedPages) {
       expect((await request.get(`/${locale}${path}`)).status()).toBe(404);

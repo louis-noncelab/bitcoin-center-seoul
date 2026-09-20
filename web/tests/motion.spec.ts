@@ -2,13 +2,13 @@ import { expect, test } from "@playwright/test";
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
   test(`scroll entrance respects CSS timing and motion preference: ${reducedMotion}`, async ({ page }) => {
-    // Given a section with three explicit entrance groups.
+    // Given a section with a heading and six gallery entrance groups.
     await page.emulateMedia({ reducedMotion });
-    await page.goto("/ko");
+    await page.goto("/ko/about");
     await page.evaluate(() => document.fonts.ready);
-    const section = page.locator("#experience");
+    const section = page.locator(".about-gallery");
     const parts = section.locator("[data-reveal-part]");
-    await expect(parts).toHaveCount(3);
+    await expect(parts).toHaveCount(7);
 
     // When the section enters the viewport.
     await section.evaluate((element) => element.scrollIntoView({ behavior: "instant", block: "start" }));
@@ -24,6 +24,10 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
         { duration: 600, delay: 0 },
         { duration: 600, delay: 80 },
         { duration: 600, delay: 160 },
+        { duration: 600, delay: 160 },
+        { duration: 600, delay: 160 },
+        { duration: 600, delay: 160 },
+        { duration: 600, delay: 160 },
       ]);
     }
     expect(await section.evaluate((element) => element.getAnimations().length)).toBe(0);
@@ -35,12 +39,12 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 }
 
 test("entrance delay stops growing after 160ms", async ({ page }) => {
-  // Given the journal heading and its three record rows.
+  // Given the gallery heading and its six photographs.
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.goto("/en");
+  await page.goto("/en/about");
   await page.evaluate(() => document.fonts.ready);
-  const section = page.locator("#journal");
-  await expect(section.locator("[data-reveal-part]")).toHaveCount(4);
+  const section = page.locator(".about-gallery");
+  await expect(section.locator("[data-reveal-part]")).toHaveCount(7);
 
   // When that scene enters the viewport.
   await section.evaluate((element) => element.scrollIntoView({ behavior: "instant", block: "start" }));
@@ -48,26 +52,14 @@ test("entrance delay stops growing after 160ms", async ({ page }) => {
   // Then the final group shares the maximum delay instead of extending the wait.
   await expect.poll(() => section.locator("[data-reveal-part]").evaluateAll((elements) =>
     elements.map((element) => element.getAnimations()[0]?.effect?.getTiming().delay),
-  ), { timeout: 2000, intervals: [10, 20, 40] }).toEqual([0, 80, 160, 160]);
+  ), { timeout: 2000, intervals: [10, 20, 40] }).toEqual([0, 80, 160, 160, 160, 160, 160]);
 });
 
 test("unmarked sections keep their single entrance", async ({ page }) => {
   // Given a section using the original unmarked anatomy.
-  await page.addInitScript(() => {
-    const observe = IntersectionObserver.prototype.observe;
-    IntersectionObserver.prototype.observe = function (this: IntersectionObserver, target: Element) {
-      if (target.matches("#programs [data-reveal-part]")) {
-        document.querySelectorAll("#experience [data-reveal-part]").forEach((part) => {
-          part.removeAttribute("data-reveal-part");
-        });
-        IntersectionObserver.prototype.observe = observe;
-      }
-      observe.call(this, target);
-    };
-  });
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.goto("/ko");
-  const section = page.locator("#experience");
+  await page.goto("/ko/about");
+  const section = page.locator(".about-reviews-link");
   await expect(section.locator("[data-reveal-part]")).toHaveCount(0);
 
   // When it enters the viewport.
@@ -83,14 +75,14 @@ test("unmarked sections keep their single entrance", async ({ page }) => {
 test("reduced-motion changes cancel entrances and stop observing new sections", async ({ page }) => {
   // Given active group entrances paused so their cleanup cannot pass by timeout.
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.goto("/ko");
-  const section = page.locator("#experience");
+  await page.goto("/ko/about");
+  const section = page.locator(".about-gallery");
   await section.evaluate((element) => element.scrollIntoView({ behavior: "instant", block: "start" }));
   await expect.poll(() => section.evaluate((element) => {
     const animations = element.getAnimations({ subtree: true });
     animations.forEach((animation) => animation.pause());
     return animations.length;
-  }), { timeout: 2000, intervals: [10, 20, 40] }).toBe(3);
+  }), { timeout: 2000, intervals: [10, 20, 40] }).toBe(7);
 
   // When the visitor requests reduced motion while the groups are active.
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -102,7 +94,7 @@ test("reduced-motion changes cancel entrances and stop observing new sections", 
     await expect(part).toHaveCSS("transform", "none");
   }
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  const untouched = page.locator("#journal");
+  const untouched = page.locator(".about-reviews-link");
   await untouched.evaluate((element) => element.scrollIntoView({ behavior: "instant", block: "start" }));
   await page.evaluate(() => new Promise<void>((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
@@ -114,9 +106,9 @@ test("mobile parts enter once when each reaches the viewport", async ({ page }) 
   // Given a mobile scene whose final photograph is below the first visible group.
   await page.setViewportSize({ width: 375, height: 667 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.goto("/en");
+  await page.goto("/en/about");
   await page.evaluate(() => document.fonts.ready);
-  const section = page.locator("#experience");
+  const section = page.locator(".about-gallery");
   const first = section.locator("[data-reveal-part]").first();
   const last = section.locator("[data-reveal-part]").last();
 

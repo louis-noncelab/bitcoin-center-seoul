@@ -32,6 +32,13 @@ export function SpaceFilm({ name, label, locale }: {
   useEffect(() => {
     const film = video.current;
     if (!film) return;
+    const frame = film.closest<HTMLElement>(".space-film");
+    function fitOriginal() {
+      if (frame) frame.style.maxInlineSize = `${(film?.videoWidth || 640) / window.devicePixelRatio}px`;
+    }
+    fitOriginal();
+    film.addEventListener("loadedmetadata", fitOriginal);
+    window.addEventListener("resize", fitOriginal);
     const preference = matchMedia("(prefers-reduced-motion: reduce)");
     let visible = false;
     function synchronize() {
@@ -56,6 +63,8 @@ export function SpaceFilm({ name, label, locale }: {
     preference.addEventListener("change", preferenceChanged);
     document.addEventListener("visibilitychange", synchronize);
     return () => {
+      film.removeEventListener("loadedmetadata", fitOriginal);
+      window.removeEventListener("resize", fitOriginal);
       visibility.disconnect();
       selection.disconnect();
       preference.removeEventListener("change", preferenceChanged);

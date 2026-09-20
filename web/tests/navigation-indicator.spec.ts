@@ -6,7 +6,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("hover and keyboard focus keep a single navigation underline", async ({ page }) => {
-  await page.goto("/ko/journal");
+  await page.goto("/ko/news");
   await page.locator('.desktop-navigation[data-indicator-ready="true"]').waitFor();
   const destination = page.locator('.desktop-navigation a[href="/ko/experience"]');
   for (const interaction of ["hover", "focus"] as const) {
@@ -27,13 +27,13 @@ test("hover and keyboard focus keep a single navigation underline", async ({ pag
 test("cached navigation and history carry the underline from its current position", async ({ page }) => {
   await page.goto("/ko/experience");
   await page.locator('.desktop-navigation[data-indicator-ready="true"]').waitFor();
-  await page.locator('.desktop-navigation a[href="/ko/journal"]').click();
-  await expect(page).toHaveURL("/ko/journal");
+  await page.locator('.desktop-navigation a[href="/ko/news"]').click();
+  await expect(page).toHaveURL("/ko/news");
   await page.locator('.desktop-navigation[data-indicator-ready="true"]').waitFor();
   await page.waitForTimeout(350);
 
   for (const back of [false, true]) {
-    const target = back ? "/ko/journal" : "/ko/experience";
+    const target = back ? "/ko/news" : "/ko/experience";
     const marker = page.locator(".desktop-navigation .navigation-indicator");
     const from = await marker.boundingBox();
     const to = await page.locator(`.desktop-navigation a[href="${target}"] .navigation-feedback`).boundingBox();
@@ -79,7 +79,7 @@ test("initial page load places the underline directly under the current label", 
     }
     requestAnimationFrame(sample);
   });
-  await page.goto("/ko/journal", { waitUntil: "domcontentloaded" });
+  await page.goto("/ko/news", { waitUntil: "domcontentloaded" });
   await page.locator('.desktop-navigation[data-indicator-ready="true"]').waitFor();
   await page.waitForTimeout(350);
   const offsets: number[] = await page.evaluate(() => Reflect.get(window, "navigationInitialOffsets"));

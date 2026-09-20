@@ -77,13 +77,13 @@ test("admin uploads, publishes, browses, edits and deletes a collection item", a
     expect(savedId).toBe(id); expect(created_at).toBeTruthy(); expect(updated_at).toBeTruthy();
     expect((await page.request.put(`/api/admin/collection/${id}`, { headers: { ...headers, "If-Match": `"${revision}"` }, data: { ...input, images: [item.images[0], item.images[0]] } })).status()).toBe(400);
     await page.goto("/en/collection");
-    const gallery = page.getByRole("tabpanel", { name: "All", exact: true });
+    const gallery = page.locator(".collection-browser");
     await expect(gallery.getByRole("heading", { name: title, exact: true })).toBeVisible();
-    await page.getByRole("tab", { name: "Books", exact: true }).click();
-    await expect(page.getByRole("tabpanel", { name: "Books", exact: true }).getByRole("heading", { name: title, exact: true })).toHaveCount(0);
-    await page.getByRole("tab", { name: "Books", exact: true }).press("ArrowRight");
-    await expect(page.getByRole("tab", { name: "Art", exact: true })).toHaveAttribute("aria-selected", "true");
-    await page.getByRole("tabpanel", { name: "Art", exact: true }).getByRole("link").filter({ hasText: title }).click();
+    await page.locator(".collection-filters").getByRole("link", { name: "Books", exact: true }).click();
+    await expect(gallery.getByRole("heading", { name: title, exact: true })).toHaveCount(0);
+    await page.locator(".collection-filters").getByRole("link", { name: "Art", exact: true }).click();
+    await expect(page.locator(".collection-filters").getByRole("link", { name: "Art", exact: true })).toHaveAttribute("aria-current", "page");
+    await gallery.getByRole("link").filter({ hasText: title }).click();
     await expect(page).toHaveURL(`/en/collection/${id}`);
     await expect(page.locator("main h1")).toHaveText(title);
     await expect(page.locator(".photo-gallery img")).toHaveCount(2);
@@ -175,7 +175,7 @@ test("private and deleted images cannot be downloaded or retained through the im
   }
 });
 
-test("board games publish to their own page and stay out of the books & art collection", async ({ request, baseURL }) => {
+test("board games publish to their own detail page and the collection hub", async ({ request, baseURL }) => {
   if (!password) throw new Error("Run through npm run review -- test.");
   const headers = { origin: baseURL ?? "" };
   await request.post("/api/admin/login", { headers, data: { password } });
@@ -191,7 +191,8 @@ test("board games publish to their own page and stay out of the books & art coll
     const list = await request.get("/ko/experience/board-game");
     expect(list.status()).toBe(200);
     expect(await list.text()).toContain(title);
-    expect(await (await request.get("/ko/collection")).text()).not.toContain(title);
+    expect(await (await request.get("/ko/collection")).text()).toContain(title);
+    expect(await (await request.get("/ko/collection?kind=book")).text()).not.toContain(title);
     expect((await request.get(`/ko/experience/board-game/${record.slug}`)).status()).toBe(200);
     expect((await request.get(`/ko/experience/board-game/${record.id}`, { maxRedirects: 0 })).status()).toBe(308);
     expect((await request.get(`/ko/collection/${record.id}`)).status()).toBe(404);
@@ -212,7 +213,7 @@ test("전시 페이지는 도서·작품, 보드게임, 하드웨어 지갑 체�
   await expect(cards.nth(1).getByRole("img", { name: "흰색 선반에 놓인 비트코인 보드게임", exact: true })).toBeVisible();
 });
 
-test("관리자가 보드게임을 등록하면 보드게임 페이지에만 공개된다", async ({ page, baseURL }) => {
+test("관리자가 보드게임을 등록하면 컬렉션 필터와 보드게임 상세에서 공개된다", async ({ page, baseURL }) => {
   if (!password) throw new Error("Run through npm run review -- test.");
   const title = `검증용 보드게임 ${randomUUID()}`;
   let id: number | undefined;
@@ -238,7 +239,15 @@ test("관리자가 보드게임을 등록하면 보드게임 페이지에만 공
     await page.goto("/ko/experience/board-game");
     await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
     await page.goto("/ko/collection");
+    await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
+    const filters = page.getByRole("navigation", { name: "컬렉션 종류" });
+    await filters.getByRole("link", { name: "서적", exact: true }).click();
     await expect(page.getByRole("heading", { name: title, exact: true })).toHaveCount(0);
+    await filters.getByRole("link", { name: "보드게임", exact: true }).click();
+    await expect(filters.getByRole("link", { name: "보드게임", exact: true })).toHaveAttribute("aria-current", "page");
+    await page.getByRole("link").filter({ has: page.getByRole("heading", { name: title, exact: true }) }).click();
+    await expect(page).toHaveURL(`/ko/experience/board-game/${item.slug}`);
+    await expect(page.getByRole("heading", { level: 1, name: title, exact: true })).toBeVisible();
     await page.goto("/ko/admin/collection");
     const row = page.locator(".events-admin-list > li").filter({ hasText: title });
     await row.getByRole("button", { name: "삭제", exact: true }).click();

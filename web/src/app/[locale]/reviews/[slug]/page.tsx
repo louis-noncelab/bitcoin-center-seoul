@@ -37,7 +37,7 @@ export default async function ReviewPage({ params }: Props) {
   const review = visitReview(record);
   const t = reviewCopy[locale];
   const related = listReviews().filter((item) => item.id !== record.id).sort((a, b) => Number(b.kind === record.kind) - Number(a.kind === record.kind)).slice(0, 3);
-  return <><SiteHeader locale={locale} /><main id="main" tabIndex={-1} className="container detail-page event-page reviews-page">
+  return <><SiteHeader locale={locale} section="news" /><main id="main" tabIndex={-1} className="container detail-page event-page reviews-page">
     <Link href="/reviews" prefetch={false} locale={locale} className="button event-back" data-variant="secondary"><ArrowLeft className="icon" aria-hidden="true" />{locale === "ko" ? "방문 후기로" : "Back to visitor stories"}</Link>
     <article className="review-story">
       <header className="review-story-heading">

@@ -1,5 +1,5 @@
 import { ArrowRight, ArrowUpRight, CalendarDays, Clock3, MapPin } from "lucide-react";
-import Image from "next/image";
+import { OriginalPhoto } from "./original-photo";
 import "@/styles/reviews.css";
 import type { EventRecord, HighlightRecord } from "@/lib/events-contract";
 import { markdownExcerpt } from "@/lib/markdown";
@@ -7,6 +7,9 @@ import { ContentLink } from "@/components/controls/content-link";
 import { MarkdownContent } from "@/components/site/markdown-content";
 import { ContentTags } from "@/components/site/content-tags";
 import { EventsCalendar } from "@/components/site/events-calendar";
+import { EventBookingLink } from "@/components/site/event-booking-link";
+import { eventBookingHref } from "@/lib/event-booking";
+import { seoulDate } from "@/lib/center-status";
 import type { Locale } from "@/i18n/routing";
 
 function text(locale: Locale, korean: string, english: string) {
@@ -83,14 +86,14 @@ export function EventsCatalog({ events, locale, today }: { readonly events: read
     <div className="events-catalog" id="events">
       <EventsCalendar dates={days.map(({ date, events }) => ({ date, count: events.length }))} locale={locale} today={today} />
       <div className="events-timeline">
-        <EventGroup id="upcoming-events" days={upcoming} locale={locale} title={locale === "ko" ? "다가오는 행사" : "Upcoming events"} empty={locale === "ko" ? "예정된 행사가 없습니다." : "There are no upcoming events."} />
-        {past.length > 0 && <EventGroup id="past-events" days={past} locale={locale} title={locale === "ko" ? "지난 행사" : "Past events"} />}
+        <EventGroup id="upcoming-events" days={upcoming} locale={locale} today={today} title={locale === "ko" ? "다가오는 행사" : "Upcoming events"} empty={locale === "ko" ? "예정된 행사가 없습니다." : "There are no upcoming events."} />
+        {past.length > 0 && <EventGroup id="past-events" days={past} locale={locale} today={today} title={locale === "ko" ? "지난 행사" : "Past events"} />}
       </div>
     </div>
   );
 }
 
-function EventGroup({ id, days, locale, title, empty }: { readonly id: string; readonly days: readonly { readonly date: string; readonly events: readonly EventRecord[] }[]; readonly locale: Locale; readonly title: string; readonly empty?: string }) {
+function EventGroup({ id, days, locale, today, title, empty }: { readonly id: string; readonly days: readonly { readonly date: string; readonly events: readonly EventRecord[] }[]; readonly locale: Locale; readonly today: string; readonly title: string; readonly empty?: string }) {
   return (
     <section className="catalog-group" aria-labelledby={id}>
       <h2 id={id}>{title}</h2>
@@ -111,8 +114,9 @@ function EventGroup({ id, days, locale, title, empty }: { readonly id: string; r
                       <strong>{titleText}</strong>
                       {location && <span className="event-card-location muted"><MapPin className="icon" aria-hidden="true" />{location}</span>}
                     </span>
-                    {images[0] && <span className="event-card-photo"><Image src={images[0]} alt="" fill sizes="(max-width: 767px) 64px, 96px" unoptimized /></span>}
+                    {images[0] && <span className="event-card-photo"><OriginalPhoto src={images[0]} alt="" crop /></span>}
                   </ContentLink>
+                  <EventBookingLink event={event} locale={locale} today={today} />
                 </li>
               );
             })}
@@ -134,7 +138,7 @@ export function HighlightsCatalog({ highlights, locale, preview = false }: { rea
         return (
           <article className={`review-card highlight-card${preview ? " review-card-compact" : ""}`} key={highlight.id} data-reveal-part={preview ? "" : undefined}>
             <ContentLink href={`/journal/${highlight.slug || highlight.id}`} locale={locale} className="review-card-link highlight-card-link">
-              {images[0] && <span className="review-card-image highlight-card-photo"><Image src={images[0]} alt="" fill sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 33vw" unoptimized /></span>}
+              {images[0] && <span className="review-card-image highlight-card-photo"><OriginalPhoto src={images[0]} alt="" crop /></span>}
               <div className="review-card-content highlight-card-copy">
                 <Title>{title}</Title>
                 <p className="review-card-summary highlight-card-summary">{markdownExcerpt(text(locale, highlight.description, highlight.descriptionEn))}</p>
@@ -149,16 +153,17 @@ export function HighlightsCatalog({ highlights, locale, preview = false }: { rea
   );
 }
 
-export function EventDetail({ event, locale }: { readonly event: EventRecord; readonly locale: Locale }) {
+export function EventDetail({ event, locale, today = seoulDate() }: { readonly event: EventRecord; readonly locale: Locale; readonly today?: string }) {
   const title = text(locale, event.title, event.titleEn);
   const link = externalHref(event.link);
   return (
     <article className="event-detail">
-      <PhotoGallery images={galleryImages(event)} title={title} locale={locale} />
       <EventMeta event={event} locale={locale} />
+      <EventBookingLink event={event} locale={locale} today={today} />
+      <PhotoGallery images={galleryImages(event)} title={title} locale={locale} />
       <ContentTags tags={event.tags} locale={locale} />
       <MarkdownContent lang={locale === "en" && !event.descriptionEn ? "ko" : locale}>{text(locale, event.description, event.descriptionEn)}</MarkdownContent>
-      {link && <a href={link} target="_blank" rel="noopener noreferrer" className="button" data-variant="primary">{locale === "ko" ? "참여하기" : "Join"}<ArrowUpRight className="icon" aria-hidden="true" /><span className="sr-only">{locale === "ko" ? " (새 창)" : " (new window)"}</span></a>}
+      {link && !eventBookingHref(link, event.date, today) && <a href={link} target="_blank" rel="noopener noreferrer" className="source-link">{locale === "ko" ? "행사 링크 보기" : "View event link"}<ArrowUpRight className="icon" aria-hidden="true" /><span className="sr-only">{locale === "ko" ? " (새 창)" : " (new window)"}</span></a>}
     </article>
   );
 }
@@ -184,7 +189,7 @@ export function PhotoGallery({ images, title, locale }: { readonly images: reado
       <div className="photo-gallery-grid">
         {images.map((image, index) => (
           <figure className="gallery-photo" key={`${image}-${index}`}>
-            <Image src={image} alt={`${title} ${locale === "ko" ? "사진" : "photo"} ${index + 1}`} width={1600} height={1200} sizes="(max-width: 767px) 100vw, 760px" unoptimized />
+            <OriginalPhoto src={image} alt={`${title} ${locale === "ko" ? "사진" : "photo"} ${index + 1}`} />
           </figure>
         ))}
       </div>

@@ -1,3 +1,4 @@
+import { deleteContentFixture } from "./content-cleanup";
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { expect, request, test, type APIRequestContext } from "@playwright/test";
@@ -6,6 +7,12 @@ import { eventRecordSchema, highlightRecordSchema } from "../src/lib/events-cont
 
 const runtimeSchema = z.object({ ADMIN_PASSWORD: z.string().min(1) });
 const responseSchema = <T extends z.ZodType>(schema: T) => z.object({ data: schema });
+const seoulToday = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" }).format(new Date());
+const futureEventDate = (() => {
+  const date = new Date(`${seoulToday}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + 2);
+  return date.toISOString().slice(0, 10);
+})();
 
 test.describe.serial("events-only public pages", () => {
   let admin: APIRequestContext;
@@ -25,38 +32,50 @@ test.describe.serial("events-only public pages", () => {
     expect((await admin.post("/api/admin/login", { data: { password: runtime.ADMIN_PASSWORD } })).ok()).toBeTruthy();
 
     const event = responseSchema(eventRecordSchema).parse(await (await admin.post("/api/admin/events", { data: {
-      slug: `${eventSlug}-old`, title: eventTitleKo, titleEn: eventTitleEn, date: "2026-10-31", time: "19:00", location: "비트코인 센터 서울", locationEn: "Bitcoin Center Seoul", description: "외부 안내 링크가 있는 공개 행사입니다.", descriptionEn: "A public event with an external information link.", image: "", link: "https://example.com/event", images: [],
+      slug: `${eventSlug}-old`, title: eventTitleKo, titleEn: eventTitleEn, date: futureEventDate, time: "19:00", location: "비트코인 센터 서울", locationEn: "Bitcoin Center Seoul", description: "외부 안내 링크가 있는 공개 행사입니다.", descriptionEn: "A public event with an external information link.", image: "", link: "https://example.com/event", images: [],
     } })).json()).data;
-    const { id: createdEventId, ...eventInput } = event;
+    const { id: createdEventId, revision: eventRevision, ...eventInput } = event;
     eventId = createdEventId;
-    expect((await admin.put(`/api/admin/events/${eventId}`, { data: { ...eventInput, slug: eventSlug } })).ok()).toBeTruthy();
+    expect((await admin.put(`/api/admin/events/${eventId}`, { headers: { "If-Match": `"${eventRevision}"` }, data: { ...eventInput, slug: eventSlug } })).ok()).toBeTruthy();
 
     const highlight = responseSchema(highlightRecordSchema).parse(await (await admin.post("/api/admin/highlights", { data: {
       slug: `${highlightSlug}-old`, title: highlightTitleKo, titleEn: highlightTitleEn, meta: "공개 검토 기록", metaEn: "Public review record", category: "밋업", categoryEn: "Meetup", date: "2099.09.09", startDate: "", endDate: "", host: "비트코인 센터 서울", hostEn: "Bitcoin Center Seoul", description: "실제 공개 데이터 경로를 검토하는 기록입니다.", descriptionEn: "A record used to review the real public data path.", image: "", link: "https://example.com/highlight", icon: "", sort_order: 0, is_active: 1, images: [],
     } })).json()).data;
-    const { id: createdHighlightId, ...highlightInput } = highlight;
+    const { id: createdHighlightId, revision: highlightRevision, ...highlightInput } = highlight;
     highlightId = createdHighlightId;
-    expect((await admin.put(`/api/admin/highlights/${highlightId}`, { data: { ...highlightInput, slug: highlightSlug } })).ok()).toBeTruthy();
+    expect((await admin.put(`/api/admin/highlights/${highlightId}`, { headers: { "If-Match": `"${highlightRevision}"` }, data: { ...highlightInput, slug: highlightSlug } })).ok()).toBeTruthy();
   });
 
-  test.afterAll(async () => {
-    if (eventId) await admin.delete(`/api/admin/events/${eventId}`);
-    if (highlightId) await admin.delete(`/api/admin/highlights/${highlightId}`);
-    if (admin) await admin.dispose();
+  test.afterAll(async ({ baseURL }) => {
+    if (!admin) return;
+    try {
+      try {
+        if (eventId) await deleteContentFixture(admin, `/api/admin/events/${eventId}`, baseURL ?? "http://127.0.0.1:3102");
+      } finally {
+        if (highlightId) await deleteContentFixture(admin, `/api/admin/highlights/${highlightId}`, baseURL ?? "http://127.0.0.1:3102");
+      }
+    } finally {
+      await admin.dispose();
+    }
   });
 
   test("shows a real event and its safe external link without commerce destinations", async ({ page }) => {
     // Given a published event created through the real admin API
     // When a Korean visitor opens the program list and detail
     await page.goto("/ko/programs");
-    const eventLink = page.getByRole("link").filter({ hasText: eventTitleKo });
+    const eventLink = page.locator(`.event-card[href="/ko/programs/${eventSlug}"]`);
 
     // Then the record is linked by its canonical slug and commerce is absent
+    await expect(eventLink).toHaveCount(1);
     await expect(eventLink).toHaveAttribute("href", `/ko/programs/${eventSlug}`);
-    await expect(page.locator('a[href*="/goods"], a[href*="/cart"], a[href*="/checkout"], a[href*="/account"], a[href*="/booking"], a[href*="/payments"]')).toHaveCount(0);
+    await expect(page.locator('a[href*="/cart"], a[href*="/checkout"], a[href*="/account"], a[href*="/booking"], a[href*="/payments"]')).toHaveCount(0);
     await eventLink.click();
     await expect(page.getByRole("heading", { name: eventTitleKo, exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: /참여하기/ })).toHaveAttribute("href", "https://example.com/event");
+    const booking = page.locator(".event-detail a.event-booking-link");
+    await expect(booking).toHaveAccessibleName(`${eventTitleKo} 예약하기 외부 사이트 (새 창)`);
+    await expect(booking).toHaveAttribute("href", "https://example.com/event");
+    await expect(booking).toHaveAttribute("target", "_blank");
+    await expect(booking).toHaveAttribute("rel", /^(?=.*\bnoopener\b)(?=.*\bnoreferrer\b).+$/);
   });
 
   test("shows only the active highlight and preserves its detail route across locales", async ({ page }) => {
@@ -70,6 +89,7 @@ test.describe.serial("events-only public pages", () => {
     // Then the published content, original link, and locale-preserving control are present
     await expect(page.getByRole("heading", { name: highlightTitleEn, exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: /Read the original/ })).toHaveAttribute("href", "https://example.com/highlight");
+    await page.getByRole("button", { name: "Menu", exact: true }).click();
     await page.getByRole("link", { name: /한국어로 전환/ }).click();
     await expect(page).toHaveURL(new RegExp(`/ko/journal/${highlightSlug}$`));
     await expect(page.getByRole("heading", { name: highlightTitleKo, exact: true })).toBeVisible();
@@ -116,8 +136,8 @@ test.describe.serial("events-only public pages", () => {
 
   test("keeps the numeric URL canonical when an event slug is cleared", async ({ page, request: publicRequest }) => {
     // Given an event whose custom slug is cleared through the admin API
-    const { id, ...input } = responseSchema(eventRecordSchema).parse(await (await admin.get(`/api/admin/events/${eventId}`)).json()).data;
-    expect((await admin.put(`/api/admin/events/${id}`, { data: { ...input, slug: "" } })).ok()).toBeTruthy();
+    const { id, revision, ...input } = responseSchema(eventRecordSchema).parse(await (await admin.get(`/api/admin/events/${eventId}`)).json()).data;
+    expect((await admin.put(`/api/admin/events/${id}`, { headers: { "If-Match": `"${revision}"` }, data: { ...input, slug: "" } })).ok()).toBeTruthy();
     // When a visitor opens its numeric URL
     const response = await page.goto(`/ko/programs/${id}`);
     // Then that URL renders normally and the previous slug redirects back to it
@@ -130,8 +150,8 @@ test.describe.serial("events-only public pages", () => {
 
   test("hides inactive highlights through numeric, canonical, and previous slug paths", async ({ request: publicRequest }) => {
     // Given a formerly published highlight that the admin makes inactive
-    const { id, ...input } = responseSchema(highlightRecordSchema).parse(await (await admin.get(`/api/admin/highlights/${highlightId}`)).json()).data;
-    expect((await admin.put(`/api/admin/highlights/${id}`, { data: { ...input, is_active: 0 } })).ok()).toBeTruthy();
+    const { id, revision, ...input } = responseSchema(highlightRecordSchema).parse(await (await admin.get(`/api/admin/highlights/${highlightId}`)).json()).data;
+    expect((await admin.put(`/api/admin/highlights/${id}`, { headers: { "If-Match": `"${revision}"` }, data: { ...input, is_active: 0 } })).ok()).toBeTruthy();
     // When visitors request any known path
     for (const path of [id, highlightSlug, `${highlightSlug}-old`]) {
       const response = await publicRequest.get(`/ko/journal/${path}`, { maxRedirects: 0 });
@@ -160,6 +180,7 @@ test.describe.serial("events-only public pages", () => {
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/ko\/journal\?page=2$/);
     await expect(page.locator('link[hreflang="en"]')).toHaveAttribute("href", /\/en\/journal\?page=2$/);
     await expect(page.locator('meta[property="og:url"]')).toHaveAttribute("content", /\/ko\/journal\?page=2$/);
+    await page.getByRole("button", { name: "메뉴", exact: true }).click();
     await page.getByRole("link", { name: /Switch to English/ }).click();
     await expect(page).toHaveURL(/\/en\/journal\?page=2$/);
     await expect(page.getByRole("navigation", { name: "Highlights pagination" }).locator('[aria-current="page"]')).toHaveText("2");

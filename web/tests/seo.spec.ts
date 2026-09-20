@@ -7,18 +7,26 @@ const brands = { ko: "비트코인 센터 서울", en: "Bitcoin Center Seoul" } 
 const publicRowsSchema = z.object({ data: z.array(z.object({ id: z.number().int().positive(), slug: z.string().default("") })) });
 
 async function publicDetailPaths(request: APIRequestContext) {
-  const [events, highlights, notices] = await Promise.all([
+  const [events, highlights, notices, collection, reviews] = await Promise.all([
     request.get("/api/events"),
     request.get("/api/highlights"),
     request.get("/api/notices"),
+    request.get("/api/collection"),
+    request.get("/ko/reviews"),
   ]);
   expect(events.status()).toBe(200);
   expect(highlights.status()).toBe(200);
   expect(notices.status()).toBe(200);
+  expect(collection.status()).toBe(200);
+  expect(reviews.status()).toBe(200);
   const eventRows = publicRowsSchema.parse(await events.json()).data;
   const highlightRows = publicRowsSchema.parse(await highlights.json()).data;
   const noticeRows = publicRowsSchema.parse(await notices.json()).data;
+  const collectionRows = z.object({ data: z.array(z.object({ id: z.number(), slug: z.string(), kind: z.enum(["book", "artwork", "boardgame"]) })) }).parse(await collection.json()).data;
+  const reviewPaths = [...new Set([...((await reviews.text()).matchAll(/href="\/ko(\/reviews\/[^"?#]+)"/g))].map((match) => match[1]))];
   return [
+    ...reviewPaths,
+    ...collectionRows.map(({ id, slug, kind }) => `${kind === "boardgame" ? "/experience/board-game" : "/collection"}/${slug || id}`),
     ...noticeRows.map(({ slug }) => `/notices/${slug}`),
     ...eventRows.map(({ id, slug }) => `/programs/${slug || id}`),
     ...highlightRows.map(({ id, slug }) => `/journal/${slug || id}`),
@@ -90,7 +98,7 @@ test("the sitemap keeps the same Korean fallback for every locale pair", async (
   const response = await request.get("/sitemap.xml");
   const xml = await response.text();
   const entries = xml.match(/<url>[\s\S]*?<\/url>/g) ?? [];
-  const paths = [...sections, "/experience/wallet", "/notices", ...await publicDetailPaths(request)];
+  const paths = [...sections, "/news", "/collection", "/goods", "/reviews", "/experience/board-game", "/experience/wallet", "/notices", ...await publicDetailPaths(request)];
 
   expect(response.status()).toBe(200);
   expect(entries).toHaveLength(paths.length * 2);

@@ -8,6 +8,7 @@ import { PageMotion } from "@/components/site/page-motion";
 import { ReviewsCatalog, ReviewsFeature, reviewFilters } from "@/components/site/reviews-public";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
+import { NewsNavigation } from "@/components/site/news-content";
 import { reviewCopy } from "@/content/review-copy";
 import { pageMetadata } from "@/content/site";
 import { Link } from "@/i18n/navigation";
@@ -39,11 +40,12 @@ export default async function ReviewsPage({ params, searchParams }: Props) {
   const { type } = await searchParams;
   const filter = reviewFilters.find((kind) => kind === type) ?? "all";
   const t = reviewCopy[locale];
-  return <><SiteHeader locale={locale} /><main id="main" tabIndex={-1} className="container detail-page reviews-page">
+  return <><SiteHeader locale={locale} section="news" /><main id="main" tabIndex={-1} className="container detail-page reviews-page">
     <div className="detail-heading reviews-heading">
-      <Link href="/about" locale={locale} className="button" data-variant="secondary"><ArrowLeft className="icon" aria-hidden="true" />{t.back}</Link>
+      <Link href="/news" locale={locale} className="button" data-variant="secondary"><ArrowLeft className="icon" aria-hidden="true" />{locale === "ko" ? "소식으로" : "Back to news"}</Link>
       <div className="reviews-heading-row"><div><h1>{t.title}</h1><p className="reviews-introduction">{t.introduction}<br />{t.description}</p></div></div>
     </div>
+    <NewsNavigation locale={locale} current="reviews" />
     <ReviewsFeature locale={locale} review={featured ? visitReview(featured) : null} /><ReviewsCatalog locale={locale} filter={filter} reviews={reviews} />
     <PageMotion pageKey={`${locale}-reviews`} />
   </main><SiteFooter locale={locale} /></>;

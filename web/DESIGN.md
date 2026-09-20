@@ -1,5 +1,68 @@
 # Bitcoin Center Seoul: public design revision
 
+## 확정 기준: 확장 모바일 홈, 2026-09-20
+
+- 승인 자료: `bcs-expanded-mobile.html`과 최신 모바일 화면. 아래 이전 after 계획은 과거 기록
+- 흰 배경, 회색 패널, 오렌지 pill, 옅은 파란 곡선. 수동 라이트와 다크 테마
+- 대표 제목 34px, 섹션 제목 27px, 행사 제목 22px. 359px 이하 29px, 25px, 21px
+- 행사, 빠른 메뉴, 일정, 소식과 미디어월, 컬렉션, 굿즈, 공간과 방문 순서
+- 실제 공개 행사 최대 5개. 실제 컬렉션 대표 자료와 종류별 목록. 매거진 목록 준비 안내
+- 굿즈는 실제 센터 사진과 샛비 판매처 연결. 가격과 재고 추정 없음
+- 6개 메뉴 단일 모델. 영어 메뉴 겹침 방지를 위한 모바일 메뉴 전환점 1400px
+- 모바일 320px과 375px 우선. 768px 2개, 1200px 이상 3개 행사 카드. 단일 카드 최대 420px
+- DB와 관리자 계약 유지. 로컬 검토 한정
+
+## 모바일 홈 after 시안 적용, 2026-09-20
+
+- 승인된 after 안의 제목 위계, 숫자형 행사 이동, 캘린더 결과 패널, 공간 섹션 순서 반영
+- 홈 문서 h1 1개, 공간 소개 h2 유지
+- 오늘 이후 최대 5개, 실제 행사 개수, 내부 상세 링크, 주황색 예약 링크 구분 유지
+- 오늘 상태 칩은 사진 위 오버레이 대신 사진 아래 본문 첫 줄에 배치. 제목보다 먼저 노출
+- 다음 카드 88% 노출, 실제 사진 contain, 자동 재생 정지와 동작 줄이기 유지
+- 이후 홈 변경도 320px과 375px, 한영, 라이트와 다크, 키보드, 가로 넘침 검증 필수
+
+## 행사 카드 정리와 예약 동선, 2026-09-20
+
+- 홈 행사 카드의 바깥 테두리와 그림자 제거. 둥근 모서리, 카드 간격, 다음 카드 일부 노출 유지
+- 홈 행사 카드, 캘린더 날짜별 목록, 프로그램 목록에 개별 예약 링크 직접 노출
+- 상세 페이지 예약 버튼은 일정 정보 다음, 사진과 본문 이전 배치
+- 기존 외부 예약 URL 재사용. 상세 페이지 이동 없이 등록된 신청 화면 연결
+- 예약 버튼은 로고 오렌지와 짙은 글자, 최소 48px 터치 영역. 행사 제목보다 작은 글자 크기
+- 상세 보기와 예약하기는 독립 링크. 예약 사이트 이름과 새 창 안내, 키보드 포커스 유지
+- 서울 날짜 기준 지난 행사, 예약 링크 누락 또는 잘못된 URL의 예약 버튼 미노출
+- 지난 행사 외부 링크는 본문 뒤 일반 링크로 유지. 마감이나 잔여석 상태 추정 금지
+- 내부 예약 시스템, 샛비 로그인이나 결제 변경, 가짜 예약 URL, 운영 DB 수정과 배포 제외
+
+## 소식 발행 연결, 2026-09-20
+
+- 이번 범위: 기존 공지와 현장 스케치의 소식 통합, 홈 요약, 미디어월
+- `/ko/news`, `/en/news` 신설. 전체 소식, 공지사항, 현장 스케치, 사진과 영상, 방문 후기 분류
+- 상단 현장 스케치 메뉴를 소식으로 변경. 기존 상세 URL과 목록 유지
+- 공개 자료만 표시. 공지는 서울 기준 작성일, 현장 스케치는 행사 종료일 또는 행사일 순
+- 소식 첫 화면 최근 12개, 홈 캘린더 아래 최근 2개와 미디어 최대 4개
+- 사진은 공개 현장 스케치의 대표 사진 재사용. 같은 사진 중복 제외, 원래 정렬 유지
+- 영상은 기존 선정 영상과 실제 썸네일 재사용. 유튜브 원본 새 창 연결, 자동재생 없음
+- 홈의 기존 현장 스케치와 영상 블록 중복 제거
+- 모바일 2열 미디어 카드, 48px 분류 링크, 기존 색상 토큰과 라이트/다크 대응
+- 기존 관리자에 공개 소식 확인 링크와 노출 위치 안내. 저장 전 이탈 확인 유지
+- 새 DB 테이블, 별도 미디어 편집기, 굿즈 관리, 나머지 전체 메뉴 개편과 배포 제외
+
+## 모바일 홈 행사와 캘린더, 2026-09-20
+
+- 이후 UI 변경도 모바일 사용성 우선. 첫 화면 가독성, 손가락 터치, 가로 넘침 기준으로 판단
+- 홈 순서: 헤더, 다가오는 행사, 행사 캘린더, 기존 센터 소개와 나머지 영역
+- 다가오는 행사: 서울 날짜 기준 오늘 이후 일정, 날짜와 시간순 최대 5개
+- 좌우 스와이프, 다음 카드 일부 노출, 페이지 점과 이전/다음 버튼, 자동 재생 없음
+- 행사명, 날짜, 시간, 장소, 실제 등록 이미지, 상세 페이지 링크
+- 이미지 없는 행사: 텍스트 카드. 예정 행사 없는 경우 강조 영역 전체 미노출
+- 홈 캘린더: 오늘 초기 선택, 날짜 선택 시 같은 화면에서 해당 날짜 행사 목록 갱신
+- 모든 행사 날짜 표시, 상단 5개 제한과 무관하게 전체 일정 탐색 가능
+- 행사 없는 날짜 안내, 선택 날짜와 월 이동 결과 일치, 전체 일정 보기 링크
+- 기존 행사 등록 자료 재사용. 관리자나 SQLite 스키마 변경 없음
+- 모바일 320px, 360px, 375px 검증, 기본 배율에서 행사 이동 버튼과 날짜 칸 44px 이상 터치 영역
+- 한영, 라이트/다크, 키보드, 동작 줄이기 지원
+- 참고: 국립중앙박물관의 상단 이미지 강조와 세종문화회관의 날짜별 일정 탐색
+
 ## Visitor review articles — 2026-09-11
 
 Reviews with editorial body content open a readable article before the original source.
@@ -131,8 +194,9 @@ Reuse the existing neutral surfaces, Pretendard, controls and selection primitiv
 - Composition: after the owner's width revision, the tour fills the page content
   width and aligns with the page heading. A 3:2 column split enlarges the video
   alongside its description, with shared 32/40px gaps, 16:9 frame and 12px corners.
-  Under 768px the image and description stack. The real 640×360 footage scales
-  with its frame; its actual colors and watermark remain. No invented frames,
+  Under 768px the image and description stack. Following the image-quality fix,
+  the real 640×360 footage is capped at its native pixel size divided by the
+  display pixel ratio; its actual colors and watermark remain. No invented frames,
   faux grain, decorative subtitles or audio. Scene changes use a 500ms
   opacity dissolve with the existing image/exit tokens and selection lifecycle.
   The owner's latest revision removes every visible playback icon and the bottom
@@ -148,7 +212,9 @@ Reuse the existing neutral surfaces, Pretendard, controls and selection primitiv
   poster and can explicitly play; changing the preference pauses playback.
   Manual pause persists through visibility changes. Failed/autoplay-blocked
   playback retains a poster, a useful label and a working retry/play action.
-  No-JavaScript retains the initial poster, description and destination.
+  No-JavaScript retains the initial poster, description and destination. Gallery
+  photographs keep their native aspect ratio and, with JavaScript, are capped
+  to their original pixels at the current display density instead of enlarged.
 - References: beui.dev `tabs` and `animated-badge` source consulted for shared
   selection and state-icon mechanisms; native media lifecycle follows installed
   Next.js video guidance. Adapt mechanisms only; no registry components copied.

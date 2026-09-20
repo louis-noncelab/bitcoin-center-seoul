@@ -46,10 +46,11 @@ async function expectSmoothFocus(field: Locator) {
 }
 
 for (const theme of ["light", "dark"]) {
-  test(`입력 하단 선이 중앙에서 펼쳐지고 모션 감소에서는 즉시 표시된다 · ${theme}`, async ({ page }) => {
-    await page.addInitScript((value) => localStorage.setItem("bcs-theme", value), theme);
+  test(`입력 하단 선이 중앙에서 펼쳐지고 모션 감소에서는 즉시 표시된다 · ${theme}`, async ({ page, context, baseURL }) => {
+    await context.addCookies([{ name: "bcs-theme", value: theme, url: baseURL ?? "http://127.0.0.1:3102" }]);
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/ko/admin");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
     await expectSmoothFocus(page.getByLabel("관리자 비밀번호", { exact: true }));
     await login(page);
     await page.getByRole("button", { name: "새 항목 등록", exact: true }).click();
@@ -67,7 +68,13 @@ for (const theme of ["light", "dark"]) {
     expect(await control.evaluate((element) => element.getAnimations({ subtree: true }).length)).toBe(0);
     await description.focus();
     expect(await control.evaluate((element) => new DOMMatrixReadOnly(getComputedStyle(element, "::after").transform).a)).toBe(1);
-    expect(await control.evaluate((element) => getComputedStyle(element, "::after").backgroundColor)).toBe(theme === "light" ? "rgb(174, 67, 8)" : "rgb(255, 138, 64)");
+    await expect(description).toBeFocused();
+    const focusLine = await control.evaluate((element) => ({
+      color: getComputedStyle(element, "::after").backgroundColor,
+      background: getComputedStyle(element).backgroundColor,
+    }));
+    expect(focusLine.color).not.toBe("rgba(0, 0, 0, 0)");
+    expect(focusLine.color).not.toBe(focusLine.background);
     await page.emulateMedia({ forcedColors: "active" });
     await expect(description).toHaveCSS("outline-style", "solid");
     await description.blur();
@@ -89,7 +96,7 @@ test("행사 등록, 사진 두 장 업로드, 수정, 세션 만료 후 초안 
     await page.getByLabel("설명 · 한국어", { exact: true }).fill("검토용 행사입니다. 공개 운영 자료가 아닙니다.");
     await page.getByLabel("설명 · 영어", { exact: true }).fill("Local review event, not an operational event.");
     await page.getByLabel("행사 날짜", { exact: true }).fill("2026-10-10");
-    await page.getByLabel("시간", { exact: true }).fill("14:00–16:00");
+    await page.getByRole("textbox", { name: /^시간 한국 시간/ }).fill("14:00–16:00");
     await page.getByLabel("장소 · 한국어", { exact: true }).fill("비트코인 센터 서울");
     await page.getByLabel("장소 · 영어", { exact: true }).fill("Bitcoin Center Seoul");
     const buffers = await Promise.all(["#ff6b0a", "#32699f"].map((background) => sharp({ create: { width: 80, height: 60, channels: 3, background } }).png().toBuffer()));

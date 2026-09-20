@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, X } from "lucide-react";
+import { ChevronDown, Menu, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
@@ -12,6 +12,10 @@ type NavigationItem = {
   readonly href: string;
   readonly label: string;
   readonly current?: boolean;
+  readonly children?: readonly {
+    readonly href: string;
+    readonly label: string;
+  }[];
 };
 
 export function NavigationDisclosure({
@@ -30,6 +34,7 @@ export function NavigationDisclosure({
   readonly footer?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null);
   const id = useId();
   const trigger = useRef<HTMLButtonElement>(null);
   const disclosure = useRef<HTMLDivElement>(null);
@@ -37,7 +42,10 @@ export function NavigationDisclosure({
   useEffect(() => {
     if (!open) return;
     function dismissOutside(event: PointerEvent) {
-      if (event.target instanceof Node && !disclosure.current?.contains(event.target)) {
+      if (
+        event.target instanceof Node &&
+        !disclosure.current?.contains(event.target)
+      ) {
         setOpen(false);
       }
     }
@@ -89,31 +97,83 @@ export function NavigationDisclosure({
         inert={!open}
         className="disclosure-panel"
       >
-        <ul>
+        <h2 className="navigation-panel-title">
+          {locale === "ko" ? "전체 메뉴" : "Explore the center"}
+        </h2>
+        <ul className="navigation-groups">
           {items.map((item) => (
             <li key={item.href}>
-              <Link
-                href={item.href}
-                prefetch={item.href === "/journal" ? false : undefined}
-                locale={locale}
-                className="navigation-link"
-                aria-current={item.current ? "page" : undefined}
-                onNavigate={() => {
-                  setOpen(false);
-                  trigger.current?.focus({ preventScroll: true });
-                }}
-              >
-                <NavigationFeedback label={item.label} />
-              </Link>
+              {item.children ? (
+                <>
+                  <button
+                    type="button"
+                    className="navigation-group-toggle"
+                    aria-expanded={expanded === item.href}
+                    aria-controls={`${id}-${item.href.slice(1)}`}
+                    aria-current={item.current ? "true" : undefined}
+                    data-current={item.current || undefined}
+                    onClick={() =>
+                      setExpanded(expanded === item.href ? null : item.href)
+                    }
+                  >
+                    {item.label}
+                    <ChevronDown className="icon" aria-hidden="true" />
+                  </button>
+                  <div
+                    className="navigation-submenu"
+                    id={`${id}-${item.href.slice(1)}`}
+                    hidden={expanded !== item.href}
+                  >
+                    {item.children.map((child) => (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        locale={locale}
+                        prefetch={false}
+                        onNavigate={() => {
+                          setOpen(false);
+                          trigger.current?.focus({ preventScroll: true });
+                        }}
+                      >
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <Link
+                  href={item.href}
+                  prefetch={item.href === "/journal" ? false : undefined}
+                  locale={locale}
+                  className="navigation-link"
+                  aria-current={item.current ? "page" : undefined}
+                  onNavigate={() => {
+                    setOpen(false);
+                    trigger.current?.focus({ preventScroll: true });
+                  }}
+                >
+                  <NavigationFeedback label={item.label} />
+                </Link>
+              )}
             </li>
           ))}
         </ul>
-        {open && footer && <div className="navigation-utilities" onClick={(event) => {
-          if (event.target instanceof Element && event.target.closest("a")) {
-            setOpen(false);
-            trigger.current?.focus({ preventScroll: true });
-          }
-        }}>{footer}</div>}
+        {open && footer && (
+          <div
+            className="navigation-utilities"
+            onClick={(event) => {
+              if (
+                event.target instanceof Element &&
+                event.target.closest("a")
+              ) {
+                setOpen(false);
+                trigger.current?.focus({ preventScroll: true });
+              }
+            }}
+          >
+            {footer}
+          </div>
+        )}
       </nav>
     </div>
   );

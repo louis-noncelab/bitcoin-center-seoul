@@ -39,7 +39,7 @@ test("reading progress follows client navigation and restored history without mo
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/ko/about");
   await page.evaluate(() => document.fonts.ready);
-  const next = page.locator('.detail-visit a[href="/ko/visit"]');
+  const next = page.locator('.footer-navigation a[href="/ko/visit"]');
   await next.scrollIntoViewIfNeeded();
   await expect.poll(() => progress(page)).toBeGreaterThan(0.3);
   const previous = { scroll: await page.evaluate(() => scrollY), progress: await progress(page) };
@@ -61,11 +61,17 @@ test.describe("static contact access", () => {
       await page.setViewportSize({ width: 375, height: 900 });
       await page.goto(`/${locale}`);
       const contacts = page.locator(".footer-actions a");
-      await expect(contacts).toHaveCount(2);
+      await expect(contacts).toHaveCount(4);
       await expect(contacts.nth(0)).toHaveAccessibleName(/hello@noncelab\.com/);
       await expect(contacts.nth(0)).toHaveAttribute("href", "mailto:hello@noncelab.com");
       await expect(contacts.nth(1)).toHaveAccessibleName(/702-1718/);
       await expect(contacts.nth(1)).toHaveAttribute("href", /^tel:/);
+      for (const [index, href] of [[2, "https://x.com/BtcCtrSeoul"], [3, "https://www.instagram.com/bitcoincenterseoul/"]] as const) {
+        await expect(contacts.nth(index)).toHaveAttribute("href", href);
+        await expect(contacts.nth(index)).toHaveAccessibleName(/새 창|new window/);
+        await expect(contacts.nth(index)).toHaveAttribute("target", "_blank");
+        await expect(contacts.nth(index)).toHaveAttribute("rel", "noopener noreferrer");
+      }
       for (const link of await contacts.all()) {
         await expect(link).toHaveText("");
         await expect(link.locator("svg")).toHaveCount(1);

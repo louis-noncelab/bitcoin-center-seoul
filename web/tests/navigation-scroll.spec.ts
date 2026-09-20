@@ -19,14 +19,15 @@ async function scrollFrames(page: Page) {
 for (const locale of ["ko", "en"] as const) {
   for (const reducedMotion of ["no-preference", "reduce"] as const) {
     test(`${locale} navigation keeps the page top with motion ${reducedMotion}`, async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 1000 });
       await page.emulateMedia({ reducedMotion });
       await page.goto(`/${locale}`);
       await page.evaluate(() => document.fonts.ready);
 
-      for (const section of ["about", "programs", "experience", "journal", "visit"]) {
+      for (const section of ["programs", "experience", "collection", "goods", "news", "visit"]) {
         await page.locator(`.desktop-navigation a[href="/${locale}/${section}"]`).click();
         await expect(page).toHaveURL(`/${locale}/${section}`);
-        await expect(page.locator(`.detail-${section}`)).toBeVisible();
+        await expect(page.locator("main h1")).toBeVisible();
         expect(await scrollFrames(page), `Unexpected scroll after ${section} navigation`).toEqual(Array(12).fill(0));
       }
 

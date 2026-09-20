@@ -7,6 +7,7 @@ import { SectionContent } from "@/components/site/section-content";
 import { PageMotion } from "@/components/site/page-motion";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
+import { NewsNavigation } from "@/components/site/news-content";
 import { centerContent } from "@/content/center";
 import { pageMetadata, publicSections } from "@/content/site";
 import { Link } from "@/i18n/navigation";
@@ -83,13 +84,14 @@ export default async function SectionPage({ params, searchParams }: Props) {
         tabIndex={-1}
       >
         <div className="detail-heading">
-          <Link href="/" locale={locale} className="button" data-variant="secondary">
+          <Link href={section === "journal" ? "/news" : "/"} locale={locale} className="button" data-variant="secondary">
             <ArrowLeft className="icon" aria-hidden="true" />
-            {locale === "ko" ? "홈으로" : "Back to home"}
+            {section === "journal" ? locale === "ko" ? "소식으로" : "Back to news" : locale === "ko" ? "홈으로" : "Back to home"}
           </Link>
           <h1>{content.title}</h1>
           <p className="body-copy muted">{content.introduction}</p>
         </div>
+        {section === "journal" && <NewsNavigation locale={locale} current="journal" />}
         <SectionContent locale={locale} section={section} events={events} highlights={highlights} today={today} pagination={pagination} />
         <PageMotion pageKey={`${locale}-${section}-${pagination.page}`} />
       </main>

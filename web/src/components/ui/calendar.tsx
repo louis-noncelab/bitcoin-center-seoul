@@ -14,9 +14,11 @@ type Props = {
   readonly minMonth?: string;
   readonly maxMonth?: string;
   readonly initialMonth?: string;
+  readonly allowUnmarkedDates?: boolean;
+  readonly onMonthChange?: (month: string) => void;
 };
 
-export function Calendar({ locale, today, selected, onSelect, markedDates, minMonth = "0100-01", maxMonth = "9999-12", initialMonth }: Props) {
+export function Calendar({ locale, today, selected, onSelect, markedDates, minMonth = "0100-01", maxMonth = "9999-12", initialMonth, allowUnmarkedDates = false, onMonthChange }: Props) {
   const currentMonth = today.slice(0, 7);
   const initial = initialMonth || selected?.slice(0, 7) || currentMonth;
   const [month, setMonth] = useState(initial < minMonth ? minMonth : initial > maxMonth ? maxMonth : initial);
@@ -53,6 +55,7 @@ export function Calendar({ locale, today, selected, onSelect, markedDates, minMo
   function changeMonth(next: string) {
     if (next < minMonth || next > maxMonth) return;
     setMonth(next);
+    if (next !== month) onMonthChange?.(next);
     if (pickerOpen) closePicker();
   }
 
@@ -103,7 +106,7 @@ export function Calendar({ locale, today, selected, onSelect, markedDates, minMo
             const count = countByDate.get(date) ?? 0;
             const fullDate = dateFormat.format(new Date(`${date}T00:00:00Z`));
             const label = markedDates ? `${fullDate}, ${locale === "ko" ? `행사 ${count}개` : `${count} ${count === 1 ? "event" : "events"}`}` : fullDate;
-            return <td key={weekday}>{!markedDates || count > 0 ? (
+            return <td key={weekday}>{allowUnmarkedDates || !markedDates || count > 0 ? (
               <button type="button" className="calendar-day" data-calendar-date={date} data-event-date={count > 0 ? date : undefined} aria-current={date === today ? "date" : undefined} aria-pressed={date === selected} aria-label={label} onClick={() => onSelect(date)}>{day}</button>
             ) : <span className="calendar-day" aria-current={date === today ? "date" : undefined}>{day}</span>}</td>;
           })}</tr>
