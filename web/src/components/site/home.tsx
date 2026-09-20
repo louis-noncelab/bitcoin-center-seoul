@@ -12,6 +12,7 @@ import { CenterPhoto } from "./center-photo";
 import { HomeDiscovery } from "./home-discovery";
 import { HomeNews } from "./news-content";
 import { PageMotion } from "./page-motion";
+import { ReviewsPreview } from "./reviews-preview";
 import "@/styles/home-space.css";
 
 export function Home({
@@ -56,6 +57,7 @@ export function Home({
         </nav>
         <HomeEventCalendar events={events} locale={locale} today={today} />
         <HomeNews items={news} highlights={highlights} locale={locale} />
+        <ReviewsPreview locale={locale} />
         <HomeDiscovery collection={collection} locale={locale} />
       </div>
       <section
@@ -74,12 +76,12 @@ export function Home({
               <CenterPhoto
                 name="exhibition"
                 locale={locale}
-                sizes="(max-width: 767px) 50vw, 340px"
+                sizes="(max-width: 767px) 120vw, 90vw"
               />
               <CenterPhoto
                 name="lounge"
                 locale={locale}
-                sizes="(max-width: 767px) 40vw, 300px"
+                sizes="(max-width: 767px) 100vw, 800px"
               />
             </div>
             <figcaption className="sr-only">

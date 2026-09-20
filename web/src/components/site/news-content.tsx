@@ -76,7 +76,7 @@ export function NewsMedia({ highlights, locale, preview = false }: { readonly hi
     })}
     {videos.map((video) => <article className="news-media-item" key={`video-${video.id}`}>
       <a className="news-media-link" href={`https://www.youtube.com/watch?v=${video.id}`} target="_blank" rel="noopener noreferrer">
-        <span className="news-media-image"><Image src={video.thumbnail} alt="" fill sizes="(max-width: 767px) 50vw, (max-width: 1199px) 33vw, 320px" /><span className="news-media-symbol"><Play aria-hidden="true" /></span></span>
+        <span className="news-media-image"><Image src={video.thumbnail} alt="" fill sizes={preview ? "(max-width: 767px) 90vw, 70vw" : "(max-width: 767px) 90vw, (max-width: 1199px) 45vw, 480px"} /><span className="news-media-symbol"><Play aria-hidden="true" /></span></span>
         <span className="news-media-title">{video.title[locale]}</span>
         <span className="news-media-kind muted">{t.video} / YouTube<ArrowUpRight className="icon" aria-hidden="true" /><span className="sr-only"> ({t.window})</span></span>
       </a>

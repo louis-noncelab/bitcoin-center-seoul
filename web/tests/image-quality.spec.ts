@@ -7,8 +7,8 @@ const staticPhotos = [
   { path: "/ko/about", selector: ".about-detail .media-frame img" },
   { path: "/ko/experience", selector: ".experience-gallery > :first-child img" },
   { path: "/ko/experience", selector: ".experience-object img" },
-  { path: "/ko/programs", selector: ".selection-panel:not([hidden]) img" },
-  { path: "/ko/about", selector: ".about-detail > img" },
+  { path: "/ko/about", selector: ".selection-panel:not([hidden]) img" },
+  { path: "/ko", selector: ".home-space-collage img:first-child" },
 ];
 const publicRowsSchema = z.object({
   data: z.array(z.object({ id: z.number().int().positive(), images: z.array(z.string()) })),
@@ -27,8 +27,8 @@ for (const dpr of [1, 2]) {
       ]);
       expect(eventResponse.status()).toBe(200);
       expect(highlightResponse.status()).toBe(200);
-      const event = publicRowsSchema.parse(await eventResponse.json()).data.find(({ images }) => images.length > 0);
-      const highlight = publicRowsSchema.parse(await highlightResponse.json()).data.find(({ images }) => images.length > 0);
+      const event = publicRowsSchema.parse(await eventResponse.json()).data.sort((left, right) => left.id - right.id).find(({ images }) => images.length > 0);
+      const highlight = publicRowsSchema.parse(await highlightResponse.json()).data.sort((left, right) => left.id - right.id).find(({ images }) => images.length > 0);
       expect(event).toBeDefined();
       expect(highlight).toBeDefined();
       const photos = [
@@ -63,7 +63,7 @@ for (const dpr of [1, 2]) {
               };
             });
             measurements.push({ path, selector, width, dpr, ...pixels });
-            expect(pixels.scale, `${path} at ${width}px / DPR ${dpr}`).toBeLessThanOrEqual(1.01);
+            expect.soft(pixels.scale, `${path} at ${width}px / DPR ${dpr}`).toBeLessThanOrEqual(1.01);
           }
         }
       } finally {

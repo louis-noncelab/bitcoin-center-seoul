@@ -213,7 +213,7 @@ test("전시 페이지는 도서·작품, 보드게임, 하드웨어 지갑 체�
   await expect(cards.nth(1).getByRole("img", { name: "흰색 선반에 놓인 비트코인 보드게임", exact: true })).toBeVisible();
 });
 
-test("관리자가 보드게임을 등록하면 보드게임 페이지에만 공개된다", async ({ page, baseURL }) => {
+test("관리자가 보드게임을 등록하면 컬렉션 필터와 보드게임 상세에서 공개된다", async ({ page, baseURL }) => {
   if (!password) throw new Error("Run through npm run review -- test.");
   const title = `검증용 보드게임 ${randomUUID()}`;
   let id: number | undefined;
@@ -239,7 +239,15 @@ test("관리자가 보드게임을 등록하면 보드게임 페이지에만 공
     await page.goto("/ko/experience/board-game");
     await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
     await page.goto("/ko/collection");
+    await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
+    const filters = page.getByRole("navigation", { name: "컬렉션 종류" });
+    await filters.getByRole("link", { name: "서적", exact: true }).click();
     await expect(page.getByRole("heading", { name: title, exact: true })).toHaveCount(0);
+    await filters.getByRole("link", { name: "보드게임", exact: true }).click();
+    await expect(filters.getByRole("link", { name: "보드게임", exact: true })).toHaveAttribute("aria-current", "page");
+    await page.getByRole("link").filter({ has: page.getByRole("heading", { name: title, exact: true }) }).click();
+    await expect(page).toHaveURL(`/ko/experience/board-game/${item.slug}`);
+    await expect(page.getByRole("heading", { level: 1, name: title, exact: true })).toBeVisible();
     await page.goto("/ko/admin/collection");
     const row = page.locator(".events-admin-list > li").filter({ hasText: title });
     await row.getByRole("button", { name: "삭제", exact: true }).click();

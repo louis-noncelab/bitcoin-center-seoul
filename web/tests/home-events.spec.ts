@@ -1,5 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { cp, mkdtemp, readFile, rm, symlink } from "node:fs/promises";
+import { spawn, execFileSync } from "node:child_process";
+import { once } from "node:events";
+import { createServer } from "node:net";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, request, test, type APIRequestContext, type Locator } from "@playwright/test";
 import { z } from "zod";
@@ -32,24 +37,8 @@ test.describe.serial("mobile home event discovery", () => {
   test.use({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
   let admin: APIRequestContext;
   const created: EventRecord[] = [];
-  const temporarilyChanged = new Map<number, EventRecord>();
 
   const records = async () => eventsResponse.parse(await (await admin.get("/api/admin/events")).json()).data;
-  const changeDate = async (record: EventRecord, date: string) => {
-    const { id, revision, ...input } = record;
-    const response = await admin.put(`/api/admin/events/${id}`, {
-      headers: { "if-match": `"${revision}"` }, data: { ...input, date },
-    });
-    expect(response.ok()).toBeTruthy();
-    return eventResponse.parse(await response.json()).data;
-  };
-  const restoreDates = async () => {
-    for (const [id, original] of temporarilyChanged) {
-      const current = eventResponse.parse(await (await admin.get(`/api/admin/events/${id}`)).json()).data;
-      await changeDate(current, original.date);
-      temporarilyChanged.delete(id);
-    }
-  };
 
   test.beforeAll(async ({ baseURL }) => {
     // The runtime path and exact origin prevent fixture writes outside the isolated review server.
@@ -86,7 +75,6 @@ test.describe.serial("mobile home event discovery", () => {
 
   test.afterAll(async () => {
     if (!admin) return;
-    await restoreDates();
     for (const event of created) {
       const current = eventResponse.parse(await (await admin.get(`/api/admin/events/${event.id}`)).json()).data;
       const response = await admin.delete(`/api/admin/events/${event.id}`, { headers: { "if-match": `"${current.revision}"` } });
@@ -244,24 +232,53 @@ test.describe.serial("mobile home event discovery", () => {
     }
   });
 
-  test("hides the whole upcoming section when no upcoming review events remain", async ({ page }) => {
-    const upcoming = (await records()).filter((event) => event.date.replaceAll(".", "-") >= today);
-    // Never alter imported or real content, even if someone points a review instance at such data.
-    expect(upcoming.every((event) => event.title.startsWith("[검토용]") && /^(home-preview-|home-browser-)/.test(event.slug))).toBe(true);
+  test("hides the whole upcoming section when an isolated database has only past events", async ({ page, request }) => {
+    const directory = await mkdtemp(join(tmpdir(), "bcs-empty-home-"));
+    let server: ReturnType<typeof spawn> | undefined;
     try {
-      for (const event of upcoming) {
-        temporarilyChanged.set(event.id, event);
-        await changeDate(event, "2000-01-01");
-      }
+      const standalone = join(directory, "server", "web");
+      await cp(resolve(".next-events/standalone"), join(directory, "server"), { recursive: true });
+      await symlink(resolve(".next-events/static"), join(standalone, ".next-events/static"));
+      await symlink(resolve("public"), join(standalone, "public"));
+      const database = join(directory, "events.db");
+      execFileSync(process.execPath, ["--conditions=react-server", "--import", "tsx", "--input-type=module", "-e",
+        'import { openDatabase } from "./src/server/events/db.ts"; const db = openDatabase(process.argv[1]); db.prepare("INSERT INTO events (title,titleEn,date,time,location,locationEn,description,descriptionEn) VALUES (?,?,?,?,?,?,?,?)").run("지난 행사", "Past event", "2000-01-01", "12:00", "센터", "Center", "지난 행사", "Past event"); db.close();', database],
+      { env: { ...process.env, __NEXT_PROCESSED_ENV: "true" }, stdio: "pipe" });
+      const socket = createServer();
+      socket.listen(0, "127.0.0.1");
+      await once(socket, "listening");
+      const address = socket.address();
+      if (!address || typeof address === "string") throw new Error("Missing isolated server port");
+      await new Promise<void>((resolve, reject) => socket.close(error => error ? reject(error) : resolve()));
+      const origin = `http://127.0.0.1:${address.port}`;
+      server = spawn(process.execPath, [join(standalone, "server.js")], {
+        cwd: standalone, stdio: "ignore", env: {
+          PATH: process.env.PATH, NODE_ENV: "production", HOSTNAME: "127.0.0.1", PORT: String(address.port),
+          APP_ORIGIN: origin, BCS_EVENTS_DB: database, BCS_EVENTS_UPLOADS: join(directory, "images"),
+          BCS_EVENTS_REVIEW: "true", BCS_TRUST_PROXY: "false", __NEXT_PROCESSED_ENV: "true",
+        },
+      });
+      await expect.poll(async () => {
+        try { return (await request.get(`${origin}/api/events`)).status(); }
+        catch (error) {
+          if (error instanceof Error && error.message.includes("ECONNREFUSED")) return 0;
+          throw error;
+        }
+      }).toBe(200);
       for (const locale of ["ko", "en"]) {
-        await page.goto(`/${locale}`);
+        await page.goto(`${origin}/${locale}`);
         await expect(page.locator(".home-upcoming")).toHaveCount(0);
         await expect(page.locator(".home-event-calendar")).toBeVisible();
         await expect(page.locator(".home-calendar-empty")).toBeVisible();
         await expect(page.locator("main h1")).toHaveCount(1);
       }
     } finally {
-      await restoreDates();
+      if (server && server.exitCode === null && server.signalCode === null) {
+        const exited = once(server, "exit");
+        server.kill("SIGTERM");
+        await exited;
+      }
+      await rm(directory, { recursive: true, force: true });
     }
   });
 });

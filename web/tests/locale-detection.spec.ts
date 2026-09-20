@@ -31,7 +31,7 @@ test("explicit URLs win over a saved language and browser settings", async ({ re
 
 test("a manual language choice survives a later unprefixed visit", async ({ browser, baseURL }) => {
   // Given a browser whose preferred language is English
-  const context = await browser.newContext({ locale: "en-US", baseURL: baseURL ?? "http://127.0.0.1:3102" });
+  const context = await browser.newContext({ locale: "en-US", viewport: { width: 1440, height: 1000 }, baseURL: baseURL ?? "http://127.0.0.1:3102" });
   const page = await context.newPage();
   try {
     await page.goto("/");

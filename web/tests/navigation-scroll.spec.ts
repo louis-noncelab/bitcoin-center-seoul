@@ -23,10 +23,10 @@ for (const locale of ["ko", "en"] as const) {
       await page.goto(`/${locale}`);
       await page.evaluate(() => document.fonts.ready);
 
-      for (const section of ["about", "programs", "experience", "journal", "visit"]) {
+      for (const section of ["programs", "experience", "collection", "goods", "news", "visit"]) {
         await page.locator(`.desktop-navigation a[href="/${locale}/${section}"]`).click();
         await expect(page).toHaveURL(`/${locale}/${section}`);
-        await expect(page.locator(`.detail-${section}`)).toBeVisible();
+        await expect(page.locator("main h1")).toBeVisible();
         expect(await scrollFrames(page), `Unexpected scroll after ${section} navigation`).toEqual(Array(12).fill(0));
       }
 

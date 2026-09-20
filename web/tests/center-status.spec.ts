@@ -1,3 +1,4 @@
+import { deleteContentFixture } from "./content-cleanup";
 import { expect, test } from "@playwright/test";
 import Database from "better-sqlite3";
 import { centerStatusLabels, seoulDate } from "@/lib/center-status";
@@ -7,6 +8,7 @@ test("automatic status and daily exceptions keep authentication, live updates an
   const databasePath = process.env.BCS_EVENTS_DB;
   if (!password || !databasePath || process.env.BCS_EVENTS_REVIEW !== "true") throw new Error("Use the isolated review runner.");
   const headers = { origin: baseURL ?? "" };
+  await page.setViewportSize({ width: 1440, height: 1000 });
   expect(seoulDate(new Date("2026-12-31T14:59:59Z"))).toBe("2026-12-31");
   expect(seoulDate(new Date("2026-12-31T15:00:00Z"))).toBe("2027-01-01");
   expect((await request.put("/api/admin/center-status", { headers, data: { override: "open" } })).status()).toBe(401);
@@ -31,8 +33,8 @@ test("automatic status and daily exceptions keep authentication, live updates an
     expect(html).toContain('data-status="closed"');
     await page.goto("/ko");
     await expect(page.locator(".operating-status")).toHaveText("운영 종료");
-    expect(await page.locator(".section-frame").evaluateAll((elements) => elements.map((element) => element.id))).toEqual(["programs", "journal", "experience"]);
-    await expect(page.locator('#journal h2').first()).toHaveText("현장 스케치");
+    await expect(page.locator("#home-calendar")).toBeVisible();
+    await expect(page.locator("#home-news h2")).toHaveText("비센서 소식");
     const created = await page.request.post("/api/admin/events", { headers, data: { title: "상태 검증용 임시 밋업", titleEn: "Temporary status test meetup", date: seoulDate(), time: "00:00 ~ 24:00", location: "비트코인 센터 서울", locationEn: "Bitcoin Center Seoul", description: "자동 상태 검증 후 삭제", descriptionEn: "Deleted after automatic status verification", image: "", images: [], link: "" } });
     expect(created.status()).toBe(201);
     eventId = (await created.json()).data.id;
@@ -40,7 +42,7 @@ test("automatic status and daily exceptions keep authentication, live updates an
     expect((await page.request.put("/api/admin/center-status", { headers, data: { override: "open" } })).status()).toBe(200);
     await page.evaluate(() => window.dispatchEvent(new Event("focus")));
     await expect(page.locator(".operating-status")).toHaveText("밋업 중");
-    expect((await page.request.delete(`/api/admin/events/${eventId}`, { headers })).status()).toBe(200);
+    await deleteContentFixture(page.request, `/api/admin/events/${eventId}`, baseURL ?? "");
     eventId = undefined;
     await page.request.put("/api/admin/center-status", { headers, data: { override: null } });
     const automatic = (await (await request.get("/api/center-status")).json()).data;
@@ -66,7 +68,7 @@ test("automatic status and daily exceptions keep authentication, live updates an
     await expect(page.getByText("오늘의 운영 설정을 저장했습니다.", { exact: true })).toBeVisible();
   } finally {
     await page.request.post("/api/admin/login", { headers, data: { password } });
-    if (eventId) await page.request.delete(`/api/admin/events/${eventId}`, { headers });
+    if (eventId) await deleteContentFixture(page.request, `/api/admin/events/${eventId}`, baseURL ?? "");
     expect((await page.request.put("/api/admin/center-status", { headers, data: { override: saved.override } })).status()).toBe(200);
     const db = new Database(databasePath);
     try { db.prepare("DELETE FROM center_opening_overrides WHERE date = '2000-01-01'").run(); } finally { db.close(); }

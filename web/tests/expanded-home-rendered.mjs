@@ -59,7 +59,9 @@ test(
       for (let attempt = 0; attempt < 150; attempt++) {
         try {
           if ((await fetch(origin + "/ko")).ok) break;
-        } catch {}
+        } catch (error) {
+          if (!(error instanceof TypeError)) throw error;
+        }
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
       async function html(pathname) {
@@ -150,6 +152,32 @@ test(
         body: JSON.stringify({ password: "expanded-local-fixture" }),
       });
       const cookie = login.headers.get("set-cookie").split(";", 1)[0];
+      const reviewHeaders = { "content-type": "application/json", origin, cookie };
+      const reviewIds = [];
+      for (let index = 0; index < 3; index++) {
+        const response = await fetch(origin + "/api/admin/reviews", {
+          method: "POST", headers: reviewHeaders,
+          body: JSON.stringify({ kind: "blog", url: `https://example.com/story-${index}`,
+            author: "Review fixture", title: `홈 후기 ${index}`, titleEn: `Home story ${index}`,
+            summary: "로컬 검증용 후기", summaryEn: "Local verification story", is_active: 1 }),
+        });
+        assert.equal(response.status, 201);
+        reviewIds.unshift((await response.json()).data.id);
+      }
+      const reviewState = await (await fetch(origin + "/api/admin/reviews", { headers: reviewHeaders })).json();
+      const selected = await fetch(origin + "/api/admin/reviews/selection", {
+        method: "PUT", headers: { ...reviewHeaders, "if-match": `"${reviewState.data.selection.revision}"` },
+        body: JSON.stringify({ featured_id: null, home_ids: reviewIds }),
+      });
+      assert.equal(selected.status, 200);
+      for (const locale of ["ko", "en"]) {
+        const home = await html(`/${locale}`);
+        const section = home.match(/<section\b[^>]*id="reviews"[^>]*>([\s\S]*?)<\/section>/)?.[1];
+        assert.ok(section, "Administrator-selected visitor stories must appear on the home page");
+        assert.deepEqual([...section.matchAll(/data-review-id="(\d+)"/g)].map(match => Number(match[1])), reviewIds);
+        assert.ok(section.includes(locale === "ko" ? "홈 후기 2" : "Home story 2"));
+        assert.ok(section.includes(`href="/${locale}/reviews"`));
+      }
       for (const kind of ["book", "boardgame", "artwork"]) {
         for (const active of [0, 1]) {
           const title = `expanded-${kind}-${active ? "public" : "private"}`;

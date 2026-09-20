@@ -20,32 +20,36 @@ test("HTML permits only Maps and privacy-enhanced YouTube embed endpoints for cl
   }
 });
 
-test("home videos load third-party frames only after play and stop when selection changes", async ({ page }) => {
-  const embeds: string[] = [];
-  await page.route("https://www.youtube-nocookie.com/embed/**", async (route) => {
-    embeds.push(route.request().url());
-    await route.fulfill({ contentType: "text/html", body: "<!doctype html><title>Player boundary fixture</title>" });
+test("home and media videos use safe outbound links without loading third-party embeds", async ({ page, context }) => {
+  const thirdPartyRequests: string[] = [];
+  await context.route(/https:\/\/(?:[^/]+\.)?(?:youtube(?:-nocookie)?\.com|ytimg\.com)\//, async (route) => {
+    thirdPartyRequests.push(route.request().url());
+    await route.fulfill({ contentType: "text/html", body: "<!doctype html><title>Video destination fixture</title>" });
   });
   for (const locale of ["ko", "en"]) {
-    await page.goto(`/${locale}`);
-    const section = page.locator("#videos");
-    const rows = section.locator(".center-videos-item");
-    await expect(rows).toHaveCount(3);
-    await expect(section.locator("iframe")).toHaveCount(0);
-    const before = embeds.length;
-    await rows.nth(1).click();
-    await expect(rows.nth(1)).toHaveAttribute("aria-current", "true");
-    await expect(section.locator("iframe")).toHaveCount(0);
-    expect(embeds).toHaveLength(before);
-    await section.locator(".center-videos-poster").focus();
-    await page.keyboard.press("Enter");
-    await expect(section.locator("iframe")).toHaveAttribute("src", /\/oJNES8yse00\?autoplay=1/);
-    await expect.poll(() => embeds.length).toBe(before + 1);
-    await expect(section.locator("iframe")).toBeFocused();
-    await rows.nth(2).click();
-    await expect(section.locator("iframe")).toHaveCount(0);
-    await expect(section.locator(".center-videos-poster")).toHaveAttribute("href", "https://www.youtube.com/watch?v=lIuNoBffEMo");
+    for (const path of [`/${locale}`, `/${locale}/news?view=media`]) {
+      await page.goto(path);
+      const videos = page.locator('.news-media-link[href^="https://www.youtube.com/watch?v="]');
+      if (path.endsWith("view=media")) await expect(videos).toHaveCount(3);
+      else await expect(videos.first()).toBeVisible();
+      await expect(page.locator("iframe")).toHaveCount(0);
+      for (const video of await videos.all()) {
+        await expect(video).toHaveAttribute("target", "_blank");
+        await expect(video).toHaveAttribute("rel", "noopener noreferrer");
+      }
+      expect(thirdPartyRequests).toEqual([]);
+    }
   }
+  const video = page.locator('.news-media-link[href^="https://www.youtube.com/watch?v="]').first();
+  const destination = await video.getAttribute("href");
+  const popupOpened = page.waitForEvent("popup");
+  await video.focus();
+  await page.keyboard.press("Enter");
+  const popup = await popupOpened;
+  await expect(popup).toHaveURL(destination ?? "");
+  expect(await popup.evaluate(() => window.opener === null)).toBe(true);
+  await popup.close();
+  await expect(page.locator("iframe")).toHaveCount(0);
 });
 
 test("admin pages and endpoints always opt out of search indexing", async ({ request }) => {
@@ -132,9 +136,10 @@ test("unknown dotted paths retain the HTML security policy", async ({ request })
   scriptPolicy(response.headers()["content-security-policy"] ?? "");
 });
 
-test("themes and locale navigation hydrate under the production policy", async ({ page }) => {
+test("themes and locale navigation hydrate under the production policy", async ({ page, context, baseURL }) => {
   // Given a returning visitor with a saved dark theme
-  await page.addInitScript(() => localStorage.setItem("bcs-theme", "dark"));
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await context.addCookies([{ name: "bcs-theme", value: "dark", url: baseURL ?? "http://127.0.0.1:3102" }]);
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
@@ -153,12 +158,15 @@ test("themes and locale navigation hydrate under the production policy", async (
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://bitcoincenterseoul.com/en/experience");
   await expect(page.locator('link[hreflang="ko"]')).toHaveAttribute("href", "https://bitcoincenterseoul.com/ko/experience");
-  expect(await page.evaluate(() => localStorage.getItem("bcs-theme"))).toBe("light");
+  expect((await context.cookies()).find((cookie) => cookie.name === "bcs-theme")?.value).toBe("light");
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   expect(errors).toEqual([]);
 });
 
 test("an injected script cannot execute without a trusted nonce", async ({ page }) => {
   // Given an untrusted script inserted into the actual HTML response
+  await page.setViewportSize({ width: 1440, height: 1000 });
   const injection = '<script nonce="attacker">document.documentElement.dataset.untrustedScript = "executed"</script>';
   await page.addInitScript(() => document.addEventListener("securitypolicyviolation", (event) => {
     document.documentElement.dataset.blockedScript = event.effectiveDirective;

@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext } from "@playwright/test";
+import { expect, request as playwrightRequest, test as base, type APIRequestContext } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
 import { z } from "zod";
@@ -20,7 +20,34 @@ async function cleanup(request: APIRequestContext, id: number) {
   if (record) expect((await request.delete(`${endpoint}/${id}`, { headers: version(record.revision) })).status()).toBe(200);
 }
 
-test("review writes enforce auth, origin, schemas and record/selection revisions", async ({ request }) => {
+type ReviewCleanup = {
+  ids: number[];
+  selection?: z.infer<typeof reviewAdminSchema>["selection"];
+};
+const test = base.extend<{ reviewCleanup: ReviewCleanup }>({
+  reviewCleanup: async ({}, run) => {
+    const pending: ReviewCleanup = { ids: [] };
+    await run(pending);
+    const request = await playwrightRequest.newContext({ baseURL: origin });
+    try {
+      await login(request);
+      try {
+        if (pending.selection) {
+          const latest = (await state(request)).selection;
+          expect((await request.put(`${endpoint}/selection`, { headers: version(latest.revision), data: {
+            featured_id: pending.selection.featured_id, home_ids: pending.selection.home_ids,
+          } })).status()).toBe(200);
+        }
+      } finally {
+        for (const id of pending.ids) await cleanup(request, id);
+      }
+    } finally {
+      await request.dispose();
+    }
+  },
+});
+
+test("review writes enforce auth, origin, schemas and record/selection revisions", async ({ request, reviewCleanup }) => {
   const input = { title: `후기 API ${randomUUID()}`, kind: "blog", author: "테스트 방문자", url: "https://example.com/visit", summary: "방문 소개" };
   expect((await request.get(endpoint)).status()).toBe(401);
   expect((await request.post(endpoint, { headers, data: input })).status()).toBe(401);
@@ -53,13 +80,12 @@ test("review writes enforce auth, origin, schemas and record/selection revisions
     expect(selected.status()).toBe(200);
     expect((await request.put(`${endpoint}/selection`, { headers: version(original.revision), data: { featured_id: original.featured_id, home_ids: original.home_ids } })).status()).toBe(409);
   } finally {
-    const latest = (await state(request)).selection;
-    expect((await request.put(`${endpoint}/selection`, { headers: version(latest.revision), data: { featured_id: original.featured_id, home_ids: original.home_ids } })).status()).toBe(200);
-    await cleanup(request, record.id);
+    reviewCleanup.selection = original;
+    reviewCleanup.ids.push(record.id);
   }
 });
 
-test("admin uploads, publishes, selects, edits and hides a review without rebuilding", async ({ page, request }) => {
+test("admin uploads, publishes, selects, edits and hides a review without rebuilding", async ({ page, request, reviewCleanup }) => {
   page.setDefaultTimeout(5000);
   await login(page.request);
   const original = (await state(page.request)).selection;
@@ -94,7 +120,7 @@ test("admin uploads, publishes, selects, edits and hides a review without rebuil
     await expect(page.locator(".review-card").first().getByRole("heading")).toHaveText(title);
     await expect(page.locator("#review-feature-title")).toHaveText("센터에서 보낸 오후");
     await expect(page.locator(".review-feature-context script")).toHaveCount(0);
-    expect(await page.locator(".review-feature-photo img").evaluate(img => img instanceof HTMLImageElement && img.complete && img.naturalWidth > 0)).toBe(true);
+    await expect.poll(() => page.locator(".review-feature-photo img").evaluate(img => img instanceof HTMLImageElement && img.complete && img.naturalWidth > 0)).toBe(true);
     await page.goto("/ko");
     await expect(page.locator("#reviews .review-card").first().getByRole("heading")).toHaveText(title);
     await page.goto("/ko/admin/reviews");
@@ -113,13 +139,12 @@ test("admin uploads, publishes, selects, edits and hides a review without rebuil
     await expect(page.locator(`#reviews .review-card[data-review-id="${id}"]`)).toHaveCount(0);
     expect(errors).toEqual([]);
   } finally {
-    const latest = (await state(page.request)).selection;
-    expect((await page.request.put(`${endpoint}/selection`, { headers: version(latest.revision), data: { featured_id: original.featured_id, home_ids: original.home_ids } })).status()).toBe(200);
-    if (id) await cleanup(page.request, id);
+    reviewCleanup.selection = original;
+    if (id) reviewCleanup.ids.push(id);
   }
 });
 
-test("stale browser editor retains its draft and reloads latest after confirmation", async ({ browser }) => {
+test("stale browser editor retains its draft and reloads latest after confirmation", async ({ browser, reviewCleanup }) => {
   const context = await browser.newContext({ baseURL: origin });
   await login(context.request);
   const input = { kind: "note", title: `충돌 후기 ${randomUUID()}`, author: "방문자", url: "https://example.com/review", summary: "소개" };
@@ -137,10 +162,10 @@ test("stale browser editor retains its draft and reloads latest after confirmati
     await page.getByRole("button", { name: "최신 내용 불러오기", exact: true }).click();
     await page.getByRole("dialog").getByRole("button", { name: "버리기", exact: true }).click();
     await expect(page.getByRole("heading", { name: `${input.title} 먼저 저장`, exact: true })).toBeVisible();
-  } finally { await cleanup(context.request, record.id); await context.close(); }
+  } finally { reviewCleanup.ids.push(record.id); await context.close(); }
 });
 
-test("article editor publishes inline photos, SEO, redirects and hides the detail", async ({ page, request, browser }) => {
+test("article editor publishes inline photos, SEO, redirects and hides the detail", async ({ page, request, browser, reviewCleanup }) => {
   await login(page.request);
   const slug = `visitor-story-${randomUUID().slice(0, 8)}`;
   let id: number | undefined;
@@ -167,7 +192,8 @@ test("article editor publishes inline photos, SEO, redirects and hides the detai
     const bodyImage = record.description.match(/\((\/images\/[^)]+)\)/)?.[1];
     if (!bodyImage) throw new Error("Body image missing");
     await page.goto("/ko/reviews");
-    await page.locator(".review-more summary").click();
+    const more = page.locator(".review-more summary");
+    if (await more.count()) await more.click();
     const card = page.locator(`.review-card-link[href="/ko/reviews/${slug}"]`);
     await expect(card).not.toHaveAttribute("target", "_blank");
     await card.click();
@@ -194,5 +220,5 @@ test("article editor publishes inline photos, SEO, redirects and hides the detai
     expect((await request.get(`/ko/reviews/${moved.slug}`)).status()).toBe(404);
     expect((await request.get(bodyImage)).status()).toBe(404);
     expect(await (await request.get("/sitemap.xml")).text()).not.toContain(`/ko/reviews/${moved.slug}`);
-  } finally { if (id) await cleanup(page.request, id); }
+  } finally { if (id) reviewCleanup.ids.push(id); }
 });
