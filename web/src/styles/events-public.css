@@ -4,6 +4,7 @@
 
 .catalog-empty { padding-block: var(--space-6); border-block: var(--border-width) solid var(--line); }
 .highlight-card-photo { flex-shrink: 0; }
+:is(.event-card-photo, .highlight-card-photo) img { display: block; inline-size: 100%; block-size: 100%; margin: auto; object-fit: cover; }
 .catalog-read .icon { transition: transform var(--duration-control) var(--ease-out); }
 
 .event-meta {
@@ -38,7 +39,7 @@
 .photo-gallery { inline-size: 100%; }
 .photo-gallery-grid { display: grid; gap: var(--space-4); }
 .gallery-photo { overflow: hidden; border-radius: var(--radius); background: var(--surface); }
-.gallery-photo img { display: block; inline-size: 100%; block-size: auto; max-block-size: 70svh; object-fit: contain; }
+.gallery-photo img { display: block; inline-size: auto; max-inline-size: 100%; margin-inline: auto; block-size: auto; max-block-size: 70svh; object-fit: contain; }
 
 @media (hover: hover) {
   .highlight-card-link:hover .review-read .icon { transform: translateX(var(--space-1)); }

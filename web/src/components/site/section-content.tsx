@@ -53,7 +53,7 @@ export function ExperienceContent({ locale }: { readonly locale: Locale }) {
         return (
           <div key={area.id} className={area.id === "wallet" ? "experience-object" : undefined} data-reveal-part>
             <MediaFrame ratio="landscape" caption={<><strong>{area.title}</strong><span>{area.description}</span></>}>
-              <CenterPhoto name={card.photo} locale={locale} sizes="(max-width: 767px) 100vw, 33vw" />
+              <CenterPhoto name={card.photo} locale={locale} sizes="(max-width: 767px) 134vw, (max-width: 1023px) 67vw, 45vw" />
             </MediaFrame>
             <Link href={card.link.href} locale={locale} className="section-link collection-entry">{card.link.label}<ArrowRight className="icon" aria-hidden="true" /></Link>
           </div>

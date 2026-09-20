@@ -1,5 +1,5 @@
 import { ArrowRight, ArrowUpRight, CalendarDays, Clock3, MapPin } from "lucide-react";
-import Image from "next/image";
+import { OriginalPhoto } from "./original-photo";
 import "@/styles/reviews.css";
 import type { EventRecord, HighlightRecord } from "@/lib/events-contract";
 import { markdownExcerpt } from "@/lib/markdown";
@@ -114,7 +114,7 @@ function EventGroup({ id, days, locale, today, title, empty }: { readonly id: st
                       <strong>{titleText}</strong>
                       {location && <span className="event-card-location muted"><MapPin className="icon" aria-hidden="true" />{location}</span>}
                     </span>
-                    {images[0] && <span className="event-card-photo"><Image src={images[0]} alt="" fill sizes="(max-width: 767px) 64px, 96px" unoptimized /></span>}
+                    {images[0] && <span className="event-card-photo"><OriginalPhoto src={images[0]} alt="" crop /></span>}
                   </ContentLink>
                   <EventBookingLink event={event} locale={locale} today={today} />
                 </li>
@@ -138,7 +138,7 @@ export function HighlightsCatalog({ highlights, locale, preview = false }: { rea
         return (
           <article className={`review-card highlight-card${preview ? " review-card-compact" : ""}`} key={highlight.id} data-reveal-part={preview ? "" : undefined}>
             <ContentLink href={`/journal/${highlight.slug || highlight.id}`} locale={locale} className="review-card-link highlight-card-link">
-              {images[0] && <span className="review-card-image highlight-card-photo"><Image src={images[0]} alt="" fill sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 33vw" unoptimized /></span>}
+              {images[0] && <span className="review-card-image highlight-card-photo"><OriginalPhoto src={images[0]} alt="" crop /></span>}
               <div className="review-card-content highlight-card-copy">
                 <Title>{title}</Title>
                 <p className="review-card-summary highlight-card-summary">{markdownExcerpt(text(locale, highlight.description, highlight.descriptionEn))}</p>
@@ -189,7 +189,7 @@ export function PhotoGallery({ images, title, locale }: { readonly images: reado
       <div className="photo-gallery-grid">
         {images.map((image, index) => (
           <figure className="gallery-photo" key={`${image}-${index}`}>
-            <Image src={image} alt={`${title} ${locale === "ko" ? "사진" : "photo"} ${index + 1}`} width={1600} height={1200} sizes="(max-width: 767px) 100vw, 760px" unoptimized />
+            <OriginalPhoto src={image} alt={`${title} ${locale === "ko" ? "사진" : "photo"} ${index + 1}`} />
           </figure>
         ))}
       </div>

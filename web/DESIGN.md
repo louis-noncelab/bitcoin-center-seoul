@@ -194,8 +194,9 @@ Reuse the existing neutral surfaces, Pretendard, controls and selection primitiv
 - Composition: after the owner's width revision, the tour fills the page content
   width and aligns with the page heading. A 3:2 column split enlarges the video
   alongside its description, with shared 32/40px gaps, 16:9 frame and 12px corners.
-  Under 768px the image and description stack. The real 640×360 footage scales
-  with its frame; its actual colors and watermark remain. No invented frames,
+  Under 768px the image and description stack. Following the image-quality fix,
+  the real 640×360 footage is capped at its native pixel size divided by the
+  display pixel ratio; its actual colors and watermark remain. No invented frames,
   faux grain, decorative subtitles or audio. Scene changes use a 500ms
   opacity dissolve with the existing image/exit tokens and selection lifecycle.
   The owner's latest revision removes every visible playback icon and the bottom
@@ -211,7 +212,9 @@ Reuse the existing neutral surfaces, Pretendard, controls and selection primitiv
   poster and can explicitly play; changing the preference pauses playback.
   Manual pause persists through visibility changes. Failed/autoplay-blocked
   playback retains a poster, a useful label and a working retry/play action.
-  No-JavaScript retains the initial poster, description and destination.
+  No-JavaScript retains the initial poster, description and destination. Gallery
+  photographs keep their native aspect ratio and, with JavaScript, are capped
+  to their original pixels at the current display density instead of enlarged.
 - References: beui.dev `tabs` and `animated-badge` source consulted for shared
   selection and state-icon mechanisms; native media lifecycle follows installed
   Next.js video guidance. Adapt mechanisms only; no registry components copied.

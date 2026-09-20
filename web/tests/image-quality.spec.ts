@@ -14,7 +14,7 @@ const publicRowsSchema = z.object({
   data: z.array(z.object({ id: z.number().int().positive(), images: z.array(z.string()) })),
 });
 
-for (const dpr of [1, 2]) {
+for (const dpr of [1, 2, 3]) {
   test.describe(`image quality at DPR ${dpr}`, () => {
     test.use({ deviceScaleFactor: dpr });
 
