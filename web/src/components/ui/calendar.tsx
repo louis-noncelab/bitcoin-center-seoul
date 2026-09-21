@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import type { Locale } from "@/i18n/routing";
+import { SlideRegion } from "./slide-region";
 import { FormControl } from "./primitives";
 
 type Props = {
@@ -22,12 +23,12 @@ export function Calendar({ locale, today, selected, onSelect, markedDates, minMo
   const currentMonth = today.slice(0, 7);
   const initial = initialMonth || selected?.slice(0, 7) || currentMonth;
   const [month, setMonth] = useState(initial < minMonth ? minMonth : initial > maxMonth ? maxMonth : initial);
-  const [pickerYear, setPickerYear] = useState<string | null>(null);
+  const [pickerYear, setPickerYear] = useState(month.slice(0, 4));
+  const [pickerOpen, setPickerOpen] = useState(false);
   const monthToggle = useRef<HTMLButtonElement>(null);
   const yearInput = useRef<HTMLInputElement>(null);
   const titleId = useId();
-  const pickerOpen = pickerYear !== null;
-  const validYear = pickerYear !== null && /^\d{4}$/.test(pickerYear) && pickerYear >= minMonth.slice(0, 4) && pickerYear <= maxMonth.slice(0, 4);
+  const validYear = /^\d{4}$/.test(pickerYear) && pickerYear >= minMonth.slice(0, 4) && pickerYear <= maxMonth.slice(0, 4);
   const language = locale === "ko" ? "ko-KR" : "en-GB";
   const start = new Date(`${month}-01T00:00:00Z`);
   const daysInMonth = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 0)).getUTCDate();
@@ -48,7 +49,7 @@ export function Calendar({ locale, today, selected, onSelect, markedDates, minMo
   }, [pickerOpen]);
 
   function closePicker() {
-    setPickerYear(null);
+    setPickerOpen(false);
     monthToggle.current?.focus({ preventScroll: true });
   }
 
@@ -75,12 +76,12 @@ export function Calendar({ locale, today, selected, onSelect, markedDates, minMo
     }}>
       <div className="calendar-navigation">
         <button type="button" onClick={() => moveMonth(-1)} disabled={month <= minMonth} aria-label={locale === "ko" ? "이전 달" : "Previous month"}><ChevronLeft className="icon" aria-hidden="true" /></button>
-        <h3 className="calendar-month" id={titleId} aria-live="polite" aria-atomic="true"><button ref={monthToggle} type="button" className="calendar-month-toggle" aria-label={`${monthLabel}, ${pickerLabel}`} aria-expanded={pickerOpen} aria-controls={`${titleId}-picker`} onClick={() => pickerOpen ? closePicker() : setPickerYear(month.slice(0, 4))}>{monthLabel}</button></h3>
+        <h3 className="calendar-month" id={titleId} aria-live="polite" aria-atomic="true"><button ref={monthToggle} type="button" className="calendar-month-toggle" aria-label={`${monthLabel}, ${pickerLabel}`} aria-expanded={pickerOpen} aria-controls={`${titleId}-picker`} onClick={() => pickerOpen ? closePicker() : (setPickerYear(month.slice(0, 4)), setPickerOpen(true))}>{monthLabel}</button></h3>
         <button type="button" onClick={() => moveMonth(1)} disabled={month >= maxMonth} aria-label={locale === "ko" ? "다음 달" : "Next month"}><ChevronRight className="icon" aria-hidden="true" /></button>
       </div>
-      {pickerYear !== null && <div id={`${titleId}-picker`} className="calendar-month-picker" role="group" aria-label={pickerLabel}>
+      <SlideRegion open={pickerOpen} id={`${titleId}-picker`}><div className="calendar-month-picker" role="group" aria-label={pickerLabel}>
         <label className="calendar-year" htmlFor={`${titleId}-year`}>{locale === "ko" ? "연도" : "Year"}
-          <FormControl><input ref={yearInput} id={`${titleId}-year`} type="text" inputMode="numeric" maxLength={4} autoComplete="off" spellCheck={false} value={pickerYear} aria-invalid={!validYear || undefined} aria-describedby={`${titleId}-year-hint`}
+          <FormControl><input ref={yearInput} id={`${titleId}-year`} type="text" inputMode="numeric" autoComplete="off" spellCheck={false} value={pickerYear} aria-invalid={!validYear || undefined} aria-describedby={`${titleId}-year-hint`}
             onChange={(event) => { event.stopPropagation(); setPickerYear(event.currentTarget.value); }}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.nativeEvent.isComposing) {
@@ -95,8 +96,9 @@ export function Calendar({ locale, today, selected, onSelect, markedDates, minMo
           const label = new Intl.DateTimeFormat(language, { month: "short", timeZone: "UTC" }).format(new Date(Date.UTC(2000, index, 1)));
           return <button key={index} type="button" data-calendar-month={validYear ? next : undefined} aria-label={validYear ? monthFormat.format(new Date(`${next}-01T00:00:00Z`)) : label} aria-pressed={next === month} disabled={!validYear || next < minMonth || next > maxMonth} onClick={() => changeMonth(next)}>{label}</button>;
         })}</div>
-      </div>}
-      <table aria-labelledby={titleId} hidden={pickerOpen}>
+      </div></SlideRegion>
+      <SlideRegion open={!pickerOpen}>
+      <table aria-labelledby={titleId}>
         <thead><tr>{weekdays.map((day) => <th key={day.getUTCDay()} scope="col" aria-label={new Intl.DateTimeFormat(language, { weekday: "long", timeZone: "UTC" }).format(day)}>{new Intl.DateTimeFormat(language, { weekday: "short", timeZone: "UTC" }).format(day)}</th>)}</tr></thead>
         <tbody key={month}>{Array.from({ length: Math.ceil((weekdayOffset + daysInMonth) / 7) }, (_, week) => (
           <tr key={week}>{Array.from({ length: 7 }, (_, weekday) => {
@@ -112,10 +114,11 @@ export function Calendar({ locale, today, selected, onSelect, markedDates, minMo
           })}</tr>
         ))}</tbody>
       </table>
-      <div className="calendar-footer" hidden={pickerOpen}>
+      <div className="calendar-footer">
         {monthCount !== undefined && <p className="calendar-count muted" aria-live="polite">{locale === "ko" ? `행사 ${monthCount}개` : `${monthCount} ${monthCount === 1 ? "event" : "events"}`}</p>}
         <button type="button" className="calendar-current" onClick={() => changeMonth(currentMonth)} disabled={month === currentMonth || currentMonth < minMonth || currentMonth > maxMonth}>{locale === "ko" ? "이번 달" : "This month"}</button>
       </div>
+      </SlideRegion>
     </div>
   );
 }

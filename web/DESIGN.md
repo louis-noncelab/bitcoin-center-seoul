@@ -1,5 +1,21 @@
 # Bitcoin Center Seoul: public design revision
 
+## 공통 공개 페이지 프레임, 2026-09-21
+
+- 홈의 1280px 고정 폭을 제거하고 기존 공통 `--content-max`(기본 80rem, 1440px부터 90rem, 1800px부터 110rem)와 반응형 `--gutter` 사용. 초광폭 화면에서도 중앙 정렬과 최대 폭 유지
+- 홈 행사 패널의 바깥 경계와 다른 페이지 본문, 헤더 로고의 시작선을 정렬. 패널 내부 여백은 유지
+- 모든 공개 페이지의 배경·표면·텍스트·구분선은 기존 홈의 라이트/다크 팔레트 공유. 관리자 팔레트는 분리
+- 공통 헤더는 홈 기준 74px 높이, 148×43px 로고, 하단 선 없는 스타일과 원형 모바일 메뉴 버튼. 현재 메뉴 표시, 한영·테마 전환과 접근성 유지
+- 넓어진 홈 사진은 표시 크기에 맞는 반응형 이미지 선택. 본문 가독성 제한과 기존 콘텐츠 구성 유지
+
+## 행사 목록 장소 표시, 2026-09-21
+
+- 관리자는 센터 / 외부 장소를 선택. 새 행사의 기본값은 센터이며 센터 이름과 한영 주소를 서버에서 자동 적용
+- 외부 장소 선택 시에만 장소 입력란 표시. 한국어 필수, 영어 선택(없으면 한국어 표시); 전환 중 외부 입력 초안 유지
+- 홈 행사 카드·달력·목록 보기·전체 일정에서는 저장된 구분값이 센터일 때 장소 생략. 행사 상세에는 전체 장소 표시
+- 기존 데이터는 컬럼 추가 시 한 번만 분류하고 원본 장소는 보존. 확인되지 않은 장소는 외부로 유지
+- 센터의 밋업 중 상태는 센터 행사만 반영
+
 ## 확정 기준: 확장 모바일 홈, 2026-09-20
 
 - 승인 자료: `bcs-expanded-mobile.html`과 최신 모바일 화면. 아래 이전 after 계획은 과거 기록
@@ -828,3 +844,9 @@ Public navigation uses a 72px desktop / 56px mobile height, with 44px / 36px
 wordmarks. Admin header dimensions are unchanged. Highlight cards reuse the review
 card's surface, image ratio, content spacing and footer structure. Titles and
 summaries precede metadata; home previews share the same responsive treatment.
+
+## Disclosure motion
+
+Site-controlled disclosures keep their content mounted through both opening and closing. Navigation submenus, calendar year/month selection and venue fields share a CSS grid height transition with the existing menu enter/exit durations and ease-out token. Closed content becomes inert and hidden from assistive technology immediately; visual visibility is delayed until the exit completes. Reversing a toggle continues from its current height. Chevron rotation uses the control duration.
+
+Review “more” uses native details/summary with a progressively enhanced, interruptible height animation; the no-JavaScript disclosure remains usable. Date dialogs retain their calendar during the existing exit transition and reset it on the next opening. Reduced motion settles all disclosures immediately. OS-managed select popups retain native keyboard, touch and form behavior.

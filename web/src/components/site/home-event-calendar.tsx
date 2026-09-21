@@ -7,6 +7,7 @@ import { EventBookingLink } from "@/components/site/event-booking-link";
 import { Calendar } from "@/components/ui/calendar";
 import type { Locale } from "@/i18n/routing";
 import type { HomeEvent } from "@/lib/home-events";
+import { eventListLocation } from "@/lib/event-location";
 import "@/styles/home-event-calendar.css";
 
 type Props = {
@@ -136,10 +137,7 @@ export function HomeEventCalendar({ events, locale, today }: Props) {
                     locale === "en" && event.titleEn
                       ? event.titleEn
                       : event.title;
-                  const location =
-                    locale === "en" && event.locationEn
-                      ? event.locationEn
-                      : event.location;
+                  const location = eventListLocation(event, locale);
                   return (
                     <li key={event.id}>
                       <ContentLink

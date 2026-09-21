@@ -81,7 +81,7 @@ export function Home({
               <CenterPhoto
                 name="lounge"
                 locale={locale}
-                sizes="(max-width: 767px) 100vw, 800px"
+                sizes="(max-width: 767px) 100vw, 60vw"
               />
             </div>
             <figcaption className="sr-only">

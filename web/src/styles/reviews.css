@@ -46,7 +46,8 @@
 .review-more-closed > span { color: var(--muted); font-variant-numeric: tabular-nums; }
 .review-more-open, .review-more[open] .review-more-closed { display: none; }
 .review-more[open] .review-more-open { display: flex; }
-.review-more[open] > .review-grid { margin-block-start: var(--space-8); }
+.review-more .sliding-details-content { overflow: hidden; }
+.review-more .sliding-details-content > .review-grid { padding-block-start: var(--space-8); }
 .review-visit { display: flex; align-items: center; justify-content: space-between; gap: var(--space-8); padding: var(--space-10); margin-block-start: var(--section-gap); background: var(--surface); border-radius: var(--radius-panel); }
 .review-visit h2 { font-size: var(--text-subheading); }
 .review-visit p { margin-block-start: var(--space-3); color: var(--muted); }

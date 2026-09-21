@@ -4,6 +4,7 @@ import { reviewCopy } from "@/content/review-copy";
 import { type VisitReview } from "@/content/visit-reviews";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
+import { SlidingDetails } from "../ui/sliding-details";
 import { ReviewCard } from "./review-card";
 
 export const reviewFilters = ["all", "blog", "cafe", "video", "note"] as const;
@@ -44,10 +45,9 @@ export function ReviewsCatalog({ locale, filter, reviews }: { readonly locale: L
     <div className="review-results" key={filter}>
       {!records.length && <p className="catalog-empty muted">{locale === "ko" ? "아직 등록된 후기가 없습니다." : "No visitor stories yet."}</p>}
       <ReviewGrid records={records.slice(0, 12)} locale={locale} />
-      {records.length > 12 && <details className="review-more">
-        <summary><span className="review-more-closed">{t.more}<span>{records.length - 12}</span><Plus className="icon" aria-hidden="true" /></span><span className="review-more-open">{t.less}<Minus className="icon" aria-hidden="true" /></span></summary>
+      {records.length > 12 && <SlidingDetails className="review-more" summary={<><span className="review-more-closed">{t.more}<span>{records.length - 12}</span><Plus className="icon" aria-hidden="true" /></span><span className="review-more-open">{t.less}<Minus className="icon" aria-hidden="true" /></span></>}>
         <ReviewGrid records={records.slice(12)} locale={locale} />
-      </details>}
+      </SlidingDetails>}
     </div>
     <div className="review-visit"><div><h2>{t.visit}</h2><p>{t.visitCopy}</p></div><Link href="/visit" locale={locale} className="button" data-variant="secondary">{t.visitLink}<ArrowRight className="icon" aria-hidden="true" /></Link></div>
   </section>;
