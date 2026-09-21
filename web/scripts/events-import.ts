@@ -1,3 +1,4 @@
+import { legacyVenueType } from "../src/server/events/venue-migration";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -105,8 +106,8 @@ function copySnapshotImages(targetRoot: string, expectedPaths: ReadonlySet<strin
 function importRows(db: Database.Database, snapshot: z.infer<typeof snapshotSchema>) {
   const insertEvent = db.prepare(`
     INSERT OR IGNORE INTO events
-      (id, title, titleEn, date, time, location, locationEn, description, descriptionEn, image, link, created_at, updated_at)
-    VALUES (@id, @title, @titleEn, @date, @time, @location, @locationEn, @description, @descriptionEn, @image, @link, @created_at, @updated_at)
+      (id, title, titleEn, date, time, venueType, location, locationEn, description, descriptionEn, image, link, created_at, updated_at)
+    VALUES (@id, @title, @titleEn, @date, @time, @venueType, @location, @locationEn, @description, @descriptionEn, @image, @link, @created_at, @updated_at)
   `);
   const insertHighlight = db.prepare(`
     INSERT OR IGNORE INTO highlights
@@ -122,7 +123,7 @@ function importRows(db: Database.Database, snapshot: z.infer<typeof snapshotSche
     let events = 0;
     let highlights = 0;
     for (const event of snapshot.events) {
-      if (insertEvent.run(event).changes === 1) {
+      if (insertEvent.run({ ...event, venueType: legacyVenueType(event.location, event.locationEn) }).changes === 1) {
         events += 1;
         if (event.image) insertImage.run("event", event.id, event.image);
       }

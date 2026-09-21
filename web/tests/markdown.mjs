@@ -14,7 +14,7 @@ test("event descriptions render Markdown through their public detail component",
   // Given an existing event record containing Markdown in its stored description.
   const event = {
     id: 1, slug: "markdown-review", title: "검토", titleEn: "Review",
-    date: "2026-09-10", time: "", location: "", locationEn: "",
+    date: "2026-09-10", time: "", venueType: "center", location: "", locationEn: "",
     description: "## 일정\n\n**비트코인** 교육\n\n- 지갑\n- 라이트닝",
     descriptionEn: "", image: "", images: [], link: "", tags: [],
   };

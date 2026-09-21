@@ -48,11 +48,11 @@ test("keeps runtime database access fail closed and legacy compatible", () => {
     const events = listEvents();
     await login("local-test-password", "global");
     const verify = new Sqlite(process.env.BCS_LEGACY_TEST_PATH, { fileMustExist: true });
-    const { tags, revision, ...legacyAfter } = verify.prepare("SELECT * FROM events WHERE id = 1").get();
+    const { tags, revision, venueType, registrationClosed, ...legacyAfter } = verify.prepare("SELECT * FROM events WHERE id = 1").get();
     const after = JSON.stringify(legacyAfter);
     const additions = verify.prepare("SELECT count(*) AS count FROM sqlite_master WHERE type='table' AND name IN ('content_images','content_slugs','admin_sessions','admin_login_attempts')").get().count;
     verify.close();
-    if (revision !== 1 || events[0].revision !== 1 || events.length !== 1 || events[0].slug !== '' || tags !== '[]' || events[0].tags.length !== 0 || before !== after || additions !== 4) process.exit(1);
+    if (registrationClosed !== 0 || events[0].registrationClosed !== false || venueType !== 'external' || revision !== 1 || events[0].revision !== 1 || events.length !== 1 || events[0].slug !== '' || tags !== '[]' || events[0].tags.length !== 0 || before !== after || additions !== 4) process.exit(1);
     process.stdout.write("ok");
   `;
 
@@ -95,7 +95,7 @@ test("preserves slug aliases, ownership, visibility and transactional legacy wri
     const { eventInputSchema, highlightInputSchema } = await import("./src/lib/events-contract.ts");
     const { ApiError } = await import("./src/server/events/errors.ts");
     openDatabase(process.env.BCS_EVENTS_DB).close();
-    const event = eventInputSchema.parse({ title:'행사', titleEn:'Event', date:'2026-01-01', time:'', location:'', locationEn:'', description:'설명', descriptionEn:'Description', image:'', link:'', images:[] });
+    const event = eventInputSchema.parse({ title:'행사', titleEn:'Event', date:'2026-01-01', time:'', venueType:'center', location:'', locationEn:'', description:'설명', descriptionEn:'Description', image:'', link:'', images:[] });
     const highlight = highlightInputSchema.parse(${JSON.stringify(highlight)});
     const collision = (error) => error instanceof ApiError && error.status === 409 && error.code === 'SLUG_CONFLICT';
     for (const kind of ['Event', 'Highlight']) {
@@ -248,7 +248,7 @@ test.describe.serial("events-only HTTP API", () => {
   test("rejects a calendar date that cannot exist", async () => {
     // Given an otherwise valid event with an impossible calendar date
     const payload = {
-      title: "Invalid date", titleEn: "Invalid date", date: "2026-02-31", time: "", location: "",
+      title: "Invalid date", titleEn: "Invalid date", date: "2026-02-31", time: "", venueType: "center", location: "",
       locationEn: "", description: "설명", descriptionEn: "Description", image: "", link: "", images: [],
     };
 
@@ -305,7 +305,7 @@ test.describe.serial("events-only HTTP API", () => {
       slug: `api-event-${Date.now()}`,
       date: "2026-10-21",
       time: "19:00",
-      location: "서울",
+      venueType: "external", location: "서울",
       locationEn: "Seoul",
       description: "가".repeat(20_000),
       descriptionEn: "나".repeat(20_000),

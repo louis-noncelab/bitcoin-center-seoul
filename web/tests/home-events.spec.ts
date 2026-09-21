@@ -63,7 +63,9 @@ test.describe.serial("mobile home event discovery", () => {
         slug: `${prefix}-${index}`, tags: [],
         title: `[검토용] 홈 행사 ${index}`, titleEn: `[Review only] Home event ${index}`,
         date: fixture.dotted ? dateAt(fixture.offset).replaceAll("-", ".") : dateAt(fixture.offset), time: fixture.time,
-        location: "비트코인 센터 서울", locationEn: "Bitcoin Center Seoul",
+        venueType: index === 1 ? "external" : "center",
+        location: index === 1 ? "외부 행사장" : index === 2 ? "비트코인 센터 서울 (서울 마포구 신촌로2안길 30, 2층)" : "비트코인 센터 서울",
+        locationEn: index === 1 ? "External venue" : index === 2 ? "Bitcoin Center Seoul (2F, 30 Sinchon-ro 2an-gil, Mapo-gu, Seoul)" : "Bitcoin Center Seoul",
         description: "모바일 홈 검토용 가상 일정입니다. 이미지는 기존 센터 공간 사진으로 행사 현장 사진이 아닙니다.",
         descriptionEn: "A fictional mobile home test event. The image shows the center space, not this event.",
         image: photo, images: photo ? [photo] : [], link: "",
@@ -88,6 +90,34 @@ test.describe.serial("mobile home event discovery", () => {
   });
 
   for (const locale of ["ko", "en"] as const) {
+    test(`omits center locations only from lists and preserves external venues and details in ${locale}`, async ({ page, context }, testInfo) => {
+      const external = locale === "ko" ? "외부 행사장" : "External venue";
+      const center = locale === "ko" ? "비트코인 센터 서울" : "Bitcoin Center Seoul";
+      for (const [width, theme] of [[320, "light"], [375, "dark"], [768, "light"], [1280, "dark"]] as const) {
+        await page.setViewportSize({ width, height: 900 });
+        await context.addCookies([{ name: "bcs-theme", value: theme, url: "http://127.0.0.1:3102" }]);
+        await page.goto(`/${locale}`);
+        await expect(page.locator(`.upcoming-card[href$="${prefix}-2"] .upcoming-meta`)).toHaveCount(0);
+        await expect(page.locator(`.upcoming-card[href$="${prefix}-1"] .upcoming-meta`)).toHaveText(external);
+        const calendar = page.locator(".home-event-calendar");
+        await expect(calendar.locator(".home-calendar-event-location")).toHaveCount(0);
+        await selectDate(calendar, pairedDate, locale);
+        await expect(calendar.locator(".home-calendar-event-location")).toHaveText(external);
+        await calendar.screenshot({ path: testInfo.outputPath(`${locale}-${width}-${theme}-calendar.png`) });
+        await calendar.getByRole("button", { name: locale === "ko" ? "목록 보기" : "List view", exact: true }).click();
+        await expect(calendar.locator(".home-calendar-event-location")).toHaveText(external);
+        await page.goto(`/${locale}/programs`);
+        await expect(page.locator(`.event-card[href$="${prefix}-2"] .event-card-location`)).toHaveCount(0);
+        await expect(page.locator(`.event-card[href$="${prefix}-3"] .event-card-location`)).toHaveCount(0);
+        await expect(page.locator(`.event-card[href$="${prefix}-1"] .event-card-location`)).toHaveText(external);
+        await page.locator(".events-timeline").screenshot({ path: testInfo.outputPath(`${locale}-${width}-${theme}-programs.png`) });
+        await page.locator(`.event-card[href$="${prefix}-2"]`).click();
+        await expect(page.locator(".event-meta")).toContainText(center);
+        await page.locator(".event-meta").screenshot({ path: testInfo.outputPath(`${locale}-${width}-${theme}-detail.png`) });
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+      }
+    });
+
     test(`puts the first five upcoming events above the hero in chronological order in ${locale}`, async ({ page }) => {
       const upcoming = (await records())
         .filter((event) => event.date.replaceAll(".", "-") >= today)
@@ -221,6 +251,12 @@ test.describe.serial("mobile home event discovery", () => {
       const dates = page.locator(".home-event-calendar button[data-calendar-date]");
       await expect(controls).toHaveCount(2);
       expect(await dates.count()).toBeGreaterThanOrEqual(28);
+      const clipped = await dates.evaluateAll(elements => elements.filter(element => {
+        const bounds = element.getBoundingClientRect();
+        const clip = element.closest(".slide-region-content")?.getBoundingClientRect();
+        return clip && (bounds.left < clip.left - 0.5 || bounds.right > clip.right + 0.5);
+      }).length);
+      expect(clipped, `${width}px calendar tap targets must remain inside the slide clip`).toBe(0);
       for (const [name, targets] of [["carousel controls", controls], ["calendar dates", dates]] as const) {
         const sizes = await targets.evaluateAll((elements) => elements.map((element) => {
           const bounds = element.getBoundingClientRect();

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { inspectSlide } from "./disclosure-motion";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { reviewAdminSchema, reviewKinds, reviewRecordSchema } from "@/lib/reviews-contract";
@@ -81,3 +82,37 @@ test("filters and remaining stories work without JavaScript", async ({ browser, 
   await expect(page.locator(".review-card:visible")).toHaveCount(counts.get("cafe") ?? 0);
   await context.close();
 });
+
+for (const locale of ["ko", "en"] as const) {
+  test(`${locale} more stories slide open and closed, with reduced motion fallback`, async ({ page }, info) => {
+    await page.setViewportSize({ width: locale === "ko" ? 375 : 1280, height: 900 });
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto(`/${locale}/reviews`);
+    const details = page.locator(".review-more");
+    const summary = details.locator("summary");
+    const content = details.locator(".sliding-details-content");
+    await summary.evaluate(element => element.scrollIntoView({ block: "start" }));
+    await inspectSlide(page, details, async () => {
+      const before = await summary.evaluate(element => element.getBoundingClientRect().top);
+      const bounds = await summary.boundingBox();
+      if (!bounds) throw new Error("Review summary unavailable");
+      await page.mouse.click(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+      const after = await summary.evaluate(element => element.getBoundingClientRect().top);
+      expect(Math.abs(after - before)).toBeLessThan(2);
+    }, `${locale}-reviews`, info);
+    await expect(details).not.toHaveAttribute("open");
+    await expect(content).toHaveAttribute("inert", "");
+    await summary.click();
+    await summary.click();
+    await summary.click();
+    await expect(summary).toHaveAttribute("aria-expanded", "true");
+    await expect(content).not.toHaveAttribute("inert");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await summary.click();
+    await expect(details).not.toHaveAttribute("open");
+    expect(await details.evaluate(element => element.getAnimations({ subtree: true }).length)).toBe(0);
+    await summary.press("Enter");
+    await expect(details).toHaveAttribute("open", "");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  });
+}

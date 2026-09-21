@@ -32,7 +32,7 @@ test.describe.serial("events-only public pages", () => {
     expect((await admin.post("/api/admin/login", { data: { password: runtime.ADMIN_PASSWORD } })).ok()).toBeTruthy();
 
     const event = responseSchema(eventRecordSchema).parse(await (await admin.post("/api/admin/events", { data: {
-      slug: `${eventSlug}-old`, title: eventTitleKo, titleEn: eventTitleEn, date: futureEventDate, time: "19:00", location: "비트코인 센터 서울", locationEn: "Bitcoin Center Seoul", description: "외부 안내 링크가 있는 공개 행사입니다.", descriptionEn: "A public event with an external information link.", image: "", link: "https://example.com/event", images: [],
+      slug: `${eventSlug}-old`, title: eventTitleKo, titleEn: eventTitleEn, date: futureEventDate, time: "19:00", venueType: "center", location: "비트코인 센터 서울", locationEn: "Bitcoin Center Seoul", description: "외부 안내 링크가 있는 공개 행사입니다.", descriptionEn: "A public event with an external information link.", image: "", link: "https://example.com/event", images: [],
     } })).json()).data;
     const { id: createdEventId, revision: eventRevision, ...eventInput } = event;
     eventId = createdEventId;
@@ -72,7 +72,7 @@ test.describe.serial("events-only public pages", () => {
     await eventLink.click();
     await expect(page.getByRole("heading", { name: eventTitleKo, exact: true })).toBeVisible();
     const booking = page.locator(".event-detail a.event-booking-link");
-    await expect(booking).toHaveAccessibleName(`${eventTitleKo} 예약하기 외부 사이트 (새 창)`);
+    await expect(booking).toHaveAccessibleName(`${eventTitleKo} 참여하기 외부 사이트 (새 창)`);
     await expect(booking).toHaveAttribute("href", "https://example.com/event");
     await expect(booking).toHaveAttribute("target", "_blank");
     await expect(booking).toHaveAttribute("rel", /^(?=.*\bnoopener\b)(?=.*\bnoreferrer\b).+$/);

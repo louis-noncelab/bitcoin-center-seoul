@@ -37,7 +37,7 @@ test("a manual language choice survives a later unprefixed visit", async ({ brow
     await page.goto("/");
     await expect(page).toHaveURL(/\/en$/);
     // When the visitor chooses Korean then returns through the root URL
-    await page.locator(".language-control").click();
+    await page.locator(".language-control:visible").click();
     await expect(page).toHaveURL(/\/ko$/);
     await page.goto("/");
     // Then the explicit preference remains in use

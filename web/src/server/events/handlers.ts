@@ -32,6 +32,7 @@ import {
   listEvents,
   listHighlights,
   updateEvent,
+  setEventRegistration,
   updateHighlight,
 } from "@/server/events";
 
@@ -90,6 +91,17 @@ export async function adminEventPut(request: NextRequest, context: ItemContext):
     requireSameOrigin(request);
     requireAdmin(request);
     return dataResponse(updateEvent(await itemId(context), await jsonBody(request, eventInputSchema), expectedRevision(request)));
+  });
+}
+
+const registrationSchema = z.object({ registrationClosed: z.boolean() }).strict();
+
+export async function adminEventPatch(request: NextRequest, context: ItemContext): Promise<Response> {
+  return route(async () => {
+    requireSameOrigin(request);
+    requireAdmin(request);
+    const { registrationClosed } = await jsonBody(request, registrationSchema);
+    return dataResponse(setEventRegistration(await itemId(context), registrationClosed, expectedRevision(request)));
   });
 }
 

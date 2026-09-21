@@ -1,0 +1,18 @@
+.slide-region {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+  transition: grid-template-rows var(--duration-menu-exit) var(--ease-out), opacity var(--duration-menu-exit) var(--ease-out), visibility 0s var(--duration-menu-exit);
+}
+.slide-region[data-open="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  visibility: visible;
+  transition-duration: var(--duration-menu-enter), var(--duration-menu-enter), 0s;
+  transition-delay: 0s;
+}
+.slide-region-content { min-block-size: 0; overflow: hidden; }
+@media (prefers-reduced-motion: reduce) {
+  .slide-region { transition: none; }
+}

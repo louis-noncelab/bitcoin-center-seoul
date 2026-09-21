@@ -57,6 +57,8 @@ export const contentImagesSchema = z
   .refine((values) => new Set(values).size === values.length, "같은 이미지를 중복해서 사용할 수 없습니다.");
 
 const eventFields = {
+  registrationClosed: z.boolean().optional(),
+  venueType: z.enum(["center", "external"]),
   slug: contentSlugSchema,
   tags: contentTagsSchema,
   title: requiredText(200),
@@ -119,6 +121,7 @@ export const eventRecordSchema = z
     id: z.number().int().positive(),
     revision: z.number().int().positive(),
     ...eventFields,
+    registrationClosed: z.boolean().default(false),
   })
   .strict();
 
@@ -131,7 +134,10 @@ export const highlightRecordSchema = z
   .strict()
   .superRefine(validateHighlightPeriod);
 
-export const eventInputSchema = z.object(eventFields).strict();
+export const eventInputSchema = z.object(eventFields).strict().refine(
+  (event) => event.venueType !== "external" || event.location.length > 0,
+  { path: ["location"], message: "외부 장소를 입력해 주세요." },
+);
 export const highlightInputSchema = z.object(highlightFields).strict().superRefine(validateHighlightPeriod);
 
 export type EventRecord = z.infer<typeof eventRecordSchema>;

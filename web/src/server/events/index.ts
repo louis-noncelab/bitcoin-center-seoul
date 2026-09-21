@@ -14,14 +14,15 @@ import { ApiError } from "@/server/events/errors";
 import { requireExistingImages } from "@/server/events/images";
 import { reserveRevision } from "@/server/events/revision";
 import { storedTagsSchema } from "@/server/events/tags";
+import { centerEventLocation } from "@/lib/event-location";
 
-type EventRow = Omit<EventRecord, "images" | "tags"> & { readonly tags: string };
+type EventRow = Omit<EventRecord, "images" | "tags" | "registrationClosed"> & { readonly tags: string; readonly registrationClosed: number };
 type HighlightRow = Omit<HighlightRecord, "images" | "tags"> & { readonly tags: string };
 type ContentKind = "event" | "highlight";
 type Visibility = { readonly includeInactive?: boolean };
 
 const eventSelect = `
-  SELECT id, revision, title, titleEn, date, time, location, locationEn,
+  SELECT id, revision, registrationClosed, title, titleEn, date, time, venueType, location, locationEn,
          description, descriptionEn, image, link, tags,
          COALESCE((SELECT slug FROM content_slugs WHERE kind = 'event' AND content_id = events.id AND is_current = 1), '') AS slug
   FROM events`;
@@ -45,7 +46,7 @@ function imagesFor(kind: ContentKind, contentId: number, legacyImage: string): s
 
 function eventFrom(row: EventRow): EventRecord {
   const images = imagesFor("event", row.id, row.image);
-  return eventRecordSchema.parse({ ...row, tags: storedTagsSchema.parse(row.tags), image: images[0] ?? "", link: normalizedLink(row.link), images });
+  return eventRecordSchema.parse({ ...row, registrationClosed: row.registrationClosed === 1, tags: storedTagsSchema.parse(row.tags), image: images[0] ?? "", link: normalizedLink(row.link), images });
 }
 
 function highlightFrom(row: HighlightRow): HighlightRecord {
@@ -152,9 +153,9 @@ export function createEvent(input: EventInput): EventRecord {
   const create = db.transaction(() => {
     const image = input.images[0] ?? "";
     const result = db.prepare(`
-      INSERT INTO events (title, titleEn, date, time, location, locationEn, description, descriptionEn, image, link, tags)
-      VALUES (@title, @titleEn, @date, @time, @location, @locationEn, @description, @descriptionEn, @image, @link, @tags)
-    `).run({ ...input, image, tags: JSON.stringify(input.tags) });
+      INSERT INTO events (registrationClosed, title, titleEn, date, time, venueType, location, locationEn, description, descriptionEn, image, link, tags)
+      VALUES (@registrationClosed, @title, @titleEn, @date, @time, @venueType, @location, @locationEn, @description, @descriptionEn, @image, @link, @tags)
+    `).run({ ...input, registrationClosed: input.registrationClosed ? 1 : 0, ...(input.venueType === "center" ? centerEventLocation : {}), image, tags: JSON.stringify(input.tags) });
     const id = Number(result.lastInsertRowid);
     replaceImages("event", id, input.images);
     setSlug("event", id, input.slug);
@@ -165,6 +166,15 @@ export function createEvent(input: EventInput): EventRecord {
   return event;
 }
 
+export function setEventRegistration(id: number, registrationClosed: boolean, revision: number): EventRecord {
+  const db = getDatabase();
+  return db.transaction(() => {
+    reserveRevision("events", id, revision);
+    db.prepare("UPDATE events SET registrationClosed = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(Number(registrationClosed), id);
+    return getEvent(id)!;
+  }).immediate();
+}
+
 export function updateEvent(id: number, input: EventInput, revision: number): EventRecord {
   requireExistingImages(input.images);
   const db = getDatabase();
@@ -172,11 +182,11 @@ export function updateEvent(id: number, input: EventInput, revision: number): Ev
     reserveRevision("events", id, revision);
     const image = input.images[0] ?? "";
     const result = db.prepare(`
-      UPDATE events SET title = @title, titleEn = @titleEn, date = @date, time = @time,
-        location = @location, locationEn = @locationEn, description = @description,
+      UPDATE events SET registrationClosed = COALESCE(@registrationClosed, registrationClosed), title = @title, titleEn = @titleEn, date = @date, time = @time,
+        venueType = @venueType, location = @location, locationEn = @locationEn, description = @description,
         descriptionEn = @descriptionEn, image = @image, link = @link, tags = @tags, updated_at = CURRENT_TIMESTAMP
       WHERE id = @id
-    `).run({ ...input, id, image, tags: JSON.stringify(input.tags) });
+    `).run({ ...input, registrationClosed: input.registrationClosed === undefined ? null : Number(input.registrationClosed), ...(input.venueType === "center" ? centerEventLocation : {}), id, image, tags: JSON.stringify(input.tags) });
     if (result.changes === 0) throw new ApiError(404, "NOT_FOUND", "행사를 찾을 수 없습니다.");
     replaceImages("event", id, input.images);
     setSlug("event", id, input.slug);

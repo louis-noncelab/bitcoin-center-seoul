@@ -10,7 +10,7 @@ const common = {
   id: 1, slug: "tags-render", title: "검토", titleEn: "Review", date: "2026-09-10",
   description: "본문", descriptionEn: "Body", image: "", images: [], link: "", tags: ["비트코인", "<script>alert(1)</script>"],
 };
-const event = { ...common, time: "19:00", location: "", locationEn: "" };
+const event = { ...common, time: "19:00", venueType: "center", location: "", locationEn: "" };
 const highlight = { ...common, meta: "", metaEn: "", category: "", categoryEn: "", host: "", hostEn: "", startDate: "", endDate: "", icon: "calendar", sort_order: 0, is_active: 1 };
 
 for (const locale of ["ko", "en"]) {

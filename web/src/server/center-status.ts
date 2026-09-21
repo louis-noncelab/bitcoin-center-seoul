@@ -9,7 +9,7 @@ import { dataResponse, jsonBody, route } from "@/server/events/http";
 export async function getCenterStatus(now = new Date()) {
   const date = seoulDate(now), yesterday = seoulDate(new Date(Date.parse(`${date}T00:00:00+09:00`) - 1));
   const db = getDatabase();
-  const events = db.prepare<[string, string], ScheduledEvent>("SELECT date, time FROM events WHERE REPLACE(TRIM(date), '.', '-') IN (?, ?)").all(yesterday, date);
+  const events = db.prepare<[string, string], ScheduledEvent>("SELECT date, time FROM events WHERE venueType = 'center' AND REPLACE(TRIM(date), '.', '-') IN (?, ?)").all(yesterday, date);
   const exceptions = db.prepare<[string, string], OpeningException>("SELECT date, status FROM center_opening_overrides WHERE date IN (?, ?)").all(yesterday, date);
   return resolveCenterStatus(now, events, exceptions);
 }

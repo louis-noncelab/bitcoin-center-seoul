@@ -42,3 +42,8 @@ test("SatB branding uses only the exact provider hostname", () => {
     assert.equal(isSaturdayBlockUrl(link), false, link);
   }
 });
+
+test("manual closure suppresses participation while preserving the configured URL for reopening", () => {
+  assert.equal(eventBookingHref(bookingUrl, today, today, true), undefined);
+  assert.equal(eventBookingHref(bookingUrl, today, today, false), bookingUrl);
+});

@@ -4,6 +4,7 @@ import { ChevronDown, Menu, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
+import { SlideRegion } from "../ui/slide-region";
 import { Button } from "../ui/primitives";
 import { NavigationFeedback } from "./navigation-feedback";
 import "@/styles/navigation.css";
@@ -119,11 +120,8 @@ export function NavigationDisclosure({
                     {item.label}
                     <ChevronDown className="icon" aria-hidden="true" />
                   </button>
-                  <div
-                    className="navigation-submenu"
-                    id={`${id}-${item.href.slice(1)}`}
-                    hidden={expanded !== item.href}
-                  >
+                  <SlideRegion id={`${id}-${item.href.slice(1)}`} open={expanded === item.href}>
+                  <div className="navigation-submenu">
                     {item.children.map((child) => (
                       <Link
                         key={child.href}
@@ -139,6 +137,7 @@ export function NavigationDisclosure({
                       </Link>
                     ))}
                   </div>
+                  </SlideRegion>
                 </>
               ) : (
                 <Link
@@ -158,7 +157,7 @@ export function NavigationDisclosure({
             </li>
           ))}
         </ul>
-        {open && footer && (
+        {footer && (
           <div
             className="navigation-utilities"
             onClick={(event) => {

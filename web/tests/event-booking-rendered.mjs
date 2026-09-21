@@ -100,7 +100,7 @@ function assertBooking(anchor, href, locale, satb = true) {
   assert.match(anchor.content, locale === "ko" ? /새 창/ : /new window/i);
   if (satb) assert.match(anchor.content, locale === "ko" ? /샛비/ : /SatB/i);
   else assert.doesNotMatch(anchor.content, /샛비|SatB|Saturday Block/i);
-  assert.match(anchor.content, locale === "ko" ? /예약/ : /book|reserve/i);
+  assert.match(anchor.content, locale === "ko" ? /참여하기/ : /Join event/i);
 }
 
 function relativeDate(today, offset) {
@@ -184,7 +184,7 @@ test("event booking is available directly from bilingual home, schedule and deta
     assert.ok(cookie?.startsWith("bcs_admin_session="), "Admin login did not set a session cookie");
     const baseInput = {
       slug: "booking-today", tags: [], title: "오늘 예약 행사", titleEn: "Today booking event",
-      date: today, time: "19:00", location: "테스트 장소", locationEn: "Fixture venue",
+      date: today, time: "19:00", venueType: "external", location: "테스트 장소", locationEn: "Fixture venue",
       description: "예약 상세 본문 검증 문구", descriptionEn: "Booking detail body verification marker",
       image: imagePath, images: [imagePath], link: bookingUrl,
     };

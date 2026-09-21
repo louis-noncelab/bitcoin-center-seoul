@@ -231,7 +231,7 @@ test(
           titleEn: "Expanded home event",
           date,
           time: "19:00",
-          location: "센터",
+          venueType: "center", location: "센터",
           locationEn: "Center",
           description: "SSR fixture",
           descriptionEn: "SSR fixture",

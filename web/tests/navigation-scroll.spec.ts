@@ -38,7 +38,7 @@ for (const locale of ["ko", "en"] as const) {
       await expect(page).toHaveURL(`/${locale}`);
       expect(await scrollFrames(page), "The wordmark must return to the page top").toEqual(Array(12).fill(0));
 
-      await page.locator(".language-control").click();
+      await page.locator(".language-control:visible").click();
       await expect(page).toHaveURL(`/${locale === "ko" ? "en" : "ko"}`);
       expect(await scrollFrames(page), "Changing locale must keep the page top").toEqual(Array(12).fill(0));
     });
