@@ -123,3 +123,23 @@ test("sold-out changes preserve the link, images, publication and older-client s
   assert.equal(edited.soldOut, true);
   assert.equal(setCollectionSoldOut(item.id, false, edited.revision).purchaseUrl, item.purchaseUrl);
 });
+
+test("purchasing is limited to books and goods, including kind changes and legacy rows", () => {
+  for (const kind of ["boardgame", "artwork"]) {
+    const input = { kind, title: "구매 제외 검증", images: [] };
+    assert.equal(collectionInputSchema.safeParse({ ...input, purchaseUrl: "https://pay.example.com/item" }).success, false);
+    assert.equal(collectionInputSchema.safeParse({ ...input, soldOut: true }).success, false);
+    const item = saveCollectionItem(collectionInputSchema.parse(input));
+    assert.throws(() => setCollectionSoldOut(item.id, true, item.revision), { status: 400, code: "UNSUPPORTED_COLLECTION_KIND" });
+    assert.equal(getCollectionItem(item.id, true).revision, item.revision);
+    getDatabase().prepare("UPDATE collection_items SET purchaseUrl = ?, soldOut = 1 WHERE id = ?").run("https://pay.example.com/legacy", item.id);
+    assert.equal(getCollectionItem(item.id, true).title, input.title);
+    const cleaned = saveCollectionItem(collectionInputSchema.parse(input), item.id, item.revision);
+    assert.equal(cleaned.purchaseUrl, "");
+    assert.equal(cleaned.soldOut, false);
+  }
+  const book = saveCollectionItem(collectionInputSchema.parse({ kind: "book", title: "분류 변경 검증", images: [], purchaseUrl: "https://pay.example.com/book", soldOut: true }));
+  const changed = saveCollectionItem(collectionInputSchema.parse({ kind: "artwork", title: book.title, images: [] }), book.id, book.revision);
+  assert.equal(changed.purchaseUrl, "");
+  assert.equal(changed.soldOut, false);
+});

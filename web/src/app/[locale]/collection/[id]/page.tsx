@@ -1,3 +1,4 @@
+import { isPurchasableKind } from "@/lib/collection-contract";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { hasLocale } from "next-intl";
@@ -29,7 +30,7 @@ export default async function CollectionDetailPage({ params }: Props) {
   return <CollectionFrame locale={locale} section="library" title={content.title} detail><article className="event-detail">
     <PhotoGallery images={item.images} title={content.title} locale={locale} />
     <div className="collection-detail-meta"><p className="caption muted">{collectionCopy[locale][item.kind]}</p>{content.creator && <p lang={locale === "en" && !item.creatorEn ? "ko" : locale}>{content.creator}</p>}</div>
-    <div className="button-row"><PurchaseLink record={item} locale={locale} /></div>
+    {isPurchasableKind(item.kind) && <div className="button-row"><PurchaseLink record={item} locale={locale} /></div>}
     {content.description && <MarkdownContent lang={locale === "en" && !item.descriptionEn ? "ko" : locale}>{content.description}</MarkdownContent>}
   </article></CollectionFrame>;
 }

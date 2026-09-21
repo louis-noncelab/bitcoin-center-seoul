@@ -862,3 +862,7 @@ Collection admin provides a `품절` switch in the list and editor, using the ex
 ## Admin switch motion
 
 Event closure and collection sold-out switches share the same 32×18 track and 14px thumb in lists and editor inputs. Translate the persistent thumb over the existing 240ms control duration and ease-out curve in both directions; tint the track smoothly. Keep list rows mounted after successful updates and keep pending switch colors steady while duplicate input remains disabled. Native checkbox/Space behavior, focus, failure state and saved values stay intact. Reduced motion settles immediately; forced colors preserves track/thumb contrast. Mechanism reference: https://beui.dev/r/switch/raw, adapted to existing CSS tokens without a new animation dependency.
+
+## Collection administration filters
+
+Reuse wrapping button-row controls with aria-pressed for 전체 / 도서 / 굿즈 / 보드게임 / 작품 filters. Keep the selected filter when editing or cancelling; registering from a kind filter starts in that kind. If an edited item changes kind, a narrowed filter follows its saved kind. Purchase links and sold-out controls apply only to books and goods, across admin list/editor, API and public list/detail. Other kinds remain exhibition records; hide legacy purchase actions immediately and clear their inactive purchasing fields when saved. Temporarily switching form kinds preserves unsaved purchasing values if switched back before saving. Retain existing spacing, active-selection tokens and switch motion.

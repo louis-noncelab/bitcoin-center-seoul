@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import { ContentLink } from "@/components/controls/content-link";
 import { pageMetadata } from "@/content/site";
 import type { Locale } from "@/i18n/routing";
-import type { CollectionRecord } from "@/lib/collection-contract";
+import { isPurchasableKind, type CollectionRecord } from "@/lib/collection-contract";
 import { markdownExcerpt } from "@/lib/markdown";
 import { SiteHeader } from "./site-header";
 import { SiteFooter } from "./site-footer";
@@ -71,6 +71,7 @@ export const goodsCopy = {
 } as const;
 
 export function PurchaseLink({ record, locale }: { readonly record: CollectionRecord; readonly locale: Locale }) {
+  if (!isPurchasableKind(record.kind)) return null;
   if (record.soldOut) return <button type="button" className="button collection-sold-out" disabled aria-disabled="true">{locale === "ko" ? "품절" : "Sold out"}</button>;
   if (!record.purchaseUrl) return null;
   return <a className="button" data-variant="primary" href={record.purchaseUrl} target="_blank" rel="noopener noreferrer">
@@ -249,7 +250,7 @@ export function CollectionGrid({
                 </div>
               </div>
             </ContentLink>
-            {(record.purchaseUrl || record.soldOut) && <div className="collection-purchase"><PurchaseLink record={record} locale={locale} /></div>}
+            {isPurchasableKind(record.kind) && (record.purchaseUrl || record.soldOut) && <div className="collection-purchase"><PurchaseLink record={record} locale={locale} /></div>}
           </article>
         );
       })}
