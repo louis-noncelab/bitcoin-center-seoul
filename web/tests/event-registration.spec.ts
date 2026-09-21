@@ -36,8 +36,10 @@ test("admin can close and reopen participation without losing the link or bypass
     await page.goto("/ko/admin");
     const toggle = page.getByRole("switch", { name: `${title} 참여 마감`, exact: true });
     await expect(toggle).toHaveAttribute("aria-checked", "false");
+    const originalToggle = await toggle.elementHandle();
     await toggle.click();
     await expect(toggle).toHaveAttribute("aria-checked", "true");
+    expect(await originalToggle?.evaluate((element) => element.isConnected), "Keep the switch mounted so its thumb can slide without flashing the list").toBe(true);
     await page.screenshot({ path: info.outputPath("registration-admin-closed.png") });
     let current = eventRecordSchema.parse((await (await admin.get(`/api/admin/events/${event.id}`)).json()).data);
     expect(current.registrationClosed).toBe(true);

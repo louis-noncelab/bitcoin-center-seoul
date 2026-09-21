@@ -49,10 +49,6 @@
 .events-form .muted, .center-status-admin .muted, .events-admin-list .muted { font-size: var(--text-small); line-height: 1.6; }
 .events-admin-list h3 { overflow-wrap: anywhere; }
 .events-admin-list > li > .button-row { flex-wrap: wrap; }
-.events-switch-track { inline-size: 2rem; block-size: 1.125rem; padding: 2px; border-radius: 1rem; background: var(--muted); flex-shrink: 0; }
-.events-switch-track::after { content: ""; display: block; inline-size: .875rem; block-size: .875rem; border-radius: 50%; background: var(--canvas); }
-[role="switch"][aria-checked="true"] .events-switch-track { background: var(--blue-ink); }
-[role="switch"][aria-checked="true"] .events-switch-track::after { margin-inline-start: auto; }
 .events-form .events-checkbox:has([role="switch"]) { flex-wrap: wrap; }
 @media (min-width: 768px) {
   .center-status-admin { grid-template-columns: minmax(0, 1fr) auto; padding-block: var(--space-4); }

@@ -245,14 +245,45 @@ button:not(:disabled), summary {
 .choice-control:checked::before { opacity: 1; transform: scale(1); }
 .choice-control:disabled { cursor: not-allowed; opacity: 0.55; }
 .choice-control:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); }
+.choice-control[role="switch"], .events-switch-track {
+  --switch-thumb: calc(var(--space-4) - 2 * var(--border-width));
+  display: block;
+  inline-size: var(--space-8);
+  block-size: calc(var(--space-4) + 2 * var(--border-width));
+  padding: calc(2 * var(--border-width));
+  border: 0;
+  border-radius: var(--space-4);
+  background: var(--muted);
+  flex-shrink: 0;
+}
+.choice-control[role="switch"]::before, .events-switch-track::after {
+  content: "";
+  display: block;
+  inline-size: var(--switch-thumb);
+  block-size: var(--switch-thumb);
+  border-radius: 50%;
+  background: var(--canvas);
+  clip-path: none;
+  opacity: 1;
+  transform: translateX(0);
+}
+.choice-control[role="switch"]:checked, [role="switch"][aria-checked="true"] .events-switch-track { background: var(--blue-ink); }
+.choice-control[role="switch"]:checked::before, [role="switch"][aria-checked="true"] .events-switch-track::after { transform: translateX(var(--switch-thumb)); }
+.button[role="switch"][aria-busy="true"] { background: transparent; color: var(--ink); }
 @media (prefers-reduced-motion: no-preference) {
   .choice-control { transition: border-color var(--duration-control), background-color var(--duration-control); }
   .choice-control::before { transition: transform var(--duration-control) var(--ease-out), opacity var(--duration-control); }
+  .events-switch-track { transition: background-color var(--duration-control); }
+  .events-switch-track::after { transition: transform var(--duration-control) var(--ease-out); }
 }
 @media (forced-colors: active) {
   .choice-control { forced-color-adjust: none; background: Canvas; border-color: CanvasText; color: CanvasText; }
   .choice-control:checked { background: Highlight; border-color: Highlight; color: HighlightText; }
   .choice-control:focus-visible { outline-color: Highlight; }
+  .choice-control[role="switch"], .events-switch-track { background: Canvas; outline: var(--border-width) solid CanvasText; forced-color-adjust: none; }
+  .choice-control[role="switch"]::before, .events-switch-track::after { background: CanvasText; }
+  .choice-control[role="switch"]:checked, [role="switch"][aria-checked="true"] .events-switch-track { background: Highlight; }
+  .choice-control[role="switch"]:checked::before, [role="switch"][aria-checked="true"] .events-switch-track::after { background: HighlightText; }
 }
 
 .form-control::after {
