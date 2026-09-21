@@ -78,7 +78,7 @@ function initialize(next: Database.Database, createLegacy: boolean): Database.Da
       );
       CREATE TABLE IF NOT EXISTS collection_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        kind TEXT NOT NULL CHECK (kind IN ('book', 'artwork', 'boardgame')),
+        kind TEXT NOT NULL CHECK (kind IN ('book', 'artwork', 'boardgame', 'goods')),
         slug TEXT NOT NULL DEFAULT '',
         title TEXT NOT NULL, titleEn TEXT NOT NULL DEFAULT '',
         creator TEXT NOT NULL DEFAULT '', creatorEn TEXT NOT NULL DEFAULT '',
@@ -153,10 +153,16 @@ function initialize(next: Database.Database, createLegacy: boolean): Database.Da
           next.exec(`ALTER TABLE ${table} ADD COLUMN tags TEXT NOT NULL DEFAULT '[]'`);
         }
       }
-      widenCollectionKinds(next);
       const collectionColumns = next.prepare<[], { readonly name: string }>("PRAGMA table_info(collection_items)").all();
       if (!collectionColumns.some(({ name }) => name === "slug")) {
         next.exec("ALTER TABLE collection_items ADD COLUMN slug TEXT NOT NULL DEFAULT ''");
+      }
+      if (!collectionColumns.some(({ name }) => name === "purchaseUrl")) {
+        next.exec("ALTER TABLE collection_items ADD COLUMN purchaseUrl TEXT NOT NULL DEFAULT ''");
+      }
+      widenCollectionKinds(next);
+      if (!collectionColumns.some(({ name }) => name === "soldOut")) {
+        next.exec("ALTER TABLE collection_items ADD COLUMN soldOut INTEGER NOT NULL DEFAULT 0 CHECK (soldOut IN (0, 1))");
       }
       next.exec("CREATE UNIQUE INDEX IF NOT EXISTS collection_items_slug ON collection_items (slug) WHERE slug != ''");
     }).immediate();
@@ -174,14 +180,17 @@ function initialize(next: Database.Database, createLegacy: boolean): Database.Da
   }
 }
 
-// SQLite cannot widen a CHECK constraint in place, so rebuild the table once when 'boardgame' is missing.
+// SQLite cannot widen a CHECK constraint in place, so rebuild the table once when 'goods' is missing.
 function widenCollectionKinds(db: Database.Database): void {
   const table = db.prepare<[], { readonly sql: string }>("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'collection_items'").get();
-  if (!table || table.sql.includes("boardgame")) return;
+  if (!table || table.sql.includes("'goods'")) return;
+  const sequence = db.prepare<[], { readonly seq: number }>("SELECT seq FROM sqlite_sequence WHERE name = 'collection_items'").get()?.seq ?? 0;
   db.exec(`
     CREATE TABLE collection_items_rebuilt (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      kind TEXT NOT NULL CHECK (kind IN ('book', 'artwork', 'boardgame')),
+      kind TEXT NOT NULL CHECK (kind IN ('book', 'artwork', 'boardgame', 'goods')),
+      slug TEXT NOT NULL DEFAULT '',
+      purchaseUrl TEXT NOT NULL DEFAULT '',
       title TEXT NOT NULL, titleEn TEXT NOT NULL DEFAULT '',
       creator TEXT NOT NULL DEFAULT '', creatorEn TEXT NOT NULL DEFAULT '',
       description TEXT NOT NULL DEFAULT '', descriptionEn TEXT NOT NULL DEFAULT '',
@@ -192,11 +201,12 @@ function widenCollectionKinds(db: Database.Database): void {
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       revision INTEGER NOT NULL DEFAULT 1
     );
-    INSERT INTO collection_items_rebuilt (id, kind, title, titleEn, creator, creatorEn, description, descriptionEn, images, sort_order, is_active, created_at, updated_at, revision)
-      SELECT id, kind, title, titleEn, creator, creatorEn, description, descriptionEn, images, sort_order, is_active, created_at, updated_at, revision FROM collection_items;
+    INSERT INTO collection_items_rebuilt (id, kind, slug, purchaseUrl, title, titleEn, creator, creatorEn, description, descriptionEn, images, sort_order, is_active, created_at, updated_at, revision)
+      SELECT id, kind, slug, purchaseUrl, title, titleEn, creator, creatorEn, description, descriptionEn, images, sort_order, is_active, created_at, updated_at, revision FROM collection_items;
     DROP TABLE collection_items;
     ALTER TABLE collection_items_rebuilt RENAME TO collection_items;
   `);
+  db.prepare("UPDATE sqlite_sequence SET seq = MAX(seq, ?) WHERE name = 'collection_items'").run(sequence);
 }
 
 function assertColumns(

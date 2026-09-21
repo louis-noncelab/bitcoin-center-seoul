@@ -12,8 +12,8 @@ import { MarkdownEditor } from "./markdown-editor";
 import { MarkdownHelp } from "./markdown-help";
 import { adminRequest, AdminRequestError, errorText, jsonBody, revisionHeaders } from "./request";
 
-const kindLabels = { book: "도서", artwork: "작품", boardgame: "보드게임" } as const;
-const viewHref = (record: CollectionRecord) => (record.kind === "boardgame" ? `/experience/board-game/${record.slug || record.id}` : `/collection/${record.slug || record.id}`);
+const kindLabels = { book: "도서", artwork: "작품", boardgame: "보드게임", goods: "굿즈" } as const;
+const viewHref = (record: CollectionRecord) => (record.kind === "boardgame" ? `/experience/board-game/${record.slug || record.id}` : record.kind === "goods" ? `/goods/${record.slug || record.id}` : `/collection/${record.slug || record.id}`);
 
 export function CollectionAdmin() {
   const [records, setRecords] = useState<CollectionRecord[]>([]);
@@ -68,12 +68,22 @@ export function CollectionAdmin() {
     event.preventDefault();
     if (busy.current || expired || uploads.current > 0) return;
     const form = new FormData(event.currentTarget);
-    const input = collectionInputSchema.safeParse({ ...Object.fromEntries(form), images, sort_order: Number(form.get("sort_order")), is_active: form.has("is_active") ? 1 : 0 });
+    const input = collectionInputSchema.safeParse({ ...Object.fromEntries(form), images, soldOut: form.has("soldOut"), sort_order: Number(form.get("sort_order")), is_active: form.has("is_active") ? 1 : 0 });
     if (!input.success) { setError(input.error.issues[0]?.message ?? "입력 내용을 확인해 주세요."); return; }
     busy.current = true; setPending(true); setError("");
     try {
       await adminRequest(`/api/admin/collection${selected ? `/${selected.id}` : ""}`, collectionRecordSchema, jsonBody(input.data, selected ? "PUT" : "POST", selected?.revision));
       setEditing(false); setDirty(false); setMessage("저장했습니다."); setRevision((value) => value + 1);
+    } catch (caught) { handleError(caught); }
+    finally { busy.current = false; setPending(false); }
+  }
+  async function toggleSoldOut(record: CollectionRecord) {
+    if (busy.current || expired || uploads.current > 0) return;
+    busy.current = true; setPending(true); setError("");
+    try {
+      const saved = await adminRequest(`/api/admin/collection/${record.id}`, collectionRecordSchema, jsonBody({ soldOut: !record.soldOut }, "PATCH", record.revision));
+      setRecords((items) => items.map((item) => item.id === saved.id ? saved : item));
+      setMessage(saved.soldOut ? "품절로 표시했습니다." : "품절 표시를 해제했습니다.");
     } catch (caught) { handleError(caught); }
     finally { busy.current = false; setPending(false); }
   }
@@ -107,13 +117,16 @@ export function CollectionAdmin() {
     {editing ? <form className="events-form" key={selected?.id ?? "new"} onSubmit={(event) => void save(event)} onChange={() => setDirty(true)}>
       <h2>{selected ? "항목 수정" : "항목 등록"}</h2>
       <fieldset className="events-editor-fields" disabled={pending}>
-        <fieldset className="collection-kind"><legend>분류</legend><div className="button-row"><label className="events-checkbox"><ChoiceControl type="radio" name="kind" value="book" defaultChecked={!selected || selected.kind === "book"} />도서</label><label className="events-checkbox"><ChoiceControl type="radio" name="kind" value="artwork" defaultChecked={selected?.kind === "artwork"} />작품</label><label className="events-checkbox"><ChoiceControl type="radio" name="kind" value="boardgame" defaultChecked={selected?.kind === "boardgame"} />보드게임</label></div></fieldset>
+        <fieldset className="collection-kind"><legend>분류</legend><div className="button-row"><label className="events-checkbox"><ChoiceControl type="radio" name="kind" value="book" defaultChecked={!selected || selected.kind === "book"} />도서</label><label className="events-checkbox"><ChoiceControl type="radio" name="kind" value="artwork" defaultChecked={selected?.kind === "artwork"} />작품</label><label className="events-checkbox"><ChoiceControl type="radio" name="kind" value="boardgame" defaultChecked={selected?.kind === "boardgame"} />보드게임</label><label className="events-checkbox"><ChoiceControl type="radio" name="kind" value="goods" defaultChecked={selected?.kind === "goods"} />굿즈</label></div></fieldset>
         <div className="events-field-grid">
           <label>제목<FormControl><input name="title" required maxLength={200} defaultValue={selected?.title ?? ""} /></FormControl></label>
           <label>저자·제작사 (선택)<FormControl><input name="creator" maxLength={200} defaultValue={selected?.creator ?? ""} /></FormControl></label>
         </div>
         <label>URL 슬러그 (공개 보드게임 필수)<FormControl><input name="slug" defaultValue={selected?.slug ?? ""} maxLength={100} pattern="(?=.*[a-z])[a-z0-9]+(-[a-z0-9]+)*" autoCapitalize="none" spellCheck={false} placeholder="bitcoin-larp" aria-describedby="collection-slug-help" /></FormControl></label>
-        <p id="collection-slug-help" className="muted">/experience/board-game/ 또는 /collection/ 뒤에 붙는 주소입니다. 영문 소문자·숫자·하이픈을 사용해 주세요.</p>
+        <p id="collection-slug-help" className="muted">/experience/board-game/, /goods/ 또는 /collection/ 뒤에 붙는 주소입니다. 영문 소문자·숫자·하이픈을 사용해 주세요.</p>
+        <label>구매하기 링크 (선택)<FormControl><input name="purchaseUrl" type="url" maxLength={2048} defaultValue={selected?.purchaseUrl ?? ""} placeholder="https://…" aria-describedby="collection-purchase-help" /></FormControl></label>
+        <p id="collection-purchase-help" className="muted">Zaprite 결제 링크나 외부 판매 페이지 주소를 입력해 주세요. 비워 두면 구매하기 버튼을 표시하지 않습니다.</p>
+        <label className="events-checkbox"><ChoiceControl role="switch" name="soldOut" type="checkbox" defaultChecked={selected?.soldOut ?? false} />품절<span className="muted">켜면 구매하기 대신 ‘품절’이 표시됩니다. 저장하면 반영됩니다.</span></label>
         <GalleryField locale="ko" images={images} onChange={(next) => { setImages(next); setDirty(true); }} onPending={uploadPending} onExpired={() => setExpired(true)} />
         <MarkdownEditor name="description" label="소개 (선택)" defaultValue={selected?.description ?? ""} rows={6} helpId="collection-markdown-help" onPending={uploadPending} onDirty={() => setDirty(true)} onExpired={() => setExpired(true)} />
         <div className="events-field-grid">
@@ -129,8 +142,8 @@ export function CollectionAdmin() {
       </fieldset>
       <div className="button-row"><Button type="submit" disabled={pending || uploading || expired}>{pending ? "저장 중…" : "저장"}</Button><Button variant="secondary" disabled={pending || uploading} onClick={() => { void leave().then((accepted) => { if (accepted) { setEditing(false); setDirty(false); setRevision((value) => value + 1); } }); }}>취소</Button></div>
     </form> : <>
-      <div className="events-admin-toolbar"><h2>도서·작품·보드게임 목록</h2><Button disabled={pending || expired} onClick={() => edit(null)}>항목 등록</Button></div>
-      <ul className="events-admin-list">{records.map((record) => <li key={record.id}><div><h3>{record.title}</h3><p className="muted">{kindLabels[record.kind]}{record.creator ? ` · ${record.creator}` : ""} · {record.is_active ? "공개" : "비공개"} · 순서 {record.sort_order}</p></div><div className="button-row">{Boolean(record.is_active) && <Link href={viewHref(record)} locale="ko" className="button" data-variant="quiet">보기</Link>}<Button variant="secondary" disabled={pending || expired} onClick={() => edit(record)}>수정</Button><Button variant="quiet" disabled={pending || expired} onClick={() => void remove(record)}>삭제</Button></div></li>)}{!records.length && <li>등록된 항목이 없습니다.</li>}</ul>
+      <div className="events-admin-toolbar"><h2>도서·작품·보드게임·굿즈 목록</h2><Button disabled={pending || expired} onClick={() => edit(null)}>항목 등록</Button></div>
+      <ul className="events-admin-list">{records.map((record) => <li key={record.id}><div><h3>{record.title}</h3><p className="muted">{kindLabels[record.kind]}{record.creator ? ` · ${record.creator}` : ""} · {record.is_active ? "공개" : "비공개"} · 순서 {record.sort_order}</p></div><div className="button-row"><Button variant="secondary" role="switch" aria-checked={record.soldOut} aria-label={`${record.title} 품절`} disabled={pending || expired} onClick={() => void toggleSoldOut(record)}><span className="events-switch-track" aria-hidden="true" />품절</Button>{Boolean(record.is_active) && <Link href={viewHref(record)} locale="ko" className="button" data-variant="quiet">보기</Link>}<Button variant="secondary" disabled={pending || expired} onClick={() => edit(record)}>수정</Button><Button variant="quiet" disabled={pending || expired} onClick={() => void remove(record)}>삭제</Button></div></li>)}{!records.length && <li>등록된 항목이 없습니다.</li>}</ul>
     </>}
   </div>;
 }

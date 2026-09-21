@@ -11,3 +11,10 @@
 .review-card-image.collection-card-photo { background: var(--surface); }
 .collection-card-photo img { object-fit: contain; }
 .collection-detail-meta { display: grid; gap: var(--space-2); }
+
+.collection-card { display: flex; flex-direction: column; }
+.collection-card > .review-card-link { block-size: auto; flex: 1; }
+.collection-purchase { padding: 0 var(--space-6) var(--space-6); }
+.goods-catalog { margin-block-end: var(--space-12); }
+
+.collection-sold-out { color: var(--muted); background: var(--surface); cursor: default; }

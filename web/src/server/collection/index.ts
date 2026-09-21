@@ -6,8 +6,8 @@ import { getDatabase } from "@/server/events/db";
 import { ApiError } from "@/server/events/errors";
 import { requireExistingImages } from "@/server/events/images";
 
-type CollectionRow = Omit<CollectionRecord, "images"> & { readonly images: string };
-const fromRow = (row: CollectionRow): CollectionRecord => collectionRecordSchema.parse({ ...row, images: JSON.parse(row.images) });
+type CollectionRow = Omit<CollectionRecord, "images" | "soldOut"> & { readonly images: string; readonly soldOut: number };
+const fromRow = (row: CollectionRow): CollectionRecord => collectionRecordSchema.parse({ ...row, soldOut: Boolean(row.soldOut), images: JSON.parse(row.images) });
 
 const kindFilter = (kinds?: readonly CollectionKind[]) =>
   kinds ? ` AND kind IN (${kinds.map((kind) => `'${kind}'`).join(", ")})` : "";
@@ -33,7 +33,7 @@ export function getCollectionByPath(value: string, includeInactive = false, kind
 }
 
 export function collectionHref(record: CollectionRecord): string {
-  const base = record.kind === "boardgame" ? "/experience/board-game" : "/collection";
+  const base = record.kind === "boardgame" ? "/experience/board-game" : record.kind === "goods" ? "/goods" : "/collection";
   return `${base}/${record.slug || record.id}`;
 }
 
@@ -49,13 +49,13 @@ export function saveCollectionItem(input: CollectionInput, id?: number, revision
   return db.transaction(() => {
     if (id !== undefined) reserveRevision("collection_items", id, revision);
     assertSlugAvailable(input.slug, id);
-    const values = { ...input, images: JSON.stringify(input.images) };
+    const values = { ...input, soldOut: input.soldOut === undefined ? null : Number(input.soldOut), images: JSON.stringify(input.images) };
     let savedId = id;
     if (savedId === undefined) {
-      savedId = Number(db.prepare(`INSERT INTO collection_items (kind,slug,title,titleEn,creator,creatorEn,description,descriptionEn,images,sort_order,is_active)
-        VALUES (@kind,@slug,@title,@titleEn,@creator,@creatorEn,@description,@descriptionEn,@images,@sort_order,@is_active)`).run(values).lastInsertRowid);
+      savedId = Number(db.prepare(`INSERT INTO collection_items (kind,slug,purchaseUrl,soldOut,title,titleEn,creator,creatorEn,description,descriptionEn,images,sort_order,is_active)
+        VALUES (@kind,@slug,@purchaseUrl,COALESCE(@soldOut,0),@title,@titleEn,@creator,@creatorEn,@description,@descriptionEn,@images,@sort_order,@is_active)`).run(values).lastInsertRowid);
     } else {
-      const result = db.prepare(`UPDATE collection_items SET kind=@kind,slug=@slug,title=@title,titleEn=@titleEn,creator=@creator,creatorEn=@creatorEn,
+      const result = db.prepare(`UPDATE collection_items SET kind=@kind,slug=@slug,purchaseUrl=@purchaseUrl,soldOut=COALESCE(@soldOut,soldOut),title=@title,titleEn=@titleEn,creator=@creator,creatorEn=@creatorEn,
         description=@description,descriptionEn=@descriptionEn,images=@images,sort_order=@sort_order,is_active=@is_active,updated_at=CURRENT_TIMESTAMP WHERE id=@id`).run({ ...values, id: savedId });
       if (!result.changes) throw new ApiError(404, "NOT_FOUND", "항목을 찾을 수 없습니다.");
     }
@@ -71,4 +71,15 @@ export function deleteCollectionItem(id: number, revision: number): void {
     reserveRevision("collection_items", id, revision);
     db.prepare("DELETE FROM collection_items WHERE id = ?").run(id);
   })();
+}
+
+export function setCollectionSoldOut(id: number, soldOut: boolean, revision: number): CollectionRecord {
+  const db = getDatabase();
+  return db.transaction(() => {
+    reserveRevision("collection_items", id, revision);
+    db.prepare("UPDATE collection_items SET soldOut = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(Number(soldOut), id);
+    const saved = getCollectionItem(id, true);
+    if (!saved) throw new ApiError(404, "NOT_FOUND", "항목을 찾을 수 없습니다.");
+    return saved;
+  }).immediate();
 }

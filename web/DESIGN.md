@@ -852,3 +852,9 @@ Home calendar date hover uses a centered 36px circle, matching the selected-day 
 Site-controlled disclosures keep their content mounted through both opening and closing. Navigation submenus, calendar year/month selection and venue fields share a CSS grid height transition with the existing menu enter/exit durations and ease-out token. Closed content becomes inert and hidden from assistive technology immediately; visual visibility is delayed until the exit completes. Reversing a toggle continues from its current height. Chevron rotation uses the control duration.
 
 Review “more” uses native details/summary with a progressively enhanced, interruptible height animation; the no-JavaScript disclosure remains usable. Date dialogs retain their calendar during the existing exit transition and reset it on the next opening. Reduced motion settles all disclosures immediately. OS-managed select popups retain native keyboard, touch and form behavior.
+
+## Collection purchasing — 2026-09-21
+
+The collection admin also registers goods using the existing image, Markdown, order and publication controls. Optional HTTP(S) purchase links show a shared primary `구매하기` / `Buy` button opening a new window; no link means no button. Books stay in the collection and goods have their own `/goods` gallery and details, using the same responsive gallery and detail primitives. Keep the existing SatB purchasing introduction. Korean labels use `도서`, including navigation and filters. Drafts remain private; purchase links do not create local checkout or payment state.
+
+Collection admin provides a `품절` switch in the list and editor, using the existing event closure switch. Sold-out items remain visible, with a non-interactive `품절` / `Sold out` state replacing the purchase action even when no link is set. Turning it off restores the saved link. This is a manual website display setting; external seller stock is managed separately.

@@ -31,7 +31,7 @@ export default async function CollectionPage({ params, searchParams }: Props) {
       title={collectionCopy[locale].title}
     >
       <CollectionGallery
-        records={listCollection(false)}
+        records={listCollection(false, ["book", "artwork", "boardgame"])}
         locale={locale}
         kind={typeof kind === "string" ? kind : "all"}
       />
