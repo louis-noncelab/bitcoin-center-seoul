@@ -1,0 +1,393 @@
+// Commerce slice ported from backup/center-web-before-events-only-20260909-175952 (b1cc3f8).
+// Only cart -> quote -> order -> payment is modelled here. Editorial content (events,
+// collection, notices, reviews) stays in the existing better-sqlite3 database.
+//
+// Deliberate omissions vs. the backup schema: customer accounts and sessions (guest-only
+// checkout), bookings, BTCPay. `accountId` / `bookingId` remain as plain nullable columns so
+// the ported server code compiles unchanged and the seam stays open.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ContentFormat {
+  PLAIN
+  MARKDOWN
+}
+
+enum PriceKind {
+  FREE
+  KRW_FIXED
+  BTC_FIXED
+}
+
+enum Fulfillment {
+  PICKUP
+  DOMESTIC
+  INTERNATIONAL
+}
+
+enum FulfillmentStatus {
+  UNFULFILLED
+  READY
+  SHIPPED
+  DELIVERED
+  COLLECTED
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  CANCELLED
+  EXPIRED
+  REVIEW
+}
+
+// LNURL is a generic LUD-06/LUD-16/LUD-21 lightning-address payer, not Blink-specific.
+enum PaymentProvider {
+  LNURL
+  ZAPRITE
+}
+
+// SANDBOX drives real provider traffic against a Zaprite sandbox organization while the app
+// still runs on a local origin. The unique constraints below are per mode, so sandbox rows can
+// never collide with live ones.
+enum PaymentMode {
+  REVIEW
+  SANDBOX
+  LIVE
+}
+
+enum PaymentStatus {
+  NEW
+  CREATING
+  PENDING
+  PROCESSING
+  PAID
+  EXPIRED
+  FAILED
+  REVIEW
+}
+
+enum CouponDiscountKind {
+  PERCENT
+  KRW
+  SATS
+}
+
+enum BtcPriceSource {
+  UPBIT
+  BITHUMB
+  FIXED
+}
+
+enum ProductDisplayUnit {
+  SATS
+  BTC
+}
+
+enum EmailStatus {
+  CAPTURED
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+}
+
+model SiteSetting {
+  id                   String             @id @default("site")
+  guestPurchaseAllowed Boolean            @default(true)
+  maintenanceMode      Boolean            @default(false)
+  paymentProvider      PaymentProvider?
+  btcPriceSource       BtcPriceSource     @default(UPBIT)
+  fixedKrwPerBtc       Decimal?           @db.Decimal(30, 10)
+  productDisplayUnit   ProductDisplayUnit @default(SATS)
+  updatedAt            DateTime           @updatedAt
+}
+
+model RateLimitBucket {
+  key       String   @id
+  count     Int      @default(0)
+  expiresAt DateTime
+}
+
+model ProductCategory {
+  id        String    @id @default(cuid())
+  slug      String    @unique
+  nameKo    String
+  nameEn    String
+  sortOrder Int       @default(0)
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+
+  @@index([active, sortOrder])
+}
+
+model Product {
+  id                  String           @id @default(cuid())
+  slug                String           @unique
+  titleKo             String
+  titleEn             String
+  descriptionKo       String
+  descriptionEn       String
+  contentFormat       ContentFormat    @default(PLAIN)
+  imageUrl            String           @default("")
+  published           Boolean          @default(false)
+  priceKind           PriceKind
+  priceAmount         BigInt
+  listPriceAmount     BigInt?
+  allowedFulfillments Fulfillment[]
+  memberOnly          Boolean          @default(false)
+  categoryId          String?
+  category            ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  variants            ProductVariant[]
+
+  @@index([categoryId])
+}
+
+model ProductVariant {
+  id              String      @id @default(cuid())
+  productId       String
+  product         Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
+  sku             String      @unique
+  optionLabelKo   String      @default("")
+  optionLabelEn   String      @default("")
+  stockOnHand     Int         @default(0)
+  reservedStock   Int         @default(0)
+  billableWeightG Int         @default(0)
+  active          Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  orderItems      OrderItem[]
+
+  @@index([productId])
+}
+
+model ShippingZone {
+  id        String            @id @default(cuid())
+  nameKo    String
+  nameEn    String
+  active    Boolean           @default(true)
+  countries ShippingCountry[]
+  rates     ShippingRate[]
+}
+
+model ShippingCountry {
+  code               String       @id
+  zoneId             String
+  zone               ShippingZone @relation(fields: [zoneId], references: [id], onDelete: Restrict)
+  requiresPostalCode Boolean      @default(true)
+
+  @@index([zoneId])
+}
+
+model ShippingRate {
+  id         String       @id @default(cuid())
+  zoneId     String
+  zone       ShippingZone @relation(fields: [zoneId], references: [id], onDelete: Restrict)
+  maxWeightG Int
+  amountKrw  BigInt
+
+  @@unique([zoneId, maxWeightG])
+}
+
+model Quote {
+  id            String    @id @default(cuid())
+  accountId     String?
+  ownerHash     String?
+  input         Json
+  snapshot      Json
+  amountSats    BigInt
+  amountKrw     BigInt?
+  rateKrwPerBtc Decimal?  @db.Decimal(30, 10)
+  rateSource    String?
+  rateTimestamp DateTime?
+  expiresAt     DateTime
+  createdAt     DateTime  @default(now())
+  order         Order?
+
+  @@index([expiresAt])
+}
+
+model Order {
+  id                   String            @id @default(cuid())
+  accountId            String?
+  quoteId              String            @unique
+  quote                Quote             @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+  customerName         String
+  customerEmail        String
+  customerPhone        String            @default("")
+  locale               String            @default("ko")
+  status               OrderStatus       @default(PENDING_PAYMENT)
+  amountSats           BigInt
+  amountKrw            BigInt?
+  fulfillment          Fulfillment
+  fulfillmentStatus    FulfillmentStatus @default(UNFULFILLED)
+  address              Json?
+  shippingSnapshot     Json
+  billableWeightG      Int               @default(0)
+  shippingAmountKrw    BigInt            @default(0)
+  shippingAmountSats   BigInt            @default(0)
+  carrier              String?
+  trackingNumber       String?
+  fulfilledAt          DateTime?
+  holdExpiresAt        DateTime?
+  idempotencyScope     String
+  idempotencyKey       String
+  requestHash          String
+  customerNotes        String            @default("")
+  accessTokenHash      String            @unique
+  accessTokenExpiresAt DateTime          @default(dbgenerated("(now() + interval '30 days')"))
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  items                OrderItem[]
+  payments             Payment[]
+  couponUsage          CouponUsage?
+
+  @@unique([idempotencyScope, idempotencyKey])
+  @@index([accountId, createdAt])
+  @@index([status, holdExpiresAt])
+}
+
+model OrderItem {
+  id              String         @id @default(cuid())
+  orderId         String
+  order           Order          @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  variantId       String
+  variant         ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  quantity        Int
+  sku             String
+  titleKo         String
+  titleEn         String
+  optionLabelKo   String
+  optionLabelEn   String
+  priceKind       PriceKind
+  unitPriceAmount BigInt
+  amountSats      BigInt
+  snapshot        Json
+
+  @@index([orderId])
+  @@index([variantId])
+}
+
+model Payment {
+  id              String          @id @default(cuid())
+  orderId         String?
+  order           Order?          @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  bookingId       String?
+  provider        PaymentProvider
+  mode            PaymentMode
+  externalId      String?
+  creationKey     String          @unique
+  amountSats      BigInt
+  currency        String          @default("BTC")
+  metadata        Json
+  status          PaymentStatus   @default(NEW)
+  creationUnknown Boolean         @default(false)
+  reviewReason    String?
+  checkoutUrl     String?
+  paymentRequest  String?
+  verifyUrl       String?
+  paymentHash     String?
+  expiresAt       DateTime
+  paidAt          DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  events          PaymentEvent[]
+
+  @@unique([provider, mode, externalId])
+  @@unique([provider, mode, paymentHash])
+  @@index([orderId])
+  @@index([status, expiresAt])
+}
+
+model PaymentEvent {
+  id          String          @id @default(cuid())
+  paymentId   String
+  payment     Payment         @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  provider    PaymentProvider
+  mode        PaymentMode
+  eventKey    String
+  summary     Json
+  processedAt DateTime        @default(now())
+
+  @@unique([provider, mode, eventKey])
+  @@index([paymentId])
+}
+
+model Coupon {
+  id                String             @id @default(cuid())
+  code              String             @unique
+  nameKo            String
+  nameEn            String
+  discountKind      CouponDiscountKind
+  discountValue     BigInt
+  minPurchaseAmount BigInt             @default(0)
+  maxDiscountAmount BigInt?
+  usageLimit        Int?
+  perUserLimit      Int                @default(1)
+  validFrom         DateTime
+  validUntil        DateTime
+  active            Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  usages            CouponUsage[]
+
+  @@index([active, validFrom, validUntil])
+}
+
+model CouponUsage {
+  id           String   @id @default(cuid())
+  couponId     String
+  coupon       Coupon   @relation(fields: [couponId], references: [id], onDelete: Restrict)
+  orderId      String   @unique
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  accountId    String?
+  discountSats BigInt
+  createdAt    DateTime @default(now())
+
+  @@index([couponId])
+  @@index([accountId])
+}
+
+model EmailOutbox {
+  id               String      @id @default(cuid())
+  eventKey         String      @unique
+  to               String
+  locale           String      @default("ko")
+  kind             String
+  payload          Json
+  encryptedPayload String?
+  status           EmailStatus @default(PENDING)
+  attempts         Int         @default(0)
+  nextAttemptAt    DateTime    @default(now())
+  claimToken       String?
+  claimedAt        DateTime?
+  sentAt           DateTime?
+  lastError        String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([status, nextAttemptAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  targetType String
+  targetId   String
+  summary    Json
+  createdAt  DateTime @default(now())
+
+  @@index([targetType, targetId, createdAt])
+}

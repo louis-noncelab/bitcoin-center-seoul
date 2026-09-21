@@ -29,11 +29,17 @@
     "test:markdown": "node --import tsx --test tests/markdown.mjs",
     "test:status": "node --conditions=react-server --import tsx --test tests/center-schedule.mjs",
     "postinstall": "node scripts/patch-next-image-optimizer.mjs apply",
-    "test:image-optimizer": "node --test tests/image-optimizer-abort.mjs"
+    "test:image-optimizer": "node --test tests/image-optimizer-abort.mjs",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy"
   },
   "dependencies": {
     "@hyunbinseo/holidays-kr": "5.2027.1",
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0",
     "better-sqlite3": "13.0.3",
+    "bolt11": "1.4.1",
     "lucide-react": "1.23.0",
     "mdast-util-from-markdown": "2.0.3",
     "motion": "13.2.0",
@@ -59,11 +65,16 @@
     "@types/react-dom": "19.2.3",
     "eslint": "9.39.4",
     "eslint-config-next": "16.3.4",
+    "prisma": "7.10.0",
     "react-doctor": "0.9.13",
     "react-grab": "0.2.0",
     "react-scan": "0.5.7",
     "tailwindcss": "4.3.3",
     "tsx": "4.23.13",
     "typescript": "6.0.2"
+  },
+  "overrides": {
+    "mysql2": "^3.24.4",
+    "deepmerge-ts": "^8.0.0"
   }
 }
