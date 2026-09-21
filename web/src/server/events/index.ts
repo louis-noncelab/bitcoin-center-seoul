@@ -166,6 +166,15 @@ export function createEvent(input: EventInput): EventRecord {
   return event;
 }
 
+export function setEventRegistration(id: number, registrationClosed: boolean, revision: number): EventRecord {
+  const db = getDatabase();
+  return db.transaction(() => {
+    reserveRevision("events", id, revision);
+    db.prepare("UPDATE events SET registrationClosed = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(Number(registrationClosed), id);
+    return getEvent(id)!;
+  }).immediate();
+}
+
 export function updateEvent(id: number, input: EventInput, revision: number): EventRecord {
   requireExistingImages(input.images);
   const db = getDatabase();

@@ -1,3 +1,4 @@
+import Database from "better-sqlite3";
 import { test, expect, request } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
@@ -21,6 +22,15 @@ test("admin can close and reopen participation without losing the link or bypass
   const event = eventRecordSchema.parse((await created.json()).data);
   try {
     expect(event.registrationClosed).toBe(false);
+    // Simulate an imported event with no venue; closing must not require editing legacy fields.
+    const db = new Database(runtime.BCS_EVENTS_DB);
+    try { db.prepare("UPDATE events SET venueType = 'external', location = '', locationEn = '' WHERE id = ?").run(event.id); }
+    finally { db.close(); }
+    const patch = { headers: { "If-Match": `"${event.revision}"` }, data: { registrationClosed: true } };
+    expect((await guest.patch(`/api/admin/events/${event.id}`, patch)).status()).toBe(401);
+    expect((await admin.patch(`/api/admin/events/${event.id}`, { ...patch, headers: { ...patch.headers, origin: "https://invalid.example" } })).status()).toBe(403);
+    expect((await admin.patch(`/api/admin/events/${event.id}`, { ...patch, data: { registrationClosed: "true" } })).status()).toBe(400);
+    expect((await admin.patch(`/api/admin/events/${event.id}`, { ...patch, data: { registrationClosed: true, title: "unexpected" } })).status()).toBe(400);
     expect((await guest.put(`/api/admin/events/${event.id}`, { headers: { "If-Match": `"${event.revision}"` }, data: { ...input, registrationClosed: true } })).status()).toBe(401);
     await page.context().addCookies((await admin.storageState()).cookies);
     await page.goto("/ko/admin");
@@ -32,6 +42,9 @@ test("admin can close and reopen participation without losing the link or bypass
     let current = eventRecordSchema.parse((await (await admin.get(`/api/admin/events/${event.id}`)).json()).data);
     expect(current.registrationClosed).toBe(true);
     expect(current.link).toBe(link);
+    expect(current.venueType).toBe("external");
+    expect(current.location).toBe("");
+    expect((await admin.patch(`/api/admin/events/${event.id}`, patch)).status()).toBe(409);
     expect((await admin.put(`/api/admin/events/${event.id}`, { headers: { "If-Match": `"${event.revision}"` }, data: { ...input, registrationClosed: false } })).status()).toBe(409);
     // Older clients that omit the additive field must not reopen registration.
     expect((await admin.put(`/api/admin/events/${event.id}`, { headers: { "If-Match": `"${current.revision}"` }, data: input })).ok()).toBeTruthy();

@@ -80,9 +80,9 @@ export function EventsAdmin({ locale }: { readonly locale: Locale }) {
   async function toggleRegistration(record: ContentRecord) {
     if (!("registrationClosed" in record) || busy.current || editorBusyRef.current) return;
     busy.current = true; setPending(true); setError("");
-    const { id, revision: version, ...input } = record;
+    const { id, revision: version } = record;
     try {
-      await adminRequest(`/api/admin/events/${id}`, eventRecordSchema, jsonBody({ ...input, registrationClosed: !record.registrationClosed }, "PUT", version));
+      await adminRequest(`/api/admin/events/${id}`, eventRecordSchema, jsonBody({ registrationClosed: !record.registrationClosed }, "PATCH", version));
       setNotice(record.registrationClosed ? "참여 접수를 다시 열었습니다." : "참여 접수를 마감했습니다."); refresh();
     } catch (caught) {
       setError(errorText(caught, locale));
