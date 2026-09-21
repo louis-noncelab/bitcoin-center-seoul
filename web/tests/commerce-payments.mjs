@@ -101,40 +101,41 @@ test("exchange tickers are rejected unless the quote is fresh", () => {
   assert.throws(() => parseBithumbRate({ status: "5600", data: {} }, now), (error) => error.code === "RATE_UNAVAILABLE");
 });
 
-// Captured 2026-09-21 from the two configured lightning addresses, 10 sats each.
-// oksu.su commits to a plain `description`; blink.sv commits to sha256(metadata) in `h`.
-// LUD-06 permits both, and the earlier parser rejected the first form outright.
-const oksu = {
+// Real 10-sat invoices captured from live lightning addresses on 2026-09-21. LUD-06 lets a payer
+// server describe the payment either way, so both forms must parse whatever address is configured.
+// `plainDescription` is the form the configured address (oksu.su) uses, and the earlier parser
+// rejected it outright; `hashedDescription` came from another provider and covers the other branch.
+const plainDescription = {
   pr: "lnbc100n1p4tzqmupp5vcdcad2697q3ky76xk54x48qjy466ucayz55a8aph47hchyma6yqdqs2pshjgr5dusxycmncqzysxqrrsssp5s0nwrnuxwu3eec8py07g20pc5cwvr67mehz9pfy2smcg4axst4cq9qxpqysgquejvmf7z7h9t6ts6kmsw5whka6t72xs909f435zayz0uua8v20spvw0yh4rj4lkj345wtpvqk38wj4pzjc0tgfzzfudlfdmx8lmhe4gqnl43f0",
   metadata: '[["text/plain","Pay to bcs"]]',
 };
-const blink = {
+const hashedDescription = {
   pr: "lnbc100n1p4tzqmapp54y9wcveatqxwzus3l80we97j4g6gglmr4rmcuatxzzn6l9ch6qxqsp5uzz8yjpamhdy5vcv8rjgwznrhu2et2avv8urtduxw7hale2cy6zqxq9z0rgqnp4qvyndeaqzman7h898jxm98dzkm0mlrsx36s93smrur7h0azyyuxc5rzjqwghf7zxvfkxq5a6sr65g0gdkv768p83mhsnt0msszapamzx2qvuxqqqqrt49lmtcqqqqqqqqqqq86qq9qcqzpuhp5aef9rffs5g7xf2d3w8nu8md987zqz0y6ek9t29pgxmm00s5204hq9qyyssq3ft9a4t5tycjcgtlj8pwyzdn2988890q9qq06nngzcd0c08qkmnxwyfx978zz7pxx5reee9xwhx0xl539jejuv48667q47vqr9jshucpvyyg4p",
   metadata: '[["text/plain","Pay to bcs@blink.sv"],["text/identifier","bcs@blink.sv"]]',
 };
 
 test("both LUD-06 description forms are accepted", () => {
-  const plain = validateBolt11(oksu.pr, { amountSats: 10n, review: false, metadata: oksu.metadata });
+  const plain = validateBolt11(plainDescription.pr, { amountSats: 10n, review: false, metadata: plainDescription.metadata });
   assert.match(plain.paymentHash, /^[0-9a-f]{64}$/);
-  const hashed = validateBolt11(blink.pr, { amountSats: 10n, review: false, metadata: blink.metadata });
+  const hashed = validateBolt11(hashedDescription.pr, { amountSats: 10n, review: false, metadata: hashedDescription.metadata });
   assert.match(hashed.paymentHash, /^[0-9a-f]{64}$/);
 });
 
 test("a committed description hash must match the served metadata", () => {
   assert.throws(
-    () => validateBolt11(blink.pr, { amountSats: 10n, review: false, metadata: '[["text/plain","other"]]' }),
+    () => validateBolt11(hashedDescription.pr, { amountSats: 10n, review: false, metadata: '[["text/plain","other"]]' }),
     (error) => error instanceof PaymentError && error.code === "BOLT11_METADATA_MISMATCH",
   );
 });
 
 test("an invoice for the wrong amount is refused", () => {
   assert.throws(
-    () => validateBolt11(blink.pr, { amountSats: 11n, review: false, metadata: blink.metadata }),
+    () => validateBolt11(hashedDescription.pr, { amountSats: 11n, review: false, metadata: hashedDescription.metadata }),
     (error) => error instanceof PaymentError && error.code === "BOLT11_QUOTE_MISMATCH",
   );
   // Mainnet invoices must never satisfy a REVIEW payment, which is testnet-only.
   assert.throws(
-    () => validateBolt11(blink.pr, { amountSats: 10n, review: true, metadata: blink.metadata }),
+    () => validateBolt11(hashedDescription.pr, { amountSats: 10n, review: true, metadata: hashedDescription.metadata }),
     (error) => error instanceof PaymentError && error.code === "BOLT11_QUOTE_MISMATCH",
   );
 });

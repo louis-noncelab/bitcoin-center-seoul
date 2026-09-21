@@ -136,3 +136,18 @@ export const reviewScenarioLabels = {
   bad_preimage: "잘못된 preimage",
   wrong_pr: "다른 인보이스 응답",
 } as const;
+
+export const adminCouponRecord = z.object({
+  id: z.string(), code: z.string(), nameKo: z.string(), nameEn: z.string(),
+  discountKind: z.enum(["PERCENT", "KRW", "SATS"]),
+  discountValue: z.string(), minPurchaseAmount: z.string(),
+  maxDiscountAmount: z.string().nullable(),
+  usageLimit: z.number().int().nullable(), perUserLimit: z.number().int(),
+  validFrom: z.string(), validUntil: z.string(),
+  active: z.boolean(), usageCount: z.number().int(),
+});
+export type AdminCouponRecord = z.infer<typeof adminCouponRecord>;
+
+export const couponKindLabels = {
+  PERCENT: "퍼센트 할인", KRW: "원 할인", SATS: "사토시 할인",
+} as const;

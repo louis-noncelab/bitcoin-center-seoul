@@ -30,8 +30,8 @@ export async function createLnurlInvoice({ payment, receiver, transport }: Provi
   if (metadata.filter(([kind]) => kind === "text/plain").length !== 1) throw new PaymentError("INVALID_LNURL_METADATA");
   const msats = payment.amountSats * 1000n;
   if (msats < BigInt(resolved.minSendable) || msats > BigInt(resolved.maxSendable)) throw new PaymentError("LNURL_AMOUNT_RANGE");
-  // The callback often lives on a different origin than the address domain (blink.sv resolves to
-  // lnurl.blink.sv), so both must already be allowlisted.
+  // A provider may serve the callback from a different origin than the address domain, so every
+  // origin the address touches has to be allowlisted, not just the domain itself.
   const callback = trustedUrl(resolved.callback, receiver.allowedOrigins);
   callback.searchParams.set("amount", msats.toString());
   const result = invoiceResponse.parse(await transport({ url: callback.href }));

@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { z } from "zod";
-import { Link, useRouter } from "@/i18n/navigation";
+import { useRef, useState } from "react";
+import { useRouter } from "@/i18n/navigation";
 import { FormField, FormNotice } from "@/components/ui/form-field";
 import { Button } from "@/components/ui/primitives";
 import { ApiError, apiRequest, jsonRequest } from "@/lib/api-client";
@@ -19,30 +18,7 @@ import { constraintError, FieldError, fieldError } from "./field-error";
 import { useDisplayUnit } from "./display-unit";
 import { bitcoin, fulfillmentLabels, submissionHeaders } from "./format";
 
-const savedAddressSchema = z.object({
-  id: z.string(),
-  label: z.string(),
-  recipient: z.string(),
-  phone: z.string(),
-  countryCode: z.string(),
-  postalCode: z.string(),
-  region: z.string(),
-  city: z.string(),
-  line1: z.string(),
-  line2: z.string(),
-  isDefault: z.boolean(),
-});
-type SavedAddress = z.infer<typeof savedAddressSchema>;
 const emptyDraft: ShippingDraft = { line1: "", line2: "", city: "", region: "", postalCode: "" };
-
-function matchesFulfillment(item: SavedAddress, fulfillment: Fulfillment) {
-  if (fulfillment === "PICKUP") return false;
-  return fulfillment === "DOMESTIC" ? item.countryCode === "KR" : item.countryCode !== "KR";
-}
-
-function shippingDraftFromSaved(item: SavedAddress): ShippingDraft {
-  return { line1: item.line1, line2: item.line2, city: item.city, region: item.region, postalCode: item.postalCode };
-}
 
 export function CheckoutForm({ locale, items, countries, fromCart }: {
   readonly locale: Locale;
@@ -60,8 +36,6 @@ export function CheckoutForm({ locale, items, countries, fromCart }: {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [submission, setSubmission] = useState<ReturnType<typeof submissionHeaders> | null>(null);
-  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState("");
   const [shippingDraft, setShippingDraft] = useState<ShippingDraft>(emptyDraft);
   const busy = useRef(false);
   const country = fulfillment === "DOMESTIC" ? "KR" : internationalCountry;
@@ -82,53 +56,17 @@ export function CheckoutForm({ locale, items, countries, fromCart }: {
     setQuote(null);
     setSubmission(null);
   }
-  const matchingAddresses = savedAddresses.filter((item) => matchesFulfillment(item, fulfillment));
-  const autoKey = `${fulfillment}:${savedAddresses.map((item) => item.id).join(",")}`;
-  const [appliedAutoKey, setAppliedAutoKey] = useState("");
-  if (appliedAutoKey !== autoKey) {
-    setAppliedAutoKey(autoKey);
-    if (fulfillment === "PICKUP") {
-      setSelectedAddressId("");
-      setShippingDraft(emptyDraft);
-    } else {
-      const preferred = matchingAddresses.find((item) => item.isDefault) ?? matchingAddresses[0];
-      if (!preferred) {
-        setSelectedAddressId("");
-        setShippingDraft(emptyDraft);
-      } else {
-        setSelectedAddressId(preferred.id);
-        setShippingDraft(shippingDraftFromSaved(preferred));
-        if (preferred.countryCode !== "KR") setInternationalCountry(preferred.countryCode);
-      }
-    }
+  // Switching away from a shipped fulfillment must not carry the typed address along.
+  const [appliedFulfillment, setAppliedFulfillment] = useState(fulfillment);
+  if (appliedFulfillment !== fulfillment) {
+    setAppliedFulfillment(fulfillment);
+    if (fulfillment === "PICKUP") setShippingDraft(emptyDraft);
   }
   const summaryItems = items.map((item) => {
     const variant = item.product.variants.find((entry) => entry.id === item.variantId);
     return { product: item.product, quantity: item.quantity, option: variant ? (ko ? variant.optionLabelKo : variant.optionLabelEn) : "" };
   });
   const notesError = fieldError(error, "notes", locale);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    apiRequest("/api/account/addresses", z.array(savedAddressSchema), { signal: controller.signal })
-      .then((rows) => { if (!controller.signal.aborted) setSavedAddresses(rows); })
-      .catch((failure: unknown) => {
-        if (controller.signal.aborted) return;
-        if (failure instanceof ApiError && (failure.status === 401 || failure.code === "AUTH_REQUIRED" || failure.code === "INVALID_SESSION")) return;
-      });
-    return () => controller.abort();
-  }, []);
-
-  function applySavedAddress(id: string) {
-    const selected = matchingAddresses.find((item) => item.id === id) ?? null;
-    setSelectedAddressId(selected?.id ?? "");
-    setShippingDraft(selected ? shippingDraftFromSaved(selected) : emptyDraft);
-    if (!selected) return;
-    if (selected.countryCode !== "KR" && selected.countryCode !== internationalCountry) {
-      setInternationalCountry(selected.countryCode);
-      invalidateQuote();
-    }
-  }
 
   return <div className="commerce-checkout">
     <form className="form-stack" onInvalidCapture={(event) => { event.preventDefault(); setError(constraintError(event.currentTarget)); }} onChange={() => { setSubmission(null); }} onSubmit={async (event) => {
@@ -172,13 +110,7 @@ export function CheckoutForm({ locale, items, countries, fromCart }: {
           </label>)}</div>
         </fieldset>
         {fulfillment === "PICKUP" && <p className="commerce-pickup">{centerContent[locale].visit.address.value}</p>}
-        {fulfillment !== "PICKUP" && matchingAddresses.length > 0 && <FormField id="saved-address" label={ko ? "저장된 주소" : "Saved address"} hint={<>{ko ? "주소록에서 고르거나 아래에서 직접 입력할 수 있습니다." : "Choose a saved address or enter one below."}{" "}<Link href="/account">{ko ? "주소록 관리" : "Manage addresses"}</Link></>}>
-          <select id="saved-address" value={selectedAddressId} onChange={(event) => applySavedAddress(event.target.value)}>
-            <option value="">{ko ? "직접 입력" : "Enter manually"}</option>
-            {matchingAddresses.map((item) => <option key={item.id} value={item.id}>{item.label || item.recipient}{item.isDefault ? (ko ? " · 기본" : " · Default") : ""} · {item.line1}</option>)}
-          </select>
-        </FormField>}
-        <ShippingFields key={selectedAddressId || "manual"} error={error} locale={locale} fulfillment={fulfillment} country={country} countries={countries} draft={shippingDraft} onCountry={(value) => { setInternationalCountry(value); invalidateQuote(); }} />
+        <ShippingFields error={error} locale={locale} fulfillment={fulfillment} country={country} countries={countries} draft={shippingDraft} onCountry={(value) => { setInternationalCountry(value); invalidateQuote(); }} />
         <FormField id="coupon-code" label={ko ? "쿠폰 코드" : "Coupon code"}>
           <input id="coupon-code" name="couponCode" value={couponCode} maxLength={40} autoComplete="off" onChange={(event) => { setCouponCode(event.target.value); invalidateQuote(); }} />
         </FormField>

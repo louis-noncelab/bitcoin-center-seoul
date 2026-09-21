@@ -19,7 +19,8 @@ export function validateBolt11(pr: string, expected: { readonly amountSats: bigi
   const paymentHash = digestHexSchema.parse(hashes[0]?.data);
   if (expected.metadata !== undefined) {
     // LUD-06 lets a payer server commit to the metadata with tag `h`, or describe the payment in
-    // plain text with tag `d`. Observed in production: blink.sv sends `h`, oksu.su sends `d`.
+    // plain text with tag `d`. Both were observed on live lightning addresses in 2026-09;
+    // the configured address (oksu.su) uses `d`, and an earlier parser rejected that outright.
     const descriptionHash = decoded.tagsObject.purpose_commit_hash;
     const description = decoded.tagsObject.description;
     const metadataHash = createHash("sha256").update(expected.metadata, "utf8").digest("hex");
