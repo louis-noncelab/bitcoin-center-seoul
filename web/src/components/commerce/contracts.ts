@@ -7,7 +7,7 @@ export const productSchema = z.object({
   id: z.string(), slug: z.string(), titleKo: z.string(), titleEn: z.string(),
   descriptionKo: z.string(), descriptionEn: z.string(), imageUrl: z.string(),
   images: z.array(z.string()).optional(), createdAt: z.string().optional(),
-  contentFormat: z.enum(["PLAIN", "HTML"]),
+  contentFormat: z.enum(["PLAIN", "MARKDOWN"]),
   priceKind: z.enum(["FREE", "KRW_FIXED", "BTC_FIXED"]), priceAmount: amount,
   listPriceAmount: amount.nullable().optional(),
   allowedFulfillments: z.array(fulfillmentSchema), memberOnly: z.boolean(),

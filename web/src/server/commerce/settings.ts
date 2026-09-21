@@ -1,4 +1,5 @@
 import "server-only";
+import { z } from "zod";
 import type { BtcPriceSource, PaymentProvider, ProductDisplayUnit } from "@/generated/prisma/client";
 import { getServerConfig, type ServerConfig } from "@/server/config";
 import { prisma, type Tx } from "@/server/db";
@@ -60,4 +61,53 @@ export async function activePaymentProvider(tx?: Tx): Promise<PaymentProvider> {
   const settings = await getCommerceSettings(tx);
   assertProviderConfigured(settings.paymentProvider);
   return settings.paymentProvider;
+}
+
+export const commerceSettingsSchema = z.object({
+  paymentProvider: z.enum(["LNURL", "ZAPRITE"]),
+  btcPriceSource: z.enum(["UPBIT", "BITHUMB", "FIXED"]),
+  // Only meaningful with FIXED; stored as a decimal string so BigInt maths stays exact.
+  fixedKrwPerBtc: z.union([z.literal(""), z.string().regex(/^[1-9]\d{0,14}(\.\d{1,10})?$/)]),
+  productDisplayUnit: z.enum(["SATS", "BTC"]),
+  guestPurchaseAllowed: z.boolean(),
+  maintenanceMode: z.boolean(),
+}).strict().superRefine((value, ctx) => {
+  if (value.btcPriceSource === "FIXED" && !value.fixedKrwPerBtc) {
+    ctx.addIssue({ code: "custom", message: "고정 환율을 입력해 주세요. / Enter a fixed rate.", path: ["fixedKrwPerBtc"] });
+  }
+});
+export type CommerceSettingsInput = z.infer<typeof commerceSettingsSchema>;
+
+export async function adminSettings() {
+  const row = await prisma.siteSetting.findUnique({ where: { id: "site" } });
+  return {
+    paymentProvider: row?.paymentProvider ?? envPaymentProvider(),
+    btcPriceSource: row?.btcPriceSource ?? "UPBIT",
+    fixedKrwPerBtc: row?.fixedKrwPerBtc?.toString() ?? "",
+    productDisplayUnit: row?.productDisplayUnit ?? "SATS",
+    guestPurchaseAllowed: row?.guestPurchaseAllowed ?? true,
+    maintenanceMode: row?.maintenanceMode ?? false,
+    configured: configuredPaymentProviders(),
+  };
+}
+
+export async function updateCommerceSettings(input: CommerceSettingsInput, actorId: string) {
+  // Refuse to select a provider the running configuration cannot actually reach.
+  assertProviderConfigured(input.paymentProvider);
+  const data = {
+    paymentProvider: input.paymentProvider,
+    btcPriceSource: input.btcPriceSource,
+    fixedKrwPerBtc: input.fixedKrwPerBtc === "" ? null : input.fixedKrwPerBtc,
+    productDisplayUnit: input.productDisplayUnit,
+    guestPurchaseAllowed: input.guestPurchaseAllowed,
+    maintenanceMode: input.maintenanceMode,
+  };
+  await prisma.$transaction(async (tx) => {
+    await tx.siteSetting.upsert({ where: { id: "site" }, update: data, create: { id: "site", ...data } });
+    await tx.auditLog.create({ data: {
+      actorId, action: "settings.updated", targetType: "SiteSetting", targetId: "site",
+      summary: { paymentProvider: data.paymentProvider, btcPriceSource: data.btcPriceSource },
+    } });
+  });
+  return adminSettings();
 }

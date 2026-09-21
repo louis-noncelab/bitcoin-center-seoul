@@ -4,6 +4,7 @@ import { NavigationDisclosure } from "@/components/controls/navigation-disclosur
 import { NavigationFeedback } from "@/components/controls/navigation-feedback";
 import { NavigationIndicator } from "@/components/controls/navigation-indicator";
 import { ThemeToggle } from "@/components/controls/theme-toggle";
+import { CartControl } from "@/components/commerce/cart-control";
 import { BrandWordmark } from "@/components/site/brand-wordmark";
 import { OperatingStatus } from "@/components/site/operating-status";
 import { ActionLink } from "@/components/ui/primitives";
@@ -77,6 +78,7 @@ export async function SiteHeader({
         <LocaleLink locale={otherLocale} label={t.language} />
       </Suspense>
       <ThemeToggle label={t.theme} />
+      <CartControl locale={locale} />
     </>
   );
 
