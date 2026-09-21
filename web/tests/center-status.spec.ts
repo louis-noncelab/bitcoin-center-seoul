@@ -32,7 +32,7 @@ test("automatic status and daily exceptions keep authentication, live updates an
     const html = await (await request.get("/ko")).text();
     expect(html).toContain('data-status="closed"');
     await page.goto("/ko");
-    await expect(page.locator(".operating-status")).toHaveText("운영 종료");
+    await expect(page.locator(".operating-status:visible")).toHaveText("운영 종료");
     await expect(page.locator("#home-calendar")).toBeVisible();
     await expect(page.locator("#home-news h2")).toHaveText("비센서 소식");
     const created = await page.request.post("/api/admin/events", { headers, data: { title: "상태 검증용 임시 밋업", titleEn: "Temporary status test meetup", date: seoulDate(), time: "00:00 ~ 24:00", venueType: "center", location: "비트코인 센터 서울", locationEn: "Bitcoin Center Seoul", description: "자동 상태 검증 후 삭제", descriptionEn: "Deleted after automatic status verification", image: "", images: [], link: "" } });
@@ -41,20 +41,20 @@ test("automatic status and daily exceptions keep authentication, live updates an
     expect((await (await request.get("/api/center-status")).json()).data.status).toBe("closed");
     expect((await page.request.put("/api/admin/center-status", { headers, data: { override: "open" } })).status()).toBe(200);
     await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-    await expect(page.locator(".operating-status")).toHaveText("밋업 중");
+    await expect(page.locator(".operating-status:visible")).toHaveText("밋업 중");
     await deleteContentFixture(page.request, `/api/admin/events/${eventId}`, baseURL ?? "");
     eventId = undefined;
     await page.request.put("/api/admin/center-status", { headers, data: { override: null } });
     const automatic = (await (await request.get("/api/center-status")).json()).data;
     expect(["open", "event", "closed"]).toContain(automatic.status);
     await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-    await expect(page.locator(".operating-status")).toHaveAttribute("data-status", automatic.status);
-    await page.locator(".operating-status").click();
+    await expect(page.locator(".operating-status:visible")).toHaveAttribute("data-status", automatic.status);
+    await page.locator(".operating-status:visible").click();
     await expect(page).toHaveURL("/ko/visit");
     const db = new Database(databasePath);
     try { db.prepare("INSERT INTO center_opening_overrides (date, status) VALUES ('2000-01-01', 'closed') ON CONFLICT(date) DO UPDATE SET status = 'closed'").run(); } finally { db.close(); }
     await page.goto("/en");
-    await expect(page.locator(".operating-status")).toHaveAttribute("data-status", automatic.status);
+    await expect(page.locator(".operating-status:visible")).toHaveAttribute("data-status", automatic.status);
     expect((await (await request.get("/api/center-status")).json()).data.override).toBe(null);
     await page.goto("/ko/admin");
     await expect(controls.getByRole("button", { name: "정상 운영", exact: true })).toBeEnabled();
@@ -76,13 +76,14 @@ test("automatic status and daily exceptions keep authentication, live updates an
 });
 
 test("header refreshes at a server boundary even when the visitor clock is wrong", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
   const snapshot = { date: "2026-09-10", override: null, holiday: null, checkedAt: "2026-09-10T04:59:58.000Z", nextChangeAt: "2026-09-10T05:00:00.000Z" };
   let reads = 0;
   await page.route("**/api/center-status", (route) => route.fulfill({ json: { data: { ...snapshot, status: ++reads === 1 ? "open" : "event" } } }));
   await page.clock.install({ time: new Date("2099-01-01T00:00:00Z") });
   await page.goto("/ko");
-  await expect(page.locator(".operating-status")).toHaveText(centerStatusLabels.ko.open);
+  await expect(page.locator(".operating-status:visible")).toHaveText(centerStatusLabels.ko.open);
   await page.clock.fastForward(2_500);
-  await expect(page.locator(".operating-status")).toHaveText(centerStatusLabels.ko.event);
+  await expect(page.locator(".operating-status:visible")).toHaveText(centerStatusLabels.ko.event);
   expect(reads).toBeGreaterThan(1);
 });
