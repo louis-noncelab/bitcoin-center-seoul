@@ -10,6 +10,7 @@ import { eventRecordSchema, highlightRecordSchema } from "@/lib/events-contract"
 import type { ContentKind, ContentRecord } from "./editor-fields";
 import { CenterStatusAdmin } from "./center-status-admin";
 import { LoginForm } from "./login-form";
+import { AdminTabs } from "./admin-tabs";
 import { RecordEditor } from "./record-editor";
 import { adminRequest, AdminRequestError, errorText, jsonBody, revisionHeaders } from "./request";
 import "@/styles/news.css";
@@ -65,6 +66,7 @@ export function EventsAdmin({ locale }: { readonly locale: Locale }) {
   }
   function refresh() { setLoading(true); setError(""); setRevision((value) => value + 1); }
   async function pick(next: ContentKind) {
+    if (next === kind && !editing) return;
     if (!(await canLeave())) return;
     setDirty(false); setEditing(false); setSelected(null); setKind(next); setRecords([]); setNotice(""); refresh();
   }
@@ -105,14 +107,12 @@ export function EventsAdmin({ locale }: { readonly locale: Locale }) {
     <div className="events-admin-workspace">
       {dialog}
       <div className="events-admin-toolbar">
-        <nav aria-label={ko ? "콘텐츠 관리" : "Content management"} className="button-row">
-          <Button variant="secondary" aria-pressed={kind === "events"} disabled={pending || editorBusy} onClick={() => void pick("events")}>{ko ? "행사" : "Events"}</Button>
-          <Button variant="secondary" aria-pressed={kind === "highlights"} disabled={pending || editorBusy} onClick={() => void pick("highlights")}>{ko ? "하이라이트" : "Highlights"}</Button>
+        <AdminTabs label={ko ? "콘텐츠 관리" : "Content management"} items={[{ value: "events", label: ko ? "행사" : "Events" }, { value: "highlights", label: ko ? "하이라이트" : "Highlights" }]} value={kind} disabled={pending || editorBusy} onChange={(next) => void pick(next)}>
           <Link href="/admin/notices" locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void canLeave().then((accepted) => { if (accepted) router.push("/admin/notices", { locale: "ko" }); }); }}>공지사항</Link>
           <Link href="/admin/collection" locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void canLeave().then((accepted) => { if (accepted) router.push("/admin/collection", { locale: "ko" }); }); }}>도서·작품·보드게임·굿즈</Link>
           <Link href="/admin/reviews" locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void canLeave().then((accepted) => { if (accepted) router.push("/admin/reviews", { locale: "ko" }); }); }}>방문 후기</Link>
           <Link href="/news" locale="ko" prefetch={false} className="button" data-variant="quiet" onNavigate={(event) => { event.preventDefault(); void canLeave().then((accepted) => { if (accepted) router.push("/news", { locale: "ko" }); }); }}>공개 소식 보기</Link>
-        </nav>
+        </AdminTabs>
         <Button variant="quiet" disabled={pending || editorBusy} onClick={() => void logout()}>{ko ? "로그아웃" : "Sign out"}</Button>
       </div>
       {kind === "highlights" && <p className="news-admin-guide">공개한 하이라이트는 소식의 ‘현장 스케치’에 반영됩니다. 첫 번째 사진은 ‘사진과 영상’의 대표 이미지로 사용됩니다. 최근 소식과 사진 일부는 홈에도 표시됩니다. 비공개 항목은 제외됩니다.</p>}

@@ -12,6 +12,49 @@ const kinds = ["book", "goods", "boardgame", "artwork"] as const;
 const rowsSchema = z.object({ data: z.array(collectionRecordSchema) });
 const evidence = ".local/events-review/collection-filters";
 
+test("filter motion glides, handles rapid selection and respects reduced motion", async ({ page, baseURL }) => {
+  expect(baseURL).toBe("http://127.0.0.1:3102");
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  expect((await page.request.post("/api/admin/login", { headers: { origin: baseURL ?? "" }, data: { password: process.env.ADMIN_PASSWORD } })).status()).toBe(200);
+  await page.goto("/ko/admin/collection");
+  const filters = page.getByRole("navigation", { name: "종류별 필터" });
+  await expect(filters.getByRole("button", { name: "전체", exact: true })).toHaveAttribute("aria-pressed", "true");
+  const samples = await filters.evaluate(async (nav) => {
+    const target = nav.querySelectorAll("button").item(3);
+    const before = nav.querySelector(".admin-tab-indicator")?.getBoundingClientRect().x;
+    target.click();
+    const frames: { x: number; opacity: number }[] = [];
+    const started = performance.now();
+    while (performance.now() - started < 400) {
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+      const indicator = nav.querySelector(".admin-tab-indicator");
+      const list = document.querySelector(".collection-admin-results");
+      if (indicator && list) frames.push({ x: indicator.getBoundingClientRect().x, opacity: Number(getComputedStyle(list).opacity) });
+    }
+    return { before, end: target.getBoundingClientRect().x, frames };
+  });
+  expect(samples.before).toBeDefined();
+  expect(samples.frames.some(frame => frame.x > (samples.before ?? 0) + 1 && frame.x < samples.end - 1)).toBe(true);
+  expect(samples.frames.some(frame => frame.opacity > 0 && frame.opacity < 1)).toBe(true);
+  expect(samples.frames.at(-1)?.x).toBeCloseTo(samples.end, 0);
+  await filters.evaluate(async (nav) => {
+    for (const index of [1, 4, 2]) {
+      nav.querySelectorAll("button").item(index).click();
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+    }
+  });
+  await expect(filters.getByRole("button", { name: "굿즈", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".admin-tab-indicator")).toHaveCount(1);
+  await expect(page.locator(".collection-admin-results")).toHaveCount(1);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await filters.getByRole("button", { name: "작품", exact: true }).focus();
+  await page.keyboard.press("Space");
+  await expect(filters.getByRole("button", { name: "작품", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".admin-tab-indicator")).toHaveCSS("transform", "none");
+  await expect(page.locator(".collection-admin-results")).toHaveCSS("animation-name", "none");
+  await expect(page.locator(".collection-admin-results")).toHaveCSS("opacity", "1");
+});
+
 test("kind filters limit purchasing to books and goods and follow saved kind changes", async ({ page, baseURL }) => {
   expect(baseURL).toBe("http://127.0.0.1:3102");
   const database = process.env.BCS_EVENTS_DB;

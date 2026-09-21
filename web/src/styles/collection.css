@@ -6,6 +6,10 @@
 .collection-browser :is(.selection-background, .selection-arrow) { display: none; }
 .collection-browser .selection-panels { background: transparent; }
 .collection-browser .selection-panel { padding: 0; min-block-size: 0; }
+@keyframes collection-results-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: no-preference) {
+  .collection-results { animation: collection-results-in var(--duration-control) var(--ease-out); }
+}
 .collection-browser .catalog-empty { max-inline-size: none; padding-block-start: 0; border-block-start: 0; text-align: center; }
 .collection-browser .keyboard-hint { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .review-card-image.collection-card-photo { background: var(--surface); }

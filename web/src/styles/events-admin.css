@@ -34,6 +34,21 @@
   .events-login { padding: var(--space-5); }
 }
 .collection-kind { margin: 0; padding: 0; border: 0; }
+.admin-tabs { isolation: isolate; }
+.admin-tabs .button { position: relative; }
+.admin-tabs .button[aria-pressed="true"] { background: transparent; }
+.admin-tab-indicator { position: absolute; inset: calc(-1 * var(--border-width)); z-index: var(--layer-selection); border-radius: inherit; background: var(--selection); pointer-events: none; }
+.admin-tab-label { position: relative; z-index: var(--layer-label); }
+@keyframes admin-content-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: no-preference) {
+  .events-admin-page > h1,
+  .events-admin-workspace > :is(.events-admin-toolbar, .news-admin-guide, .center-status-admin),
+  .events-admin-list,
+  .events-form { animation: admin-content-in var(--duration-control) var(--ease-out); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-tab-indicator { transform: none !important; opacity: 1 !important; }
+}
 .center-status-admin { display: grid; gap: var(--space-3); padding-block: var(--space-5); border-block: var(--border-width) solid var(--line); }
 .center-status-admin h2 { font-size: var(--text-title); }
 .center-status-admin [role="status"]:empty { display: none; }

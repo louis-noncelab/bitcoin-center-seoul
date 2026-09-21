@@ -289,6 +289,7 @@ export function CollectionGallery({
           </ContentLink>
         ))}
       </nav>
+      <div key={selected} className="collection-results">
       {selected === "magazine" ? (
         <p className="catalog-empty muted">
           {locale === "ko"
@@ -305,6 +306,7 @@ export function CollectionGallery({
           locale={locale}
         />
       )}
+      </div>
     </div>
   );
 }
