@@ -9,7 +9,8 @@ function bookingUrl(link: string): URL | undefined {
   }
 }
 
-export function eventBookingHref(link: string, date: string, today: string): string | undefined {
+export function eventBookingHref(link: string, date: string, today: string, registrationClosed = false): string | undefined {
+  if (registrationClosed) return undefined;
   if (!isCalendarDate(date) || !isCalendarDate(today)) return undefined;
   if (date.trim().replaceAll(".", "-") < today.trim().replaceAll(".", "-")) return undefined;
   return bookingUrl(link) ? link.trim() : undefined;

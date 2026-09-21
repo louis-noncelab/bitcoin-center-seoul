@@ -2,5 +2,7 @@
 .event-booking-provider { display: inline-flex; flex-shrink: 0; align-items: center; gap: var(--space-1); font-size: var(--text-caption); font-weight: var(--weight-medium); }
 .home-calendar-event-list .event-booking-link, .event-card-list .event-booking-link { margin-block-start: var(--space-2); }
 @media (hover: hover) {
-  .button.event-booking-link:not(:disabled):hover { color: var(--action-ink); background: color-mix(in srgb, var(--orange) 88%, white); transform: none; box-shadow: none; }
+  .button.event-booking-link:not(:disabled):not([aria-disabled="true"]):hover { color: var(--action-ink); background: color-mix(in srgb, var(--orange) 88%, white); transform: none; box-shadow: none; }
 }
+
+.button.event-registration-closed { background: var(--surface); color: var(--muted); cursor: default; }

@@ -9,6 +9,7 @@ import { ContentTags } from "@/components/site/content-tags";
 import { EventsCalendar } from "@/components/site/events-calendar";
 import { EventBookingLink } from "@/components/site/event-booking-link";
 import { eventBookingHref } from "@/lib/event-booking";
+import { eventListLocation } from "@/lib/event-location";
 import { seoulDate } from "@/lib/center-status";
 import type { Locale } from "@/i18n/routing";
 
@@ -104,7 +105,7 @@ function EventGroup({ id, days, locale, today, title, empty }: { readonly id: st
           <ul className="event-card-list">
             {events.map((event) => {
               const titleText = text(locale, event.title, event.titleEn);
-              const location = text(locale, event.location, event.locationEn);
+              const location = eventListLocation(event, locale);
               const images = galleryImages(event);
               return (
                 <li key={event.id}>
@@ -163,7 +164,7 @@ export function EventDetail({ event, locale, today = seoulDate() }: { readonly e
       <PhotoGallery images={galleryImages(event)} title={title} locale={locale} />
       <ContentTags tags={event.tags} locale={locale} />
       <MarkdownContent lang={locale === "en" && !event.descriptionEn ? "ko" : locale}>{text(locale, event.description, event.descriptionEn)}</MarkdownContent>
-      {link && !eventBookingHref(link, event.date, today) && <a href={link} target="_blank" rel="noopener noreferrer" className="source-link">{locale === "ko" ? "행사 링크 보기" : "View event link"}<ArrowUpRight className="icon" aria-hidden="true" /><span className="sr-only">{locale === "ko" ? " (새 창)" : " (new window)"}</span></a>}
+      {link && !event.registrationClosed && !eventBookingHref(link, event.date, today) && <a href={link} target="_blank" rel="noopener noreferrer" className="source-link">{locale === "ko" ? "행사 링크 보기" : "View event link"}<ArrowUpRight className="icon" aria-hidden="true" /><span className="sr-only">{locale === "ko" ? " (새 창)" : " (new window)"}</span></a>}
     </article>
   );
 }

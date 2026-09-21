@@ -20,7 +20,7 @@ import { adminNoticesPost, adminNoticePut, adminNoticeDelete, publicNotice } fro
 
 const event = {
   slug: "tag-event", title: "태그 행사", titleEn: "Tag event", date: "2026-09-10", time: "19:00",
-  location: "서울", locationEn: "Seoul", description: "행사 본문", descriptionEn: "Event body", image: "", images: [], link: "",
+  venueType: "external", location: "서울", locationEn: "Seoul", description: "행사 본문", descriptionEn: "Event body", image: "", images: [], link: "",
 };
 const highlight = {
   slug: "tag-highlight", title: "태그 기록", titleEn: "Tag record", date: "2026-09-10", startDate: "", endDate: "",

@@ -17,7 +17,7 @@ for (const kind of ["events", "highlights", "notices", "book", "artwork", "board
       }
       const title = `동시 편집 ${randomUUID()}`;
       const common = { title, titleEn: title, description: "설명", descriptionEn: "Description", date: "2026-09-10", images: [], image: "", link: "" };
-      const data = kind === "events" ? { ...common, time: "", location: "", locationEn: "" }
+      const data = kind === "events" ? { ...common, time: "", venueType: "center", location: "", locationEn: "" }
         : kind === "highlights" ? { ...common, meta: "", metaEn: "", category: "", categoryEn: "", startDate: "", endDate: "", host: "", hostEn: "", icon: "", sort_order: 0, is_active: 0 }
         : kind === "notices" ? { title, description: "설명", slug: `review-${randomUUID()}`, is_active: 0 }
         : { kind, title, images: [], is_active: 0 };

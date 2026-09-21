@@ -35,7 +35,7 @@ test("automatic status and daily exceptions keep authentication, live updates an
     await expect(page.locator(".operating-status")).toHaveText("운영 종료");
     await expect(page.locator("#home-calendar")).toBeVisible();
     await expect(page.locator("#home-news h2")).toHaveText("비센서 소식");
-    const created = await page.request.post("/api/admin/events", { headers, data: { title: "상태 검증용 임시 밋업", titleEn: "Temporary status test meetup", date: seoulDate(), time: "00:00 ~ 24:00", location: "비트코인 센터 서울", locationEn: "Bitcoin Center Seoul", description: "자동 상태 검증 후 삭제", descriptionEn: "Deleted after automatic status verification", image: "", images: [], link: "" } });
+    const created = await page.request.post("/api/admin/events", { headers, data: { title: "상태 검증용 임시 밋업", titleEn: "Temporary status test meetup", date: seoulDate(), time: "00:00 ~ 24:00", venueType: "center", location: "비트코인 센터 서울", locationEn: "Bitcoin Center Seoul", description: "자동 상태 검증 후 삭제", descriptionEn: "Deleted after automatic status verification", image: "", images: [], link: "" } });
     expect(created.status()).toBe(201);
     eventId = (await created.json()).data.id;
     expect((await (await request.get("/api/center-status")).json()).data.status).toBe("closed");

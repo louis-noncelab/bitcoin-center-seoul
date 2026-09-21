@@ -27,7 +27,7 @@ export function Dialog({ open, onClose, title, description, children, className 
         if (event.key !== "Tab") return;
         const dialog = event.currentTarget;
         const controls = Array.from(dialog.querySelectorAll<HTMLElement>("a[href], button, input, select, textarea, [tabindex]")).filter((element) =>
-          element.tabIndex >= 0 && !element.matches(":disabled") && element.getClientRects().length > 0 && getComputedStyle(element).visibility !== "hidden"
+          element.tabIndex >= 0 && !element.closest("[inert]") && !element.matches(":disabled") && element.getClientRects().length > 0 && getComputedStyle(element).visibility !== "hidden"
         );
         const first = controls[0];
         const last = controls.at(-1);

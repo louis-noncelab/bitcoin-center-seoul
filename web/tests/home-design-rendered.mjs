@@ -144,7 +144,7 @@ test("rendered home keeps its heading hierarchy and truthful event navigation", 
 
     const baseInput = {
       slug: "home-design-one", tags: [], title: "홈 디자인 행사 1", titleEn: "Home design event 1",
-      date: today, time: "19:00", location: "비트코인 센터 서울", locationEn: "Bitcoin Center Seoul",
+      date: today, time: "19:00", venueType: "center", location: "비트코인 센터 서울", locationEn: "Bitcoin Center Seoul",
       description: "홈 SSR 설계 검증", descriptionEn: "Home SSR design fixture",
       image: "", images: [], link: "",
     };

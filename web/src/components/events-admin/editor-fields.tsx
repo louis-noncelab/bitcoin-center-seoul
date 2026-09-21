@@ -5,6 +5,7 @@ import { DateField } from "@/components/ui/date-field";
 import { MarkdownHelp } from "./markdown-help";
 import { MarkdownEditor } from "./markdown-editor";
 import { TagsField } from "./tags-field";
+import { EventVenueFields } from "./event-venue-fields";
 
 export type ContentKind = "events" | "highlights";
 export type ContentRecord = EventRecord | HighlightRecord;
@@ -34,20 +35,14 @@ export function EditorFields({ locale, kind, record, onPending, onDirty, onExpir
         <span id="slug-help" className="muted">/{locale}/{kind === "events" ? "programs" : "journal"}/ 뒤에 붙는 주소입니다. 영문 소문자·숫자·하이픈(-)을 사용해 주세요. 주소를 바꿔도 이전 링크는 새 주소로 연결됩니다.</span>
       </label>
       <TagsField tags={record?.tags ?? []} />
-      <div className="events-field-grid">
-        <MarkdownEditor name="description" label="설명 · 한국어" defaultValue={record?.description ?? ""} required helpId="description-markdown-help" onPending={onPending} onDirty={onDirty} onExpired={onExpired} />
-        <MarkdownEditor name="descriptionEn" label="설명 · 영어" defaultValue={record?.descriptionEn ?? ""} required helpId="description-markdown-help" onPending={onPending} onDirty={onDirty} onExpired={onExpired} />
-      </div>
-      <MarkdownHelp id="description-markdown-help" />
       {kind === "events" ? (
         <div className="events-field-grid">
           {input("date", ko ? "행사 날짜" : "Event date", date(event?.date), "date", true)}
           <label>{ko ? "시간" : "Time"}
             <FormControl><input name="time" defaultValue={event?.time ?? ""} maxLength={100} placeholder="14:00 ~ 16:00" aria-describedby="event-time-help" /></FormControl>
-            <span id="event-time-help" className="muted">{ko ? "한국 시간의 시작·종료 시각을 입력하면 ‘밋업 중’ 표시에 반영됩니다. 예: 19:00 ~ 21:00. 종료가 시작보다 이르면 다음 날 종료로 계산합니다." : "Enter start and end times in Korea time for the live status, e.g. 19:00 ~ 21:00. An earlier end time means the following day."}</span>
+            <span id="event-time-help" className="muted">{ko ? "한국 시간의 시작·종료 시각을 입력해 주세요. 센터 행사만 ‘밋업 중’ 표시에 반영됩니다. 예: 19:00 ~ 21:00. 종료가 시작보다 이르면 다음 날 종료로 계산합니다." : "Enter start and end times in Korea time, e.g. 19:00 ~ 21:00. Only center events affect the live status. An earlier end time means the following day."}</span>
           </label>
-          {input("location", ko ? "장소 · 한국어" : "Location · Korean", event?.location)}
-          {input("locationEn", ko ? "장소 · 영어" : "Location · English", event?.locationEn)}
+          <EventVenueFields event={event} />
         </div>
       ) : (
         <>
@@ -68,7 +63,19 @@ export function EditorFields({ locale, kind, record, onPending, onDirty, onExpir
           <input name="icon" type="hidden" value={highlight?.icon ?? "calendar"} />
         </>
       )}
-      {input("link", ko ? "관련 링크 (선택)" : "Related link (optional)", record?.link ? (/^www\./.test(record.link) ? `https://${record.link}` : record.link) : "", "url")}
+      {kind === "events" && <label className="events-checkbox"><ChoiceControl role="switch" name="registrationClosed" type="checkbox" defaultChecked={event?.registrationClosed ?? false} />참여 마감<span className="muted">켜면 참여 링크 대신 ‘참여 마감’이 표시됩니다. 저장하면 반영됩니다.</span></label>}
+      {kind === "events" ? (
+        <label>
+          참여하기 버튼 링크 (선택)
+          <FormControl><input name="link" aria-label="참여하기 버튼 링크 (선택)" type="url" maxLength={2048} defaultValue={record?.link ? (/^www\./.test(record.link) ? `https://${record.link}` : record.link) : ""} placeholder="https://" aria-describedby="event-link-help" /></FormControl>
+          <span id="event-link-help" className="muted">Zaprite Payment Link 또는 이벤트 티켓 링크를 입력해 주세요. 참여하기 버튼을 누르면 입력한 링크가 새 창으로 열립니다. 비워 두면 버튼이 표시되지 않습니다.</span>
+        </label>
+      ) : input("link", ko ? "관련 링크 (선택)" : "Related link (optional)", record?.link ? (/^www\./.test(record.link) ? `https://${record.link}` : record.link) : "", "url")}
+      <div className="events-field-grid">
+        <MarkdownEditor name="description" label="설명 · 한국어" defaultValue={record?.description ?? ""} required helpId="description-markdown-help" onPending={onPending} onDirty={onDirty} onExpired={onExpired} />
+        <MarkdownEditor name="descriptionEn" label="설명 · 영어" defaultValue={record?.descriptionEn ?? ""} required helpId="description-markdown-help" onPending={onPending} onDirty={onDirty} onExpired={onExpired} />
+      </div>
+      <MarkdownHelp id="description-markdown-help" />
     </>
   );
 }

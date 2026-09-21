@@ -31,7 +31,7 @@ function request(method, body, revision) {
 }
 const common = { title: "Original", titleEn: "Original", description: "Original body", descriptionEn: "Original body", tags: [], slug: "", images: [], image: "", link: "", date: "2026-09-10" };
 const cases = [
-  ["events", events.adminEventsPost, events.adminEventPut, events.adminEventDelete, events.adminEventsGet, { ...common, time: "", location: "", locationEn: "" }],
+  ["events", events.adminEventsPost, events.adminEventPut, events.adminEventDelete, events.adminEventsGet, { ...common, time: "", venueType: "center", location: "", locationEn: "" }],
   ["highlights", events.adminHighlightsPost, events.adminHighlightPut, events.adminHighlightDelete, events.adminHighlightsGet, { ...common, meta: "", metaEn: "", category: "", categoryEn: "", startDate: "", endDate: "", host: "", hostEn: "", icon: "", sort_order: 0, is_active: 0 }],
   ["notices", notices.adminNoticesPost, notices.adminNoticePut, notices.adminNoticeDelete, notices.adminNoticesGet, { title: "Original", description: "Original body", slug: "concurrent-notice", is_active: 0 }],
   ["books", collection.adminCollectionPost, collection.adminCollectionPut, collection.adminCollectionDelete, collection.adminCollectionGet, { kind: "book", title: "Original", images: [], is_active: 0 }],

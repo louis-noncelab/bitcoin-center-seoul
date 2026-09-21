@@ -30,7 +30,7 @@ test.describe.serial("event calendar date exploration", () => {
       const response = await admin.post("/api/admin/events", { data: {
         slug: `${slug}-${index}`, title: `[검토] 달력 행사 ${index}`, titleEn: `[Review] Calendar event ${index}`,
         date, time,
-        location: "비트코인 센터 서울", locationEn: "Bitcoin Center Seoul",
+        venueType: "center", location: "비트코인 센터 서울", locationEn: "Bitcoin Center Seoul",
         description: "달력 탐색 검토용 행사입니다.", descriptionEn: "An event for the calendar navigation check.",
         image: "", link: "", images: [],
       } });
@@ -55,7 +55,7 @@ test.describe.serial("event calendar date exploration", () => {
       // When a visitor edits the year, only an explicit available month changes the calendar.
       await toggle.click();
       await expect(year).toBeFocused();
-      for (const invalid of ["", "20", "2011", "abcd"]) {
+      for (const invalid of ["", "20", "2011", "20000", "abcd"]) {
         await year.fill(invalid);
         await year.press("Enter");
         await expect(year).toHaveAttribute("aria-invalid", "true");

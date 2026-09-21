@@ -5,6 +5,7 @@ import path from "node:path";
 import Database from "better-sqlite3";
 import { configuredDatabasePath } from "@/server/events/config";
 import { ApiError } from "@/server/events/errors";
+import { migrateEventVenues } from "@/server/events/venue-migration";
 
 const eventColumns = [
   "id", "title", "titleEn", "date", "time", "location", "locationEn", "description", "descriptionEn", "image", "link",
@@ -129,6 +130,11 @@ function initialize(next: Database.Database, createLegacy: boolean): Database.Da
       ON content_slugs (kind, content_id) WHERE is_current = 1;
     `);
     next.transaction(() => {
+      migrateEventVenues(next);
+      const eventFields = next.prepare<[], { readonly name: string }>("PRAGMA table_info(events)").all();
+      if (!eventFields.some(({ name }) => name === "registrationClosed")) {
+        next.exec("ALTER TABLE events ADD COLUMN registrationClosed INTEGER NOT NULL DEFAULT 0 CHECK (registrationClosed IN (0, 1))");
+      }
       const reviewColumns = next.prepare<[], { readonly name: string }>("PRAGMA table_info(visit_reviews)").all();
       for (const name of ["slug", "description", "descriptionEn"] as const) {
         if (!reviewColumns.some((column) => column.name === name)) {

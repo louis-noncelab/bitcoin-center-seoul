@@ -8,6 +8,7 @@ import { EventBookingLink } from "@/components/site/event-booking-link";
 import { CenterPhoto } from "@/components/site/center-photo";
 import type { Locale } from "@/i18n/routing";
 import type { HomeEvent } from "@/lib/home-events";
+import { eventListLocation } from "@/lib/event-location";
 import { eventBookingHref } from "@/lib/event-booking";
 import "@/styles/home-upcoming.css";
 
@@ -139,15 +140,13 @@ export function UpcomingEvents({ events, locale, today }: Props) {
       >
         {events.map((event, index) => {
           const title = ko ? event.title : event.titleEn || event.title;
-          const location = ko
-            ? event.location
-            : event.locationEn || event.location;
-          const booking = eventBookingHref(event.link, event.date, today);
+          const location = eventListLocation(event, locale);
+          const booking = eventBookingHref(event.link, event.date, today, event.registrationClosed);
           return (
             <li
               className="upcoming-slide"
               key={event.id}
-              data-bookable={Boolean(booking)}
+              data-bookable={Boolean(booking) || event.registrationClosed}
             >
               <ContentLink
                 className="upcoming-card"
@@ -161,7 +160,7 @@ export function UpcomingEvents({ events, locale, today }: Props) {
                       alt=""
                       fill
                       unoptimized
-                      sizes="(max-width: 767px) 90vw, (max-width: 1199px) 48vw, 400px"
+                      sizes="(max-width: 767px) 90vw, (max-width: 1199px) 48vw, (max-width: 1799px) 34vw, 560px"
                       loading={index === 0 ? "eager" : "lazy"}
                       onLoad={(loaded) => {
                         const image = loaded.currentTarget;
@@ -176,7 +175,7 @@ export function UpcomingEvents({ events, locale, today }: Props) {
                       <CenterPhoto
                         name="lounge"
                         locale={locale}
-                        sizes="(max-width: 767px) 90vw, (max-width: 1199px) 48vw, 400px"
+                        sizes="(max-width: 767px) 90vw, (max-width: 1199px) 48vw, (max-width: 1799px) 34vw, 560px"
                       />
                       <span className="upcoming-photo-caption">
                         {ko ? "센터 공간 사진" : "Center space"}
@@ -201,9 +200,7 @@ export function UpcomingEvents({ events, locale, today }: Props) {
                     </time>
                     {event.time && <span>{event.time}</span>}
                   </div>
-                  <div className="upcoming-meta">
-                    {location && <span>{location}</span>}
-                  </div>
+                  {location && <div className="upcoming-meta"><span>{location}</span></div>}
                   <span className="upcoming-details">
                     {ko ? "자세히 보기" : "View details"}
                     <ArrowUpRight className="icon" aria-hidden="true" />

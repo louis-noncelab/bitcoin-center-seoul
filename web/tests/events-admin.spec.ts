@@ -97,8 +97,9 @@ test("행사 등록, 사진 두 장 업로드, 수정, 세션 만료 후 초안 
     await page.getByLabel("설명 · 영어", { exact: true }).fill("Local review event, not an operational event.");
     await page.getByLabel("행사 날짜", { exact: true }).fill("2026-10-10");
     await page.getByRole("textbox", { name: /^시간 한국 시간/ }).fill("14:00–16:00");
-    await page.getByLabel("장소 · 한국어", { exact: true }).fill("비트코인 센터 서울");
-    await page.getByLabel("장소 · 영어", { exact: true }).fill("Bitcoin Center Seoul");
+    await page.getByLabel("참여하기 버튼 링크 (선택)", { exact: true }).fill("https://pay.zaprite.com/test-payment?ticket=early&source=center#checkout");
+    await expect(page.getByLabel("행사 장소", { exact: true })).toHaveValue("center");
+    await expect(page.getByLabel("장소 · 한국어", { exact: true })).toBeHidden();
     const buffers = await Promise.all(["#ff6b0a", "#32699f"].map((background) => sharp({ create: { width: 80, height: 60, channels: 3, background } }).png().toBuffer()));
     await page.getByLabel("사진 여러 장 선택").setInputFiles(buffers.map((buffer, index) => ({ name: `review-${index}.png`, mimeType: "image/png", buffer })));
     await expect(page.getByText("2장 선택됨", { exact: true })).toBeVisible();
@@ -110,12 +111,17 @@ test("행사 등록, 사진 두 장 업로드, 수정, 세션 만료 후 초안 
     id = initial.id;
     expect(initial.images).toHaveLength(2);
     expect(initial.slug).toBe(slug);
+    expect(initial.link).toBe("https://pay.zaprite.com/test-payment?ticket=early&source=center#checkout");
     await page.goto(`/en/programs/${id}`);
     await expect(page).toHaveURL(`/en/programs/${slug}`);
     await expect(page.getByRole("heading", { name: "[Review] Event gallery", exact: true })).toBeVisible();
+    await expect(page.locator(".event-detail .event-booking-link")).toHaveAttribute("href", initial.link);
+    await expect(page.locator(".event-detail .event-booking-link")).toContainText("Join event");
     await page.goto("/ko/admin");
     const row = page.locator(".events-admin-list > li").filter({ hasText: title });
     await row.getByRole("button", { name: "수정", exact: true }).click();
+    await expect(page.getByLabel("참여하기 버튼 링크 (선택)", { exact: true })).toHaveValue(initial.link);
+    await page.getByLabel("참여하기 버튼 링크 (선택)", { exact: true }).fill("https://pay.zaprite.com/test-ticket?event=meetup");
     await page.getByLabel("제목 · 한국어", { exact: true }).fill(title + " 수정");
     await page.getByLabel("URL 슬러그", { exact: true }).fill(slug + "-updated");
     await page.getByRole("button", { name: "사진 2 앞으로", exact: true }).click();
@@ -138,6 +144,7 @@ test("행사 등록, 사진 두 장 업로드, 수정, 세션 만료 후 초안 
     const amended = z.object({ data: eventRecordSchema }).parse(await (await page.request.get(`/api/events/${id}`)).json()).data;
     expect(amended.title).toBe(title + " 수정");
     expect(amended.slug).toBe(slug + "-updated");
+    expect(amended.link).toBe("https://pay.zaprite.com/test-ticket?event=meetup");
     const previousUrl = await page.request.get(`/en/programs/${slug}`, { maxRedirects: 0 });
     expect(previousUrl.status()).toBe(308);
     expect(previousUrl.headers().location).toBe(`/en/programs/${slug}-updated`);
