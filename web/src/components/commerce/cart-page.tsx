@@ -37,7 +37,7 @@ export function CartPageClient({ locale }: { readonly locale: Locale }) {
   }, [revision]);
   if (!hydrated) return <div className="commerce-loading" role="status">{ko ? "장바구니를 불러오는 중…" : "Loading your cart…"}</div>;
   if (error) return <div className="form-stack"><RequestError error={error} locale={locale} returnTo={`/${locale}/cart`} /><Button onClick={() => { setError(null); setRevision((value) => value + 1); }}>{ko ? "다시 불러오기" : "Try again"}</Button></div>;
-  if (!items.length) return <div className="form-stack"><FormNotice kind="info">{ko ? "담긴 상품이 없습니다. 굿즈 목록에서 옵션을 담아 주세요." : "Your cart is empty. Add an option from the goods pages."}</FormNotice><ActionLink href={`/${locale}/goods`}>{ko ? "상품 보기" : "Browse goods"}</ActionLink></div>;
+  if (!items.length) return <div className="form-stack"><FormNotice kind="info">{ko ? "담긴 상품이 없습니다. 상점에서 상품을 담아 주세요." : "Your cart is empty. Add an item from the shop."}</FormNotice><ActionLink href={`/${locale}/shop`}>{ko ? "상품 보기" : "Browse goods"}</ActionLink></div>;
   if (!products) return <div className="commerce-loading" role="status">{ko ? "상품 정보를 확인하는 중…" : "Checking item details…"}</div>;
   const resolved = resolveCartLines(items, products);
   const ready = resolved.lines.filter((line) => line.available);
@@ -59,7 +59,7 @@ export function CartPageClient({ locale }: { readonly locale: Locale }) {
         {blocked || !ready.length
           ? <Button disabled>{ko ? "주문하기" : "Checkout"}</Button>
           : <Link href="/checkout" locale={locale} className="button" data-variant="primary">{ko ? "주문하기" : "Checkout"}</Link>}
-        <ActionLink href={`/${locale}/goods`} variant="secondary">{ko ? "계속 둘러보기" : "Continue browsing"}</ActionLink>
+        <ActionLink href={`/${locale}/shop`} variant="secondary">{ko ? "계속 둘러보기" : "Continue browsing"}</ActionLink>
       </div>
     </aside>
   </div>;

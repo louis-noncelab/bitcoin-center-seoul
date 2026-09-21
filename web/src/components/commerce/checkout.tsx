@@ -30,13 +30,13 @@ export function Checkout({ locale, selection }: {
     return () => controller.abort();
   }, [revision]);
   if (!selection && !hydrated) return <div className="commerce-loading" role="status">{ko ? "장바구니를 불러오는 중…" : "Loading your cart…"}</div>;
-  if (!source.length) return <div className="form-stack"><FormNotice kind="info">{ko ? "상품의 옵션과 수량을 먼저 선택해 주세요." : "Choose an item, option and quantity first."}</FormNotice><ActionLink href={`/${locale}/goods`}>{ko ? "상품 보기" : "Browse goods"}</ActionLink><ActionLink href={`/${locale}/cart`} variant="secondary">{ko ? "장바구니" : "Cart"}</ActionLink></div>;
+  if (!source.length) return <div className="form-stack"><FormNotice kind="info">{ko ? "상품의 옵션과 수량을 먼저 선택해 주세요." : "Choose an item, option and quantity first."}</FormNotice><ActionLink href={`/${locale}/shop`}>{ko ? "상품 보기" : "Browse goods"}</ActionLink><ActionLink href={`/${locale}/cart`} variant="secondary">{ko ? "장바구니" : "Cart"}</ActionLink></div>;
   if (error) return <div className="form-stack"><RequestError error={error} locale={locale} returnTo={`/${locale}/checkout`} /><Button onClick={() => { setError(null); setRevision((value) => value + 1); }}>{ko ? "다시 불러오기" : "Try again"}</Button></div>;
   if (!data) return <div className="commerce-loading" role="status">{ko ? "상품과 배송 정보를 불러오는 중…" : "Loading item and shipping details…"}</div>;
   const items = source.flatMap((item) => {
     const product = data.products.find((entry) => entry.variants.some((variant) => variant.id === item.variantId));
     return product ? [{ variantId: item.variantId, quantity: item.quantity, product }] : [];
   });
-  if (!items.length) return <FormNotice>{ko ? "선택한 상품을 주문할 수 없습니다. 상품 목록에서 다시 선택해 주세요." : "This item is unavailable. Please choose an item from the goods page."}<ActionLink href={`/${locale}/goods`}>{ko ? "상품 보기" : "Browse goods"}</ActionLink></FormNotice>;
+  if (!items.length) return <FormNotice>{ko ? "선택한 상품을 주문할 수 없습니다. 상품 목록에서 다시 선택해 주세요." : "This item is unavailable. Please choose an item from the goods page."}<ActionLink href={`/${locale}/shop`}>{ko ? "상품 보기" : "Browse goods"}</ActionLink></FormNotice>;
   return <CheckoutForm locale={locale} items={items} countries={data.countries} fromCart={!selection} />;
 }

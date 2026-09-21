@@ -19,7 +19,7 @@ export default async function PaymentPage({ params, searchParams }: Props) {
   const query = await searchParams;
   // Zaprite returns the customer here with no query string, so the order link is best-effort.
   const order = typeof query.order === "string" && /^[A-Za-z0-9_-]{1,100}$/.test(query.order) ? query.order : null;
-  return <CommercePage locale={locale} title={locale === "ko" ? "비트코인 결제" : "Bitcoin payment"} backTo="/goods">
+  return <CommercePage locale={locale} title={locale === "ko" ? "비트코인 결제" : "Bitcoin payment"} backTo="/shop">
     <PaymentView id={id} locale={locale} returnPath={order ? `/${locale}/orders/${order}` : `/${locale}/goods`} />
   </CommercePage>;
 }

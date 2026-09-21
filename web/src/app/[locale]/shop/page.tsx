@@ -24,7 +24,8 @@ export default async function ShopPage({ params }: Props) {
     introduction={ko
       ? "원화로 표시된 가격은 주문 시점의 시세로 사토시로 환산해 비트코인으로 결제합니다."
       : "Prices shown in KRW are converted to satoshis at the exchange rate quoted when you order."}
-    backTo="/goods"
+    backTo="/"
+    backLabel={ko ? "홈으로" : "Back to home"}
   >
     <ShopCatalog products={products} locale={locale} unit={settings.productDisplayUnit} />
   </CommercePage>;

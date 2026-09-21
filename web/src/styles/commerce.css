@@ -327,3 +327,16 @@
 .event-detail-aside > .commerce-panel,
 .event-detail-aside > #register { width: 100%; }
 
+
+
+/* Arrival motion for commerce bodies, matching `.event-detail` in events-public.css so content
+   fades in on the same curve instead of snapping in when a client fetch resolves. */
+@media (prefers-reduced-motion: no-preference) {
+  .commerce-product-page,
+  .commerce-checkout,
+  .commerce-resource,
+  .commerce-payment,
+  .commerce-loading {
+    animation: content-page-fade var(--duration-control) var(--ease-out) both;
+  }
+}

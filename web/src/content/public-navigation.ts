@@ -39,7 +39,10 @@ export function publicNavigation(locale: Locale) {
     {
       id: "goods",
       ...link("/goods", "굿즈", "Goods"),
-      children: [link("/goods", "굿즈와 구매 안내", "Goods & purchasing")],
+      children: [
+        link("/goods", "굿즈와 구매 안내", "Goods & purchasing"),
+        link("/shop", "센터 상점", "Center shop"),
+      ],
     },
     {
       id: "news",
