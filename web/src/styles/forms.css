@@ -1,0 +1,179 @@
+.form-field {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.form-field > label, .form-legend {
+  font-weight: var(--weight-medium);
+  font-size: var(--text-small);
+}
+.form-field :is(input, select, textarea) {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-height);
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width) solid var(--field-border);
+  border-radius: var(--radius-control);
+  background: var(--canvas);
+  color: var(--ink);
+  font: inherit;
+  font-size: max(1rem, var(--text-small));
+  transition:
+    border-color 200ms var(--ease-out),
+    background 200ms var(--ease-out),
+    box-shadow 200ms var(--ease-out);
+}
+.form-field :is(input, select, textarea):hover {
+  border-color: color-mix(in srgb, var(--field-border) 70%, var(--ink));
+}
+.form-field :is(input, select, textarea):focus-visible {
+  outline: none;
+  border-color: var(--orange);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--orange) 18%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--orange) 22%, transparent);
+}
+.form-field [aria-invalid="true"] { border-color: var(--danger); }
+.form-field :is(input, select, textarea)[aria-invalid="true"]:is(:hover, :focus-visible) {
+  border-color: var(--danger);
+}
+.form-field :is(input, select, textarea)[aria-invalid="true"]:focus-visible {
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--danger) 18%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--danger) 22%, transparent);
+}
+.form-field textarea { min-height: 8rem; resize: vertical; }
+.form-field :disabled { opacity: 0.6; cursor: not-allowed; }
+.field-hint { color: var(--muted); font-size: var(--text-caption); line-height: var(--leading-small); }
+.form-stack { display: grid; gap: var(--space-6); }
+.form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5); }
+.form-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3); }
+.form-notice {
+  padding: var(--space-4);
+  border-inline-start: 3px solid var(--blue-ink);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  font-size: var(--text-small);
+  line-height: var(--leading-small);
+  overflow-wrap: anywhere;
+}
+.form-notice[data-kind="error"] { border-color: var(--danger); color: var(--danger); }
+.form-notice[data-kind="success"] { border-color: var(--success); }
+.choice-input { accent-color: var(--focus); width: 1.25rem; height: 1.25rem; flex: 0 0 auto; }
+.choice-label { display: flex; align-items: center; gap: var(--space-3); min-height: var(--control-height); cursor: pointer; }
+@media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+@media (forced-colors: active) {
+  .form-field :is(input, select, textarea):focus-visible {
+    outline: var(--focus-width) solid Highlight;
+    box-shadow: none;
+  }
+}
+.form-field input[type="search"] {
+  appearance: none;
+  -webkit-appearance: none;
+}
+.menu-select {
+  position: relative;
+  min-inline-size: 0;
+}
+.menu-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-height);
+  height: var(--control-height);
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width) solid var(--field-border);
+  border-radius: var(--radius-control);
+  background: var(--canvas);
+  color: var(--ink);
+  font: inherit;
+  font-size: max(1rem, var(--text-small));
+  text-align: start;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition:
+    border-color 200ms var(--ease-out),
+    background 200ms var(--ease-out),
+    box-shadow 200ms var(--ease-out);
+}
+.menu-select-trigger span {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.menu-select-trigger .icon {
+  flex-shrink: 0;
+  inline-size: var(--icon-size);
+  block-size: var(--icon-size);
+  transition: transform var(--duration-control) var(--ease-out);
+}
+.menu-select[data-open="true"] .menu-select-trigger .icon { transform: rotate(180deg); }
+.menu-select-trigger:hover { border-color: color-mix(in srgb, var(--ink) 40%, var(--field-border)); }
+.menu-select-trigger:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--ink) 55%, var(--field-border));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--ink) 12%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--ink) 10%, transparent);
+}
+.menu-select-trigger:disabled { opacity: 0.6; cursor: not-allowed; }
+.menu-select-menu {
+  position: absolute;
+  z-index: var(--layer-disclosure);
+  inset-inline: 0;
+  inset-block-start: calc(100% + var(--space-2));
+  max-block-size: 16rem;
+  overflow: auto;
+  padding: var(--space-2);
+  border: var(--border-width) solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--canvas);
+  box-shadow: var(--shadow-disclosure);
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(-0.35rem);
+  pointer-events: none;
+  transition:
+    opacity var(--duration-overlay) var(--ease-out),
+    transform var(--duration-overlay) var(--ease-out),
+    visibility 0s linear var(--duration-overlay);
+}
+.menu-select-menu[data-open="true"] {
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+.menu-select-menu button {
+  display: block;
+  width: 100%;
+  min-height: 2.5rem;
+  padding-inline: var(--space-3);
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--text-small);
+  text-align: start;
+}
+.menu-select-menu button[aria-selected="true"],
+.menu-select-menu button:hover { background: var(--surface); }
+.form-field :is(input, textarea) {
+  height: var(--control-height);
+  box-sizing: border-box;
+}
+.form-field textarea { height: auto; }
+@media (prefers-reduced-motion: reduce) {
+  .form-field :is(input, select, textarea),
+  .menu-select-menu,
+  .menu-select-trigger,
+  .menu-select-trigger .icon { transition: none; }
+}

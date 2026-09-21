@@ -29,7 +29,7 @@ export function resourceAccessCookie(kind: "order" | "booking" | "quote", id: st
 }
 
 export async function requireResourceAccess(request: Request, resource: ResourceOwner): Promise<void> {
-  const account = await optionalAccount(request);
+  const account = await optionalAccount();
   if (account && resource.accountId === account.id) return;
   if (!resource.accountId && resource.accessTokenExpiresAt > new Date() && matchesToken(readAccessToken(request, resource.kind, resource.id), resource.accessTokenHash)) return;
   throw new HttpError(404, "NOT_FOUND", "The requested record was not found.");

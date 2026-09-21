@@ -9,7 +9,7 @@ import { HttpError } from "@/server/http";
  */
 export type PublicAccount = { readonly id: string };
 
-export async function optionalAccount(_request: Request): Promise<PublicAccount | null> {
+export async function optionalAccount(): Promise<PublicAccount | null> {
   return null;
 }
 
