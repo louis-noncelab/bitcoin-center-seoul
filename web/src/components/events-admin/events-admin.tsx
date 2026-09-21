@@ -82,8 +82,9 @@ export function EventsAdmin({ locale }: { readonly locale: Locale }) {
     busy.current = true; setPending(true); setError("");
     const { id, revision: version } = record;
     try {
-      await adminRequest(`/api/admin/events/${id}`, eventRecordSchema, jsonBody({ registrationClosed: !record.registrationClosed }, "PATCH", version));
-      setNotice(record.registrationClosed ? "참여 접수를 다시 열었습니다." : "참여 접수를 마감했습니다."); refresh();
+      const saved = await adminRequest(`/api/admin/events/${id}`, eventRecordSchema, jsonBody({ registrationClosed: !record.registrationClosed }, "PATCH", version));
+      setRecords((items) => items.map((item) => item.id === saved.id ? saved : item));
+      setNotice(saved.registrationClosed ? "참여 접수를 마감했습니다." : "참여 접수를 다시 열었습니다.");
     } catch (caught) {
       setError(errorText(caught, locale));
       if (caught instanceof AdminRequestError && caught.status === 401) setExpired(true);
@@ -131,7 +132,7 @@ export function EventsAdmin({ locale }: { readonly locale: Locale }) {
           {loading ? <p role="status">{ko ? "목록을 불러오는 중…" : "Loading content…"}</p> : <ul className="events-admin-list">
             {records.map((record) => <li key={record.id}>
               <div><h3>{ko ? record.title : record.titleEn}</h3><p className="muted">{record.date || ("startDate" in record ? `${record.startDate} – ${record.endDate}` : "")}{"is_active" in record && !record.is_active ? (ko ? " · 비공개" : " · Unpublished") : ""}</p></div>
-              <div className="button-row">{"registrationClosed" in record && <Button variant="secondary" role="switch" aria-checked={record.registrationClosed} aria-label={`${record.title} 참여 마감`} disabled={loading || pending || expired || editorBusy} onClick={() => void toggleRegistration(record)}><span className="events-switch-track" aria-hidden="true" />참여 마감</Button>}<Link href={`/${kind === "events" ? "programs" : "journal"}/${record.slug || record.id}`} locale={locale} className="button" data-variant="quiet">{ko ? "보기" : "View"}</Link><Button variant="secondary" disabled={pending || expired || editorBusy} onClick={() => { setSelected(record); setEditing(true); setNotice(""); }}>{ko ? "수정" : "Edit"}</Button><Button variant="quiet" disabled={pending || expired || editorBusy} onClick={() => void remove(record)}>{ko ? "삭제" : "Delete"}</Button></div>
+              <div className="button-row">{"registrationClosed" in record && <Button variant="secondary" role="switch" aria-busy={pending} aria-checked={record.registrationClosed} aria-label={`${record.title} 참여 마감`} disabled={loading || pending || expired || editorBusy} onClick={() => void toggleRegistration(record)}><span className="events-switch-track" aria-hidden="true" />참여 마감</Button>}<Link href={`/${kind === "events" ? "programs" : "journal"}/${record.slug || record.id}`} locale={locale} className="button" data-variant="quiet">{ko ? "보기" : "View"}</Link><Button variant="secondary" disabled={pending || expired || editorBusy} onClick={() => { setSelected(record); setEditing(true); setNotice(""); }}>{ko ? "수정" : "Edit"}</Button><Button variant="quiet" disabled={pending || expired || editorBusy} onClick={() => void remove(record)}>{ko ? "삭제" : "Delete"}</Button></div>
             </li>)}
             {!records.length && <li>{ko ? "등록된 항목이 없습니다." : "No content yet."}</li>}
           </ul>}
