@@ -2,7 +2,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { prisma } from "@/server/db";
 import { activePaymentProvider } from "@/server/commerce/settings";
-import { getServerConfig } from "@/server/config";
+import { getServerConfig, paymentModeOf } from "@/server/config";
 import { enqueue } from "@/server/email";
 import { HttpError } from "@/server/http";
 import { quoteShipping } from "@/server/shipping";
@@ -73,7 +73,7 @@ export async function createOrder(request: Request, input: CreateOrder, account:
       shippingSnapshot: snapshot.shipping, shippingAmountKrw: BigInt(snapshot.shipping.amountKrw), shippingAmountSats: BigInt(snapshot.shippingAmountSats), billableWeightG: snapshot.shipping.weightG,
       holdExpiresAt, idempotencyScope: identity.scope, idempotencyKey: identity.key, requestHash, accessTokenHash: hashToken(token),
       items: { create: snapshot.items.map((item) => ({ variantId: item.variantId, quantity: item.quantity, sku: item.sku, titleKo: item.titleKo, titleEn: item.titleEn, optionLabelKo: item.optionLabelKo, optionLabelEn: item.optionLabelEn, priceKind: item.priceKind, unitPriceAmount: BigInt(item.unitPriceAmount), amountSats: BigInt(item.amountSats), snapshot: item })) },
-      payments: { create: { provider: await activePaymentProvider(tx), mode: config.paymentMode === "review" ? "REVIEW" : "LIVE", creationKey: randomUUID(), amountSats: quote.amountSats, metadata: { orderId: id }, expiresAt: holdExpiresAt } },
+      payments: { create: { provider: await activePaymentProvider(tx), mode: paymentModeOf(config), creationKey: randomUUID(), amountSats: quote.amountSats, metadata: { orderId: id }, expiresAt: holdExpiresAt } },
     }, include: orderIncludes });
     if (snapshot.coupon) {
       await tx.couponUsage.create({

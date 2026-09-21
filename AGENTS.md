@@ -1,3 +1,37 @@
+## Current owner decision — 2026-09-21 commerce restored
+
+The owner authorized restoring cart, KRW→satoshi conversion, Zaprite checkout, redirect and
+webhook, plus lightning-address payment, on `feat/commerce-payments-port`. **This supersedes the
+2026-09-09 "no shop, checkout, cart, payments, PostgreSQL migration" boundary below.** Everything
+else from that decision still applies: no push, no deployment, no GitHub Actions, no real
+payments, refunds or operational email; never inspect existing `.env`/`.env.local`; never output
+secret values.
+
+Scope actually built: guest-only checkout. No customer accounts, no bookings, no BTCPay.
+
+The commerce slice lives in PostgreSQL through Prisma (`web/prisma/schema.prisma`,
+`web/src/server/{config,db,money,http}.ts`, `payments/`, `orders/`, `commerce/`, `shipping/`).
+Events, collection, notices and reviews stay in better-sqlite3 and are untouched. Two catalogs
+exist on purpose: `collection_items.purchaseUrl` still points at external shops, while
+`Product`/`ProductVariant` back the in-house cart. Linking them is a separate decision.
+
+`PAYMENT_MODE` is `review` (in-process fixtures, no network), `sandbox` (real Zaprite sandbox
+organization from a local origin, Zaprite only — a lightning address is mainnet money with no
+test network) or `live` (production only). `Payment.mode` mirrors it, and the provider unique
+constraints are per mode so the three can never collide.
+
+Zaprite publishes no webhook signature — verified against the published OpenAPI document, which
+declares no header parameters and returns no signing secret from `POST /v1/webhooks`. The
+delivery path therefore carries an unguessable secret compared in constant time, the body is
+never trusted, and the order is always re-read from Zaprite. The sandbox organization is shared
+with another product, so deliveries are filtered by `orgId` and foreign orders are acknowledged
+rather than retried; this app's orders carry `tags: ["bcs"]` and `metadata.source`.
+
+Checks: `npm run check` (typecheck + lint), `npm run test:commerce` (isolated `center_test`
+database, REVIEW mode, no network), `npm run db:seed`, and `PAYMENT_MODE=sandbox npm run
+check:zaprite-sandbox` for one real sandbox order. Contract evidence and open questions:
+`.local/docs-archive/2026-09-21-zaprite-lnurl-verified-contract.md`.
+
 ## Latest owner additions — 2026-09-09
 The owner also authorizes notices draft/publish/edit/delete, editable URL slugs, journal pagination and the local wallet learning guide. Public pages stay bilingual; administration stays Korean-only. SQLite/password compatibility and the no-deployment boundaries still apply.
 
