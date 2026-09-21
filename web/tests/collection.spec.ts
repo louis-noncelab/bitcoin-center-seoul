@@ -51,7 +51,7 @@ test("admin uploads, publishes, browses, edits and deletes a collection item", a
   await page.goto("/ko/admin/collection");
   await page.getByLabel("관리자 비밀번호", { exact: true }).fill(password);
   await page.getByRole("button", { name: "로그인", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "도서·작품·보드게임 목록" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "도서·작품·보드게임·굿즈 목록" })).toBeVisible();
   try {
     await page.getByRole("button", { name: "항목 등록", exact: true }).click();
     await page.getByRole("radio", { name: "작품", exact: true }).check();
@@ -221,7 +221,7 @@ test("관리자가 보드게임을 등록하면 컬렉션 필터와 보드게임
   await page.goto("/ko/admin/collection");
   await page.getByLabel("관리자 비밀번호", { exact: true }).fill(password);
   await page.getByRole("button", { name: "로그인", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "도서·작품·보드게임 목록" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "도서·작품·보드게임·굿즈 목록" })).toBeVisible();
   try {
     await page.getByRole("button", { name: "항목 등록", exact: true }).click();
     await page.getByRole("radio", { name: "보드게임", exact: true }).check();
@@ -241,7 +241,7 @@ test("관리자가 보드게임을 등록하면 컬렉션 필터와 보드게임
     await page.goto("/ko/collection");
     await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
     const filters = page.getByRole("navigation", { name: "컬렉션 종류" });
-    await filters.getByRole("link", { name: "서적", exact: true }).click();
+    await filters.getByRole("link", { name: "도서", exact: true }).click();
     await expect(page.getByRole("heading", { name: title, exact: true })).toHaveCount(0);
     await filters.getByRole("link", { name: "보드게임", exact: true }).click();
     await expect(filters.getByRole("link", { name: "보드게임", exact: true })).toHaveAttribute("aria-current", "page");

@@ -53,7 +53,7 @@
 .events-switch-track::after { content: ""; display: block; inline-size: .875rem; block-size: .875rem; border-radius: 50%; background: var(--canvas); }
 [role="switch"][aria-checked="true"] .events-switch-track { background: var(--blue-ink); }
 [role="switch"][aria-checked="true"] .events-switch-track::after { margin-inline-start: auto; }
-.events-form .events-checkbox:has([name="registrationClosed"]) { flex-wrap: wrap; }
+.events-form .events-checkbox:has([role="switch"]) { flex-wrap: wrap; }
 @media (min-width: 768px) {
   .center-status-admin { grid-template-columns: minmax(0, 1fr) auto; padding-block: var(--space-4); }
   .center-status-admin > .button-row { grid-column: 2; grid-row: 1 / span 2; align-self: center; }

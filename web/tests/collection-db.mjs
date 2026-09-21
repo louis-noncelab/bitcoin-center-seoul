@@ -27,7 +27,7 @@ legacy.prepare("INSERT INTO collection_items (id,kind,title,is_active) VALUES (7
 legacy.close();
 
 const { openDatabase, getDatabase } = await import("../src/server/events/db.ts");
-const { listCollection, getCollectionItem, saveCollectionItem } = await import("../src/server/collection/index.ts");
+const { listCollection, getCollectionItem, saveCollectionItem, setCollectionSoldOut } = await import("../src/server/collection/index.ts");
 const { collectionInputSchema, libraryKinds } = await import("../src/lib/collection-contract.ts");
 openDatabase(process.env.BCS_EVENTS_DB).close();
 after(() => { getDatabase().close(); fs.rmSync(directory, { recursive: true, force: true }); });
@@ -62,4 +62,64 @@ test("오래된 수정 버전으로는 보드게임을 덮어쓰지 못한다", 
   const game = saveCollectionItem(input);
   saveCollectionItem({ ...input, title: "먼저 저장" }, game.id, game.revision);
   assert.throws(() => saveCollectionItem({ ...input, title: "덮어쓰기" }, game.id, game.revision), { status: 409, code: "EDIT_CONFLICT" });
+});
+
+
+test("goods purchase links persist, stay private as drafts and reject unsafe URLs", () => {
+  const input = collectionInputSchema.parse({ kind: "goods", title: "센터 티셔츠", images: [], purchaseUrl: "https://pay.example.com/ticket?item=shirt" });
+  const item = saveCollectionItem(input);
+  assert.equal(getCollectionItem(item.id), null);
+  assert.equal(getCollectionItem(item.id, true).purchaseUrl, input.purchaseUrl);
+  const updated = saveCollectionItem({ ...input, purchaseUrl: "" }, item.id, item.revision);
+  assert.equal(updated.purchaseUrl, "");
+  for (const purchaseUrl of ["javascript:alert(1)", "data:text/html,test", "//example.com", "/checkout", "https://" , "x".repeat(2049)]) {
+    assert.equal(collectionInputSchema.safeParse({ ...input, purchaseUrl }).success, false);
+  }
+});
+
+test("current collection migration preserves slugs, revisions, rows, unique index and deleted IDs", () => {
+  const file = path.join(directory, "current.db");
+  const old = new Database(file);
+  old.exec(`CREATE TABLE collection_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind TEXT NOT NULL CHECK (kind IN ('book', 'artwork', 'boardgame')),
+    slug TEXT NOT NULL DEFAULT '', title TEXT NOT NULL, titleEn TEXT NOT NULL DEFAULT '',
+    creator TEXT NOT NULL DEFAULT '', creatorEn TEXT NOT NULL DEFAULT '',
+    description TEXT NOT NULL DEFAULT '', descriptionEn TEXT NOT NULL DEFAULT '',
+    images TEXT NOT NULL DEFAULT '[]', sort_order INTEGER NOT NULL DEFAULT 0,
+    is_active INTEGER NOT NULL DEFAULT 0 CHECK (is_active IN (0,1)),
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    revision INTEGER NOT NULL DEFAULT 1);
+    CREATE UNIQUE INDEX collection_items_slug ON collection_items(slug) WHERE slug != '';
+    INSERT INTO collection_items(id,kind,slug,title,titleEn,description,images,sort_order,is_active,revision)
+      VALUES (11,'boardgame','existing-game','보드게임','Game','설명','["/images/uploads/cover.webp"]',-5,1,9);
+    INSERT INTO collection_items(id,kind,title) VALUES(50,'book','삭제된 도서');
+    DELETE FROM collection_items WHERE id=50;`);
+  const before = old.prepare("SELECT * FROM collection_items").all();
+  old.close();
+  const migrated = openDatabase(file);
+  assert.deepEqual(migrated.prepare("SELECT * FROM collection_items").all(), before.map(row => ({ ...row, purchaseUrl: "", soldOut: 0 })));
+  assert.throws(() => migrated.prepare("INSERT INTO collection_items(kind,slug,title) VALUES('goods','existing-game','충돌')").run());
+  const inserted = migrated.prepare("INSERT INTO collection_items(kind,title) VALUES('goods','굿즈')").run();
+  assert.equal(Number(inserted.lastInsertRowid), 51);
+  assert.equal(migrated.pragma('integrity_check', { simple: true }), 'ok');
+  migrated.close();
+  const reopened = openDatabase(file);
+  assert.equal(reopened.prepare("SELECT revision FROM collection_items WHERE id=11").get().revision, 9);
+  reopened.close();
+});
+
+
+test("sold-out changes preserve the link, images, publication and older-client saves", () => {
+  const input = collectionInputSchema.parse({ kind: "goods", title: "품절 검증", images: [], purchaseUrl: "https://pay.example.com/goods" });
+  const item = saveCollectionItem(input);
+  const closed = setCollectionSoldOut(item.id, true, item.revision);
+  assert.equal(closed.soldOut, true);
+  assert.equal(closed.purchaseUrl, item.purchaseUrl);
+  assert.equal(closed.is_active, item.is_active);
+  assert.deepEqual(closed.images, item.images);
+  assert.throws(() => setCollectionSoldOut(item.id, false, item.revision), { status: 409 });
+  const edited = saveCollectionItem({ ...input, title: "제목 수정" }, item.id, closed.revision);
+  assert.equal(edited.soldOut, true);
+  assert.equal(setCollectionSoldOut(item.id, false, edited.revision).purchaseUrl, item.purchaseUrl);
 });

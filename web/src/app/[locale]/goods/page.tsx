@@ -1,3 +1,5 @@
+import { connection } from "next/server";
+import { listCollection } from "@/server/collection";
 import { notFound } from "next/navigation";
 import { hasLocale } from "next-intl";
 import { routing } from "@/i18n/routing";
@@ -34,5 +36,6 @@ export async function generateMetadata({ params }: Props) {
 export default async function GoodsPage({ params }: Props) {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
-  return <GoodsContent locale={locale} />;
+  await connection();
+  return <GoodsContent locale={locale} records={listCollection(false, ["goods"])} />;
 }

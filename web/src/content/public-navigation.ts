@@ -31,7 +31,7 @@ export function publicNavigation(locale: Locale) {
       children: [
         link("/collection", "컬렉션 전체 보기", "All collections"),
         link("/collection?kind=boardgame", "보드게임", "Board games"),
-        link("/collection?kind=book", "서적", "Books"),
+        link("/collection?kind=book", "도서", "Books"),
         link("/collection?kind=magazine", "매거진", "Magazines"),
         link("/collection?kind=artwork", "작품", "Artworks"),
       ],

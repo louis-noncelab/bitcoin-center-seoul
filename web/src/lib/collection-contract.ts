@@ -1,12 +1,14 @@
 import { z } from "zod";
-import { contentImagesSchema, contentSlugSchema } from "@/lib/events-contract";
+import { contentImagesSchema, contentSlugSchema, externalLink } from "@/lib/events-contract";
 
-export const collectionKinds = ["book", "artwork", "boardgame"] as const;
+export const collectionKinds = ["book", "artwork", "boardgame", "goods"] as const;
 export const libraryKinds = ["book", "artwork"] as const;
 
 const collectionFields = z.object({
   kind: z.enum(collectionKinds),
   slug: contentSlugSchema,
+  purchaseUrl: externalLink.default(""),
+  soldOut: z.boolean().optional(),
   title: z.string().trim().min(1, "제목을 입력해 주세요.").max(200),
   titleEn: z.string().trim().max(200).default(""),
   creator: z.string().trim().max(200).default(""),
@@ -25,6 +27,7 @@ export const collectionInputSchema = collectionFields
   .refine(hasPublicCover, coverError)
   .refine(hasPublicSlug, { message: "공개 보드게임은 URL 슬러그를 입력해 주세요.", path: ["slug"] });
 export const collectionRecordSchema = collectionFields.extend({
+  soldOut: z.boolean().default(false),
   id: z.number().int().positive(),
   revision: z.number().int().positive(),
   created_at: z.string(),

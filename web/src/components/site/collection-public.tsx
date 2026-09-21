@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { ContentLink } from "@/components/controls/content-link";
@@ -16,14 +16,15 @@ import "@/styles/reviews.css";
 import "@/styles/collection.css";
 import "@/styles/home-expanded.css";
 
-export type CollectionSection = "library" | "boardgame";
+export type CollectionSection = "library" | "boardgame" | "goods";
 
 export const collectionCopy = {
   ko: {
     title: "컬렉션",
     introduction: "센터에서 만나는 책과 보드게임, 매거진과 작품.",
     all: "전체",
-    book: "서적",
+    book: "도서",
+    goods: "굿즈",
     artwork: "작품",
     boardgame: "보드게임",
     magazine: "매거진",
@@ -37,6 +38,7 @@ export const collectionCopy = {
       "Books, board games, magazines and artworks at Bitcoin Center Seoul.",
     all: "All",
     book: "Books",
+    goods: "Goods",
     artwork: "Art",
     boardgame: "Board games",
     magazine: "Magazines",
@@ -63,12 +65,26 @@ export const boardGameCopy = {
   },
 } as const;
 
+export const goodsCopy = {
+  ko: { title: "비센서 굿즈", introduction: "비트코인을 일상 가까이. 센터 굿즈와 구매 안내.", back: "굿즈로" },
+  en: { title: "Center goods", introduction: "Keep Bitcoin close in everyday life. Center goods and purchasing information.", back: "Back to goods" },
+} as const;
+
+export function PurchaseLink({ record, locale }: { readonly record: CollectionRecord; readonly locale: Locale }) {
+  if (record.soldOut) return <button type="button" className="button collection-sold-out" disabled aria-disabled="true">{locale === "ko" ? "품절" : "Sold out"}</button>;
+  if (!record.purchaseUrl) return null;
+  return <a className="button" data-variant="primary" href={record.purchaseUrl} target="_blank" rel="noopener noreferrer">
+    {locale === "ko" ? "구매하기" : "Buy"}<ArrowUpRight className="icon" aria-hidden="true" />
+    <span className="sr-only">{locale === "ko" ? " (새 창)" : " (new window)"}</span>
+  </a>;
+}
+
 const sectionCopy = (locale: Locale, section: CollectionSection) =>
-  section === "boardgame" ? boardGameCopy[locale] : collectionCopy[locale];
+  section === "boardgame" ? boardGameCopy[locale] : section === "goods" ? goodsCopy[locale] : collectionCopy[locale];
 const sectionPath = (section: CollectionSection) =>
-  section === "boardgame" ? "/experience/board-game" : "/collection";
+  section === "boardgame" ? "/experience/board-game" : section === "goods" ? "/goods" : "/collection";
 const recordSection = (record: CollectionRecord): CollectionSection =>
-  record.kind === "boardgame" ? "boardgame" : "library";
+  record.kind === "boardgame" ? "boardgame" : record.kind === "goods" ? "goods" : "library";
 export const collectionHref = (record: CollectionRecord) =>
   `${sectionPath(recordSection(record))}/${record.slug || record.id}`;
 
@@ -145,7 +161,7 @@ export function CollectionFrame({
   const copy = sectionCopy(locale, section);
   return (
     <>
-      <SiteHeader locale={locale} section="collection" />
+      <SiteHeader locale={locale} section={section === "goods" ? "goods" : "collection"} />
       <main
         id="main"
         tabIndex={-1}
@@ -198,7 +214,7 @@ export function CollectionGrid({
             ? ""
             : [copy[record.kind], content.creator].filter(Boolean).join(" · ");
         return (
-          <article className="review-card highlight-card" key={record.id}>
+          <article className="review-card highlight-card collection-card" key={record.id}>
             <ContentLink
               href={collectionHref(record)}
               locale={locale}
@@ -233,6 +249,7 @@ export function CollectionGrid({
                 </div>
               </div>
             </ContentLink>
+            {(record.purchaseUrl || record.soldOut) && <div className="collection-purchase"><PurchaseLink record={record} locale={locale} /></div>}
           </article>
         );
       })}

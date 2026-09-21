@@ -6,27 +6,26 @@ import { CollectionFrame, PurchaseLink, collectionCopy, collectionMetadata, coll
 import { PhotoGallery } from "@/components/site/events-public";
 import { MarkdownContent } from "@/components/site/markdown-content";
 import { routing } from "@/i18n/routing";
-import { libraryKinds } from "@/lib/collection-contract";
 import { getCollectionByPath } from "@/server/collection";
 
 type Props = { readonly params: Promise<{ locale: string; id: string }> };
 const readItem = cache(async (value: string) => {
   await connection();
-  const item = getCollectionByPath(value, false, libraryKinds);
+  const item = getCollectionByPath(value, false, ["goods"]);
   if (!item) notFound();
   return item;
 });
 export async function generateMetadata({ params }: Props) {
   const { locale, id } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
-  return collectionMetadata(locale, "library", await readItem(id));
+  return collectionMetadata(locale, "goods", await readItem(id));
 }
-export default async function CollectionDetailPage({ params }: Props) {
+export default async function GoodsDetailPage({ params }: Props) {
   const { locale, id } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   const item = await readItem(id);
   const content = collectionText(locale, item);
-  return <CollectionFrame locale={locale} section="library" title={content.title} detail><article className="event-detail">
+  return <CollectionFrame locale={locale} section="goods" title={content.title} detail><article className="event-detail">
     <PhotoGallery images={item.images} title={content.title} locale={locale} />
     <div className="collection-detail-meta"><p className="caption muted">{collectionCopy[locale][item.kind]}</p>{content.creator && <p lang={locale === "en" && !item.creatorEn ? "ko" : locale}>{content.creator}</p>}</div>
     <div className="button-row"><PurchaseLink record={item} locale={locale} /></div>

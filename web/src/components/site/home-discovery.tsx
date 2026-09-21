@@ -20,7 +20,7 @@ export function HomeDiscovery({
       label: ko ? "보드게임" : "Board games",
       photo: "boardgame",
     },
-    { kind: "book", label: ko ? "서적" : "Books", photo: "exhibition" },
+    { kind: "book", label: ko ? "도서" : "Books", photo: "exhibition" },
     {
       kind: "magazine",
       label: ko ? "매거진" : "Magazines",

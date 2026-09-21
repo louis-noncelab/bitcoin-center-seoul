@@ -32,6 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...listCollection(false, ["boardgame"]).map(
       (item) => `/experience/board-game/${item.slug || item.id}`,
     ),
+    ...listCollection(false, ["goods"]).map((item) => `/goods/${item.slug || item.id}`),
     ...listNotices().map((notice) => `/notices/${notice.slug}`),
     ...publicSections.map((section) => `/${section}`),
     ...events.map((event) => `/programs/${event.slug || event.id}`),

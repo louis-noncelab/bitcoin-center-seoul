@@ -38,7 +38,7 @@ export const imagePathSchema = z
       ),
     "이미지 경로가 올바르지 않습니다.",
   );
-const externalLink = z
+export const externalLink = z
   .string()
   .max(2048)
   .refine((value) => {

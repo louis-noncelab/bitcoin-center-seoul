@@ -1,3 +1,5 @@
+import type { CollectionRecord } from "@/lib/collection-contract";
+import { CollectionGrid } from "./collection-public";
 import { ArrowUpRight } from "lucide-react";
 import { CenterPhoto } from "./center-photo";
 import { SiteHeader } from "./site-header";
@@ -6,7 +8,7 @@ import type { Locale } from "@/i18n/routing";
 import "@/styles/site.css";
 import "@/styles/home-expanded.css";
 
-export function GoodsContent({ locale }: { readonly locale: Locale }) {
+export function GoodsContent({ locale, records }: { readonly locale: Locale; readonly records: readonly CollectionRecord[] }) {
   const ko = locale === "ko";
   return (
     <>
@@ -24,6 +26,7 @@ export function GoodsContent({ locale }: { readonly locale: Locale }) {
               : "Keep Bitcoin close in everyday life. Center goods and purchasing information."}
           </p>
         </div>
+        {records.length > 0 && <section className="goods-catalog" aria-label={ko ? "굿즈 목록" : "Goods catalog"}><CollectionGrid records={records} locale={locale} /></section>}
         <div className="goods-introduction">
           <CenterPhoto name="retail" locale={locale} />
           <div>
