@@ -847,6 +847,8 @@ summaries precede metadata; home previews share the same responsive treatment.
 
 ## Disclosure motion
 
+Home calendar date hover uses a centered 36px circle, matching the selected-day disc, while retaining the full date-cell hit area. Fade the hover layer in and out with the existing control duration and ease-out token; keep selected dates, today's ring and event dots intact. Reduced motion changes the hover state immediately.
+
 Site-controlled disclosures keep their content mounted through both opening and closing. Navigation submenus, calendar year/month selection and venue fields share a CSS grid height transition with the existing menu enter/exit durations and ease-out token. Closed content becomes inert and hidden from assistive technology immediately; visual visibility is delayed until the exit completes. Reversing a toggle continues from its current height. Chevron rotation uses the control duration.
 
 Review “more” uses native details/summary with a progressively enhanced, interruptible height animation; the no-JavaScript disclosure remains usable. Date dialogs retain their calendar during the existing exit transition and reset it on the next opening. Reduced motion settles all disclosures immediately. OS-managed select popups retain native keyboard, touch and form behavior.
