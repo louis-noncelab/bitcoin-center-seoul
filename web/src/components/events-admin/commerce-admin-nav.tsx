@@ -7,6 +7,7 @@ const pages = [
   { href: "/admin/orders", label: "주문" },
   { href: "/admin/shipping", label: "배송비" },
   { href: "/admin/settings", label: "결제·환율" },
+  { href: "/admin/review", label: "결제 검토" },
 ] as const;
 
 /** Same toolbar row the content admin pages use, so the two areas navigate alike. */

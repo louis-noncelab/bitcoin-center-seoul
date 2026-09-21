@@ -104,3 +104,35 @@ export function nextFulfillment(order: AdminOrderRecord): "READY" | "COLLECTED" 
   if (order.fulfillmentStatus === "SHIPPED") return "DELIVERED";
   return null;
 }
+
+export const reviewPaymentRecord = z.object({
+  id: z.string(),
+  provider: z.enum(["LNURL", "ZAPRITE"]),
+  mode: z.enum(["REVIEW", "SANDBOX", "LIVE"]),
+  status: z.enum(["NEW", "CREATING", "PENDING", "PROCESSING", "PAID", "EXPIRED", "FAILED", "REVIEW"]),
+  amountSats: z.string(),
+  expiresAt: z.string(),
+  orderId: z.string().nullable(),
+  bookingId: z.string().nullable(),
+  creationUnknown: z.boolean(),
+  reviewReason: z.string().nullable(),
+});
+export const reviewPaymentsPayload = z.object({
+  enabled: z.boolean(),
+  payments: z.array(reviewPaymentRecord),
+});
+export type ReviewPaymentRecord = z.infer<typeof reviewPaymentRecord>;
+
+/** Provider outcomes the REVIEW fixtures can produce, in the order an operator would try them. */
+export const reviewScenarioLabels = {
+  pending: "결제 대기",
+  processing: "입금 감지 (미확정)",
+  paid: "결제 완료",
+  late: "기한 뒤 늦은 입금",
+  expired: "기한 만료",
+  mismatch: "금액 불일치",
+  timeout: "제공자 응답 지연",
+  outage: "제공자 장애",
+  bad_preimage: "잘못된 preimage",
+  wrong_pr: "다른 인보이스 응답",
+} as const;

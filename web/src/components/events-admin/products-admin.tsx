@@ -140,6 +140,26 @@ export function ProductsAdmin() {
     finally { busy.current = false; setPending(false); }
   }
 
+  async function addCategory(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy.current || expired) return;
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    busy.current = true; setPending(true); setError("");
+    try {
+      await adminRequest("/api/admin/categories", z.unknown(), jsonBody({
+        slug: String(data.get("categorySlug")).trim(),
+        nameKo: String(data.get("categoryNameKo")).trim(),
+        nameEn: String(data.get("categoryNameEn")).trim(),
+        sortOrder: Number(data.get("categorySortOrder")),
+        active: true,
+      }));
+      form.reset();
+      setMessage("분류를 추가했습니다."); setRevision((value) => value + 1);
+    } catch (caught) { handleError(caught); }
+    finally { busy.current = false; setPending(false); }
+  }
+
   async function archive(product: AdminProductRecord) {
     if (busy.current || uploads.current > 0) return;
     const accepted = await confirm({
@@ -266,6 +286,27 @@ export function ProductsAdmin() {
         </li>)}
         {!products.length && <li>등록된 상품이 없습니다.</li>}
       </ul>
+
+      <form className="events-form" onSubmit={(event) => void addCategory(event)}>
+        <h2>분류</h2>
+        <ul className="events-admin-list">
+          {categories.map((category) => <li key={category.id}>
+            <div><h3>{category.nameKo}</h3><p className="muted">{category.slug} · 상품 {category.productCount}개{category.active ? "" : " · 비활성"}</p></div>
+          </li>)}
+          {!categories.length && <li>등록된 분류가 없습니다. 분류 없이도 상품을 판매할 수 있습니다.</li>}
+        </ul>
+        <fieldset className="events-editor-fields" disabled={pending}>
+          <div className="events-field-grid">
+            <label>분류 이름<FormControl><input name="categoryNameKo" required maxLength={80} placeholder="책" /></FormControl></label>
+            <label>영어 이름<FormControl><input name="categoryNameEn" required maxLength={80} placeholder="Books" /></FormControl></label>
+          </div>
+          <div className="events-field-grid">
+            <label>슬러그<FormControl><input name="categorySlug" required maxLength={100} pattern="[a-z0-9]+(-[a-z0-9]+)*" autoCapitalize="none" spellCheck={false} placeholder="books" /></FormControl></label>
+            <label>표시 순서<FormControl><input name="categorySortOrder" type="number" required min={-100000} max={100000} step={1} defaultValue={0} /></FormControl></label>
+          </div>
+        </fieldset>
+        <div className="button-row"><Button type="submit" variant="secondary" disabled={pending || expired}>분류 추가</Button></div>
+      </form>
     </>}
   </div>;
 }
