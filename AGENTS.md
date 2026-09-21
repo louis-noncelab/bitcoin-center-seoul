@@ -27,6 +27,25 @@ never trusted, and the order is always re-read from Zaprite. The sandbox organiz
 with another product, so deliveries are filtered by `orgId` and foreign orders are acknowledged
 rather than retried; this app's orders carry `tags: ["bcs"]` and `metadata.source`.
 
+Surfaces: public `/shop`, `/shop/[slug]`, `/cart`, `/checkout`, `/orders/[id]`, `/payments/[id]`;
+admin `/admin/products` (+ categories), `/admin/orders`, `/admin/shipping`, `/admin/settings`,
+`/admin/review`. The admin panels use this branch's own vocabulary — `events-admin-workspace`,
+`events-form`, `events-field-grid`, `events-checkbox`, `events-error`, `AdminTabs`, `LoginForm`,
+`useConfirmation`, `adminRequest` — and authenticate with the existing SQLite admin session, not
+the backup's account system. The shop listing reuses the `review-card`/`collection-card` markup.
+`commerce.css` is namespaced `.commerce-*` and defines nothing main already defines; it still
+carries dead rules for dropped features (wishlist, product gallery, reviews, change requests).
+
+`ADMIN_PASSWORD_HASH` cannot be set plainly in `.env.local`: a scrypt verifier contains `$`, which
+both shell sourcing and dotenv expansion mangle. It needs single quotes **and** `\$` escapes, and
+`npm run dev` must not be run with `.env.local` sourced into the shell, or the shell's mangled
+value wins over the file.
+
+Still missing, deliberately: email delivery (the outbox is written, never drained — operational
+mail is out of scope), customer accounts, bookings, BTCPay, wishlists, product reviews and
+questions, change requests. Not yet proven: a completed sandbox payment, and the lightning path,
+which is live-only because a lightning address has no test network.
+
 Checks: `npm run check` (typecheck + lint), `npm run test:commerce` (isolated `center_test`
 database, REVIEW mode, no network), `npm run db:seed`, and `PAYMENT_MODE=sandbox npm run
 check:zaprite-sandbox` for one real sandbox order. Contract evidence and open questions:
