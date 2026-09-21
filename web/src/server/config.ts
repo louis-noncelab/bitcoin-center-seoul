@@ -69,7 +69,9 @@ export function parseServerConfig(raw: Readonly<Record<string, string | undefine
       break;
     case "production":
       if (value.PAYMENT_MODE !== "live") failures.push("PAYMENT_MODE");
-      if (value.EMAIL_MODE !== "smtp") failures.push("EMAIL_MODE");
+      // `capture` is allowed in production because no worker drains the outbox yet: mail is
+      // recorded, never sent. Switch to `smtp` only once a sender exists, so the SMTP
+      // credentials this would demand are not collected for a path that cannot use them.
       if (!secureOrigin(value.APP_ORIGIN) || localHosts.has(origin.hostname)) failures.push("APP_ORIGIN");
       if (value.REVIEW_KRW_PER_BTC) failures.push("REVIEW_KRW_PER_BTC");
       break;
