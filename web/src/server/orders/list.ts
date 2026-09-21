@@ -9,7 +9,6 @@ import { orderIncludes, orderView, type OrderDetails } from "./projection";
 const orderStatuses = ["PENDING_PAYMENT", "PAID", "EXPIRED", "CANCELLED", "REVIEW"] as const;
 const fulfillments = ["PICKUP", "DOMESTIC", "INTERNATIONAL"] as const;
 const fulfillmentStatuses = ["UNFULFILLED", "READY", "SHIPPED", "DELIVERED", "COLLECTED"] as const;
-const changeStatuses = ["REQUESTED", "ACCEPTED", "REJECTED", "RESOLVED"] as const;
 
 function pick<T extends string>(value: string | null, allowed: readonly T[], field: string): T | undefined {
   if (!value) return undefined;
@@ -21,14 +20,12 @@ function orderWhere(url: URL, query: AdminListQuery): Prisma.OrderWhereInput {
   const status = pick(url.searchParams.get("status"), orderStatuses, "status");
   const fulfillment = pick(url.searchParams.get("fulfillment"), fulfillments, "fulfillment");
   const fulfillmentStatus = pick(url.searchParams.get("fulfillmentStatus"), fulfillmentStatuses, "fulfillmentStatus");
-  const changeStatus = pick(url.searchParams.get("changeStatus"), changeStatuses, "changeStatus");
   const createdAt = createdAtFilter(query);
   const q = query.q;
   return {
     ...(status ? { status } : {}),
     ...(fulfillment ? { fulfillment } : {}),
     ...(fulfillmentStatus ? { fulfillmentStatus } : {}),
-    ...(changeStatus ? { changeRequests: { some: { status: changeStatus } } } : {}),
     ...(createdAt ? { createdAt } : {}),
     ...(q ? {
       OR: [

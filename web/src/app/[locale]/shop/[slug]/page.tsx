@@ -36,16 +36,24 @@ export default async function ProductPage({ params }: Props) {
   const ko = locale === "ko";
   const [product, settings] = await Promise.all([load(slug), getCommerceSettings()]);
   const title = ko ? product.titleKo : product.titleEn;
-  return <CommercePage locale={locale} title={title} backTo="/shop">
-    <div className="commerce-product-detail">
-      {product.imageUrl
-        ? <Image src={product.imageUrl} alt="" width={960} height={960} className="commerce-product-image" priority />
-        : null}
-      <DisplayUnitProvider unit={settings.productDisplayUnit}>
-        <ProductPurchase product={product} locale={locale} title={title}>
-          <p className="commerce-product-description">{ko ? product.descriptionKo : product.descriptionEn}</p>
-        </ProductPurchase>
-      </DisplayUnitProvider>
-    </div>
+  return <CommercePage
+    locale={locale}
+    title={title}
+    backTo="/shop"
+    backLabel={ko ? "상점으로" : "Back to the shop"}
+    detail
+  >
+    <article className={`commerce-product-page ${product.imageUrl ? "" : "commerce-detail-grid--without-image"}`}>
+      <div className={product.imageUrl ? "commerce-detail-grid" : ""}>
+        {product.imageUrl && <div className="commerce-product-media commerce-product-photo">
+          <Image src={product.imageUrl} alt="" fill sizes="(max-width: 767px) 100vw, 55vw" unoptimized />
+        </div>}
+        <DisplayUnitProvider unit={settings.productDisplayUnit}>
+          <ProductPurchase product={product} locale={locale} title={title}>
+            <p className="commerce-product-description">{ko ? product.descriptionKo : product.descriptionEn}</p>
+          </ProductPurchase>
+        </DisplayUnitProvider>
+      </div>
+    </article>
   </CommercePage>;
 }

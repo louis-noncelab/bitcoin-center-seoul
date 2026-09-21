@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/server/db";
-import { getServerConfig } from "@/server/config";
+import { paymentModeOf } from "@/server/config";
 import { reconcilePayment } from "./index";
 
 type MaintenancePass = {
@@ -13,7 +13,7 @@ export async function runPaymentMaintenancePass({ afterId, limit = 100, signal }
   if (!Number.isInteger(limit) || limit < 1 || limit > 100) throw new RangeError("Maintenance batch size must be between 1 and 100.");
   if (signal?.aborted) return { nextCursor: afterId, checked: 0, unavailable: 0 };
   const payments = await prisma.payment.findMany({
-    where: { mode: getServerConfig().paymentMode === "review" ? "REVIEW" : "LIVE", status: { in: ["NEW", "CREATING", "PENDING", "PROCESSING", "REVIEW", "EXPIRED"] }, ...(afterId ? { id: { gt: afterId } } : {}) },
+    where: { mode: paymentModeOf(), status: { in: ["NEW", "CREATING", "PENDING", "PROCESSING", "REVIEW", "EXPIRED"] }, ...(afterId ? { id: { gt: afterId } } : {}) },
     orderBy: { id: "asc" }, take: limit, select: { id: true },
   });
   let checked = 0; let unavailable = 0; let nextCursor = afterId;

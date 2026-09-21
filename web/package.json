@@ -35,7 +35,8 @@
     "db:deploy": "prisma migrate deploy",
     "test:commerce": "node --conditions=react-server --import tsx --test tests/commerce-payments.mjs",
     "db:seed": "node --conditions=react-server --import tsx scripts/commerce-seed.ts",
-    "check:zaprite-sandbox": "node --conditions=react-server --import tsx scripts/zaprite-sandbox-check.ts"
+    "check:zaprite-sandbox": "node --conditions=react-server --import tsx scripts/zaprite-sandbox-check.ts",
+    "payments:reconcile": "node --conditions=react-server --import tsx scripts/reconcile-payments.ts"
   },
   "dependencies": {
     "@hyunbinseo/holidays-kr": "5.2027.1",
