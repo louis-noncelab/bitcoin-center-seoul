@@ -7,6 +7,7 @@ import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { Link, useRouter } from "@/i18n/navigation";
 import { collectionInputSchema, collectionRecordSchema, isPurchasableKind, type CollectionKind, type CollectionRecord } from "@/lib/collection-contract";
 import { LoginForm } from "./login-form";
+import { AdminTabs } from "./admin-tabs";
 import { GalleryField } from "./gallery-field";
 import { MarkdownEditor } from "./markdown-editor";
 import { MarkdownHelp } from "./markdown-help";
@@ -14,7 +15,7 @@ import { adminRequest, AdminRequestError, errorText, jsonBody, revisionHeaders }
 
 const kindLabels = { book: "도서", artwork: "작품", boardgame: "보드게임", goods: "굿즈" } as const;
 const kindOptions = ["book", "goods", "boardgame", "artwork"] as const;
-const filters = ["all", ...kindOptions] as const;
+const filters = [{ value: "all", label: "전체" }, ...kindOptions.map((value) => ({ value, label: kindLabels[value] }))] as const;
 const viewHref = (record: CollectionRecord) => (record.kind === "boardgame" ? `/experience/board-game/${record.slug || record.id}` : record.kind === "goods" ? `/goods/${record.slug || record.id}` : `/collection/${record.slug || record.id}`);
 
 export function CollectionAdmin() {
@@ -152,8 +153,8 @@ export function CollectionAdmin() {
       <div className="button-row"><Button type="submit" disabled={pending || uploading || expired}>{pending ? "저장 중…" : "저장"}</Button><Button variant="secondary" disabled={pending || uploading} onClick={() => { void leave().then((accepted) => { if (accepted) { setEditing(false); setDirty(false); setRevision((value) => value + 1); } }); }}>취소</Button></div>
     </form> : <>
       <div className="events-admin-toolbar"><h2>도서·작품·보드게임·굿즈 목록</h2><Button disabled={pending || expired} onClick={() => edit(null)}>항목 등록</Button></div>
-      <nav className="button-row" aria-label="종류별 필터">{filters.map((kind) => <Button key={kind} variant="quiet" aria-pressed={filter === kind} onClick={() => setFilter(kind)}>{kind === "all" ? "전체" : kindLabels[kind]}</Button>)}</nav>
-      <ul className="events-admin-list">{visibleRecords.map((record) => <li key={record.id}><div><h3>{record.title}</h3><p className="muted">{kindLabels[record.kind]}{record.creator ? ` · ${record.creator}` : ""} · {record.is_active ? "공개" : "비공개"} · 순서 {record.sort_order}</p></div><div className="button-row">{isPurchasableKind(record.kind) && <Button variant="secondary" role="switch" aria-busy={pending} aria-checked={record.soldOut} aria-label={`${record.title} 품절`} disabled={pending || expired} onClick={() => void toggleSoldOut(record)}><span className="events-switch-track" aria-hidden="true" />품절</Button>}{Boolean(record.is_active) && <Link href={viewHref(record)} locale="ko" className="button" data-variant="quiet">보기</Link>}<Button variant="secondary" disabled={pending || expired} onClick={() => edit(record)}>수정</Button><Button variant="quiet" disabled={pending || expired} onClick={() => void remove(record)}>삭제</Button></div></li>)}{!visibleRecords.length && <li>{filter === "all" ? "등록된 항목이 없습니다." : "선택한 종류의 항목이 없습니다."}</li>}</ul>
+      <AdminTabs label="종류별 필터" items={filters} value={filter} onChange={setFilter} variant="quiet" />
+      <ul key={filter} className="events-admin-list collection-admin-results">{visibleRecords.map((record) => <li key={record.id}><div><h3>{record.title}</h3><p className="muted">{kindLabels[record.kind]}{record.creator ? ` · ${record.creator}` : ""} · {record.is_active ? "공개" : "비공개"} · 순서 {record.sort_order}</p></div><div className="button-row">{isPurchasableKind(record.kind) && <Button variant="secondary" role="switch" aria-busy={pending} aria-checked={record.soldOut} aria-label={`${record.title} 품절`} disabled={pending || expired} onClick={() => void toggleSoldOut(record)}><span className="events-switch-track" aria-hidden="true" />품절</Button>}{Boolean(record.is_active) && <Link href={viewHref(record)} locale="ko" className="button" data-variant="quiet">보기</Link>}<Button variant="secondary" disabled={pending || expired} onClick={() => edit(record)}>수정</Button><Button variant="quiet" disabled={pending || expired} onClick={() => void remove(record)}>삭제</Button></div></li>)}{!visibleRecords.length && <li>{filter === "all" ? "등록된 항목이 없습니다." : "선택한 종류의 항목이 없습니다."}</li>}</ul>
     </>}
   </div>;
 }
