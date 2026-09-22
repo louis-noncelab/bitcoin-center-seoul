@@ -6,12 +6,21 @@ import { ApiError } from "@/server/events/errors";
 import { requireExistingImages } from "@/server/events/images";
 import { reserveRevision } from "@/server/events/revision";
 
+function storedTime(value: Date): string {
+  return value.toISOString().slice(0, 19).replace("T", " ");
+}
+
 function fromRow(row: {
   id: number; revision: number; kind: string; slug: string; purchaseUrl: string; soldOut: boolean; title: string; titleEn: string;
   creator: string; creatorEn: string; description: string; descriptionEn: string; images: string; sortOrder: number; isActive: number;
+  createdAt: Date; updatedAt: Date;
 }): CollectionRecord {
   return collectionRecordSchema.parse({
-    ...row, soldOut: row.soldOut, images: JSON.parse(row.images), sort_order: row.sortOrder, is_active: row.isActive === 1 ? 1 : 0,
+    id: row.id, revision: row.revision, kind: row.kind, slug: row.slug, purchaseUrl: row.purchaseUrl, soldOut: row.soldOut,
+    title: row.title, titleEn: row.titleEn, creator: row.creator, creatorEn: row.creatorEn,
+    description: row.description, descriptionEn: row.descriptionEn, images: JSON.parse(row.images),
+    sort_order: row.sortOrder, is_active: row.isActive === 1 ? 1 : 0,
+    created_at: storedTime(row.createdAt), updated_at: storedTime(row.updatedAt),
   });
 }
 
