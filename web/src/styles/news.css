@@ -1,4 +1,7 @@
 .news-page { padding-block: var(--space-8) var(--space-12); }
+.news-page > .news-heading,
+.news-page > .news-navigation,
+.news-page > .news-page-section { inline-size: min(100%, 72rem); margin-inline: auto; }
 .news-heading { margin-bottom: var(--space-6); }
 .news-heading h1 { font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.25; font-weight: 700; letter-spacing: -.045em; }
 .news-heading p { margin-top: var(--space-3); }

@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { PriceKind } from "@/generated/prisma/client";
 import { getCommerceSettings } from "@/server/commerce/settings";
 import { getServerConfig } from "@/server/config";
+import { prisma } from "@/server/db";
 import { HttpError } from "@/server/http";
 
 const maxInteger = 9_223_372_036_854_775_807n;
@@ -113,6 +114,48 @@ async function fetchBithumbRate(): Promise<ExchangeRate> {
   return parseBithumbRate(await fetchJson("https://api.bithumb.com/public/ticker/BTC_KRW"));
 }
 
+function isRateFailure(error: unknown) {
+  return error instanceof HttpError || error instanceof TypeError || error instanceof SyntaxError || error instanceof DOMException;
+}
+
+/** A live ticker wins. When both exchanges failed, the last stored ticker is the price. */
+export function rateFromSources(live: ExchangeRate | null, cached: ExchangeRate | null): ExchangeRate {
+  if (live) return live;
+  if (cached && ratePattern.test(cached.krwPerBtc)) {
+    return {
+      krwPerBtc: cached.krwPerBtc,
+      source: cached.source.startsWith("cache:") ? cached.source : `cache:${cached.source}`,
+      timestamp: cached.timestamp,
+    };
+  }
+  throw new HttpError(503, "RATE_UNAVAILABLE", "환율 제공자에 연결할 수 없고, 이전에 받은 시세도 없습니다.");
+}
+
+async function readCachedRate(): Promise<ExchangeRate | null> {
+  try {
+    const row = await prisma.exchangeRateCache.findUnique({ where: { id: "last" } });
+    if (!row) return null;
+    const krwPerBtc = row.krwPerBtc.toString();
+    if (!ratePattern.test(krwPerBtc)) return null;
+    return { krwPerBtc, source: row.source, timestamp: row.observedAt };
+  } catch (error) {
+    console.error("[rate] cache read failed", error instanceof Error ? error.name : "UnknownError");
+    return null;
+  }
+}
+
+async function rememberExchangeRate(rate: ExchangeRate) {
+  try {
+    await prisma.exchangeRateCache.upsert({
+      where: { id: "last" },
+      update: { krwPerBtc: rate.krwPerBtc, source: rate.source, observedAt: rate.timestamp },
+      create: { id: "last", krwPerBtc: rate.krwPerBtc, source: rate.source, observedAt: rate.timestamp },
+    });
+  } catch (error) {
+    console.error("[rate] cache write failed", error instanceof Error ? error.name : "UnknownError");
+  }
+}
+
 async function liveExchangeRate(): Promise<ExchangeRate> {
   const settings = await getCommerceSettings();
   if (settings.btcPriceSource === "FIXED") {
@@ -126,15 +169,12 @@ async function liveExchangeRate(): Promise<ExchangeRate> {
   try {
     return await primary();
   } catch (error) {
-    if (!(error instanceof HttpError || error instanceof TypeError || error instanceof SyntaxError || error instanceof DOMException)) throw error;
+    if (!isRateFailure(error)) throw error;
     try {
       return await secondary();
     } catch (fallback) {
-      if (fallback instanceof HttpError) throw fallback;
-      if (fallback instanceof TypeError || fallback instanceof SyntaxError || fallback instanceof DOMException) {
-        throw new HttpError(503, "RATE_UNAVAILABLE", "환율 제공자에 연결할 수 없습니다.");
-      }
-      throw fallback;
+      if (!isRateFailure(fallback)) throw fallback;
+      return rateFromSources(null, await readCachedRate());
     }
   }
 }
@@ -148,7 +188,9 @@ export async function getExchangeRate(): Promise<ExchangeRate> {
     return { krwPerBtc: config.reviewKrwPerBtc, source: "review:fixture", timestamp: new Date() };
   }
   try {
-    return await liveExchangeRate();
+    const rate = await liveExchangeRate();
+    if (rate.source !== "fixed" && !rate.source.startsWith("cache:")) await rememberExchangeRate(rate);
+    return rate;
   } catch (error) {
     if (error instanceof HttpError) throw error;
     if (error instanceof TypeError || error instanceof SyntaxError || error instanceof DOMException) {

@@ -14,7 +14,7 @@ export function ContactFields({ locale, shipping = false, phoneRequired = false,
       <input id="customer-name" name="name" autoComplete="name" required maxLength={100} aria-invalid={Boolean(nameError)} aria-describedby={nameError ? "customer-name-error" : undefined} />
       <FieldError id="customer-name" error={nameError} />
     </FormField>
-    <FormField id="customer-email" label={ko ? "이메일" : "Email"} hint={ko ? "예약·주문 안내를 받을 주소입니다." : "For your booking or order updates."}>
+    <FormField id="customer-email" label={ko ? "이메일" : "Email"} hint={ko ? "주문 관련 연락을 받을 주소입니다." : "An address where the center can contact you about your order."}>
       <input id="customer-email" name="email" type="email" autoComplete="email" aria-describedby={`customer-email-hint${emailError ? " customer-email-error" : ""}`} aria-invalid={Boolean(emailError)} required maxLength={254} />
       <FieldError id="customer-email" error={emailError} />
     </FormField>

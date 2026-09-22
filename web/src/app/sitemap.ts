@@ -7,15 +7,28 @@ import { listReviews } from "@/server/reviews";
 import { listNotices } from "@/server/notices";
 import { libraryKinds } from "@/lib/collection-contract";
 import { listCollection } from "@/server/collection";
+import { listProducts } from "@/server/catalog";
+
+async function listedShopPaths(): Promise<string[]> {
+  try {
+    const products = await listProducts();
+    return ["/shop", ...products.map((product) => `/shop/${product.slug}`)];
+  } catch {
+    // A catalog failure must not drop the rest of the sitemap.
+    return [];
+  }
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   await connection();
-  const [events, highlights] = await Promise.all([
+  const [events, highlights, shopPaths] = await Promise.all([
     listEvents(),
     listHighlights(),
+    listedShopPaths(),
   ]);
   const paths = [
     "",
+    ...shopPaths,
     "/experience/wallet",
     "/notices",
     "/news",

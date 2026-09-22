@@ -69,17 +69,19 @@ export function parseServerConfig(raw: Readonly<Record<string, string | undefine
       break;
     case "production":
       if (value.PAYMENT_MODE !== "live") failures.push("PAYMENT_MODE");
-      // `capture` is allowed in production because no worker drains the outbox yet: mail is
-      // recorded, never sent. Switch to `smtp` only once a sender exists, so the SMTP
-      // credentials this would demand are not collected for a path that cannot use them.
+      if (!value.TRUST_PROXY) failures.push("TRUST_PROXY");
+      // `capture` stores mail and does not send it. `smtp` delivers PENDING rows through
+      // the in-process drain and scripts/email-queue.ts, and requires the SMTP fields below.
       if (!secureOrigin(value.APP_ORIGIN) || localHosts.has(origin.hostname)) failures.push("APP_ORIGIN");
       if (value.REVIEW_KRW_PER_BTC) failures.push("REVIEW_KRW_PER_BTC");
       break;
   }
-  const allowedOrigins = value.LNURL_ALLOWED_ORIGINS?.split(",").map((item) => item.trim()).filter(Boolean) ?? [];
-  const lnurl = value.LNURL_LIGHTNING_ADDRESS && allowedOrigins.length
-    ? { lightningAddress: value.LNURL_LIGHTNING_ADDRESS, allowedOrigins }
-    : null;
+  const address = value.LNURL_LIGHTNING_ADDRESS ?? "";
+  const domain = address.split("@")[1]?.trim().toLowerCase();
+  const derivedOrigin = domain && /^[a-z0-9.-]+\.[a-z]{2,}$/.test(domain) ? [`https://${domain}`] : [];
+  const configuredOrigins = value.LNURL_ALLOWED_ORIGINS?.split(",").map((item) => item.trim()).filter(Boolean) ?? [];
+  const allowedOrigins = [...new Set([...derivedOrigin, ...configuredOrigins])];
+  const lnurl = address && allowedOrigins.length ? { lightningAddress: address, allowedOrigins } : null;
   const zapriteUrl = value.ZAPRITE_API_URL ?? "https://api.zaprite.com";
   const zaprite = value.ZAPRITE_API_KEY && value.ZAPRITE_WEBHOOK_SECRET
     ? {
@@ -106,10 +108,10 @@ export function parseServerConfig(raw: Readonly<Record<string, string | undefine
   if (value.PAYMENT_MODE === "live") {
     switch (value.PAYMENT_PROVIDER) {
       case "lnurl":
-        if (!lnurl) failures.push("LNURL_LIGHTNING_ADDRESS", "LNURL_ALLOWED_ORIGINS");
+        if (!lnurl) failures.push("LNURL_LIGHTNING_ADDRESS");
         else {
           if (!/^[A-Za-z0-9._-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(lnurl.lightningAddress)) failures.push("LNURL_LIGHTNING_ADDRESS");
-          if (!lnurl.allowedOrigins.every((item) => secureOrigin(item) && new URL(item).origin === item)) failures.push("LNURL_ALLOWED_ORIGINS");
+          if (configuredOrigins.length && !configuredOrigins.every((item) => secureOrigin(item) && new URL(item).origin === item)) failures.push("LNURL_ALLOWED_ORIGINS");
         }
         break;
       case "zaprite":

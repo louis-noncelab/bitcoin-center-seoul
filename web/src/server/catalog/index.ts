@@ -7,12 +7,20 @@ import type { ProductInput } from "./validation";
 const publicInclude = { variants: { where: { active: true } }, category: true } as const;
 
 export async function listProducts() {
-  const products = await prisma.product.findMany({ where: { published: true }, orderBy: { createdAt: "desc" }, include: publicInclude });
+  const products = await prisma.product.findMany({ where: { published: true, listed: true }, orderBy: { createdAt: "desc" }, include: publicInclude });
   return products.map(publicProduct);
 }
 
+export async function listCheckoutProduct(variantId: string) {
+  const variant = await prisma.productVariant.findFirst({
+    where: { id: variantId, active: true, product: { published: true } },
+    include: { product: { include: publicInclude } },
+  });
+  return variant ? [publicProduct(variant.product)] : [];
+}
+
 export async function getProduct(slug: string) {
-  const product = await prisma.product.findFirst({ where: { slug, published: true }, include: publicInclude });
+  const product = await prisma.product.findFirst({ where: { slug, published: true, listed: true }, include: publicInclude });
   if (!product) throw new HttpError(404, "NOT_FOUND", "상품을 찾을 수 없습니다. / Product not found.");
   return publicProduct(product);
 }
@@ -24,7 +32,7 @@ export function publicProduct(product: Awaited<ReturnType<typeof prisma.product.
   return {
     id: product.id, slug: product.slug, titleKo: product.titleKo, titleEn: product.titleEn,
     descriptionKo: product.descriptionKo, descriptionEn: product.descriptionEn, contentFormat: product.contentFormat,
-    imageUrl: product.imageUrl, createdAt: product.createdAt.toISOString(),
+    imageUrl: product.imageUrl, images: product.images?.length ? product.images : (product.imageUrl ? [product.imageUrl] : []), createdAt: product.createdAt.toISOString(),
     priceKind: product.priceKind, priceAmount: product.priceAmount.toString(),
     listPriceAmount: product.listPriceAmount?.toString() ?? null,
     allowedFulfillments: product.allowedFulfillments,
@@ -46,7 +54,7 @@ export async function listAdminProducts() {
   return products.map((product) => ({
     id: product.id, slug: product.slug, titleKo: product.titleKo, titleEn: product.titleEn,
     descriptionKo: product.descriptionKo, descriptionEn: product.descriptionEn,
-    imageUrl: product.imageUrl, published: product.published, memberOnly: product.memberOnly,
+    imageUrl: product.imageUrl, images: product.images?.length ? product.images : (product.imageUrl ? [product.imageUrl] : []), published: product.published, memberOnly: product.memberOnly,
     priceKind: product.priceKind, priceAmount: product.priceAmount.toString(),
     listPriceAmount: product.listPriceAmount?.toString() ?? "",
     allowedFulfillments: product.allowedFulfillments,
@@ -81,14 +89,15 @@ export async function saveProduct(input: ProductInput, actorId: string, id?: str
     } else if (input.variants.some((variant) => variant.id)) {
       throw new HttpError(400, "INVALID_VARIANT", "새 옵션에는 ID를 지정할 수 없습니다. / New variants cannot specify an ID.");
     }
-    const { variants, priceAmount, listPriceAmount, categoryId, contentFormat, ...fields } = input;
+    const { variants, priceAmount, listPriceAmount, categoryId, contentFormat, images: imageList, imageUrl, ...fields } = input;
+    const images = (imageList?.length ? imageList : (imageUrl ? [imageUrl] : [])).slice(0, 12);
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`product:${fields.slug}`}, 0))`;
     const clash = await tx.product.findUnique({ where: { slug: fields.slug } });
     if (clash && clash.id !== current?.id) throw new HttpError(409, "SLUG_EXISTS", "이미 사용 중인 주소입니다. / Slug is already in use.");
     const resolvedCategoryId = await resolveCategoryId(tx, categoryId);
     const listPrice = listPriceAmount === undefined ? undefined : (listPriceAmount === "" ? null : BigInt(listPriceAmount));
     const data = {
-      ...fields, priceAmount: BigInt(priceAmount), categoryId: resolvedCategoryId,
+      ...fields, imageUrl: images[0] ?? "", images, priceAmount: BigInt(priceAmount), categoryId: resolvedCategoryId,
       ...(contentFormat !== undefined ? { contentFormat } : {}),
       ...(listPrice !== undefined ? { listPriceAmount: listPrice } : {}),
     };

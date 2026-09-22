@@ -35,7 +35,7 @@ export function RecordEditor({ locale, kind, record, onSaved, onCancel, onDirty,
     if (!tags.success) { setError(tags.error.issues[0]?.message ?? "해시태그를 확인해 주세요."); return; }
     const common = { slug: text("slug"), tags: tags.data, title: text("title"), titleEn: text("titleEn"), description: text("description"), descriptionEn: text("descriptionEn"), date: text("date"), image: images[0] ?? "", images, link: text("link") };
     const body = kind === "events"
-      ? { ...common, registrationClosed: form.has("registrationClosed"), time: text("time"), venueType: text("venueType"), location: text("location"), locationEn: text("locationEn") }
+      ? { ...common, registrationClosed: form.has("registrationClosed"), externalPayment: form.has("externalPayment"), isOnline: form.has("isOnline"), onlineUrl: text("onlineUrl"), onlineInstructions: text("onlineInstructions"), onlineInstructionsEn: text("onlineInstructionsEn"), time: text("time"), venueType: text("venueType"), location: text("location"), locationEn: text("locationEn"), ticketPriceKrw: text("ticketPriceKrw"), ticketCapacity: Number(text("ticketCapacity") || 0) }
       : { ...common, meta: text("meta"), metaEn: text("metaEn"), category: text("category"), categoryEn: text("categoryEn"), host: text("host"), hostEn: text("hostEn"), startDate: text("startDate"), endDate: text("endDate"), sort_order: Number(text("sort_order")), is_active: form.has("is_active") ? 1 : 0, icon: text("icon") };
     busy.current = true; setPending(true); onBusy(true); setError("");
     try {

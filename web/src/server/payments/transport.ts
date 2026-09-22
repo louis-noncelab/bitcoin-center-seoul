@@ -11,17 +11,29 @@ export function publicIPv4(address: string): boolean {
     || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && (b === 168 || b === 0 || (b === 0 && c === 2)))
     || (a === 198 && (b === 18 || b === 19 || (b === 51 && c === 100))) || (a === 203 && b === 0 && c === 113));
 }
-export function trustedUrl(input: string, allowedOrigins: readonly string[]): URL {
+export function lightningAddressOrigin(address: string): string | null {
+  const domain = address.split("@")[1]?.trim().toLowerCase();
+  if (!domain || !/^[a-z0-9.-]+\.[a-z]{2,}$/.test(domain)) return null;
+  return `https://${domain}`;
+}
+
+export function publicHttpsUrl(input: string): URL {
   const url = URL.canParse(input) ? new URL(input) : null;
   if (!url || url.protocol !== "https:" || url.username || url.password || url.hash || (url.port && url.port !== "443")
-    || !allowedOrigins.includes(url.origin) || url.hostname.endsWith(".") || (isIP(url.hostname) && !publicIPv4(url.hostname))) {
+    || url.hostname.endsWith(".") || (isIP(url.hostname) && !publicIPv4(url.hostname))) {
     throw new PaymentError("UNTRUSTED_PROVIDER_URL");
   }
   return url;
 }
-export function liveTransport(allowedOrigins: readonly string[]): Transport {
+
+export function trustedUrl(input: string, allowedOrigins: readonly string[]): URL {
+  const url = publicHttpsUrl(input);
+  if (!allowedOrigins.includes(url.origin)) throw new PaymentError("UNTRUSTED_PROVIDER_URL");
+  return url;
+}
+export function liveTransport(allowedOrigins: readonly string[] | null): Transport {
   return async (input) => {
-    const url = trustedUrl(input.url, allowedOrigins);
+    const url = allowedOrigins ? trustedUrl(input.url, allowedOrigins) : publicHttpsUrl(input.url);
     const signal = AbortSignal.timeout(8000);
     let addresses;
     try { addresses = await Promise.race([lookup(url.hostname, { all: true }), new Promise<never>((_resolve, reject) => { signal.addEventListener("abort", () => reject(new TransportError()), { once: true }); })]); }

@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { inspectSlide } from "./disclosure-motion";
+import { chooseVenue, venueField } from "./venue-menu";
 
 for (const locale of ["ko", "en"] as const) {
   test(`${locale} navigation and calendars slide in both directions`, async ({ page }, info) => {
@@ -56,11 +57,11 @@ test("venue fields and date picker keep closing content and keyboard boundaries"
   expect((await page.request.post("/api/admin/login", { headers: { origin: "http://127.0.0.1:3102" }, data: { password: process.env.ADMIN_PASSWORD } })).ok()).toBe(true);
   await page.goto("/ko/admin");
   await page.getByRole("button", { name: "새 항목 등록", exact: true }).click();
-  const venue = page.getByLabel("행사 장소", { exact: true });
+  const venue = venueField(page);
   const region = page.locator(".event-venue-details .slide-region").last();
-  await venue.scrollIntoViewIfNeeded();
+  await venue.getByRole("button").scrollIntoViewIfNeeded();
   let external = false;
-  await inspectSlide(page, region, () => { external = !external; return venue.selectOption(external ? "external" : "center"); }, "venue", info);
+  await inspectSlide(page, region, () => { external = !external; return chooseVenue(page, external ? "external" : "center"); }, "venue", info);
   await expect(page.locator('input[name="location"]')).toBeDisabled();
   await expect(region).toHaveAttribute("inert", "");
   const date = page.getByLabel("행사 날짜", { exact: true });

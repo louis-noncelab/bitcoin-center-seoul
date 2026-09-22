@@ -18,6 +18,7 @@ const storedSchema = z.object({
 
 const EMPTY: readonly CartLine[] = [];
 const listeners = new Set<() => void>();
+const selectionOrigins = new WeakMap<CartLine, CartLine>();
 
 type CartState = { items: readonly CartLine[]; drawer: boolean; hydrated: boolean };
 let state: CartState = { items: EMPTY, drawer: false, hydrated: false };
@@ -67,6 +68,11 @@ function mergeLines(items: readonly CartLine[]): CartLine[] {
 
 function setItems(items: readonly CartLine[]) {
   const next = items.length ? items : EMPTY;
+  // Quantity edits retain a selection; removing and readding creates a new one.
+  for (const item of next) {
+    const previous = state.items.find((line) => line.variantId === item.variantId);
+    if (previous) selectionOrigins.set(item, selectionOrigins.get(previous) ?? previous);
+  }
   state = { ...state, items: next, hydrated: true };
   persist(next);
   emit();
@@ -113,6 +119,16 @@ export function updateCartQuantity(variantId: string, quantity: number) {
   }
   const next = Math.min(CART_MAX_QUANTITY, quantity);
   setItems(state.items.map((item) => item.variantId === variantId ? { variantId: item.variantId, quantity: next } : item));
+}
+
+export function removePurchasedCartItems(purchased: readonly CartLine[]) {
+  prepareWrite();
+  setItems(state.items.flatMap((item) => {
+    const ordered = purchased.find((line) => line.variantId === item.variantId);
+    if (!ordered || (selectionOrigins.get(item) ?? item) !== (selectionOrigins.get(ordered) ?? ordered)) return [item];
+    const quantity = item.quantity - ordered.quantity;
+    return quantity > 0 ? [{ variantId: item.variantId, quantity }] : [];
+  }));
 }
 
 export function clearCart() {

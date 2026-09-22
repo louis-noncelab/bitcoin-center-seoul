@@ -3,6 +3,8 @@ import { createHash } from "node:crypto";
 import type { Payment } from "@/generated/prisma/client";
 import { prisma, type Tx } from "@/server/db";
 import { HttpError } from "@/server/http";
+import { notifyOrder } from "@/server/commerce/notifications";
+import { scheduleEmailDelivery } from "@/server/email/queue";
 import { applyPaymentOutcome } from "@/server/orders/payment-outcome";
 import { metadataSchema, type Invoice, type Observation } from "./types";
 
@@ -29,10 +31,12 @@ export async function persistInvoice(id: string, invoice: Invoice): Promise<Paym
   });
 }
 export async function applyObservation(id: string, observation: Observation, eventKey?: string): Promise<Payment> {
-  return prisma.$transaction(async (tx) => {
+  let notifyPaid = false;
+  let deliver = false;
+  const payment = await prisma.$transaction(async (tx) => {
     const payment = await lockPayment(tx, id);
     if (observation.reason === "NO_INVOICE_ISSUED" && payment.status !== "NEW") return payment;
-    const key = eventKey ?? `poll:${id}:${createHash("sha256").update(JSON.stringify(observation)).digest("hex")}`;
+    const key = `${eventKey ?? "poll"}:${id}:${createHash("sha256").update(JSON.stringify(observation)).digest("hex")}`;
     const inserted = await tx.paymentEvent.createMany({ data: { paymentId: id, provider: payment.provider, mode: payment.mode, eventKey: key, summary: { status: observation.status, reason: observation.reason ?? null } }, skipDuplicates: true });
     if (!inserted.count || payment.status === "PAID") return payment;
     if (observation.status === "PENDING") return payment;
@@ -41,10 +45,16 @@ export async function applyObservation(id: string, observation: Observation, eve
     if (payment.status === "PROCESSING" && observation.status === "EXPIRED") return payment;
     const outcome = terminal && observation.status !== "REVIEW" ? "REVIEW" : observation.status;
     const fulfillment = await applyPaymentOutcome(tx, payment, outcome);
-    return tx.payment.update({ where: { id }, data: {
+    deliver = outcome !== "PROCESSING";
+    const updated = await tx.payment.update({ where: { id }, data: {
       status: fulfillment === "REVIEW" ? "REVIEW" : outcome,
       reviewReason: fulfillment === "REVIEW" ? observation.reason ?? "LATE_OR_CONFLICTING_PAYMENT" : observation.reason ?? null,
       ...(observation.status === "PAID" ? { paidAt: payment.paidAt ?? new Date() } : {}),
     } });
+    notifyPaid = observation.status === "PAID" && fulfillment !== "REVIEW" && Boolean(payment.orderId);
+    return updated;
   });
+  if (notifyPaid && payment.orderId) void notifyOrder(payment.orderId, "결제 완료");
+  if (deliver) scheduleEmailDelivery();
+  return payment;
 }

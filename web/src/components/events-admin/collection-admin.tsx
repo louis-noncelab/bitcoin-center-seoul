@@ -4,8 +4,8 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { z } from "zod";
 import { Button, ChoiceControl, FormControl } from "@/components/ui/primitives";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
-import { Link, useRouter } from "@/i18n/navigation";
-import { collectionInputSchema, collectionRecordSchema, isPurchasableKind, type CollectionKind, type CollectionRecord } from "@/lib/collection-contract";
+import { Link } from "@/i18n/navigation";
+import { collectionInputSchema, collectionRecordSchema, type CollectionKind, type CollectionRecord } from "@/lib/collection-contract";
 import { LoginForm } from "./login-form";
 import { AdminTabs } from "./admin-tabs";
 import { GalleryField } from "./gallery-field";
@@ -35,7 +35,6 @@ export function CollectionAdmin() {
   const [revision, setRevision] = useState(0);
   const busy = useRef(false);
   const uploads = useRef(0);
-  const router = useRouter();
   const { confirm, dialog } = useConfirmation();
 
   useEffect(() => {
@@ -84,16 +83,6 @@ export function CollectionAdmin() {
     } catch (caught) { handleError(caught); }
     finally { busy.current = false; setPending(false); }
   }
-  async function toggleSoldOut(record: CollectionRecord) {
-    if (busy.current || expired || uploads.current > 0) return;
-    busy.current = true; setPending(true); setError("");
-    try {
-      const saved = await adminRequest(`/api/admin/collection/${record.id}`, collectionRecordSchema, jsonBody({ soldOut: !record.soldOut }, "PATCH", record.revision));
-      setRecords((items) => items.map((item) => item.id === saved.id ? saved : item));
-      setMessage(saved.soldOut ? "품절로 표시했습니다." : "품절 표시를 해제했습니다.");
-    } catch (caught) { handleError(caught); }
-    finally { busy.current = false; setPending(false); }
-  }
   async function remove(record: CollectionRecord) {
     if (busy.current || uploads.current > 0) return;
     const accepted = await confirm({ title: "항목 삭제", description: `“${record.title}” 항목을 삭제할까요? 삭제한 내용은 복구할 수 없습니다.`, confirmLabel: "삭제" });
@@ -105,21 +94,11 @@ export function CollectionAdmin() {
     } catch (caught) { handleError(caught); }
     finally { busy.current = false; setPending(false); }
   }
-  async function logout() {
-    if (!(await leave())) return;
-    busy.current = true; setPending(true);
-    try { await adminRequest("/api/admin/logout", z.unknown(), jsonBody({})); setAuthenticated(false); setEditing(false); setDirty(false); setExpired(false); setRecords([]); }
-    catch (caught) { handleError(caught); }
-    finally { busy.current = false; setPending(false); }
-  }
   const visibleRecords = filter === "all" ? records : records.filter((record) => record.kind === filter);
   if (authenticated === null) return error ? <><p className="events-error" role="alert">{error}</p><Button onClick={() => { setError(""); setRevision((value) => value + 1); }}>다시 시도</Button></> : <p role="status">로그인 확인 중…</p>;
   if (!authenticated) return <><LoginForm locale="ko" onLogin={() => { setError(""); setRevision((value) => value + 1); }} /></>;
   return <div className="events-admin-workspace">
     {dialog}
-    <div className="events-admin-toolbar"><nav aria-label="콘텐츠 관리" className="button-row">
-      {[{ href: "/admin", label: "행사·하이라이트" }, { href: "/admin/notices", label: "공지사항" }, { href: "/admin/reviews", label: "방문 후기" }].map(({ href, label }) => <Link key={href} href={href} locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void leave().then((accepted) => { if (accepted) router.push(href, { locale: "ko" }); }); }}>{label}</Link>)}
-    </nav><Button variant="quiet" disabled={pending || uploading} onClick={() => void logout()}>로그아웃</Button></div>
     {expired && <aside className="events-reauth"><p role="alert">세션이 만료되었습니다. 작성한 내용은 유지됩니다. 다시 로그인한 뒤 저장해 주세요.</p><LoginForm locale="ko" onLogin={() => { setExpired(false); setError(""); setRevision((value) => value + 1); }} /></aside>}
     {error && <p className="events-error" role="alert">{error}</p>}<p role="status">{message}</p>
     {editing ? <form className="events-form" key={selected?.id ?? "new"} onSubmit={(event) => void save(event)} onChange={() => setDirty(true)}>
@@ -132,11 +111,8 @@ export function CollectionAdmin() {
         </div>
         <label>URL 슬러그 (공개 보드게임 필수)<FormControl><input name="slug" defaultValue={selected?.slug ?? ""} maxLength={100} pattern="(?=.*[a-z])[a-z0-9]+(-[a-z0-9]+)*" autoCapitalize="none" spellCheck={false} placeholder="bitcoin-larp" aria-describedby="collection-slug-help" /></FormControl></label>
         <p id="collection-slug-help" className="muted">/experience/board-game/, /goods/ 또는 /collection/ 뒤에 붙는 주소입니다. 영문 소문자·숫자·하이픈을 사용해 주세요.</p>
-        <div hidden={!isPurchasableKind(editingKind)}><fieldset className="events-editor-fields" disabled={!isPurchasableKind(editingKind)}>
-        <label>구매하기 링크 (선택)<FormControl><input name="purchaseUrl" type="url" maxLength={2048} defaultValue={selected?.purchaseUrl ?? ""} placeholder="https://…" aria-describedby="collection-purchase-help" /></FormControl></label>
-        <p id="collection-purchase-help" className="muted">Zaprite 결제 링크나 외부 판매 페이지 주소를 입력해 주세요. 비워 두면 구매하기 버튼을 표시하지 않습니다.</p>
-        <label className="events-checkbox"><ChoiceControl role="switch" name="soldOut" type="checkbox" defaultChecked={selected?.soldOut ?? false} />품절<span className="muted">켜면 구매하기 대신 ‘품절’이 표시됩니다. 저장하면 반영됩니다.</span></label>
-        </fieldset></div>
+        {(editingKind === "book" || editingKind === "goods") && <p className="muted">도서와 굿즈의 가격·재고·결제는 상점 상품에서 관리합니다. 이 목록은 전시 소개만 담습니다.</p>}
+        {(editingKind === "boardgame" || editingKind === "artwork") && <p className="muted">보드게임과 작품은 구매하지 않습니다.</p>}
         <GalleryField locale="ko" images={images} onChange={(next) => { setImages(next); setDirty(true); }} onPending={uploadPending} onExpired={() => setExpired(true)} />
         <MarkdownEditor name="description" label="소개 (선택)" defaultValue={selected?.description ?? ""} rows={6} helpId="collection-markdown-help" onPending={uploadPending} onDirty={() => setDirty(true)} onExpired={() => setExpired(true)} />
         <div className="events-field-grid">
@@ -154,7 +130,7 @@ export function CollectionAdmin() {
     </form> : <>
       <div className="events-admin-toolbar"><h2>도서·작품·보드게임·굿즈 목록</h2><Button disabled={pending || expired} onClick={() => edit(null)}>항목 등록</Button></div>
       <AdminTabs label="종류별 필터" items={filters} value={filter} onChange={setFilter} variant="quiet" />
-      <ul key={filter} className="events-admin-list collection-admin-results">{visibleRecords.map((record) => <li key={record.id}><div><h3>{record.title}</h3><p className="muted">{kindLabels[record.kind]}{record.creator ? ` · ${record.creator}` : ""} · {record.is_active ? "공개" : "비공개"} · 순서 {record.sort_order}</p></div><div className="button-row">{isPurchasableKind(record.kind) && <Button variant="secondary" role="switch" aria-busy={pending} aria-checked={record.soldOut} aria-label={`${record.title} 품절`} disabled={pending || expired} onClick={() => void toggleSoldOut(record)}><span className="events-switch-track" aria-hidden="true" />품절</Button>}{Boolean(record.is_active) && <Link href={viewHref(record)} locale="ko" className="button" data-variant="quiet">보기</Link>}<Button variant="secondary" disabled={pending || expired} onClick={() => edit(record)}>수정</Button><Button variant="quiet" disabled={pending || expired} onClick={() => void remove(record)}>삭제</Button></div></li>)}{!visibleRecords.length && <li>{filter === "all" ? "등록된 항목이 없습니다." : "선택한 종류의 항목이 없습니다."}</li>}</ul>
+      <ul key={filter} className="events-admin-list collection-admin-results">{visibleRecords.map((record) => <li key={record.id}><div><h3>{record.title}</h3><p className="muted">{kindLabels[record.kind]}{record.creator ? ` · ${record.creator}` : ""} · {record.is_active ? "공개" : "비공개"} · 순서 {record.sort_order}</p></div><div className="button-row">{Boolean(record.is_active) && <Link href={viewHref(record)} locale="ko" className="button" data-variant="quiet">보기</Link>}<Button variant="secondary" disabled={pending || expired} onClick={() => edit(record)}>수정</Button><Button variant="quiet" disabled={pending || expired} onClick={() => void remove(record)}>삭제</Button></div></li>)}{!visibleRecords.length && <li>{filter === "all" ? "등록된 항목이 없습니다." : "선택한 종류의 항목이 없습니다."}</li>}</ul>
     </>}
   </div>;
 }

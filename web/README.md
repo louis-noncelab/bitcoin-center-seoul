@@ -1,10 +1,10 @@
 # Bitcoin Center Seoul — 개발 안내
 
-Next.js 공개 사이트와 한국어 콘텐츠 관리 화면입니다. 공개 페이지는 한영·라이트/다크를 지원합니다. 행사·현장 스케치·공지·도서·작품 등록·수정·삭제, 여러 사진 업로드와 운영 예외 설정을 제공합니다. 결제·상점·장바구니·회원·자체 예약은 포함하지 않습니다.
+Next.js 공개 사이트와 한국어 관리 화면입니다. 공개 페이지는 한영·라이트/다크를 지원합니다. 센터 소개, 프로그램, 전시, 방문 후기, 공지와 사진을 관리합니다.
 
 ## 기존 DB와 비밀번호
 
-기존 SQLite `events`, `highlights` 테이블과 ID를 유지합니다. PostgreSQL 전환이나 새 운영 DB 생성은 필요하지 않습니다. 공지·도서·작품·운영 상태와 갤러리, 세션·로그인 제한, URL 슬러그용 지원 테이블을 추가합니다. 기존 콘텐츠는 자동 삭제하거나 다시 쓰지 않습니다. 서버 실행 시 기존 DB 파일과 스키마를 확인하며, 경로가 없거나 잘못되면 빈 DB를 만들지 않고 오류를 반환합니다. 새 DB 생성은 명시적인 로컬 사본 가져오기에서만 허용합니다.
+기존 SQLite `events`, `highlights` 테이블과 ID를 유지합니다. 콘텐츠·운영 상태·관리자 세션은 SQLite, 상품·주문·결제·배송·outbox는 별도 PostgreSQL/Prisma에 저장합니다. SQLite를 PostgreSQL로 이전하지 않습니다. 외부 구매 링크를 가진 collection과 자체 상품 catalog도 별개입니다. SQLite 파일이 없거나 잘못되면 빈 DB를 만들지 않고 오류를 반환하며 새 SQLite 생성은 명시적인 로컬 사본 가져오기에서만 허용합니다.
 
 - `BCS_EVENTS_DB`: SQLite 파일의 절대 경로.
 - `BCS_EVENTS_UPLOADS`: `/images/` 아래 상대 경로에 대응하는 이미지 폴더의 절대 경로.
@@ -12,6 +12,8 @@ Next.js 공개 사이트와 한국어 콘텐츠 관리 화면입니다. 공개 �
 - `APP_ORIGIN`: 사이트의 정확한 HTTPS origin. 루프백 검토 환경에서만 HTTP를 허용합니다.
 - `BCS_PUBLIC_INDEXING`: 정식 공개 시 `true`로 설정합니다. 미설정 시 검색을 차단하며 관리자 경로는 이 설정과 관계없이 차단합니다.
 - `BCS_TRUST_PROXY`: 운영에서 `true`로 설정하고, 외부 접근이 차단된 앱 앞의 nginx가 `X-BCS-Client-IP`를 실제 연결 IP로 덮어써야 합니다. 설정되지 않은 운영 로그인은 거부됩니다.
+- `TRUST_PROXY`: 결제 API도 같은 `X-BCS-Client-IP`를 쓰도록 운영에서 `true`로 설정합니다.
+- commerce 설정과 PostgreSQL·워커 운영은 [운영 절차](../docs/security/operations.md)를 따릅니다. 이미지 저장소 `BCS_EVENTS_UPLOADS`는 콘텐츠와 상품이 공유합니다.
 
 기존 비밀번호를 변경할 필요 없이 다음 도구로 검증값을 만듭니다. 입력은 화면에 표시되지 않으며 새 비공개 파일(0600)에만 기록합니다. 이 파일의 `ADMIN_PASSWORD_HASH`를 앱에 제공하고 원문 환경변수는 제거합니다.
 
@@ -51,9 +53,22 @@ npm run test:security
 npm run test:backup
 npm run test:image-optimizer
 npm run audit
+npm run test:release
 ```
 
 이미지 처리에는 이전 검증에서 필요했던 Next16.3.4 고정 패치를 유지합니다. 설치 시 원본 해시를 확인하고 요청 중단·용량 제한 회귀를 검사합니다.
+
+`npm ci`의 postinstall, `npm run typecheck`, `npm run build`는 Prisma client를 생성합니다. `prisma.config.ts`는 환경 파일을 읽지 않으며 `db:generate`에는 `DATABASE_URL`도 필요하지 않습니다. 직접 `next build`를 실행하거나 install script를 생략했다면 먼저 `npm run db:generate`를 실행합니다. 기존 환경 파일 자동 로드를 막는 일반 검사·빌드는 `__NEXT_PROCESSED_ENV=true npm run check`와 `__NEXT_PROCESSED_ENV=true npm run build`입니다.
+
+## Commerce 로컬 검토
+
+콘텐츠용 `review` 실행기는 commerce 설정을 만들지 않습니다. 테스트 전용 PostgreSQL DB를 따로 준비하고 **명시적 `TEST_DATABASE_URL`**로 `npm run test:commerce`를 실행합니다. 이 테스트는 데이터를 작성·삭제하므로 개발 중인 주문 DB나 공유 sandbox DB를 지정하지 않습니다. 테스트는 REVIEW fixture를 사용하며 네트워크 결제나 이메일을 보내지 않습니다. migration은 해당 테스트 DB에만 적용합니다.
+
+전체 화면 검토에는 보호된 새 설정 파일을 명시적으로 Node `--env-file`로 전달합니다. `APP_MODE=review`, `PAYMENT_MODE=review`, `EMAIL_MODE=capture`, 루프백 `APP_ORIGIN`/`DATABASE_URL`, 검토용 `DATA_DIR`·암호화 키·SQLite/업로드 경로가 필요합니다. `db:seed`는 로컬 데모 상품을 만들고 같은 SKU의 재고를 20으로 되돌리므로 테스트 DB에만 사용합니다. 운영에 자동 seed하지 않습니다.
+
+`PAYMENT_MODE=sandbox`는 실제 Zaprite sandbox 조직을 호출하며 별도 승인된 검증에서만 사용합니다. lightning address에는 테스트 네트워크가 없어 live 전용입니다. sandbox 주문 생성/조회가 완료 결제 증거는 아닙니다. 완료된 sandbox 결제와 live lightning 결제는 아직 검증하지 않았습니다.
+
+관리 화면은 기존 관리자 세션을 사용합니다. 설정 파일은 Git에 포함하지 않으며 셸에서 불러오지 않습니다.
 
 ## 복구 지점
 
@@ -70,7 +85,7 @@ npm run audit
 
 관리자가 등록하는 후기·행사·현장 스케치·공지·도서·작품은 SQLite에 저장하며 사진은 `BCS_EVENTS_UPLOADS`에 둡니다. 실제 콘텐츠, 수집 사진, DB, 배포용 데이터 묶음은 Git에 넣지 않습니다. 로고·폰트·공간 소개용 고정 사진과 영상은 UI 자산으로 관리합니다. 페이지 조회나 앱 재시작은 콘텐츠를 자동 등록하지 않습니다.
 
-후기를 처음 반영할 때는 별도로 받은 `reviews.json`과 `images/` 폴더를 사용합니다. 아래 명령은 환경 파일을 읽지 않으며 `--apply` 없이는 검사만 수행합니다. 운영 반영 전 SQLite와 참조 사진을 백업하고 `restore-check`를 통과시켜야 합니다. 기존 기록이 다르거나 사진 경로가 충돌하면 덮어쓰지 않고 중단합니다.
+후기를 처음 반영할 때는 별도로 받은 `reviews.json`과 `images/` 폴더를 사용합니다. 아래 명령은 환경 파일을 읽지 않으며 `--apply` 없이는 검사만 수행합니다. 운영 반영 전 SQLite와 전체 공용 업로드를 백업하고 `restore-check`를 통과시켜야 합니다. 기존 기록이 다르거나 사진 경로가 충돌하면 덮어쓰지 않고 중단합니다.
 
 ```sh
 npm run reviews:import -- --bundle /absolute/private/reviews-bundle --db /absolute/events.db --uploads /absolute/images
@@ -78,3 +93,22 @@ npm run reviews:import -- --bundle /absolute/private/reviews-bundle --db /absolu
 ```
 
 데이터 형식은 `{version:1,reviews:[{key,...ReviewInput}],selection:{featured_key,home_keys}}`입니다. `key`는 가져오기 묶음의 고유 키이며, 사진 경로 `/images/uploads/example.webp`는 묶음의 `images/uploads/example.webp`에 대응합니다. 수정은 관리자에서 하며 같은 묶음을 다시 적용해도 기록을 중복 생성하지 않습니다.
+
+### 주문 수동 처리와 환불 기록
+
+관리자 주문 상세에서 결제 제공자 재조회, 사유를 남기는 입금 확인·미입금 취소,
+결제 후 취소(환불 대기), 외부 전액 환불 완료 기록을 할 수 있습니다.
+환불 완료에는 방식·증빙이 필요하며, 실제 송금을 수행하는 기능은 아닙니다.
+재고 복구는 미발송 또는 반품 확인한 실물이 있을 때만 선택합니다.
+입금 기록은 환불 뒤에도 보존하고, 처리 이력은 공용 관리자 계정·시각·사유와 함께 남습니다.
+
+각 처리는 결제 버전을 확인하고 Payment → Order → SKU → Coupon 순으로 잠급니다.
+동시 웹훅·조회·관리자 처리로 상태가 바뀌면 최신 주문을 다시 불러와야 합니다.
+인보이스를 발급한 뒤 취소한 결제도 정기 조회하여 웹훅이 누락된 늦은 입금을 놓치지 않습니다.
+`20260921160000_order_refund_tracking` 마이그레이션은 주문에 환불 상태와 완료 시각을 추가합니다.
+기존 수동 배포 절차의 PostgreSQL 백업·마이그레이션 단계를 먼저 완료해야 합니다.
+
+주문 목록은 검색·수령 방식·기간·페이지를 URL에 유지하며 같은 조건으로 CSV를 내려받습니다.
+발송한 주문은 송장 정보를 별도로 정정할 수 있습니다. 상점은 검색·종류·재고 필터를 제공합니다.
+관련 PostgreSQL 경합 및 관리자 API 경계 검사는 `TEST_DATABASE_URL`을 지정한
+`npm run test:commerce`에 포함됩니다. 운영 데이터베이스를 테스트 대상으로 지정하지 마세요.

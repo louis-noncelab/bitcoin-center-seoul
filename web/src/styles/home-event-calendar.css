@@ -117,6 +117,9 @@
   padding-inline: 0;
   color: var(--ink);
 }
+@media (prefers-reduced-motion: no-preference) {
+  .home-calendar-layout { animation: content-page-fade var(--duration-overlay) var(--ease-out); }
+}
 .home-calendar-layout[data-view="list"] .calendar table,
 .home-calendar-layout[data-view="list"] .home-calendar-legend {
   display: none;

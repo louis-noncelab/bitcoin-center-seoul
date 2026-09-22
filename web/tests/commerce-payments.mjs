@@ -1,15 +1,16 @@
 // Commerce + payment regression checks.
 //
-// Runs against an isolated PostgreSQL database (center_test) in REVIEW payment mode, so no
+// Runs against an explicitly selected isolated PostgreSQL database in REVIEW mode, so no
 // provider is contacted. Run with:
-//   npm run test:commerce
+//   TEST_DATABASE_URL=postgresql://localhost/bcs_test npm run test:commerce
 import assert from "node:assert/strict";
 import test, { after, before } from "node:test";
 import { randomBytes, randomUUID } from "node:crypto";
 
 process.env.APP_MODE = "test";
 process.env.APP_ORIGIN = "http://127.0.0.1:3100";
-process.env.DATABASE_URL = process.env.TEST_DATABASE_URL ?? "postgresql://max@127.0.0.1:5432/center_test";
+assert.ok(process.env.TEST_DATABASE_URL, "Set TEST_DATABASE_URL to a disposable migrated local PostgreSQL database");
+process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
 process.env.DATA_DIR = "/tmp";
 process.env.TOKEN_ENCRYPTION_KEY = Buffer.alloc(32, 7).toString("base64");
 process.env.PAYMENT_PROVIDER = "zaprite";
@@ -21,7 +22,7 @@ process.env.ZAPRITE_API_KEY = "test-key";
 process.env.ZAPRITE_WEBHOOK_SECRET = "test-secret";
 process.env.ZAPRITE_ORG_ID = "org_test";
 
-const { krwToSats, satsToKrw, parseUpbitRate, parseBithumbRate } = await import("../src/server/money.ts");
+const { krwToSats, satsToKrw, parseUpbitRate, parseBithumbRate, rateFromSources } = await import("../src/server/money.ts");
 const { validateBolt11 } = await import("../src/server/payments/bolt11.ts");
 const { readZapriteInvoice, bindZapriteInvoice } = await import("../src/server/payments/zaprite.ts");
 const { verifyZapriteWebhookToken } = await import("../src/server/payments/webhook.ts");
@@ -65,9 +66,12 @@ after(async () => {
   await prisma.paymentEvent.deleteMany({ where: { payment: { order: { items: { some: { variantId: seeded.variantId } } } } } });
   await prisma.payment.deleteMany({ where: { order: { items: { some: { variantId: seeded.variantId } } } } });
   await prisma.orderItem.deleteMany({ where: { variantId: seeded.variantId } });
-  await prisma.order.deleteMany({ where: { customerEmail: `${prefix}@example.invalid` } });
+  const { customerEmailHash } = await import("../src/server/privacy.ts");
+  const email = `${prefix}@example.invalid`;
+  const ordersForMail = await prisma.order.findMany({ where: { OR: [{ customerEmail: email }, { customerEmailHash: customerEmailHash(email) }] }, select: { id: true } });
+  if (ordersForMail.length) await prisma.emailOutbox.deleteMany({ where: { OR: ordersForMail.map(({ id }) => ({ eventKey: { contains: id } })) } });
+  await prisma.order.deleteMany({ where: { OR: [{ customerEmail: email }, { customerEmailHash: customerEmailHash(email) }] } });
   await prisma.quote.deleteMany({ where: { ownerHash: { not: null }, snapshot: { path: ["items", "0", "sku"], equals: `${prefix}-SKU` } } });
-  await prisma.emailOutbox.deleteMany({ where: { to: `${prefix}@example.invalid` } });
   await prisma.productVariant.deleteMany({ where: { sku: `${prefix}-SKU` } });
   await prisma.product.deleteMany({ where: { slug: `${prefix}-book` } });
   await prisma.shippingCountry.deleteMany({ where: { zoneId: seeded.zoneId } });
@@ -99,6 +103,13 @@ test("exchange tickers are rejected unless the quote is fresh", () => {
   const bithumb = { status: "0000", data: { closing_price: "150000000.0000", date: String(now) } };
   assert.equal(parseBithumbRate(bithumb, now).krwPerBtc, "150000000");
   assert.throws(() => parseBithumbRate({ status: "5600", data: {} }, now), (error) => error.code === "RATE_UNAVAILABLE");
+  const cached = { krwPerBtc: "149000000", source: "upbit:KRW-BTC", timestamp: new Date(now - 86_400_000) };
+  assert.equal(rateFromSources({ krwPerBtc: "150000000", source: "bithumb:BTC_KRW", timestamp: new Date(now) }, cached).source, "bithumb:BTC_KRW");
+  const fallback = rateFromSources(null, cached);
+  assert.equal(fallback.krwPerBtc, "149000000");
+  assert.equal(fallback.source, "cache:upbit:KRW-BTC");
+  assert.equal(fallback.timestamp.toISOString(), cached.timestamp.toISOString());
+  assert.throws(() => rateFromSources(null, null), (error) => error.code === "RATE_UNAVAILABLE");
 });
 
 // Real 10-sat invoices captured from live lightning addresses on 2026-09-21. LUD-06 lets a payer

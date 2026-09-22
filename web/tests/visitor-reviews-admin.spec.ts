@@ -9,6 +9,11 @@ const origin = "http://127.0.0.1:3102";
 const headers = { origin };
 const version = (revision: number) => ({ ...headers, "If-Match": `"${revision}"` });
 const recordInput = ({ id, revision, created_at, updated_at, ...input }: ReviewRecord) => { void id; void revision; void created_at; void updated_at; return input; };
+async function chooseReview(page: import("@playwright/test").Page, label: string, title: string) {
+  const field = page.locator("label").filter({ hasText: label });
+  await field.getByRole("button").click();
+  await field.getByRole("option", { name: title }).click();
+}
 async function login(request: APIRequestContext) {
   const password = process.env.ADMIN_PASSWORD;
   if (!password) throw new Error("Run through npm run review -- test.");
@@ -112,8 +117,8 @@ test("admin uploads, publishes, selects, edits and hides a review without rebuil
     if (!record) throw new Error("Review not saved");
     id = record.id;
     expect((await request.get(record.image)).status()).toBe(200);
-    await page.getByRole("combobox", { name: "후기 페이지 대표", exact: true }).selectOption(String(id));
-    await page.getByRole("combobox", { name: "홈 후기 1", exact: true }).selectOption(String(id));
+    await chooseReview(page, "후기 페이지 대표", title);
+    await chooseReview(page, "홈 후기 1", title);
     await page.getByRole("button", { name: "선택 저장", exact: true }).click();
     await expect(page.getByText("후기 선택을 저장했습니다.", { exact: true })).toBeVisible();
     await page.goto("/en/reviews");
@@ -129,7 +134,7 @@ test("admin uploads, publishes, selects, edits and hides a review without rebuil
     await page.getByLabel("공개", { exact: true }).uncheck();
     await page.getByRole("button", { name: "저장", exact: true }).click();
     await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
-    await expect(page.getByRole("combobox", { name: "후기 페이지 대표", exact: true }).locator("option:checked")).toContainText("비공개");
+    await expect(page.locator("label").filter({ hasText: "후기 페이지 대표" }).getByRole("button")).toContainText("비공개");
     expect((await request.get(record.image)).status()).toBe(404);
     expect((await page.request.get(record.image)).status()).toBe(200);
     await page.goto("/ko/reviews");

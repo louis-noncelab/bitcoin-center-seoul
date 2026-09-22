@@ -118,7 +118,11 @@ export async function readBody<Schema extends z.ZodType>(
 }
 
 export function getClientKey(request: Request): string {
-  const supplied = getServerConfig().trustProxy ? request.headers.get("x-real-ip") : null;
-  const address = supplied && isIP(supplied) ? supplied : "unidentified";
+  const config = getServerConfig();
+  const supplied = request.headers.get("x-bcs-client-ip");
+  if (config.trustProxy && (!supplied || !isIP(supplied))) {
+    throw new HttpError(403, "PROXY_REQUIRED", "요청 경로를 확인할 수 없습니다. / Trusted proxy identity is required.");
+  }
+  const address = config.trustProxy && supplied ? supplied : "loopback-review";
   return createHash("sha256").update(address).digest("hex");
 }

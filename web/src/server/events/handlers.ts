@@ -8,6 +8,7 @@ import { z } from "zod";
 import { eventInputSchema, highlightInputSchema, imagePathSchema } from "@/lib/events-contract";
 import {
   clearSessionCookie,
+  currentSessionExpiry,
   isAuthenticated,
   login,
   loginClientKey,
@@ -20,6 +21,7 @@ import { expectedRevision } from "@/server/events/revision";
 import { ApiError } from "@/server/events/errors";
 import { getDatabase } from "@/server/events/db";
 import { imageReferences } from "@/server/events/image-references";
+import { isPublishedProductImage } from "@/server/catalog/images";
 import { dataResponse, itemId, jsonBody, multipartFiles, route, type ImageContext, type ItemContext } from "@/server/events/http";
 import { requireExistingImages, resolveImageFile, storeUploadedImages } from "@/server/events/images";
 import {
@@ -35,18 +37,24 @@ import {
   setEventRegistration,
   updateHighlight,
 } from "@/server/events";
+import { retireEventTicket, syncEventTicket } from "@/server/events/tickets";
 
 const loginSchema = z.object({ password: z.string().min(1).max(1024) }).strict();
 
+function withoutJoinLink<T extends { onlineUrl: string; onlineInstructions: string; onlineInstructionsEn: string }>(event: T) {
+  const hidden = new Set(["onlineUrl", "onlineInstructions", "onlineInstructionsEn"]);
+  return Object.fromEntries(Object.entries(event).filter(([key]) => !hidden.has(key))) as Omit<T, "onlineUrl" | "onlineInstructions" | "onlineInstructionsEn">;
+}
+
 export async function publicEvents(): Promise<Response> {
-  return route(() => dataResponse(listEvents()));
+  return route(() => dataResponse(listEvents().map(withoutJoinLink)));
 }
 
 export async function publicEvent(_request: NextRequest, context: ItemContext): Promise<Response> {
   return route(async () => {
     const event = getEvent(await itemId(context));
     if (!event) throw new ApiError(404, "NOT_FOUND", "행사를 찾을 수 없습니다.");
-    return dataResponse(event);
+    return dataResponse(withoutJoinLink(event));
   });
 }
 
@@ -73,7 +81,9 @@ export async function adminEventsPost(request: NextRequest): Promise<Response> {
   return route(async () => {
     requireSameOrigin(request);
     requireAdmin(request);
-    return dataResponse(createEvent(await jsonBody(request, eventInputSchema)), 201);
+    const event = createEvent(await jsonBody(request, eventInputSchema));
+    await syncEventTicket(event, 0);
+    return dataResponse(event, 201);
   });
 }
 
@@ -90,7 +100,11 @@ export async function adminEventPut(request: NextRequest, context: ItemContext):
   return route(async () => {
     requireSameOrigin(request);
     requireAdmin(request);
-    return dataResponse(updateEvent(await itemId(context), await jsonBody(request, eventInputSchema), expectedRevision(request)));
+    const id = await itemId(context);
+    const previous = getEvent(id);
+    const event = updateEvent(id, await jsonBody(request, eventInputSchema), expectedRevision(request));
+    await syncEventTicket(event, previous?.ticketCapacity ?? event.ticketCapacity);
+    return dataResponse(event);
   });
 }
 
@@ -101,7 +115,10 @@ export async function adminEventPatch(request: NextRequest, context: ItemContext
     requireSameOrigin(request);
     requireAdmin(request);
     const { registrationClosed } = await jsonBody(request, registrationSchema);
-    return dataResponse(setEventRegistration(await itemId(context), registrationClosed, expectedRevision(request)));
+    const id = await itemId(context);
+    const event = setEventRegistration(id, registrationClosed, expectedRevision(request));
+    await syncEventTicket(event);
+    return dataResponse(event);
   });
 }
 
@@ -109,7 +126,9 @@ export async function adminEventDelete(request: NextRequest, context: ItemContex
   return route(async () => {
     requireSameOrigin(request);
     requireAdmin(request);
-    deleteEvent(await itemId(context), expectedRevision(request));
+    const id = await itemId(context);
+    deleteEvent(id, expectedRevision(request));
+    await retireEventTicket(id);
     return dataResponse({ deleted: true });
   });
 }
@@ -179,6 +198,14 @@ export async function adminSession(request: NextRequest): Promise<Response> {
   return route(() => dataResponse({ authenticated: isAuthenticated(request) }));
 }
 
+export async function adminSessions(request: NextRequest): Promise<Response> {
+  return route(() => {
+    requireAdmin(request);
+    const expiresAt = currentSessionExpiry(request);
+    return dataResponse({ sessions: expiresAt == null ? [] : [{ current: true, expiresAt }] });
+  });
+}
+
 export async function adminImages(request: NextRequest): Promise<Response> {
   return route(async () => {
     requireSameOrigin(request);
@@ -192,7 +219,8 @@ export async function publicImage(request: NextRequest, context: ImageContext): 
     const { path: segments } = await context.params;
     const publicPath = imagePathSchema.parse(`/images/${segments.join("/")}`);
     // ponytail: scan current references for immediate revocation; index them if the collection grows substantially.
-    if (!isAuthenticated(request) && !imageReferences(getDatabase(), true).includes(publicPath)) {
+    if (!isAuthenticated(request) && !imageReferences(getDatabase(), true).includes(publicPath)
+      && !await isPublishedProductImage(publicPath)) {
       throw new ApiError(404, "NOT_FOUND", "이미지를 찾을 수 없습니다.");
     }
     requireExistingImages([publicPath]);

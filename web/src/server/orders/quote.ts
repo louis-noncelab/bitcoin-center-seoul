@@ -29,6 +29,7 @@ export const quoteSnapshot = z.object({
 
 export async function cartProducts(tx: Tx, cart: Cart, account: CustomerAccount) {
   const settings = await tx.siteSetting.findUnique({ where: { id: "site" } });
+  if (settings?.maintenanceMode) throw new HttpError(503, "COMMERCE_MAINTENANCE", "상점 점검 중입니다. 잠시 후 다시 시도해 주세요. / The shop is under maintenance. Please try again later.");
   requirePurchasePolicy(account, settings?.guestPurchaseAllowed === false);
   const variants = await tx.productVariant.findMany({ where: { id: { in: cart.items.map((item) => item.variantId) } }, include: { product: true } });
   if (variants.length !== cart.items.length) throw new HttpError(409, "PRODUCT_UNAVAILABLE", "A selected product is unavailable.");

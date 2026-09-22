@@ -4,14 +4,11 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/primitives";
 import { useConfirmation } from "@/components/ui/confirmation-dialog";
-import { Link, useRouter } from "@/i18n/navigation";
 import { reviewAdminSchema, reviewInputSchema, reviewRecordSchema, reviewSelectionInputSchema, reviewSelectionSchema, type ReviewRecord, type ReviewSelection } from "@/lib/reviews-contract";
 import { LoginForm } from "./login-form";
 import { ReviewsEditor, reviewKindLabels } from "./reviews-editor";
 import { ReviewsSelection } from "./reviews-selection";
 import { adminRequest, AdminRequestError, errorText, jsonBody, revisionHeaders } from "./request";
-
-const navigation = [{ href: "/admin", label: "행사·하이라이트" }, { href: "/admin/notices", label: "공지사항" }, { href: "/admin/collection", label: "도서·작품·보드게임·굿즈" }] as const;
 
 export function ReviewsAdmin() {
   const [records, setRecords] = useState<ReviewRecord[]>([]);
@@ -30,7 +27,6 @@ export function ReviewsAdmin() {
   const [revision, setRevision] = useState(0);
   const busy = useRef(false);
   const uploads = useRef(false);
-  const router = useRouter();
   const { confirm, dialog } = useConfirmation();
   const selectionDirty = selection !== null && JSON.stringify(selection) !== JSON.stringify(savedSelection);
   const unsaved = dirty || selectionDirty;
@@ -129,20 +125,10 @@ export function ReviewsAdmin() {
     } catch (caught) { handleError(caught); }
     finally { busy.current = false; setPending(false); }
   }
-  async function logout() {
-    if (!await leave()) return;
-    busy.current = true; setPending(true);
-    try {
-      await adminRequest("/api/admin/logout", z.unknown(), jsonBody({}));
-      setAuthenticated(false); setEditing(false); setDirty(false); setExpired(false); setRecords([]); setSelection(null); setSavedSelection(null);
-    } catch (caught) { handleError(caught); }
-    finally { busy.current = false; setPending(false); }
-  }
   if (authenticated === null) return error ? <><p className="events-error" role="alert">{error}</p><Button onClick={() => { setError(""); setRevision((value) => value + 1); }}>다시 시도</Button></> : <p role="status">로그인 확인 중…</p>;
   if (!authenticated) return <LoginForm locale="ko" onLogin={() => { setError(""); setRevision((value) => value + 1); }} />;
   return <div className="events-admin-workspace">
     {dialog}
-    <div className="events-admin-toolbar"><nav aria-label="콘텐츠 관리" className="button-row">{navigation.map(({ href, label }) => <Link key={href} href={href} locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void leave().then((accepted) => { if (accepted) router.push(href, { locale: "ko" }); }); }}>{label}</Link>)}</nav><Button variant="quiet" disabled={pending || uploading} onClick={() => void logout()}>로그아웃</Button></div>
     {expired && <aside className="events-reauth"><p role="alert">세션이 만료되었습니다. 작성한 내용은 유지됩니다. 다시 로그인한 뒤 저장해 주세요.</p><LoginForm locale="ko" onLogin={() => { setExpired(false); setError(""); }} /></aside>}
     {error && <p className="events-error" role="alert">{error}</p>}{conflict && <div><Button variant="secondary" disabled={pending || uploading || expired} onClick={() => void reload()}>최신 내용 불러오기</Button></div>}<p role="status">{pending ? "처리 중…" : message}</p>
     {editing ? <ReviewsEditor key={selected ? `${selected.id}-${selected.revision}` : "new"} record={selected} disabled={pending || expired} uploading={uploading} onUpload={(value) => { uploads.current = value; setUploading(value); }} onExpired={() => setExpired(true)} onDirty={() => setDirty(true)} onSave={(event) => void save(event)} onCancel={() => void cancelEditor()} /> : <>

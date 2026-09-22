@@ -6,7 +6,8 @@ export const centerEventLocation = {
   locationEn: "Bitcoin Center Seoul (2F, 30 Sinchon-ro 2an-gil, Mapo-gu, Seoul)",
 } as const;
 
-export function eventListLocation(event: Pick<EventRecord, "venueType" | "location" | "locationEn">, locale: Locale): string {
+export function eventListLocation(event: Pick<EventRecord, "venueType" | "location" | "locationEn" | "isOnline">, locale: Locale): string {
+  if (event.isOnline) return locale === "en" ? "Online" : "온라인";
   if (event.venueType === "center") return "";
   return locale === "en" && event.locationEn ? event.locationEn : event.location;
 }

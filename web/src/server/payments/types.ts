@@ -14,7 +14,7 @@ export const receiverSchema = z.discriminatedUnion("provider", [
   z.object({ provider: z.literal("ZAPRITE"), url: z.url(), accountId: z.string().min(1) }),
 ]);
 export const metadataSchema = z.object({
-  orderId: z.string().optional(), bookingId: z.string().optional(),
+  orderId: z.string().optional(), bookingId: z.string().optional(), locale: z.enum(["ko", "en"]).optional(),
   receiverSnapshot: receiverSchema.optional(), lnurlMetadata: z.string().optional(),
   reviewScenario: z.enum(reviewScenarios).optional(),
 });

@@ -1,6 +1,8 @@
 import { z } from "zod";
+import { prisma } from "@/server/db";
 import { getServerConfig } from "@/server/config";
-import { PaymentError, type Invoice, type Observation, type ProviderContext } from "./types";
+import { openString } from "@/server/privacy";
+import { metadataSchema, PaymentError, type Invoice, type Observation, type ProviderContext } from "./types";
 
 // Contract verified against https://api.zaprite.com/openapi.json on 2026-09-21.
 // `amount` and `totalAmount` are denominated in the currency's smallest unit, i.e. satoshis when
@@ -58,13 +60,24 @@ function lookupPath(context: ProviderContext) {
   return `${context.receiver.provider === "ZAPRITE" ? context.receiver.url : ""}/v1/orders/${encodeURIComponent(id)}`;
 }
 
+async function receiptCustomer(orderId: string | null): Promise<{ email: string; name?: string } | null> {
+  if (!orderId) return null;
+  const order = await prisma.order.findUnique({ where: { id: orderId }, select: { customerEmail: true, customerName: true } });
+  if (!order) return null;
+  const email = openString(order.customerEmail).trim();
+  const name = openString(order.customerName).trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return null;
+  return name ? { email, name } : { email };
+}
+
 export async function createZapriteInvoice(context: ProviderContext): Promise<Invoice> {
   const { payment, receiver, transport } = context;
   if (receiver.provider !== "ZAPRITE") throw new PaymentError("PROVIDER_MISMATCH");
   const config = getServerConfig();
-  const locale = "ko";
+  const locale = metadataSchema.parse(payment.metadata).locale ?? "ko";
   const resource = payment.orderId ?? payment.bookingId ?? payment.id;
   const checkoutId = receiver.accountId !== "default" ? receiver.accountId : config.zaprite?.checkoutId;
+  const customer = await receiptCustomer(payment.orderId);
   const body: Record<string, unknown> = {
     amount: safeSats(payment.amountSats),
     currency: "BTC",
@@ -73,7 +86,8 @@ export async function createZapriteInvoice(context: ProviderContext): Promise<In
     redirectIfPending: false,
     expiresAt: payment.expiresAt.toISOString(),
     label: "Bitcoin Center Seoul",
-    sendReceiptToCustomer: false,
+    // Zaprite emails its own payment receipt when this is true and customerData.email is set.
+    sendReceiptToCustomer: Boolean(customer),
     // Metadata values must be strings (max 50 pairs, 1000 chars each). Tags keep this product's
     // orders separable inside a shared organization.
     tags: ["bcs"],
@@ -84,6 +98,7 @@ export async function createZapriteInvoice(context: ProviderContext): Promise<In
       resourceId: resource,
     },
   };
+  if (customer) body.customerData = customer;
   if (checkoutId) body.customCheckoutId = checkoutId;
   const raw = await transport({
     url: `${receiver.url}/v1/orders`,

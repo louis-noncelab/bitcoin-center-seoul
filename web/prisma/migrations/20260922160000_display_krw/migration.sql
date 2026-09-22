@@ -1,0 +1,1 @@
+ALTER TYPE "ProductDisplayUnit" ADD VALUE IF NOT EXISTS 'KRW';

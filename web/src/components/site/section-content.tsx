@@ -10,7 +10,9 @@ import { PhotoSlideshow } from "./photo-slideshow";
 import { EventsCatalog, HighlightsCatalog } from "./events-public";
 import { JournalPagination } from "./journal-pagination";
 import { SpaceTour } from "./space-tour";
+import "@/styles/event-booking.css";
 import "@/styles/reviews.css";
+import "@/styles/slide-region.css";
 
 export function ProgramsContent({ locale, highlights, nextEvent }: { readonly locale: Locale; readonly highlights: readonly HighlightRecord[]; readonly nextEvent: EventRecord | null }) {
   const content = centerContent[locale].programs;
@@ -111,6 +113,7 @@ export function SectionContent({
   highlights = [],
   today = "",
   pagination = { page: 1, totalPages: 1 },
+  paymentHrefs = {},
 }: {
   readonly locale: Locale;
   readonly section: PublicSection;
@@ -118,6 +121,7 @@ export function SectionContent({
   readonly highlights?: readonly HighlightRecord[];
   readonly today?: string;
   readonly pagination?: { readonly page: number; readonly totalPages: number };
+  readonly paymentHrefs?: Readonly<Record<number, string | undefined>>;
 }) {
   const content = centerContent[locale];
   switch (section) {
@@ -144,7 +148,7 @@ export function SectionContent({
         </div>
       );
     case "programs":
-      return <EventsCatalog events={events} locale={locale} today={today} />;
+      return <EventsCatalog events={events} locale={locale} today={today} paymentHrefs={paymentHrefs} />;
     case "experience":
       return <ExperienceContent locale={locale} />;
     case "journal":

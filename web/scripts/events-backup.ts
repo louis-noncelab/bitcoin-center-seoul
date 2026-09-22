@@ -25,7 +25,8 @@ const help = `Usage:
   node --import tsx scripts/events-backup.ts --help
 
 Node 24. No environment files are loaded. The output parent must already exist and be private (0700).
-backup creates a new directory with an online SQLite snapshot, referenced images and a SHA-256 manifest.
+backup creates a new directory with an online SQLite snapshot, all shared uploads and a SHA-256 manifest.
+Product-only and unpublished uploads are included. PostgreSQL needs its own pg_dump backup.
 restore-check verifies and restores only inside a fresh temporary directory, then removes it. It never replaces an active database.
 `;
 
@@ -76,6 +77,23 @@ function imageReferences(db: Database.Database): readonly string[] {
   return contentImageReferences(db);
 }
 
+function uploadedImages(root: string): readonly string[] {
+  const images: string[] = [];
+  function visit(directory: string) {
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      const filename = path.join(directory, entry.name);
+      if (entry.isSymbolicLink()) throw new BackupError("UNSAFE_FILE");
+      if (entry.isDirectory()) visit(filename);
+      else if (entry.isFile()) {
+        const parsed = imagePathSchema.safeParse(`/images/${path.relative(root, filename).split(path.sep).join("/")}`);
+        if (parsed.success && parsed.data) images.push(parsed.data);
+      }
+    }
+  }
+  visit(root);
+  return images;
+}
+
 async function backup(options: z.infer<typeof optionsSchema> & { readonly command: "backup" }): Promise<number> {
   const source = fs.realpathSync(options.database);
   const images = fs.realpathSync(options.images);
@@ -97,7 +115,7 @@ async function backup(options: z.infer<typeof optionsSchema> & { readonly comman
     try {
       saved.pragma("trusted_schema = OFF");
       saved.pragma("journal_mode = DELETE");
-      references = imageReferences(saved);
+      references = [...new Set([...imageReferences(saved), ...uploadedImages(images)])].sort();
     } finally { saved.close(); }
     synchronize(snapshot);
     const files: z.infer<typeof fileSchema>[] = [{ path: "events.db", ...await digest(snapshot) }];
@@ -142,8 +160,9 @@ async function restoreCheck(archive: string): Promise<number> {
       references = imageReferences(db);
     } finally { db.close(); }
     const expected = new Set(["events.db", ...references.map((reference) => reference.slice(1))]);
-    if (manifest.files.length !== expected.size || manifest.files.some((file) => !expected.has(file.path))) throw new BackupError("IMAGE_MANIFEST_MISMATCH");
-    return references.length;
+    const archived = new Set(manifest.files.map((file) => file.path));
+    if ([...expected].some((file) => !archived.has(file))) throw new BackupError("IMAGE_MANIFEST_MISMATCH");
+    return manifest.files.length - 1;
   } finally { fs.rmSync(temporary, { recursive: true, force: true }); }
 }
 

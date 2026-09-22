@@ -1,10 +1,11 @@
 import Image from "next/image";
-import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { ContentLink } from "@/components/controls/content-link";
 import { pageMetadata } from "@/content/site";
 import type { Locale } from "@/i18n/routing";
+import { Link } from "@/i18n/navigation";
 import { isPurchasableKind, type CollectionRecord } from "@/lib/collection-contract";
 import { markdownExcerpt } from "@/lib/markdown";
 import { SiteHeader } from "./site-header";
@@ -70,14 +71,8 @@ export const goodsCopy = {
   en: { title: "Center goods", introduction: "Keep Bitcoin close in everyday life. Center goods and purchasing information.", back: "Back to goods" },
 } as const;
 
-export function PurchaseLink({ record, locale }: { readonly record: CollectionRecord; readonly locale: Locale }) {
-  if (!isPurchasableKind(record.kind)) return null;
-  if (record.soldOut) return <button type="button" className="button collection-sold-out" disabled aria-disabled="true">{locale === "ko" ? "품절" : "Sold out"}</button>;
-  if (!record.purchaseUrl) return null;
-  return <a className="button" data-variant="primary" href={record.purchaseUrl} target="_blank" rel="noopener noreferrer">
-    {locale === "ko" ? "구매하기" : "Buy"}<ArrowUpRight className="icon" aria-hidden="true" />
-    <span className="sr-only">{locale === "ko" ? " (새 창)" : " (new window)"}</span>
-  </a>;
+export function ShopPurchaseLink({ locale }: { readonly locale: Locale }) {
+  return <Link href="/shop" locale={locale} className="button" data-variant="primary">{locale === "ko" ? "상점에서 구매" : "Buy in the shop"}</Link>;
 }
 
 const sectionCopy = (locale: Locale, section: CollectionSection) =>
@@ -250,7 +245,7 @@ export function CollectionGrid({
                 </div>
               </div>
             </ContentLink>
-            {isPurchasableKind(record.kind) && (record.purchaseUrl || record.soldOut) && <div className="collection-purchase"><PurchaseLink record={record} locale={locale} /></div>}
+            {isPurchasableKind(record.kind) && <div className="collection-purchase"><ShopPurchaseLink locale={locale} /></div>}
           </article>
         );
       })}

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
+import { MenuSelect } from "@/components/ui/menu-select";
 import { Button, FormControl } from "@/components/ui/primitives";
 import { Link } from "@/i18n/navigation";
 import { reviewPaymentsPayload, reviewScenarioLabels, type ReviewPaymentRecord } from "@/lib/commerce-contract";
@@ -86,13 +87,13 @@ export function PaymentReviewAdmin() {
             </div>
             <div className="button-row">
               <FormControl>
-                <select
+                <MenuSelect
                   aria-label="제공자 응답"
                   value={scenario[payment.id] ?? "pending"}
                   onChange={(event) => setScenario((current) => ({ ...current, [payment.id]: event.target.value }))}
                 >
                   {scenarios.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                </select>
+                </MenuSelect>
               </FormControl>
               <Button variant="secondary" disabled={pending || expired} onClick={() => void simulate(payment)}>적용</Button>
               {payment.orderId && <Link href={`/orders/${payment.orderId}`} locale="ko" className="button" data-variant="quiet">주문 보기</Link>}

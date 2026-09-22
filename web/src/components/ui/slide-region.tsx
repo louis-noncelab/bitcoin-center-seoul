@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import "@/styles/slide-region.css";
 
 export function SlideRegion({ open, id, children }: {
   readonly open: boolean;

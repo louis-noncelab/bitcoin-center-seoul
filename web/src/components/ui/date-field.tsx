@@ -6,6 +6,7 @@ import { isCalendarDate } from "@/lib/events-contract";
 import { Calendar } from "./calendar";
 import { Dialog } from "./confirmation-dialog";
 import { Button, FormControl } from "./primitives";
+import "@/styles/slide-region.css";
 
 export function DateField({ name, label, defaultValue = "", required = false, onDirty }: {
   readonly name: string; readonly label: string; readonly defaultValue?: string;

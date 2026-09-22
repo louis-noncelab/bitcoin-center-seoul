@@ -1,10 +1,9 @@
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { CommercePage } from "@/components/commerce/commerce-page";
 import { commerceMetadata, pageLocale } from "@/components/commerce/page-support";
-import { DisplayUnitProvider } from "@/components/commerce/display-unit";
+import { ProductGallery } from "@/components/commerce/product-gallery";
 import { ProductPurchase } from "@/components/commerce/product-purchase";
-import { getCommerceSettings } from "@/server/commerce/settings";
+import { ProductJsonLd } from "@/components/seo/product-json-ld";
 import { getProduct } from "@/server/catalog";
 import { HttpError } from "@/server/http";
 
@@ -34,25 +33,26 @@ export default async function ProductPage({ params }: Props) {
   const { locale: value, slug } = await params;
   const locale = pageLocale(value);
   const ko = locale === "ko";
-  const [product, settings] = await Promise.all([load(slug), getCommerceSettings()]);
+  const product = await load(slug);
   const title = ko ? product.titleKo : product.titleEn;
+  const images = product.images?.length ? product.images : (product.imageUrl ? [product.imageUrl] : []);
+  const category = product.category ? (ko ? product.category.nameKo : product.category.nameEn) : null;
   return <CommercePage
     locale={locale}
     title={title}
     backTo="/shop"
     backLabel={ko ? "상점으로" : "Back to the shop"}
     detail
+    focus="wide"
   >
-    <article className={`commerce-product-page ${product.imageUrl ? "" : "commerce-detail-grid--without-image"}`}>
-      <div className={product.imageUrl ? "commerce-detail-grid" : ""}>
-        {product.imageUrl && <div className="commerce-product-media commerce-product-photo">
-          <Image src={product.imageUrl} alt="" fill sizes="(max-width: 767px) 100vw, 55vw" unoptimized />
-        </div>}
-        <DisplayUnitProvider unit={settings.productDisplayUnit}>
-          <ProductPurchase product={product} locale={locale} title={title}>
-            <p className="commerce-product-description">{ko ? product.descriptionKo : product.descriptionEn}</p>
-          </ProductPurchase>
-        </DisplayUnitProvider>
+    <ProductJsonLd locale={locale} product={product} />
+    <article className="commerce-product-page">
+      <div className={`commerce-detail-grid${images.length ? "" : " commerce-detail-grid--without-image"}`}>
+        <ProductGallery images={images} name={title} />
+        <ProductPurchase product={product} locale={locale} title={title}>
+          {category ? <p className="caption">{category}</p> : null}
+          <p className="commerce-product-description">{ko ? product.descriptionKo : product.descriptionEn}</p>
+        </ProductPurchase>
       </div>
     </article>
   </CommercePage>;

@@ -169,3 +169,13 @@ test("backs up collection, visitor reviews and inline Markdown images, including
   const restored = f.run("restore-check", "--backup", f.output);
   assert.equal(restored.status, 0, restored.stderr);
 });
+
+test("backs up shared product uploads even when no SQLite content references them", (t) => {
+  const f = fixture(t);
+  const productImage = "/images/uploads/2026-09/postgres-product.webp";
+  fs.writeFileSync(path.join(f.images, productImage.slice("/images/".length)), "product-only-image");
+  assert.equal(f.backup().status, 0);
+  const manifest = JSON.parse(fs.readFileSync(path.join(f.output, "manifest.json"), "utf8"));
+  assert.ok(manifest.files.some((file) => file.path === productImage.slice(1)));
+  assert.equal(f.run("restore-check", "--backup", f.output).status, 0);
+});

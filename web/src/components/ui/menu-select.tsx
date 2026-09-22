@@ -1,143 +1,124 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import {
-  Children,
-  isValidElement,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { Children, Fragment, isValidElement, useEffect, useId, useRef, useState, type ChangeEvent, type KeyboardEvent, type ReactNode, type SelectHTMLAttributes } from "react";
 
-type MenuOption = {
-  readonly value: string;
-  readonly label: string;
-  readonly disabled?: boolean;
-};
+type Option = { readonly value: string; readonly label: string; readonly disabled: boolean };
 
-function readOptions(children: ReactNode): MenuOption[] {
-  const options: MenuOption[] = [];
-  Children.forEach(children, (child) => {
-    if (!isValidElement(child) || child.type !== "option") return;
-    const props = child.props as { value?: string | number; children?: ReactNode; disabled?: boolean };
-    const value = props.value === undefined || props.value === null ? "" : String(props.value);
-    const label = typeof props.children === "string" || typeof props.children === "number"
-      ? String(props.children)
-      : value;
-    options.push({ value, label, ...(props.disabled ? { disabled: true } : {}) });
-  });
+function optionLabel(children: ReactNode, fallback: string): string {
+  if (typeof children === "string" || typeof children === "number") return String(children);
+  if (Array.isArray(children)) return children.map((child) => optionLabel(child, "")).join("");
+  return fallback;
+}
+
+function readOptions(children: ReactNode): Option[] {
+  const options: Option[] = [];
+  const visit = (nodes: ReactNode) => {
+    Children.forEach(nodes, (child) => {
+      if (!isValidElement<{ value?: string | number; disabled?: boolean; children?: ReactNode }>(child)) return;
+      if (child.type === Fragment) {
+        visit(child.props.children);
+        return;
+      }
+      if (child.type !== "option") return;
+      const value = child.props.value == null ? optionLabel(child.props.children, "") : String(child.props.value);
+      options.push({ value, label: optionLabel(child.props.children, value), disabled: Boolean(child.props.disabled) });
+    });
+  };
+  visit(children);
   return options;
 }
 
-export function MenuSelect({
-  id,
-  name,
-  value,
-  defaultValue,
-  onChange,
-  disabled = false,
-  required = false,
-  children,
-  className = "",
-  "aria-label": ariaLabel,
-  "aria-describedby": describedBy,
-  "aria-invalid": invalid,
-}: {
-  readonly id?: string;
-  readonly name?: string;
-  readonly value?: string;
-  readonly defaultValue?: string;
-  readonly onChange?: (event: { target: { value: string; name: string; id: string } }) => void;
-  readonly disabled?: boolean;
-  readonly required?: boolean;
-  readonly children: ReactNode;
-  readonly className?: string;
-  readonly "aria-label"?: string;
-  readonly "aria-describedby"?: string;
-  readonly "aria-invalid"?: boolean | "true" | "false";
-}) {
-  const options = useMemo(() => readOptions(children), [children]);
-  const listId = useId();
-  const root = useRef<HTMLDivElement>(null);
+type Props = Omit<SelectHTMLAttributes<HTMLSelectElement>, "children" | "size" | "multiple"> & { readonly children?: ReactNode };
+
+export function MenuSelect({ children, value, defaultValue, onChange, name, id, required, disabled, className, "aria-invalid": invalid, "aria-describedby": describedBy, "aria-label": label, autoComplete }: Props) {
+  const options = readOptions(children);
+  const controlled = value !== undefined;
+  const [inner, setInner] = useState(String(defaultValue ?? ""));
+  const current = controlled ? String(value) : inner;
   const [open, setOpen] = useState(false);
-  const [uncontrolled, setUncontrolled] = useState(defaultValue ?? options[0]?.value ?? "");
-  const selected = value ?? uncontrolled;
-  const current = options.find((option) => option.value === selected) ?? options[0];
+  const [active, setActive] = useState(current);
+  const root = useRef<HTMLDivElement>(null);
+  const listId = useId();
+  const selected = options.find((item) => item.value === current);
+  const enabled = options.filter((item) => !item.disabled);
 
   useEffect(() => {
     if (!open) return;
-    function onPointer(event: PointerEvent) {
-      if (event.target instanceof Node && !root.current?.contains(event.target)) setOpen(false);
-    }
-    function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("pointerdown", onPointer);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onPointer);
-      document.removeEventListener("keydown", onKey);
+    const close = (event: PointerEvent) => {
+      if (!root.current?.contains(event.target as Node)) setOpen(false);
     };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
   }, [open]);
 
   function choose(next: string) {
-    if (value === undefined) setUncontrolled(next);
-    onChange?.({ target: { value: next, name: name ?? "", id: id ?? "" } });
+    if (!controlled) setInner(next);
     setOpen(false);
+    onChange?.({ target: { value: next, name: name ?? "" }, currentTarget: { value: next, name: name ?? "" } } as ChangeEvent<HTMLSelectElement>);
   }
 
-  return (
-    <div
-      className={`menu-select ${className}`.trim()}
-      ref={root}
-      data-open={open ? "true" : "false"}
-      onBlur={(event) => {
-        if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget)) setOpen(false);
-      }}
+  function move(step: number) {
+    const index = Math.max(0, enabled.findIndex((item) => item.value === active));
+    const next = enabled[(index + step + enabled.length) % enabled.length];
+    if (next) setActive(next.value);
+  }
+
+  function onKey(event: KeyboardEvent<HTMLButtonElement>) {
+    if (disabled) return;
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      if (!open) { setActive(current); setOpen(true); return; }
+      move(event.key === "ArrowDown" ? 1 : -1);
+    } else if (event.key === "Home" && open) {
+      event.preventDefault();
+      const first = enabled[0];
+      if (first) setActive(first.value);
+    } else if (event.key === "End" && open) {
+      event.preventDefault();
+      const last = enabled[enabled.length - 1];
+      if (last) setActive(last.value);
+    } else if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      if (!open) { setActive(current); setOpen(true); return; }
+      const item = options.find((option) => option.value === active && !option.disabled);
+      if (item) choose(item.value);
+    } else if (event.key === "Escape") {
+      setOpen(false);
+    }
+  }
+
+  return <div ref={root} className={className ? `menu-select ${className}` : "menu-select"} data-open={open} data-invalid={invalid ? "true" : undefined}>
+    <button
+      type="button"
+      id={id}
+      className="menu-select-trigger"
+      disabled={disabled}
+      aria-label={label}
+      aria-haspopup="listbox"
+      aria-expanded={open}
+      aria-controls={open ? listId : undefined}
+      aria-describedby={describedBy}
+      onClick={() => { setActive(current); setOpen((opened) => !opened); }}
+      onKeyDown={onKey}
     >
-      {name ? <input type="hidden" name={name} value={selected} required={required} /> : null}
-      <button
-        type="button"
-        id={id}
-        className="menu-select-trigger"
-        role="combobox"
-        aria-expanded={open}
-        aria-controls={listId}
-        aria-haspopup="listbox"
-        aria-label={ariaLabel}
-        aria-describedby={describedBy}
-        aria-invalid={invalid}
-        aria-required={required || undefined}
-        disabled={disabled}
-        onClick={() => { if (!disabled) setOpen((currentOpen) => !currentOpen); }}
-      >
-        <span>{current?.label || "\u00a0"}</span>
-        <ChevronDown className="icon" aria-hidden="true" />
-      </button>
-      <div
-        id={listId}
-        className="menu-select-menu"
-        role="listbox"
-        data-open={open ? "true" : "false"}
-        aria-hidden={!open}
-        inert={!open}
-      >
-        {options.map((option) => (
-          <button
-            key={option.value || "empty"}
-            type="button"
-            role="option"
-            aria-selected={option.value === selected}
-            disabled={option.disabled}
-            onClick={() => choose(option.value)}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+      <span>{selected?.label ?? "선택"}</span>
+      <ChevronDown className="icon" aria-hidden="true" />
+    </button>
+    <input className="menu-select-value" tabIndex={-1} name={name} value={current} required={required} autoComplete={autoComplete} onChange={() => undefined} aria-hidden="true" readOnly />
+    {open ? <ul id={listId} role="listbox" className="menu-select-popover" aria-labelledby={id}>
+      {options.map((option) => <li key={`${option.value}\u0000${option.label}`} role="presentation">
+        <button
+          type="button"
+          role="option"
+          className="menu-select-option"
+          disabled={option.disabled}
+          aria-selected={option.value === current}
+          data-active={option.value === active || undefined}
+          onMouseEnter={() => setActive(option.value)}
+          onClick={() => { if (!option.disabled) choose(option.value); }}
+        >{option.label}</button>
+      </li>)}
+    </ul> : null}
+  </div>;
 }

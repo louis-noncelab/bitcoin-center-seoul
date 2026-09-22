@@ -30,7 +30,6 @@ export function sharedFulfillments(products: readonly Product[]): Fulfillment[] 
 
 export function resolveCartLines(items: readonly CartLine[], products: readonly Product[]) {
   const missing: string[] = [];
-  const clamped: CartLine[] = [];
   const lines: ResolvedCartLine[] = [];
   for (const item of items) {
     const product = products.find((entry) => entry.variants.some((variant) => variant.id === item.variantId));
@@ -39,20 +38,9 @@ export function resolveCartLines(items: readonly CartLine[], products: readonly 
       missing.push(item.variantId);
       continue;
     }
-    const available = variant.availableStock > 0;
-    const quantity = available ? Math.min(item.quantity, variant.availableStock, CART_MAX_QUANTITY) : item.quantity;
-    if (available && quantity !== item.quantity) clamped.push({ variantId: item.variantId, quantity });
+    const quantity = item.quantity;
+    const available = !product.memberOnly && quantity <= variant.availableStock && quantity <= CART_MAX_QUANTITY;
     lines.push({ variantId: item.variantId, quantity, product, variant, available });
   }
-  return { missing, clamped, lines };
-}
-
-export function applyCartCatalog(items: readonly CartLine[], products: readonly Product[], actions: {
-  readonly remove: (variantId: string) => void;
-  readonly update: (variantId: string, quantity: number) => void;
-}) {
-  const resolved = resolveCartLines(items, products);
-  for (const variantId of resolved.missing) actions.remove(variantId);
-  for (const line of resolved.clamped) actions.update(line.variantId, line.quantity);
-  return resolved;
+  return { missing, lines };
 }

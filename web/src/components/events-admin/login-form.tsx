@@ -4,12 +4,14 @@ import { useRef, useState } from "react";
 import { z } from "zod";
 import { Button, FormControl } from "@/components/ui/primitives";
 import type { Locale } from "@/i18n/routing";
+import { useAdminSession } from "./admin-sidebar";
 import { adminRequest, errorText, jsonBody } from "./request";
 
 export function LoginForm({ locale, onLogin }: { readonly locale: Locale; readonly onLogin: () => void }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const busy = useRef(false);
+  const markSession = useAdminSession();
   const ko = locale === "ko";
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -18,7 +20,9 @@ export function LoginForm({ locale, onLogin }: { readonly locale: Locale; readon
     busy.current = true; setPending(true); setError("");
     try {
       await adminRequest("/api/admin/login", z.unknown(), jsonBody({ password: String(new FormData(form).get("password") ?? "") }));
-      form.reset(); onLogin();
+      form.reset();
+      markSession(true);
+      onLogin();
     } catch (caught) { setError(errorText(caught, locale)); }
     finally { busy.current = false; setPending(false); }
   }

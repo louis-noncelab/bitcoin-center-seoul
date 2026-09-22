@@ -16,14 +16,14 @@ import { reserveRevision } from "@/server/events/revision";
 import { storedTagsSchema } from "@/server/events/tags";
 import { centerEventLocation } from "@/lib/event-location";
 
-type EventRow = Omit<EventRecord, "images" | "tags" | "registrationClosed"> & { readonly tags: string; readonly registrationClosed: number };
+type EventRow = Omit<EventRecord, "images" | "tags" | "registrationClosed" | "ticketCapacity" | "externalPayment" | "isOnline"> & { readonly tags: string; readonly registrationClosed: number; readonly ticketCapacity: number; readonly externalPayment: number; readonly isOnline: number };
 type HighlightRow = Omit<HighlightRecord, "images" | "tags"> & { readonly tags: string };
 type ContentKind = "event" | "highlight";
 type Visibility = { readonly includeInactive?: boolean };
 
 const eventSelect = `
   SELECT id, revision, registrationClosed, title, titleEn, date, time, venueType, location, locationEn,
-         description, descriptionEn, image, link, tags,
+         description, descriptionEn, image, link, ticketPriceKrw, ticketCapacity, externalPayment, isOnline, onlineUrl, onlineInstructions, onlineInstructionsEn, tags,
          COALESCE((SELECT slug FROM content_slugs WHERE kind = 'event' AND content_id = events.id AND is_current = 1), '') AS slug
   FROM events`;
 const highlightSelect = `
@@ -46,7 +46,7 @@ function imagesFor(kind: ContentKind, contentId: number, legacyImage: string): s
 
 function eventFrom(row: EventRow): EventRecord {
   const images = imagesFor("event", row.id, row.image);
-  return eventRecordSchema.parse({ ...row, registrationClosed: row.registrationClosed === 1, tags: storedTagsSchema.parse(row.tags), image: images[0] ?? "", link: normalizedLink(row.link), images });
+  return eventRecordSchema.parse({ ...row, registrationClosed: row.registrationClosed === 1, externalPayment: row.externalPayment === 1, isOnline: row.isOnline === 1, tags: storedTagsSchema.parse(row.tags), image: images[0] ?? "", link: normalizedLink(row.link), onlineUrl: normalizedLink(row.onlineUrl), images });
 }
 
 function highlightFrom(row: HighlightRow): HighlightRecord {
@@ -153,9 +153,9 @@ export function createEvent(input: EventInput): EventRecord {
   const create = db.transaction(() => {
     const image = input.images[0] ?? "";
     const result = db.prepare(`
-      INSERT INTO events (registrationClosed, title, titleEn, date, time, venueType, location, locationEn, description, descriptionEn, image, link, tags)
-      VALUES (@registrationClosed, @title, @titleEn, @date, @time, @venueType, @location, @locationEn, @description, @descriptionEn, @image, @link, @tags)
-    `).run({ ...input, registrationClosed: input.registrationClosed ? 1 : 0, ...(input.venueType === "center" ? centerEventLocation : {}), image, tags: JSON.stringify(input.tags) });
+      INSERT INTO events (registrationClosed, title, titleEn, date, time, venueType, location, locationEn, description, descriptionEn, image, link, ticketPriceKrw, ticketCapacity, externalPayment, isOnline, onlineUrl, onlineInstructions, onlineInstructionsEn, tags)
+      VALUES (@registrationClosed, @title, @titleEn, @date, @time, @venueType, @location, @locationEn, @description, @descriptionEn, @image, @link, @ticketPriceKrw, @ticketCapacity, @externalPayment, @isOnline, @onlineUrl, @onlineInstructions, @onlineInstructionsEn, @tags)
+    `).run({ ...input, registrationClosed: input.registrationClosed ? 1 : 0, externalPayment: input.externalPayment ? 1 : 0, isOnline: input.isOnline ? 1 : 0, ...(input.venueType === "center" && !input.isOnline ? centerEventLocation : {}), image, tags: JSON.stringify(input.tags) });
     const id = Number(result.lastInsertRowid);
     replaceImages("event", id, input.images);
     setSlug("event", id, input.slug);
@@ -184,9 +184,9 @@ export function updateEvent(id: number, input: EventInput, revision: number): Ev
     const result = db.prepare(`
       UPDATE events SET registrationClosed = COALESCE(@registrationClosed, registrationClosed), title = @title, titleEn = @titleEn, date = @date, time = @time,
         venueType = @venueType, location = @location, locationEn = @locationEn, description = @description,
-        descriptionEn = @descriptionEn, image = @image, link = @link, tags = @tags, updated_at = CURRENT_TIMESTAMP
+        descriptionEn = @descriptionEn, image = @image, link = @link, ticketPriceKrw = @ticketPriceKrw, ticketCapacity = @ticketCapacity, externalPayment = @externalPayment, isOnline = @isOnline, onlineUrl = @onlineUrl, onlineInstructions = @onlineInstructions, onlineInstructionsEn = @onlineInstructionsEn, tags = @tags, updated_at = CURRENT_TIMESTAMP
       WHERE id = @id
-    `).run({ ...input, registrationClosed: input.registrationClosed === undefined ? null : Number(input.registrationClosed), ...(input.venueType === "center" ? centerEventLocation : {}), id, image, tags: JSON.stringify(input.tags) });
+    `).run({ ...input, registrationClosed: input.registrationClosed === undefined ? null : Number(input.registrationClosed), externalPayment: input.externalPayment ? 1 : 0, isOnline: input.isOnline ? 1 : 0, ...(input.venueType === "center" && !input.isOnline ? centerEventLocation : {}), id, image, tags: JSON.stringify(input.tags) });
     if (result.changes === 0) throw new ApiError(404, "NOT_FOUND", "행사를 찾을 수 없습니다.");
     replaceImages("event", id, input.images);
     setSlug("event", id, input.slug);
@@ -194,6 +194,18 @@ export function updateEvent(id: number, input: EventInput, revision: number): Ev
   const event = getEvent(id);
   if (!event) throw new ApiError(500, "WRITE_FAILED", "행사 저장에 실패했습니다.");
   return event;
+}
+
+export function paidOnlineSessions(skus: readonly string[]) {
+  const ids = [...new Set(skus.flatMap((sku) => {
+    const match = /^MEETUP-(\d+)$/.exec(sku);
+    return match ? [Number(match[1])] : [];
+  }))];
+  if (!ids.length) return [];
+  const rows = getDatabase().prepare<number[], { readonly title: string; readonly titleEn: string; readonly onlineUrl: string; readonly onlineInstructions: string; readonly onlineInstructionsEn: string }>(
+    `SELECT title, titleEn, onlineUrl, onlineInstructions, onlineInstructionsEn FROM events WHERE isOnline = 1 AND onlineUrl <> '' AND id IN (${ids.map(() => "?").join(",")})`,
+  ).all(...ids);
+  return rows.map((row) => ({ titleKo: row.title, titleEn: row.titleEn, url: normalizedLink(row.onlineUrl), note: row.onlineInstructions, noteEn: row.onlineInstructionsEn }));
 }
 
 export function deleteEvent(id: number, revision: number): void {

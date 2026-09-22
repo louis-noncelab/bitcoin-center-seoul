@@ -8,6 +8,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { noticeInputSchema, noticeRecordSchema, type NoticeRecord } from "@/lib/notices-contract";
 import { splitContentTags } from "@/lib/content-tags";
 import { LoginForm } from "./login-form";
+import { useRegisterLeave } from "./leave-guard";
 import { MarkdownHelp } from "./markdown-help";
 import { MarkdownEditor } from "./markdown-editor";
 import { TagsField } from "./tags-field";
@@ -52,6 +53,7 @@ export function NoticesAdmin() {
     const accepted = !dirty || await confirm({ title: "변경사항을 버릴까요?", description: "저장하지 않은 변경사항은 사라집니다.", confirmLabel: "버리기" });
     return accepted && !busy.current && uploads.current === 0;
   }
+  useRegisterLeave(leave);
   function uploadPending(value: boolean) { uploads.current += value ? 1 : -1; setUploading(uploads.current > 0); }
   function handleError(caught: unknown) {
     setError(errorText(caught, "ko"));
@@ -81,18 +83,10 @@ export function NoticesAdmin() {
     } catch (caught) { handleError(caught); }
     finally { busy.current = false; setPending(false); }
   }
-  async function logout() {
-    if (!(await leave())) return;
-    busy.current = true; setPending(true);
-    try { await adminRequest("/api/admin/logout", z.unknown(), jsonBody({})); setAuthenticated(false); setEditing(false); setDirty(false); setRecords([]); }
-    catch (caught) { handleError(caught); }
-    finally { busy.current = false; setPending(false); }
-  }
   if (authenticated === null) return <p role="status">로그인 확인 중…</p>;
   if (!authenticated) return <><p className="events-error" role="alert">{error}</p><LoginForm locale="ko" onLogin={() => { setError(""); setRevision((value) => value + 1); }} /></>;
   return <div className="events-admin-workspace">
     {dialog}
-    <div className="events-admin-toolbar"><Link href="/admin" locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void leave().then((accepted) => { if (accepted) router.push("/admin", { locale: "ko" }); }); }}>행사·하이라이트 관리</Link><Link href="/admin/collection" locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void leave().then((accepted) => { if (accepted) router.push("/admin/collection", { locale: "ko" }); }); }}>도서·작품·보드게임·굿즈</Link><Link href="/admin/reviews" locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void leave().then((accepted) => { if (accepted) router.push("/admin/reviews", { locale: "ko" }); }); }}>방문 후기</Link><Button variant="quiet" disabled={pending || uploading} onClick={() => void logout()}>로그아웃</Button></div>
     <div className="news-admin-guide">
       <p>공개한 공지는 공지사항과 소식에 반영됩니다. 홈에는 공지와 현장 스케치를 합쳐 최근 2개 소식이 표시됩니다. 비공개 공지는 제외됩니다.</p>
       <Link href="/news" locale="ko" prefetch={false} onNavigate={(event) => { event.preventDefault(); void leave().then((accepted) => { if (accepted) router.push("/news", { locale: "ko" }); }); }}>공개 소식 보기</Link>

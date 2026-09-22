@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import type { Locale } from "@/i18n/routing";
 import type { EventRecord, HighlightRecord } from "@/lib/events-contract";
 import { ChoiceControl, FormControl } from "@/components/ui/primitives";
@@ -16,6 +19,8 @@ export function EditorFields({ locale, kind, record, onPending, onDirty, onExpir
 }) {
   const ko = locale === "ko";
   const event = record && "time" in record ? record : null;
+  const [externalPayment, setExternalPayment] = useState(event?.externalPayment ?? true);
+  const [online, setOnline] = useState(event?.isOnline ?? false);
   const highlight = record && "meta" in record ? record : null;
   function input(name: string, label: string, value = "", type = "text", required = false) {
     if (type === "date") return <DateField key={name} name={name} label={label} defaultValue={value} required={required} onDirty={onDirty} />;
@@ -65,11 +70,34 @@ export function EditorFields({ locale, kind, record, onPending, onDirty, onExpir
       )}
       {kind === "events" && <label className="events-checkbox"><ChoiceControl role="switch" name="registrationClosed" type="checkbox" defaultChecked={event?.registrationClosed ?? false} />참여 마감<span className="muted">켜면 참여 링크 대신 ‘참여 마감’이 표시됩니다. 저장하면 반영됩니다.</span></label>}
       {kind === "events" ? (
-        <label>
-          참여하기 버튼 링크 (선택)
-          <FormControl><input name="link" aria-label="참여하기 버튼 링크 (선택)" type="url" maxLength={2048} defaultValue={record?.link ? (/^www\./.test(record.link) ? `https://${record.link}` : record.link) : ""} placeholder="https://" aria-describedby="event-link-help" /></FormControl>
-          <span id="event-link-help" className="muted">Zaprite Payment Link 또는 이벤트 티켓 링크를 입력해 주세요. 참여하기 버튼을 누르면 입력한 링크가 새 창으로 열립니다. 비워 두면 버튼이 표시되지 않습니다.</span>
-        </label>
+        <>
+          <label className="events-checkbox"><ChoiceControl role="switch" name="externalPayment" type="checkbox" checked={externalPayment} onChange={(change) => { setExternalPayment(change.currentTarget.checked); onDirty(); }} />외부 결제 링크<span className="muted">켜면 참여하기가 아래 주소를 새 창으로 엽니다. 끄면 참가비와 정원으로 센터 결제를 받습니다.</span></label>
+          <label hidden={!externalPayment}>
+            참여하기 버튼 링크 (선택)
+            <FormControl><input name="link" aria-label="참여하기 버튼 링크 (선택)" type="url" maxLength={2048} defaultValue={record?.link ? (/^www\./.test(record.link) ? `https://${record.link}` : record.link) : ""} placeholder="https://" aria-describedby="event-link-help" /></FormControl>
+            <span id="event-link-help" className="muted">Zaprite Payment Link 또는 이벤트 티켓 링크가 새 창으로 열립니다. 비워 두면 버튼이 표시되지 않습니다.</span>
+          </label>
+          <div hidden={externalPayment}>
+            <div className="events-field-grid">
+              <label>참가비 (원)<FormControl><input name="ticketPriceKrw" inputMode="numeric" pattern="[1-9][0-9]*" maxLength={9} defaultValue={event?.ticketPriceKrw ?? ""} placeholder="28000" required={!externalPayment} aria-describedby="event-ticket-help" /></FormControl></label>
+              <label>정원 (명)<FormControl><input name="ticketCapacity" inputMode="numeric" pattern="[1-9][0-9]*" maxLength={6} defaultValue={event?.ticketCapacity ? String(event.ticketCapacity) : ""} placeholder="20" required={!externalPayment} aria-describedby="event-ticket-help" /></FormControl></label>
+            </div>
+            <p id="event-ticket-help" className="muted">참여하기가 센터 주문으로 열립니다. 인보이스는 상점 설정에서 고른 Zaprite 또는 라이트닝 주소를 따릅니다.</p>
+          </div>
+          <label className="events-checkbox"><ChoiceControl role="switch" name="isOnline" type="checkbox" checked={online} onChange={(change) => { setOnline(change.currentTarget.checked); onDirty(); }} />온라인 밋업<span className="muted">켜면 장소 대신 온라인으로 안내합니다. 참여 링크는 결제 후 확인 페이지와 메일에만 버튼으로 나갑니다.</span></label>
+          <div hidden={!online} className="events-field-grid">
+            <label>온라인 참여 링크
+              <FormControl><input name="onlineUrl" type="url" inputMode="url" maxLength={2048} defaultValue={event?.onlineUrl ?? ""} placeholder="https://meet.google.com/..." required={online} aria-describedby="event-online-help" /></FormControl>
+              <span id="event-online-help" className="muted">구글 밋이나 다른 온라인 밋업 주소. 결제 전에는 공개되지 않습니다.</span>
+            </label>
+            <label>참여 안내 · 한국어 (선택)
+              <FormControl><input name="onlineInstructions" maxLength={1000} defaultValue={event?.onlineInstructions ?? ""} placeholder="입장 코드가 있으면 적어 주세요." /></FormControl>
+            </label>
+            <label>참여 안내 · 영어 (선택)
+              <FormControl><input name="onlineInstructionsEn" maxLength={1000} defaultValue={event?.onlineInstructionsEn ?? ""} /></FormControl>
+            </label>
+          </div>
+        </>
       ) : input("link", ko ? "관련 링크 (선택)" : "Related link (optional)", record?.link ? (/^www\./.test(record.link) ? `https://${record.link}` : record.link) : "", "url")}
       <div className="events-field-grid">
         <MarkdownEditor name="description" label="설명 · 한국어" defaultValue={record?.description ?? ""} required helpId="description-markdown-help" onPending={onPending} onDirty={onDirty} onExpired={onExpired} />

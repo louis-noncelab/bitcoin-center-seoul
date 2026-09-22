@@ -7,6 +7,7 @@ export const productSchema = z.object({
   descriptionKo: z.string().min(1).max(100_000), descriptionEn: z.string().min(1).max(100_000),
   contentFormat: z.enum(["PLAIN", "MARKDOWN"]).optional(),
   imageUrl: z.string().max(500).regex(/^(?:\/media\/[A-Za-z0-9_./-]+|\/images\/[A-Za-z0-9_./-]+)?$/).refine((value) => !value.includes("..")),
+  images: z.array(z.string().max(500).regex(/^\/(?:media|images)\/[A-Za-z0-9_./-]+$/).refine((value) => !value.includes(".."))).max(12).optional(),
   categoryId: z.union([z.literal(""), identifier]).nullable().optional(),
   published: z.boolean(), memberOnly: z.boolean(),
   priceKind: z.enum(["KRW_FIXED", "BTC_FIXED"]), priceAmount: z.string().regex(/^[1-9]\d{0,14}$/),

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { eventRecordSchema } from "../src/lib/events-contract";
 import { centerEventLocation } from "../src/lib/event-location";
 import { deleteContentFixture } from "./content-cleanup";
+import { chooseVenue, expectVenue, venueField } from "./venue-menu";
 
 const events = z.object({ data: z.array(eventRecordSchema) });
 
@@ -19,11 +20,11 @@ test("관리자가 센터 자동 주소와 외부 장소를 전환하고 저장�
   await page.getByLabel("관리자 비밀번호", { exact: true }).fill(process.env.ADMIN_PASSWORD);
   await page.getByRole("button", { name: "로그인", exact: true }).click();
   await page.getByRole("button", { name: "새 항목 등록", exact: true }).click();
-  const venue = page.getByLabel("행사 장소", { exact: true });
+  const venue = venueField(page);
   const korean = page.getByLabel("장소 · 한국어", { exact: true });
   const english = page.getByLabel("장소 · 영어 (선택)", { exact: true });
   const group = page.locator(".events-field-grid").filter({ has: venue });
-  await expect(venue).toHaveValue("center");
+  await expectVenue(page, "center");
   await expect(korean).toBeHidden();
   await expect(group).toContainText(centerEventLocation.location);
   await group.screenshot({ path: testInfo.outputPath("admin-center-375.png") });
@@ -45,15 +46,15 @@ test("관리자가 센터 자동 주소와 외부 장소를 전환하고 저장�
     expect(initial).toMatchObject({ venueType: "center", ...centerEventLocation });
     const edit = () => page.locator(".events-admin-list > li").filter({ hasText: title }).getByRole("button", { name: "수정", exact: true }).click();
     await edit();
-    await venue.selectOption("external");
+    await chooseVenue(page, "external");
     await expect(korean).toHaveAttribute("required", "");
     await page.getByRole("button", { name: "저장", exact: true }).click();
     expect(await korean.evaluate(input => input instanceof HTMLInputElement && input.validity.valueMissing)).toBe(true);
     await korean.fill("외부 행사장 (서울 마포구)");
     await english.fill("External venue (Mapo-gu, Seoul)");
-    await venue.selectOption("center");
+    await chooseVenue(page, "center");
     await expect(korean).toBeHidden();
-    await venue.selectOption("external");
+    await chooseVenue(page, "external");
     await expect(korean).toHaveValue("외부 행사장 (서울 마포구)");
     for (const width of [320, 375, 1280]) {
       await page.setViewportSize({ width, height: 900 });
@@ -65,9 +66,9 @@ test("관리자가 센터 자동 주소와 외부 장소를 전환하고 저장�
     expect(await saved()).toMatchObject({ venueType: "external", location: "외부 행사장 (서울 마포구)", locationEn: "External venue (Mapo-gu, Seoul)" });
     await page.reload();
     await edit();
-    await expect(venue).toHaveValue("external");
+    await expectVenue(page, "external");
     await expect(korean).toHaveValue("외부 행사장 (서울 마포구)");
-    await venue.selectOption("center");
+    await chooseVenue(page, "center");
     await page.getByRole("button", { name: "저장", exact: true }).click();
     await expect(page.locator(".events-editor")).toHaveCount(0);
     expect(await saved()).toMatchObject({ venueType: "center", ...centerEventLocation });

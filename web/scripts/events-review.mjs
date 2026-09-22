@@ -45,6 +45,24 @@ if (!runtime.ADMIN_PASSWORD_HASH) {
 if (!validPasswordHash(runtime.ADMIN_PASSWORD_HASH)) throw new Error("Invalid review password hash.");
 environment.ADMIN_PASSWORD_HASH = runtime.ADMIN_PASSWORD_HASH;
 environment.BCS_TRUST_PROXY = "false";
+// Next skips .env files because __NEXT_PROCESSED_ENV is set. The public pages now read the
+// commerce database, so the isolated review process needs a local review configuration.
+const reviewData = join(directory, "data");
+await mkdir(reviewData, { recursive: true, mode: 0o700 });
+const reviewDefaults = {
+  APP_MODE: "review",
+  DATABASE_URL: "postgresql://max@127.0.0.1:5432/center_test",
+  DATA_DIR: reviewData,
+  TOKEN_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString("base64"),
+  PAYMENT_PROVIDER: "zaprite",
+  PAYMENT_MODE: "review",
+  EMAIL_MODE: "capture",
+  TRUST_PROXY: "false",
+  REVIEW_KRW_PER_BTC: "150000000",
+};
+for (const [name, value] of Object.entries(reviewDefaults)) {
+  if (!environment[name]) environment[name] = value;
+}
 if (command !== "test") delete environment.ADMIN_PASSWORD;
 applyPatch();
 let target;

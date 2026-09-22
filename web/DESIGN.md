@@ -1,5 +1,13 @@
 # Bitcoin Center Seoul: public design revision
 
+## Commerce repair contract — 2026-09-21
+
+- Guest shoppers reuse the collection’s three/two/one-column grid, shared fields, feedback and bilingual shell. The shell owns one product heading; image-less purchases retain the existing 32rem measure. English summary keys stay intact while values wrap.
+- Forms and feedback load once with global primitives. Variants use native select labels, disabled options, validation and keyboard behavior. Admin controls retain their own namespace.
+- A single cart trigger stays visible beside the header menu at every width. One native dialog sits outside the header and hidden disclosure. Native modality handles focus, Escape and restoration; backdrop dismissal and route cleanup release scroll locking. Right-edge translation and backdrop opacity reuse the site’s 240ms control/ease-out tokens and discrete dialog transitions; interrupted changes retarget immediately and reduced motion settles without animation. Mechanism reference: https://beui.dev/r/drawer/raw, adapted to existing site-dialog CSS without dependencies.
+- Verify Korean/English shoppers at 375/768/1440px in both themes, keyboard and reduced motion, including close/reopen, backdrop, Escape, route changes, empty/unavailable carts and long fulfillment values. Runtime fixtures remain review-only.
+
+
 ## 공통 공개 페이지 프레임, 2026-09-21
 
 - 홈의 1280px 고정 폭을 제거하고 기존 공통 `--content-max`(기본 80rem, 1440px부터 90rem, 1800px부터 110rem)와 반응형 `--gutter` 사용. 초광폭 화면에서도 중앙 정렬과 최대 폭 유지

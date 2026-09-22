@@ -17,6 +17,7 @@ export function ShippingAdmin() {
   const [zones, setZones] = useState<AdminZoneRecord[]>([]);
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [expired, setExpired] = useState(false);
+  const [dirtyForms, setDirtyForms] = useState<ReadonlySet<string>>(new Set());
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -44,45 +45,51 @@ export function ShippingAdmin() {
   async function run(work: () => Promise<unknown>, done: string) {
     if (busy.current || expired) return;
     busy.current = true; setPending(true); setError(""); setMessage("");
-    try { await work(); setMessage(done); setRevision((value) => value + 1); }
+    try { await work(); setMessage(done); setRevision((value) => value + 1); return true; }
     catch (caught) { handleError(caught); }
     finally { busy.current = false; setPending(false); }
+  }
+
+  function markDirty(key: string) { setDirtyForms((current) => new Set(current).add(key)); }
+  function saved(form: HTMLFormElement, key: string) {
+    form.reset();
+    setDirtyForms((current) => { const next = new Set(current); next.delete(key); return next; });
   }
 
   async function addZone(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
-    await run(() => adminRequest("/api/admin/shipping/zones", okSchema, jsonBody({
+    const success = await run(() => adminRequest("/api/admin/shipping/zones", okSchema, jsonBody({
       nameKo: String(data.get("nameKo")).trim(),
       nameEn: String(data.get("nameEn")).trim(),
       active: true,
     })), "배송 지역을 추가했습니다.");
-    form.reset();
+    if (success) saved(form, "zone");
   }
 
   async function addCountry(event: FormEvent<HTMLFormElement>, zoneId: string) {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
-    await run(() => adminRequest("/api/admin/shipping/countries", okSchema, jsonBody({
+    const success = await run(() => adminRequest("/api/admin/shipping/countries", okSchema, jsonBody({
       code: String(data.get("code")).trim().toUpperCase(),
       zoneId,
       requiresPostalCode: data.has("requiresPostalCode"),
     })), "국가를 추가했습니다.");
-    form.reset();
+    if (success) saved(form, `country:${zoneId}`);
   }
 
   async function addRate(event: FormEvent<HTMLFormElement>, zoneId: string) {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
-    await run(() => adminRequest("/api/admin/shipping/rates", okSchema, jsonBody({
+    const success = await run(() => adminRequest("/api/admin/shipping/rates", okSchema, jsonBody({
       zoneId,
       maxWeightG: Number(data.get("maxWeightG")),
       amountKrw: String(data.get("amountKrw")).trim(),
     })), "무게 구간을 추가했습니다.");
-    form.reset();
+    if (success) saved(form, `rate:${zoneId}`);
   }
 
   if (authenticated === null) {
@@ -94,11 +101,11 @@ export function ShippingAdmin() {
 
   return <div className="events-admin-workspace">
     {dialog}
-    <CommerceAdminNav current="/admin/shipping" disabled={pending} />
+    <CommerceAdminNav current="/admin/shipping" disabled={pending} dirty={dirtyForms.size > 0} />
     {expired && <aside className="events-reauth"><p role="alert">세션이 만료되었습니다. 다시 로그인한 뒤 계속해 주세요.</p><LoginForm locale="ko" onLogin={() => { setExpired(false); setError(""); setRevision((value) => value + 1); }} /></aside>}
     {error && <p className="events-error" role="alert">{error}</p>}<p role="status">{message}</p>
 
-    <form className="events-form" onSubmit={(event) => void addZone(event)}>
+    <form className="events-form" onSubmit={(event) => void addZone(event)} onChange={() => markDirty("zone")}>
       <h2>배송 지역 추가</h2>
       <fieldset className="events-editor-fields" disabled={pending}>
         <div className="events-field-grid">
@@ -128,7 +135,7 @@ export function ShippingAdmin() {
         </li>)}
         {!zone.countries.length && <li>등록된 국가가 없습니다.</li>}
       </ul>
-      <form onSubmit={(event) => void addCountry(event, zone.id)}>
+      <form onSubmit={(event) => void addCountry(event, zone.id)} onChange={() => markDirty(`country:${zone.id}`)}>
         <fieldset className="events-editor-fields" disabled={pending}>
           <div className="events-field-grid">
             <label>ISO 국가 코드<FormControl><input name="code" required maxLength={2} minLength={2} placeholder="KR" autoCapitalize="characters" spellCheck={false} /></FormControl></label>
@@ -146,7 +153,7 @@ export function ShippingAdmin() {
         </li>)}
         {!zone.rates.length && <li>등록된 구간이 없습니다. 구간이 없으면 이 지역으로 주문할 수 없습니다.</li>}
       </ul>
-      <form onSubmit={(event) => void addRate(event, zone.id)}>
+      <form onSubmit={(event) => void addRate(event, zone.id)} onChange={() => markDirty(`rate:${zone.id}`)}>
         <fieldset className="events-editor-fields" disabled={pending}>
           <div className="events-field-grid">
             <label>최대 무게 (g)<FormControl><input name="maxWeightG" type="number" required min={1} max={1000000} step={1} placeholder="2000" /></FormControl></label>

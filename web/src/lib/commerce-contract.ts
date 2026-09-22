@@ -6,9 +6,16 @@ export const commerceSettingsRecord = z.object({
   paymentProvider: z.enum(["LNURL", "ZAPRITE"]),
   btcPriceSource: z.enum(["UPBIT", "BITHUMB", "FIXED"]),
   fixedKrwPerBtc: z.string(),
-  productDisplayUnit: z.enum(["SATS", "BTC"]),
+  productDisplayUnit: z.enum(["KRW", "SATS", "BTC"]),
   guestPurchaseAllowed: z.boolean(),
   maintenanceMode: z.boolean(),
+  lightningAddressId: z.string().nullable(),
+  lightningAddresses: z.array(z.object({
+    id: z.string(), label: z.string(), address: z.string(), allowedOrigins: z.string(),
+  })),
+  notificationChannel: z.enum(["DISCORD", "MATTERMOST", "GENERIC"]),
+  notificationWebhookRegistered: z.boolean(),
+  notificationEmail: z.string().email(),
   configured: z.record(z.string(), z.boolean()),
 });
 export type CommerceSettingsRecord = z.infer<typeof commerceSettingsRecord>;
@@ -24,6 +31,7 @@ export type AdminVariantRecord = z.infer<typeof adminVariantRecord>;
 export const adminProductRecord = z.object({
   id: z.string(), slug: z.string(), titleKo: z.string(), titleEn: z.string(),
   descriptionKo: z.string(), descriptionEn: z.string(), imageUrl: z.string(),
+  images: z.array(z.string()).default([]),
   published: z.boolean(), memberOnly: z.boolean(),
   priceKind: z.enum(["KRW_FIXED", "BTC_FIXED"]), priceAmount: amount, listPriceAmount: z.string(),
   allowedFulfillments: z.array(z.enum(["PICKUP", "DOMESTIC", "INTERNATIONAL"])),
@@ -41,6 +49,8 @@ export type AdminCategoryRecord = z.infer<typeof adminCategoryRecord>;
 
 export const adminOrderRecord = z.object({
   id: z.string(),
+  refundStatus: z.enum(["NONE", "PENDING", "COMPLETED"]).default("NONE"),
+  refundedAt: z.string().nullable().optional(),
   status: z.enum(["PENDING_PAYMENT", "PAID", "EXPIRED", "CANCELLED", "REVIEW"]),
   customerName: z.string(), customerEmail: z.string(), customerPhone: z.string(),
   customerNotes: z.string().optional(), locale: z.string(),
@@ -54,6 +64,7 @@ export const adminOrderRecord = z.object({
   shippingAmountSats: amount,
   carrier: z.string().nullable(), trackingNumber: z.string().nullable(),
   fulfilledAt: z.string().nullable(), holdExpiresAt: z.string().nullable(), createdAt: z.string(),
+  confirmationCode: z.string().nullable().optional(), checkedInAt: z.string().nullable().optional(),
   items: z.array(z.object({
     id: z.string(), sku: z.string(), quantity: z.number().int(),
     titleKo: z.string(), titleEn: z.string(),
@@ -64,6 +75,7 @@ export const adminOrderRecord = z.object({
     status: z.enum(["NEW", "CREATING", "PENDING", "PROCESSING", "PAID", "EXPIRED", "FAILED", "REVIEW"]),
     mode: z.enum(["REVIEW", "SANDBOX", "LIVE"]),
     expiresAt: z.string(),
+    updatedAt: z.string(), paidAt: z.string().nullable(), creationUnknown: z.boolean(),
   })),
 });
 export type AdminOrderRecord = z.infer<typeof adminOrderRecord>;

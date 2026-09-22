@@ -11,11 +11,11 @@ export async function requirePaymentAccess(request: Request, paymentId: string) 
   await requireResourceAccess(request, { ...payment.order, kind: "order" });
   return payment;
 }
-export function publicPayment(payment: Payment) {
+export function publicPayment(payment: Payment, confirmationCode: string | null = null) {
   return {
-    id: payment.id, provider: payment.provider, mode: payment.mode, status: payment.status,
+    id: payment.id, orderId: payment.orderId, provider: payment.provider, mode: payment.mode, status: payment.status,
     amountSats: payment.amountSats.toString(), currency: payment.currency, expiresAt: payment.expiresAt,
-    checkoutUrl: payment.checkoutUrl, paymentRequest: payment.paymentRequest,
+    checkoutUrl: payment.checkoutUrl, paymentRequest: payment.paymentRequest, confirmationCode,
     review: payment.mode === "REVIEW", creationUnknown: payment.creationUnknown, reviewReason: payment.reviewReason,
   };
 }

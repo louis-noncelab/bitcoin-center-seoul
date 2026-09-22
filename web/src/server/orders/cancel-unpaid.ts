@@ -2,7 +2,9 @@ import "server-only";
 import type { Payment, Prisma } from "@/generated/prisma/client";
 import { prisma, type Tx } from "@/server/db";
 import { HttpError } from "@/server/http";
+import { releaseCouponUsage } from "@/server/commerce/coupons";
 import { lockPayment } from "@/server/payments/state";
+import { scheduleEmailDelivery } from "@/server/email/queue";
 import { applyPaymentOutcome } from "./payment-outcome";
 import { orderIncludes, orderView } from "./projection";
 
@@ -39,7 +41,8 @@ export async function cancelUnpaidOrder(
   input: { readonly reason?: string | undefined; readonly actorId?: string | undefined },
 ) {
   const reason = cancelReason(input.reason);
-  return prisma.$transaction(async (tx) => {
+  let deliver = false;
+  const view = await prisma.$transaction(async (tx) => {
     const existingPayment = await tx.payment.findFirst({ where: { orderId }, orderBy: { createdAt: "asc" } });
     if (existingPayment) await lockPayment(tx, existingPayment.id);
     await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${orderId} FOR UPDATE`;
@@ -50,6 +53,7 @@ export async function cancelUnpaidOrder(
         return orderView(order);
     }
     if (order.status === "EXPIRED") {
+      await releaseCouponUsage(tx, order.id);
       await tx.order.update({ where: { id: order.id }, data: { status: "CANCELLED", holdExpiresAt: null } });
         await tx.auditLog.create({ data: { actorId: input.actorId ?? null, action: "order.cancelled", targetType: "Order", targetId: order.id, summary: { actor, from: "EXPIRED" } } });
       return orderView(await tx.order.findUniqueOrThrow({ where: { id: order.id }, include: orderIncludes }));
@@ -65,8 +69,10 @@ export async function cancelUnpaidOrder(
     }
     const failed = await failPayment(tx, payment, reason);
     await applyPaymentOutcome(tx, failed, "CANCELLED");
-    await tx.couponUsage.deleteMany({ where: { orderId: order.id } });
+    deliver = true;
     await tx.auditLog.create({ data: { actorId: input.actorId ?? null, action: "order.cancelled", targetType: "Order", targetId: order.id, summary: { actor, reason } } });
     return orderView(await tx.order.findUniqueOrThrow({ where: { id: order.id }, include: orderIncludes }));
   });
+  if (deliver) scheduleEmailDelivery();
+  return view;
 }

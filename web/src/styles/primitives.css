@@ -194,6 +194,11 @@ button:not(:disabled), summary {
   min-inline-size: 0;
 }
 
+.form-control > .menu-select { inline-size: 100%; }
+.form-control .menu-select-trigger {
+  padding: calc(var(--space-3) - var(--border-width)) var(--space-3);
+  font-size: var(--text-small);
+}
 .form-control > :is(input, select, textarea) {
   box-sizing: border-box;
   inline-size: 100%;
@@ -271,10 +276,12 @@ button:not(:disabled), summary {
 .choice-control[role="switch"]:checked::before, [role="switch"][aria-checked="true"] .events-switch-track::after { transform: translateX(var(--switch-thumb)); }
 .button[role="switch"][aria-busy="true"] { background: transparent; color: var(--ink); }
 @media (prefers-reduced-motion: no-preference) {
-  .choice-control { transition: border-color var(--duration-control), background-color var(--duration-control); }
-  .choice-control::before { transition: transform var(--duration-control) var(--ease-out), opacity var(--duration-control); }
-  .events-switch-track { transition: background-color var(--duration-control); }
-  .events-switch-track::after { transition: transform var(--duration-control) var(--ease-out); }
+  .choice-control { transition: border-color var(--duration-control) var(--ease-out), background-color var(--duration-control) var(--ease-out); }
+  .choice-control::before { transition: transform var(--duration-control) var(--ease-out), opacity var(--duration-control) var(--ease-out); }
+  .choice-control[role="switch"] { transition: background-color var(--duration-overlay) var(--ease-out); }
+  .choice-control[role="switch"]::before { transition: transform var(--duration-overlay) var(--ease-out); }
+  .events-switch-track { transition: background-color var(--duration-overlay) var(--ease-out); }
+  .events-switch-track::after { transition: transform var(--duration-overlay) var(--ease-out); }
 }
 @media (forced-colors: active) {
   .choice-control { forced-color-adjust: none; background: Canvas; border-color: CanvasText; color: CanvasText; }

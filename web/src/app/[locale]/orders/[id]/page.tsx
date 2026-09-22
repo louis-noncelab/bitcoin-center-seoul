@@ -7,13 +7,14 @@ type Props = { readonly params: Promise<{ locale: string; id: string }> };
 export async function generateMetadata({ params }: Props) {
   const { locale: value, id } = await params;
   const locale = pageLocale(value);
-  return commerceMetadata(locale, { path: `/orders/${id}`, title: locale === "ko" ? "주문 확인" : "Your order" });
+  if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) notFound();
+  return commerceMetadata(locale, { path: `/orders/${id}`, title: locale === "ko" ? "주문 확인" : "Your order" }, { indexed: false });
 }
 export default async function OrderPage({ params }: Props) {
   const { locale: value, id } = await params;
   const locale = pageLocale(value);
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) notFound();
-  return <CommercePage locale={locale} title={locale === "ko" ? "주문 확인" : "Your order"}>
+  return <CommercePage locale={locale} focus="narrow" title={locale === "ko" ? "주문 확인" : "Your order"}>
     <OrderDetails id={id} locale={locale} />
   </CommercePage>;
 }

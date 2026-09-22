@@ -5,6 +5,7 @@ import { cache } from "react";
 import { CollectionFrame, collectionHref, collectionMetadata, collectionText } from "@/components/site/collection-public";
 import { PhotoGallery } from "@/components/site/events-public";
 import { MarkdownContent } from "@/components/site/markdown-content";
+import "@/styles/reviews.css";
 import { routing } from "@/i18n/routing";
 import { getCollectionByPath } from "@/server/collection";
 

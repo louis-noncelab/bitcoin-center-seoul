@@ -1,0 +1,5 @@
+CREATE TYPE "RefundStatus" AS ENUM ('NONE', 'PENDING', 'COMPLETED');
+
+ALTER TABLE "Order"
+ADD COLUMN "refundStatus" "RefundStatus" NOT NULL DEFAULT 'NONE',
+ADD COLUMN "refundedAt" TIMESTAMP(3);

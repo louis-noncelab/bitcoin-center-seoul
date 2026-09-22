@@ -1,35 +1,58 @@
 "use client";
 
-import { Link } from "@/i18n/navigation";
+import { useEffect, useState } from "react";
 
-const pages = [
-  { href: "/admin/products", label: "상품" },
-  { href: "/admin/orders", label: "주문" },
-  { href: "/admin/shipping", label: "배송비" },
-  { href: "/admin/coupons", label: "쿠폰" },
-  { href: "/admin/settings", label: "결제·환율" },
-  { href: "/admin/review", label: "결제 검토" },
-] as const;
+function formatRemaining(ms: number): string {
+  if (ms <= 0) return "만료됨";
+  const total = Math.floor(ms / 1000);
+  const days = Math.floor(total / 86400);
+  const hours = Math.floor((total % 86400) / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  if (days > 0) return `${days}일 ${hours}시간`;
+  if (hours > 0) return `${hours}시간 ${minutes}분`;
+  return `${minutes}분`;
+}
 
-/** Same toolbar row the content admin pages use, so the two areas navigate alike. */
-export function CommerceAdminNav({ current, disabled = false }: {
+function SessionRemainder() {
+  const [label, setLabel] = useState("");
+  useEffect(() => {
+    let stopped = false;
+    const load = async () => {
+      try {
+        const response = await fetch("/api/admin/sessions", { credentials: "same-origin", cache: "no-store" });
+        if (!response.ok) return;
+        const body = await response.json() as { data?: unknown };
+        const data = body.data;
+        const sessions = Array.isArray(data) ? data : (data && typeof data === "object" && "sessions" in data && Array.isArray(data.sessions) ? data.sessions : []);
+        const current = sessions.find((item) => item && typeof item === "object" && "current" in item && item.current === true) as { expiresAt?: unknown; remainingMs?: unknown } | undefined;
+        if (!current || stopped) return;
+        const expiresAt = typeof current.expiresAt === "number" ? current.expiresAt : typeof current.expiresAt === "string" ? Date.parse(current.expiresAt) : NaN;
+        const remaining = Number.isFinite(expiresAt) ? expiresAt - Date.now() : typeof current.remainingMs === "number" ? current.remainingMs : NaN;
+        if (Number.isFinite(remaining)) setLabel(formatRemaining(remaining));
+      } catch {
+        // The sessions page may not be deployed yet. The toolbar still works without the countdown.
+      }
+    };
+    void load();
+    const timer = window.setInterval(() => void load(), 30_000);
+    return () => { stopped = true; window.clearInterval(timer); };
+  }, []);
+  if (!label) return null;
+  return <p className="muted caption">세션 만료까지 {label}</p>;
+}
+
+export function CommerceAdminNav({ dirty = false }: {
   readonly current: string;
   readonly disabled?: boolean;
+  readonly dirty?: boolean;
+  readonly onLeave?: () => Promise<boolean>;
 }) {
-  return <div className="events-admin-toolbar">
-    <nav aria-label="상점 관리" className="button-row">
-      {pages.map(({ href, label }) => <Link
-        key={href}
-        href={href}
-        locale="ko"
-        className="button"
-        data-variant={href === current ? "primary" : "secondary"}
-        aria-current={href === current ? "page" : undefined}
-        aria-disabled={disabled || undefined}
-      >{label}</Link>)}
-    </nav>
-    <nav aria-label="콘텐츠 관리" className="button-row">
-      <Link href="/admin" locale="ko" className="button" data-variant="quiet">콘텐츠 관리</Link>
-    </nav>
-  </div>;
+  useEffect(() => {
+    if (!dirty) return;
+    const prevent = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", prevent);
+    return () => window.removeEventListener("beforeunload", prevent);
+  }, [dirty]);
+
+  return <SessionRemainder />;
 }

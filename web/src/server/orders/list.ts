@@ -4,7 +4,8 @@ import { prisma } from "@/server/db";
 import { HttpError } from "@/server/http";
 import { csvResponse, seoulStamp } from "@/server/admin/csv";
 import { createdAtFilter, parseAdminListQuery, searchContains, type AdminListQuery } from "@/server/admin/list-query";
-import { orderIncludes, orderView, type OrderDetails } from "./projection";
+import { customerEmailHash } from "@/server/privacy";
+import { orderIncludes, orderView } from "./projection";
 
 const orderStatuses = ["PENDING_PAYMENT", "PAID", "EXPIRED", "CANCELLED", "REVIEW"] as const;
 const fulfillments = ["PICKUP", "DOMESTIC", "INTERNATIONAL"] as const;
@@ -30,9 +31,7 @@ function orderWhere(url: URL, query: AdminListQuery): Prisma.OrderWhereInput {
     ...(q ? {
       OR: [
         { id: { contains: q } },
-        { customerName: searchContains(q) },
-        { customerEmail: searchContains(q) },
-        { customerPhone: searchContains(q) },
+        ...(q.includes("@") ? [{ customerEmailHash: customerEmailHash(q) }] : []),
         { trackingNumber: searchContains(q) },
         { carrier: searchContains(q) },
         { items: { some: { OR: [{ titleKo: searchContains(q) }, { titleEn: searchContains(q) }, { sku: searchContains(q) }] } } },
@@ -41,7 +40,7 @@ function orderWhere(url: URL, query: AdminListQuery): Prisma.OrderWhereInput {
   };
 }
 
-function addressLine(address: OrderDetails["address"]): string {
+function addressLine(address: unknown): string {
   if (!address || typeof address !== "object") return "";
   const value = address as Record<string, unknown>;
   return ["countryCode", "postalCode", "region", "city", "line1", "line2"]

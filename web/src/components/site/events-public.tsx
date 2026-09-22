@@ -1,6 +1,5 @@
 import { ArrowRight, ArrowUpRight, CalendarDays, Clock3, MapPin } from "lucide-react";
 import { OriginalPhoto } from "./original-photo";
-import "@/styles/reviews.css";
 import type { EventRecord, HighlightRecord } from "@/lib/events-contract";
 import { markdownExcerpt } from "@/lib/markdown";
 import { ContentLink } from "@/components/controls/content-link";
@@ -44,12 +43,13 @@ function galleryImages(record: EventRecord | HighlightRecord) {
 }
 
 function EventMeta({ event, locale }: { readonly event: EventRecord; readonly locale: Locale }) {
-  const location = text(locale, event.location, event.locationEn);
+  const location = event.isOnline ? (locale === "en" ? "Online" : "온라인") : text(locale, event.location, event.locationEn);
   return (
     <div className="event-meta">
       {event.date && <span><CalendarDays className="icon" aria-hidden="true" />{dateLabel(event.date, locale)}</span>}
       {event.time && <span><Clock3 className="icon" aria-hidden="true" />{event.time}</span>}
       {location && <span><MapPin className="icon" aria-hidden="true" />{location}</span>}
+      {event.isOnline && <span className="muted">{locale === "en" ? "The join link arrives after payment, on the confirmation page and in the email." : "참여 링크는 결제 후 확인 페이지와 메일로 보내 드립니다."}</span>}
     </div>
   );
 }
@@ -70,7 +70,7 @@ function HighlightMeta({ highlight, locale, compact = false }: { readonly highli
   );
 }
 
-export function EventsCatalog({ events, locale, today }: { readonly events: readonly EventRecord[]; readonly locale: Locale; readonly today: string }) {
+export function EventsCatalog({ events, locale, today, paymentHrefs = {} }: { readonly events: readonly EventRecord[]; readonly locale: Locale; readonly today: string; readonly paymentHrefs?: Readonly<Record<number, string | undefined>> }) {
   const byDate = new Map<string, EventRecord[]>();
   for (const event of events) {
     const date = event.date.trim().replaceAll(".", "-");
@@ -87,14 +87,14 @@ export function EventsCatalog({ events, locale, today }: { readonly events: read
     <div className="events-catalog" id="events">
       <EventsCalendar dates={days.map(({ date, events }) => ({ date, count: events.length }))} locale={locale} today={today} />
       <div className="events-timeline">
-        <EventGroup id="upcoming-events" days={upcoming} locale={locale} today={today} title={locale === "ko" ? "다가오는 행사" : "Upcoming events"} empty={locale === "ko" ? "예정된 행사가 없습니다." : "There are no upcoming events."} />
-        {past.length > 0 && <EventGroup id="past-events" days={past} locale={locale} today={today} title={locale === "ko" ? "지난 행사" : "Past events"} />}
+        <EventGroup id="upcoming-events" days={upcoming} locale={locale} today={today} paymentHrefs={paymentHrefs} title={locale === "ko" ? "다가오는 행사" : "Upcoming events"} empty={locale === "ko" ? "예정된 행사가 없습니다." : "There are no upcoming events."} />
+        {past.length > 0 && <EventGroup id="past-events" days={past} locale={locale} today={today} paymentHrefs={paymentHrefs} title={locale === "ko" ? "지난 행사" : "Past events"} />}
       </div>
     </div>
   );
 }
 
-function EventGroup({ id, days, locale, today, title, empty }: { readonly id: string; readonly days: readonly { readonly date: string; readonly events: readonly EventRecord[] }[]; readonly locale: Locale; readonly today: string; readonly title: string; readonly empty?: string }) {
+function EventGroup({ id, days, locale, today, title, empty, paymentHrefs }: { readonly id: string; readonly days: readonly { readonly date: string; readonly events: readonly EventRecord[] }[]; readonly locale: Locale; readonly today: string; readonly title: string; readonly empty?: string; readonly paymentHrefs: Readonly<Record<number, string | undefined>> }) {
   return (
     <section className="catalog-group" aria-labelledby={id}>
       <h2 id={id}>{title}</h2>
@@ -117,7 +117,7 @@ function EventGroup({ id, days, locale, today, title, empty }: { readonly id: st
                     </span>
                     {images[0] && <span className="event-card-photo"><OriginalPhoto src={images[0]} alt="" crop /></span>}
                   </ContentLink>
-                  <EventBookingLink event={event} locale={locale} today={today} />
+                  <EventBookingLink event={event} locale={locale} today={today} paymentHref={paymentHrefs[event.id]} />
                 </li>
               );
             })}
@@ -154,13 +154,13 @@ export function HighlightsCatalog({ highlights, locale, preview = false }: { rea
   );
 }
 
-export function EventDetail({ event, locale, today = seoulDate() }: { readonly event: EventRecord; readonly locale: Locale; readonly today?: string }) {
+export function EventDetail({ event, locale, today = seoulDate(), paymentHref }: { readonly event: EventRecord; readonly locale: Locale; readonly today?: string; readonly paymentHref?: string | undefined }) {
   const title = text(locale, event.title, event.titleEn);
   const link = externalHref(event.link);
   return (
     <article className="event-detail">
       <EventMeta event={event} locale={locale} />
-      <EventBookingLink event={event} locale={locale} today={today} />
+      <EventBookingLink event={event} locale={locale} today={today} paymentHref={paymentHref} />
       <PhotoGallery images={galleryImages(event)} title={title} locale={locale} />
       <ContentTags tags={event.tags} locale={locale} />
       <MarkdownContent lang={locale === "en" && !event.descriptionEn ? "ko" : locale}>{text(locale, event.description, event.descriptionEn)}</MarkdownContent>

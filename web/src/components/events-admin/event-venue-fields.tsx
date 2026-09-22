@@ -4,7 +4,9 @@ import { useState } from "react";
 import type { EventRecord } from "@/lib/events-contract";
 import { centerEventLocation } from "@/lib/event-location";
 import { SlideRegion } from "@/components/ui/slide-region";
+import { MenuSelect } from "@/components/ui/menu-select";
 import { FormControl } from "@/components/ui/primitives";
+import "@/styles/slide-region.css";
 
 export function EventVenueFields({ event }: { readonly event: EventRecord | null }) {
   const [external, setExternal] = useState(event?.venueType === "external");
@@ -14,10 +16,10 @@ export function EventVenueFields({ event }: { readonly event: EventRecord | null
     <>
       <label>행사 장소
         <FormControl>
-          <select aria-label="행사 장소" name="venueType" value={external ? "external" : "center"} onChange={(change) => setExternal(change.target.value === "external")}>
+          <MenuSelect aria-label="행사 장소" name="venueType" value={external ? "external" : "center"} onChange={(change) => setExternal(change.target.value === "external")}>
             <option value="center">센터</option>
             <option value="external">외부 장소</option>
-          </select>
+          </MenuSelect>
         </FormControl>
       </label>
       <div className="event-venue-details">

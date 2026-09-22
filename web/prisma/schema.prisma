@@ -48,6 +48,12 @@ enum OrderStatus {
   REVIEW
 }
 
+enum RefundStatus {
+  NONE
+  PENDING
+  COMPLETED
+}
+
 // LNURL is a generic LUD-06/LUD-16/LUD-21 lightning-address payer, not Blink-specific.
 enum PaymentProvider {
   LNURL
@@ -87,8 +93,15 @@ enum BtcPriceSource {
 }
 
 enum ProductDisplayUnit {
+  KRW
   SATS
   BTC
+}
+
+enum NotificationChannel {
+  DISCORD
+  MATTERMOST
+  GENERIC
 }
 
 enum EmailStatus {
@@ -107,13 +120,36 @@ model SiteSetting {
   btcPriceSource       BtcPriceSource     @default(UPBIT)
   fixedKrwPerBtc       Decimal?           @db.Decimal(30, 10)
   productDisplayUnit   ProductDisplayUnit @default(SATS)
+  lightningAddressId    String?              @unique
+  lightningAddress      LightningAddress?    @relation(fields: [lightningAddressId], references: [id], onDelete: SetNull)
+  notificationChannel   NotificationChannel  @default(GENERIC)
+  notificationWebhook   String?
+  notificationEmail     String               @default("hello@noncelab.com")
   updatedAt            DateTime           @updatedAt
+}
+
+model LightningAddress {
+  id             String       @id @default(cuid())
+  label          String
+  address        String       @unique
+  allowedOrigins String
+  createdAt      DateTime     @default(now())
+  siteSetting    SiteSetting?
 }
 
 model RateLimitBucket {
   key       String   @id
   count     Int      @default(0)
   expiresAt DateTime
+}
+
+// Last live ticker that priced an order. Used only when Upbit and Bithumb are both unreachable.
+model ExchangeRateCache {
+  id         String   @id
+  krwPerBtc  Decimal  @db.Decimal(30, 10)
+  source     String
+  observedAt DateTime
+  updatedAt  DateTime @updatedAt
 }
 
 model ProductCategory {
@@ -139,7 +175,9 @@ model Product {
   descriptionEn       String
   contentFormat       ContentFormat    @default(PLAIN)
   imageUrl            String           @default("")
+  images              String[]         @default([])
   published           Boolean          @default(false)
+  listed              Boolean          @default(true)
   priceKind           PriceKind
   priceAmount         BigInt
   listPriceAmount     BigInt?
@@ -225,9 +263,12 @@ model Order {
   quote                Quote             @relation(fields: [quoteId], references: [id], onDelete: Restrict)
   customerName         String
   customerEmail        String
+  customerEmailHash    String?
   customerPhone        String            @default("")
   locale               String            @default("ko")
   status               OrderStatus       @default(PENDING_PAYMENT)
+  refundStatus         RefundStatus      @default(NONE)
+  refundedAt           DateTime?
   amountSats           BigInt
   amountKrw            BigInt?
   fulfillment          Fulfillment
@@ -245,6 +286,8 @@ model Order {
   idempotencyKey       String
   requestHash          String
   customerNotes        String            @default("")
+  confirmationCode     String?           @unique
+  checkedInAt          DateTime?
   accessTokenHash      String            @unique
   accessTokenExpiresAt DateTime          @default(dbgenerated("(now() + interval '30 days')"))
   createdAt            DateTime          @default(now())
@@ -254,6 +297,7 @@ model Order {
   couponUsage          CouponUsage?
 
   @@unique([idempotencyScope, idempotencyKey])
+  @@index([customerEmailHash])
   @@index([accountId, createdAt])
   @@index([status, holdExpiresAt])
 }

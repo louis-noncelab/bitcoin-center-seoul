@@ -29,13 +29,14 @@ export function decryptPayload(encoded: string | null): EmailPayload {
 
 export async function enqueue(
   tx: Tx, eventKey: string, to: string, locale: "ko" | "en", kind: string, payload: EmailPayload,
-): Promise<void> {
+): Promise<number> {
   const config = getServerConfig();
   const status = config.emailMode === "capture" ? "CAPTURED" : "PENDING";
-  await tx.emailOutbox.createMany({
-    data: [{ eventKey, to, locale, kind, payload: {}, encryptedPayload: encryptPayload(payload), status }],
+  const created = await tx.emailOutbox.createMany({
+    data: [{ eventKey, to: encryptPayload({ v: to }), locale, kind, payload: {}, encryptedPayload: encryptPayload(payload), status }],
     skipDuplicates: true,
   });
+  return created.count;
 }
 
 export function renderEmail(kind: string, locale: string, payload: EmailPayload) {
@@ -101,9 +102,10 @@ export function renderEmail(kind: string, locale: string, payload: EmailPayload)
   const introduction = kind === "order.review"
     ? (ko ? "운영자가 주문과 결제 상태를 확인하고 있습니다. 확인이 끝날 때까지 주문 처리와 상품 수령·배송은 보류됩니다. 문의할 때 아래 주문 번호를 알려 주세요." : "Staff are checking your order and payment. Order fulfillment, pickup and shipping are on hold while the review is open. Include the order reference below when contacting the center.")
     : kind === "change.reviewed" ? reviewMessages[payload.status ?? ""]?.[ko ? 0 : 1] : undefined;
+  if (payload.subject && payload.text && payload.html) return { subject: payload.subject, text: payload.text, html: payload.html };
   const subject = payload.title ?? labels[kind]?.[ko ? 0 : 1] ?? (ko ? "비트코인센터 서울 알림" : "Bitcoin Center Seoul notification");
-  const details = Object.entries(payload).filter(([key]) => key !== "title")
+  const details = Object.entries(payload).filter(([key]) => !["title", "subject", "text", "html"].includes(key))
     .map(([key, value]) => ["message", "url"].includes(key) ? value : `${fields[key]?.[ko ? 0 : 1] ?? key}: ${["status", "decision", "type"].includes(key) ? states[value]?.[ko ? 0 : 1] ?? value : value}`).join("\n\n");
   const text = [introduction, details].filter(Boolean).join("\n\n");
-  return { subject, text };
+  return { subject, text, html: "" };
 }

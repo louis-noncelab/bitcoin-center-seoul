@@ -14,12 +14,12 @@ export async function ensureInvoice(paymentId: string) {
     const parent = payment.orderId ? await tx.order.findUnique({ where: { id: payment.orderId } }) : null;
     if (!parent || parent.status !== "PENDING_PAYMENT" || !parent.holdExpiresAt || parent.holdExpiresAt <= new Date() || payment.expiresAt <= new Date()) throw new HttpError(409, "PAYMENT_HOLD_EXPIRED", "신청 또는 주문의 결제 기한을 확인해 주세요. / The payment reservation has expired.");
     const metadata = metadataSchema.parse(payment.metadata);
-    const updated = await tx.payment.update({ where: { id: paymentId }, data: { status: "CREATING", metadata: { ...metadata, receiverSnapshot: receiverFor(payment) } } });
+    const updated = await tx.payment.update({ where: { id: paymentId }, data: { status: "CREATING", metadata: { ...metadata, locale: parent.locale === "en" ? "en" : "ko", receiverSnapshot: await receiverFor(payment) } } });
     return { payment: updated, claimed: true };
   });
   if (!claimed.claimed) return claimed.payment;
   try {
-    const invoice = await createInvoice(providerContext(claimed.payment));
+    const invoice = await createInvoice(await providerContext(claimed.payment));
     return await persistInvoice(paymentId, invoice);
   } catch (error) {
     // Creation may have reached the provider even when parsing or persistence failed. Never issue a second callback.
@@ -41,14 +41,14 @@ export async function reconcilePayment(paymentId: string, eventKey?: string) {
     await prisma.payment.updateMany({ where: { id: paymentId, status: "CREATING", externalId: null }, data: { creationUnknown: true, status: "REVIEW", reviewReason: "INVOICE_CREATION_INTERRUPTED" } });
     payment = await prisma.payment.findUniqueOrThrow({ where: { id: paymentId } });
   }
+  if (!payment.externalId && !payment.creationUnknown) return payment;
   try {
-    let context = providerContext(payment);
+    let context = await providerContext(payment);
     if (!payment.externalId) {
-      if (!payment.creationUnknown) return payment;
       const recovered = await recoverInvoice(context);
       if (!recovered) return payment;
       payment = await persistInvoice(paymentId, recovered);
-      context = providerContext(payment);
+      context = await providerContext(payment);
     }
     return applyObservation(paymentId, await observeInvoice(context), eventKey);
   } catch (error) {

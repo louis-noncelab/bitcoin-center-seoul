@@ -65,14 +65,13 @@ test("오래된 수정 버전으로는 보드게임을 덮어쓰지 못한다", 
 });
 
 
-test("goods purchase links persist, stay private as drafts and reject unsafe URLs", () => {
-  const input = collectionInputSchema.parse({ kind: "goods", title: "센터 티셔츠", images: [], purchaseUrl: "https://pay.example.com/ticket?item=shirt" });
+test("collection items do not store purchase links", () => {
+  const input = collectionInputSchema.parse({ kind: "goods", title: "센터 티셔츠", images: [] });
   const item = saveCollectionItem(input);
   assert.equal(getCollectionItem(item.id), null);
-  assert.equal(getCollectionItem(item.id, true).purchaseUrl, input.purchaseUrl);
-  const updated = saveCollectionItem({ ...input, purchaseUrl: "" }, item.id, item.revision);
-  assert.equal(updated.purchaseUrl, "");
-  for (const purchaseUrl of ["javascript:alert(1)", "data:text/html,test", "//example.com", "/checkout", "https://" , "x".repeat(2049)]) {
+  assert.equal(getCollectionItem(item.id, true).purchaseUrl, "");
+  assert.equal(item.soldOut, false);
+  for (const purchaseUrl of ["https://pay.example.com/ticket?item=shirt", "javascript:alert(1)", "data:text/html,test", "//example.com", "/checkout", "https://", "x".repeat(2049)]) {
     assert.equal(collectionInputSchema.safeParse({ ...input, purchaseUrl }).success, false);
   }
 });
@@ -110,22 +109,16 @@ test("current collection migration preserves slugs, revisions, rows, unique inde
 });
 
 
-test("sold-out changes preserve the link, images, publication and older-client saves", () => {
-  const input = collectionInputSchema.parse({ kind: "goods", title: "품절 검증", images: [], purchaseUrl: "https://pay.example.com/goods" });
+test("sold-out is managed by shop stock, not the collection", () => {
+  const input = collectionInputSchema.parse({ kind: "goods", title: "품절 검증", images: [] });
   const item = saveCollectionItem(input);
-  const closed = setCollectionSoldOut(item.id, true, item.revision);
-  assert.equal(closed.soldOut, true);
-  assert.equal(closed.purchaseUrl, item.purchaseUrl);
-  assert.equal(closed.is_active, item.is_active);
-  assert.deepEqual(closed.images, item.images);
-  assert.throws(() => setCollectionSoldOut(item.id, false, item.revision), { status: 409 });
-  const edited = saveCollectionItem({ ...input, title: "제목 수정" }, item.id, closed.revision);
-  assert.equal(edited.soldOut, true);
-  assert.equal(setCollectionSoldOut(item.id, false, edited.revision).purchaseUrl, item.purchaseUrl);
+  assert.throws(() => setCollectionSoldOut(item.id, true, item.revision), { status: 400, code: "UNSUPPORTED_COLLECTION_KIND" });
+  assert.equal(getCollectionItem(item.id, true).revision, item.revision);
+  assert.equal(getCollectionItem(item.id, true).soldOut, false);
 });
 
-test("purchasing is limited to books and goods, including kind changes and legacy rows", () => {
-  for (const kind of ["boardgame", "artwork"]) {
+test("no collection kind stores a purchase link, including kind changes and legacy rows", () => {
+  for (const kind of ["book", "goods", "boardgame", "artwork"]) {
     const input = { kind, title: "구매 제외 검증", images: [] };
     assert.equal(collectionInputSchema.safeParse({ ...input, purchaseUrl: "https://pay.example.com/item" }).success, false);
     assert.equal(collectionInputSchema.safeParse({ ...input, soldOut: true }).success, false);
@@ -134,11 +127,12 @@ test("purchasing is limited to books and goods, including kind changes and legac
     assert.equal(getCollectionItem(item.id, true).revision, item.revision);
     getDatabase().prepare("UPDATE collection_items SET purchaseUrl = ?, soldOut = 1 WHERE id = ?").run("https://pay.example.com/legacy", item.id);
     assert.equal(getCollectionItem(item.id, true).title, input.title);
-    const cleaned = saveCollectionItem(collectionInputSchema.parse(input), item.id, item.revision);
+    const cleaned = saveCollectionItem(collectionInputSchema.parse(input), item.id, item.revision + 0);
     assert.equal(cleaned.purchaseUrl, "");
     assert.equal(cleaned.soldOut, false);
   }
-  const book = saveCollectionItem(collectionInputSchema.parse({ kind: "book", title: "분류 변경 검증", images: [], purchaseUrl: "https://pay.example.com/book", soldOut: true }));
+  const book = saveCollectionItem(collectionInputSchema.parse({ kind: "book", title: "분류 변경 검증", images: [] }));
+  getDatabase().prepare("UPDATE collection_items SET purchaseUrl = ?, soldOut = 1 WHERE id = ?").run("https://pay.example.com/book", book.id);
   const changed = saveCollectionItem(collectionInputSchema.parse({ kind: "artwork", title: book.title, images: [] }), book.id, book.revision);
   assert.equal(changed.purchaseUrl, "");
   assert.equal(changed.soldOut, false);

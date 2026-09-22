@@ -8,6 +8,7 @@ import { SlideRegion } from "../ui/slide-region";
 import { Button } from "../ui/primitives";
 import { NavigationFeedback } from "./navigation-feedback";
 import "@/styles/navigation.css";
+import "@/styles/slide-region.css";
 
 type NavigationItem = {
   readonly href: string;

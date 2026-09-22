@@ -20,6 +20,7 @@ export function CouponsAdmin() {
   const [kind, setKind] = useState<(typeof kinds)[number]>("PERCENT");
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [expired, setExpired] = useState(false);
+  const [dirty, setDirty] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -67,7 +68,7 @@ export function CouponsAdmin() {
         validUntil: toSeoulIso(String(data.get("validUntil"))),
         active: true,
       }));
-      form.reset();
+      form.reset(); setDirty(false);
       setMessage("쿠폰을 만들었습니다."); setRevision((value) => value + 1);
     } catch (caught) { handleError(caught); }
     finally { busy.current = false; setPending(false); }
@@ -98,7 +99,7 @@ export function CouponsAdmin() {
 
   return <div className="events-admin-workspace">
     {dialog}
-    <CommerceAdminNav current="/admin/coupons" disabled={pending} />
+    <CommerceAdminNav current="/admin/coupons" disabled={pending} dirty={dirty} />
     {expired && <aside className="events-reauth"><p role="alert">세션이 만료되었습니다. 다시 로그인한 뒤 계속해 주세요.</p><LoginForm locale="ko" onLogin={() => { setExpired(false); setError(""); setRevision((value) => value + 1); }} /></aside>}
     {error && <p className="events-error" role="alert">{error}</p>}<p role="status">{message}</p>
 
@@ -122,7 +123,7 @@ export function CouponsAdmin() {
       {!coupons.length && <li>등록된 쿠폰이 없습니다.</li>}
     </ul>
 
-    <form className="events-form" onSubmit={(event) => void create(event)}>
+    <form className="events-form" onChange={() => setDirty(true)} onSubmit={(event) => void create(event)}>
       <h2>쿠폰 만들기</h2>
       <fieldset className="events-editor-fields" disabled={pending}>
         <div className="events-field-grid">

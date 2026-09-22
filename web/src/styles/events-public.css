@@ -22,7 +22,11 @@
 .highlight-card .review-read .icon { transition: transform var(--duration-control) var(--ease-out); }
 .catalog-read { display: inline-flex; align-items: center; gap: var(--space-2); min-block-size: var(--control-height); margin-block-start: auto; color: var(--muted); font-size: var(--text-small); font-weight: var(--weight-medium); }
 
-.event-page:has(> .event-detail) > .detail-heading, .event-page > .event-detail { max-inline-size: var(--measure); margin-inline: auto; }
+.event-page:has(> .event-detail) > .detail-heading,
+.event-page > .event-detail,
+.event-page:has(> .notices-list) > .detail-heading,
+.event-page:has(> .notices-list) > .news-navigation,
+.event-page > .notices-list { inline-size: min(100%, var(--measure)); margin-inline: auto; }
 .event-page > .detail-heading { padding-block-start: var(--space-4); }
 .event-back { margin-block-start: var(--space-6); padding-inline: 0; color: var(--muted); }
 .event-back[data-variant="secondary"] { border: 0; }

@@ -5,20 +5,26 @@
 // row cannot starve newer ones, and re-reads each from the provider through the same parser the
 // webhook uses.
 //
-//   set -a && . ./.env.local && set +a && npm run payments:reconcile -- --watch
+//   node --env-file=/etc/bitcoin-center-seoul/commerce.env --conditions=react-server --import=tsx scripts/reconcile-payments.ts --watch
 //
-// Email delivery is deliberately not part of this worker: EMAIL_MODE is capture and operational
-// mail is out of scope, so the outbox is written but never sent.
+// A payment update queues customer and operator mail. This loop waits for that drain to finish
+// before it sleeps or disconnects. Retries and rows left PENDING run in scripts/email-queue.ts.
 import { setTimeout as delay } from "node:timers/promises";
 import { prisma } from "@/server/db";
+import { flushEmailDelivery } from "@/server/email/queue";
 import { runPaymentMaintenancePass } from "@/server/payments/maintenance";
 
 const intervalMs = 30_000;
 
 async function main() {
   const args = process.argv.slice(2);
-  if (args.some((value) => value !== "--watch")) {
-    console.error("Usage: reconcile-payments.ts [--watch]");
+  const usage = "Usage: reconcile-payments.ts [--watch|--help]";
+  if (args.length === 1 && args[0] === "--help") {
+    console.info(usage);
+    return;
+  }
+  if (args.length > 1 || args.some((value) => value !== "--watch")) {
+    console.error(usage);
     process.exitCode = 1;
     return;
   }
@@ -32,6 +38,7 @@ async function main() {
     do {
       try {
         const result = await runPaymentMaintenancePass({ afterId: cursor, signal: stop.signal });
+        await flushEmailDelivery();
         cursor = result.nextCursor;
         // Fixed event names and counts only: never provider URLs, credentials or customer data.
         console.info(JSON.stringify({
@@ -41,6 +48,7 @@ async function main() {
           cycleComplete: cursor === null,
         }));
       } catch {
+        await flushEmailDelivery().catch(() => undefined);
         console.error("maintenance.pass_failed");
         if (!watch) { process.exitCode = 1; break; }
       }
@@ -53,6 +61,7 @@ async function main() {
   } finally {
     process.off("SIGTERM", shutdown);
     process.off("SIGINT", shutdown);
+    await flushEmailDelivery().catch(() => undefined);
     await prisma.$disconnect();
   }
 }

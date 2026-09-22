@@ -87,6 +87,13 @@ export async function deactivateCoupon(id: string, actorId: string) {
   return { id, active: false as const };
 }
 
+export async function releaseCouponUsage(tx: Tx, orderId: string): Promise<void> {
+  const usage = await tx.couponUsage.findUnique({ where: { orderId } });
+  if (!usage) return;
+  await tx.$queryRaw`SELECT id FROM "Coupon" WHERE id = ${usage.couponId} FOR UPDATE`;
+  await tx.couponUsage.deleteMany({ where: { orderId } });
+}
+
 export async function quoteCouponDiscount(tx: Tx, input: {
   readonly code: string;
   readonly goodsSats: bigint;

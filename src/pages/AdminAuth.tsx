@@ -14,7 +14,7 @@ const AdminAuth = () => {
   const [searchParams] = useSearchParams();
 
   const redirectPath = searchParams.get('redirect');
-  const nextPath = redirectPath?.startsWith('/admin/') ? redirectPath : '/admin/events';
+  const nextPath = redirectPath === '/admin/highlights' ? redirectPath : '/admin/events';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

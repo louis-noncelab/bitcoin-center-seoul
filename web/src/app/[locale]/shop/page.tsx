@@ -2,7 +2,6 @@ import { CommercePage } from "@/components/commerce/commerce-page";
 import { commerceMetadata, pageLocale } from "@/components/commerce/page-support";
 import { ShopCatalog } from "@/components/commerce/shop-catalog";
 import { listProducts } from "@/server/catalog";
-import { getCommerceSettings } from "@/server/commerce/settings";
 
 type Props = { readonly params: Promise<{ locale: string }> };
 export async function generateMetadata({ params }: Props) {
@@ -17,7 +16,7 @@ export async function generateMetadata({ params }: Props) {
 export default async function ShopPage({ params }: Props) {
   const locale = pageLocale((await params).locale);
   const ko = locale === "ko";
-  const [products, settings] = await Promise.all([listProducts(), getCommerceSettings()]);
+  const products = await listProducts();
   return <CommercePage
     locale={locale}
     title={ko ? "센터 상점" : "Center shop"}
@@ -27,6 +26,6 @@ export default async function ShopPage({ params }: Props) {
     backTo="/"
     backLabel={ko ? "홈으로" : "Back to home"}
   >
-    <ShopCatalog products={products} locale={locale} unit={settings.productDisplayUnit} />
+    <ShopCatalog products={products} locale={locale} />
   </CommercePage>;
 }

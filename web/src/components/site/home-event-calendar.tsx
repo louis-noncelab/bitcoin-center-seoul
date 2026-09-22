@@ -8,7 +8,9 @@ import { Calendar } from "@/components/ui/calendar";
 import type { Locale } from "@/i18n/routing";
 import type { HomeEvent } from "@/lib/home-events";
 import { eventListLocation } from "@/lib/event-location";
+import "@/styles/event-booking.css";
 import "@/styles/home-event-calendar.css";
+import "@/styles/slide-region.css";
 
 type Props = {
   readonly events: readonly HomeEvent[];
@@ -96,7 +98,7 @@ export function HomeEventCalendar({ events, locale, today }: Props) {
           </button>
         </div>
       </div>
-      <div className="home-calendar-layout" data-view={view}>
+      <div className="home-calendar-layout" data-view={view} key={view}>
         <div className="home-calendar-month">
           <Calendar
             locale={locale}

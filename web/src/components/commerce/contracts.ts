@@ -27,10 +27,10 @@ export const quoteSchema = z.object({
 });
 export type Quote = z.infer<typeof quoteSchema>;
 export const paymentSchema = z.object({
-  id: z.string(), provider: z.enum(["LNURL", "ZAPRITE"]), mode: z.enum(["REVIEW", "SANDBOX", "LIVE"]),
+  id: z.string(), orderId: z.string().regex(/^[A-Za-z0-9_-]{1,100}$/).nullable(), provider: z.enum(["LNURL", "ZAPRITE"]), mode: z.enum(["REVIEW", "SANDBOX", "LIVE"]),
   status: z.enum(["NEW", "CREATING", "PENDING", "PROCESSING", "PAID", "EXPIRED", "FAILED", "REVIEW"]),
   amountSats: amount, currency: z.literal("BTC"), expiresAt: z.string(), checkoutUrl: z.string().nullable(),
-  paymentRequest: z.string().nullable(), review: z.boolean(), creationUnknown: z.boolean(), reviewReason: z.string().nullable(),
+  paymentRequest: z.string().nullable(), confirmationCode: z.string().nullable().optional(), review: z.boolean(), creationUnknown: z.boolean(), reviewReason: z.string().nullable(),
 });
 export type Payment = z.infer<typeof paymentSchema>;
 const paymentSummary = paymentSchema.pick({ id: true, status: true, mode: true, expiresAt: true });
@@ -40,6 +40,8 @@ const resourceFields = {
 };
 export const addressSchema = z.object({ countryCode: z.string(), postalCode: z.string(), region: z.string(), city: z.string(), line1: z.string(), line2: z.string() });
 export const orderSchema = z.object({ ...resourceFields,
+  refundStatus: z.enum(["NONE", "PENDING", "COMPLETED"]).default("NONE"),
+  refundedAt: z.string().nullable().optional(),
   status: z.enum(["PENDING_PAYMENT", "PAID", "EXPIRED", "CANCELLED", "REVIEW"]),
   fulfillment: fulfillmentSchema, fulfillmentStatus: z.enum(["UNFULFILLED", "READY", "SHIPPED", "DELIVERED", "COLLECTED"]),
   address: addressSchema.nullable(), shippingAmountSats: amount, carrier: z.string().nullable(), trackingNumber: z.string().nullable(), items: z.array(itemSchema),

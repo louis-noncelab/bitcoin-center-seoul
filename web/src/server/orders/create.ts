@@ -1,9 +1,11 @@
 import "server-only";
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { prisma } from "@/server/db";
 import { activePaymentProvider } from "@/server/commerce/settings";
 import { getServerConfig, paymentModeOf } from "@/server/config";
-import { enqueue } from "@/server/email";
+import { enqueueOperatorLetter, enqueuePaymentLetter } from "@/server/email/payment-letter";
+import { scheduleEmailDelivery } from "@/server/email/queue";
+import { customerEmailHash, sealString } from "@/server/privacy";
 import { HttpError } from "@/server/http";
 import { quoteShipping } from "@/server/shipping";
 import { cartSchema, type CreateOrder } from "./validation";
@@ -15,7 +17,7 @@ import { orderIncludes, orderView } from "./projection";
 export async function createOrder(request: Request, input: CreateOrder, account: CustomerAccount) {
   const identity = requestIdentity(request, account);
   const requestHash = hashToken(JSON.stringify(input));
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`order:${identity.scope}:${identity.key}`}, 0))`;
     const existing = await tx.order.findUnique({ where: { idempotencyScope_idempotencyKey: { idempotencyScope: identity.scope, idempotencyKey: identity.key } }, include: orderIncludes });
     if (existing) {
@@ -67,11 +69,11 @@ export async function createOrder(request: Request, input: CreateOrder, account:
     for (const item of snapshot.items) await tx.productVariant.update({ where: { id: item.variantId }, data: { reservedStock: { increment: item.quantity } } });
     const order = await tx.order.create({ data: {
       id, accountId: account?.id ?? null, quoteId: quote.id,
-      customerName: input.customer.name, customerEmail: input.customer.email, customerPhone: input.customer.phone, locale: input.locale,
-      customerNotes: input.notes ?? "",
-      amountSats: quote.amountSats, amountKrw: quote.amountKrw, fulfillment: snapshot.fulfillment, ...(input.address ? { address: input.address } : {}),
+      customerName: sealString(input.customer.name), customerEmail: sealString(input.customer.email), customerEmailHash: customerEmailHash(input.customer.email), customerPhone: sealString(input.customer.phone), locale: input.locale,
+      customerNotes: sealString(input.notes ?? ""),
+      amountSats: quote.amountSats, amountKrw: quote.amountKrw, fulfillment: snapshot.fulfillment, ...(input.address ? { address: sealString(JSON.stringify(input.address)) } : {}),
       shippingSnapshot: snapshot.shipping, shippingAmountKrw: BigInt(snapshot.shipping.amountKrw), shippingAmountSats: BigInt(snapshot.shippingAmountSats), billableWeightG: snapshot.shipping.weightG,
-      holdExpiresAt, idempotencyScope: identity.scope, idempotencyKey: identity.key, requestHash, accessTokenHash: hashToken(token),
+      holdExpiresAt, idempotencyScope: identity.scope, idempotencyKey: identity.key, requestHash, confirmationCode: randomBytes(12).toString("hex"), accessTokenHash: hashToken(token),
       items: { create: snapshot.items.map((item) => ({ variantId: item.variantId, quantity: item.quantity, sku: item.sku, titleKo: item.titleKo, titleEn: item.titleEn, optionLabelKo: item.optionLabelKo, optionLabelEn: item.optionLabelEn, priceKind: item.priceKind, unitPriceAmount: BigInt(item.unitPriceAmount), amountSats: BigInt(item.amountSats), snapshot: item })) },
       payments: { create: { provider: await activePaymentProvider(tx), mode: paymentModeOf(config), creationKey: randomUUID(), amountSats: quote.amountSats, metadata: { orderId: id }, expiresAt: holdExpiresAt } },
     }, include: orderIncludes });
@@ -85,7 +87,28 @@ export async function createOrder(request: Request, input: CreateOrder, account:
         },
       });
     }
-    await enqueue(tx, `order:${id}:created`, order.customerEmail, input.locale, "order.created", { id, status: order.status, url: `${config.appOrigin}/${input.locale}/orders/${id}${account ? "" : `#token=${token}`}` });
+    await enqueuePaymentLetter(tx, {
+      eventKey: `order:${id}:created`,
+      to: input.customer.email,
+      locale: input.locale,
+      kind: "order.created",
+      order,
+      url: `${config.appOrigin}/${input.locale}/orders/confirm/${order.confirmationCode}`,
+    });
+    const address = input.address;
+    await enqueueOperatorLetter(tx, {
+      eventKey: `operator:${id}:created`,
+      kind: "operator.created",
+      order,
+      contact: {
+        name: input.customer.name,
+        email: input.customer.email,
+        phone: input.customer.phone,
+        address: address ? [address.postalCode, address.region, address.city, address.line1, address.line2].filter(Boolean).join(" ") : "",
+      },
+    });
     return { order: orderView(order), token: account ? null : token, created: true };
   });
+  if (result.created) scheduleEmailDelivery();
+  return result;
 }

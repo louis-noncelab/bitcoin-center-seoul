@@ -53,7 +53,8 @@ export function reviewTransport(payment: Payment): Transport {
         if (url.pathname !== "/v1/orders") throw new PaymentError("REVIEW_REQUEST_UNSUPPORTED");
         z.object({
           amount: z.literal(amount), currency: z.literal("BTC"), externalUniqId: z.literal(payment.id),
-          redirectIfPending: z.literal(false), sendReceiptToCustomer: z.literal(false),
+          redirectIfPending: z.literal(false), sendReceiptToCustomer: z.boolean(),
+          customerData: z.object({ email: z.string(), name: z.string().optional() }).optional(),
         }).passthrough().parse(JSON.parse(input.body ?? "null"));
         return { ...order, status: "PENDING", totalAmount: amount };
       }
