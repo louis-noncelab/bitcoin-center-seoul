@@ -14,6 +14,7 @@ import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import type { EventRecord, HighlightRecord } from "@/lib/events-contract";
 import { listEvents, listHighlightsPage } from "@/server/events";
+import { meetupPaymentHrefs } from "@/server/events/tickets";
 import "@/styles/events-public.css";
 import "@/styles/site.css";
 import "@/styles/site-sections.css";
@@ -66,9 +67,11 @@ export default async function SectionPage({ params, searchParams }: Props) {
   let highlights: HighlightRecord[] = [];
   let today = "";
   let pagination = { page: 1, totalPages: 1 };
+  let paymentHrefs: Readonly<Record<number, string>> = {};
   if (section === "programs") {
     await connection();
     events = await listEvents();
+    paymentHrefs = await meetupPaymentHrefs(events.map((event) => event.id));
     today = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
   } else if (section === "journal") {
     const result = await journalPage(locale, (await searchParams).page);
@@ -92,7 +95,7 @@ export default async function SectionPage({ params, searchParams }: Props) {
           <p className="body-copy muted">{content.introduction}</p>
         </div>
         {section === "journal" && <NewsNavigation locale={locale} current="journal" />}
-        <SectionContent locale={locale} section={section} events={events} highlights={highlights} today={today} pagination={pagination} />
+        <SectionContent locale={locale} section={section} events={events} highlights={highlights} today={today} pagination={pagination} paymentHrefs={paymentHrefs} />
         <PageMotion pageKey={`${locale}-${section}-${pagination.page}`} />
       </main>
       <SiteFooter locale={locale} />

@@ -1,0 +1,90 @@
+.feedback-toast-region {
+  position: fixed;
+  inset-block-start: calc(var(--header-height) + var(--space-4));
+  inset-inline: var(--space-4);
+  z-index: 40;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  pointer-events: none;
+}
+.feedback-toast {
+  pointer-events: auto;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  max-inline-size: min(32rem, 100%);
+  padding: var(--space-3) var(--space-4);
+  color: var(--ink);
+  background: var(--canvas);
+  border: var(--border-width) solid var(--line);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-disclosure);
+}
+.feedback-toast[data-kind="success"] { border-color: color-mix(in srgb, var(--success) 45%, var(--line)); }
+.feedback-toast[data-kind="error"] { border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); }
+.feedback-toast-icon {
+  display: grid;
+  place-items: center;
+  inline-size: var(--space-8);
+  block-size: var(--space-8);
+  border-radius: 50%;
+  background: var(--surface);
+}
+.feedback-toast[data-kind="success"] .feedback-toast-icon { color: var(--success); }
+.feedback-toast[data-kind="error"] .feedback-toast-icon { color: var(--danger); }
+.feedback-toast p {
+  margin: 0;
+  font-size: var(--text-small);
+  white-space: pre-line;
+}
+.feedback-toast-close {
+  inline-size: var(--space-10);
+  block-size: var(--space-10);
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-control);
+}
+.feedback-toast-close:hover { color: var(--ink); }
+.feedback-dialog {
+  inset: 0;
+  max-inline-size: min(32rem, calc(100% - var(--space-8)));
+  padding: 0;
+  margin: auto;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+}
+.feedback-dialog::backdrop { background: color-mix(in srgb, var(--ink) 32%, transparent); }
+.feedback-dialog-panel {
+  display: grid;
+  gap: var(--space-5);
+  padding: var(--space-6);
+  background: var(--canvas);
+  border: var(--border-width) solid var(--line);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-disclosure);
+}
+.feedback-dialog-panel h2 {
+  margin: 0;
+  font-size: var(--text-title);
+  font-weight: var(--weight-semibold);
+}
+.feedback-dialog-panel p { margin: 0; white-space: pre-line; }
+.feedback-dialog-panel code {
+  font-size: var(--text-small);
+  word-break: break-all;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .feedback-toast {
+    animation: feedback-toast-in var(--duration-control) var(--ease-out);
+  }
+}
+@keyframes feedback-toast-in {
+  from { opacity: 0; transform: translateY(-0.5rem); }
+  to { opacity: 1; transform: none; }
+}

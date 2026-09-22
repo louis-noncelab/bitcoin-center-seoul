@@ -21,8 +21,6 @@
 .markdown-content ol { list-style: decimal; }
 .markdown-content li + li, .markdown-content li > * + * { margin-block-start: var(--space-2); }
 .markdown-content blockquote {
-  border-inline-start: var(--focus-width) solid var(--blue-ink);
-  padding-inline-start: var(--space-5);
   color: var(--muted);
 }
 .markdown-content blockquote > * + * { margin-block-start: var(--space-4); }

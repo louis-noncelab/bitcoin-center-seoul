@@ -1,6 +1,6 @@
 import type { CollectionRecord } from "@/lib/collection-contract";
+import { Link } from "@/i18n/navigation";
 import { CollectionGrid } from "./collection-public";
-import { ArrowUpRight } from "lucide-react";
 import { CenterPhoto } from "./center-photo";
 import { SiteHeader } from "./site-header";
 import { SiteFooter } from "./site-footer";
@@ -33,21 +33,12 @@ export function GoodsContent({ locale, records }: { readonly locale: Locale; rea
             <h2>{ko ? "굿즈 구매 안내" : "Where to buy"}</h2>
             <p>
               {ko
-                ? "판매 중인 상품과 가격, 재고는 샛비 판매처에서 확인해 주세요."
-                : "Visit the SatB shop for available products, prices and stock."}
+                ? "판매 중인 도서와 굿즈는 센터 상점에서 비트코인으로 결제합니다. 가격과 재고도 상점에서 확인합니다."
+                : "Books and goods on sale are paid in bitcoin in the center shop, where prices and stock are shown."}
             </p>
-            <a
-              className="button"
-              href="https://www.saturdayblock.com/shop?brand=bcs"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {ko ? "샛비에서 굿즈 보기" : "Explore goods on SatB"}
-              <ArrowUpRight className="icon" aria-hidden="true" />
-              <span className="sr-only">
-                {ko ? " (새 창)" : " (new window)"}
-              </span>
-            </a>
+            <Link className="button" href="/shop" locale={locale}>
+              {ko ? "상점에서 구매" : "Buy in the shop"}
+            </Link>
           </div>
         </div>
       </main>

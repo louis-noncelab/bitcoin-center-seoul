@@ -57,17 +57,9 @@ export function SiteFooter({ locale }: { readonly locale: Locale }) {
             </h2>
             <ul>
               <li>
-                <a
-                  href="https://www.saturdayblock.com/shop?brand=bcs"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+                <Link href="/shop" locale={locale}>
                   {locale === "ko" ? "센터 상품" : "Center shop"}
-                  <ArrowUpRight className="icon" aria-hidden="true" />
-                  <span className="sr-only">
-                    {locale === "ko" ? " (새 창)" : " (new window)"}
-                  </span>
-                </a>
+                </Link>
               </li>
               <li>
                 <a

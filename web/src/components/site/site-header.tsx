@@ -4,6 +4,8 @@ import { NavigationDisclosure } from "@/components/controls/navigation-disclosur
 import { NavigationFeedback } from "@/components/controls/navigation-feedback";
 import { NavigationIndicator } from "@/components/controls/navigation-indicator";
 import { ThemeToggle } from "@/components/controls/theme-toggle";
+import { CartControl } from "@/components/commerce/cart-control";
+import { CartDrawer } from "@/components/commerce/cart-drawer";
 import { BrandWordmark } from "@/components/site/brand-wordmark";
 import { OperatingStatus } from "@/components/site/operating-status";
 import { ActionLink } from "@/components/ui/primitives";
@@ -113,6 +115,7 @@ export async function SiteHeader({
         </nav>
         <div className="header-controls">
           <div className="header-utilities">{utilities}</div>
+          <CartControl locale={locale} />
           <div className="mobile-navigation">
             <NavigationDisclosure
               openLabel={t.open}
@@ -130,6 +133,7 @@ export async function SiteHeader({
           </div>
         </div>
       </header>
+      <CartDrawer locale={locale} />
     </>
   );
 }

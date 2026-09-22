@@ -98,10 +98,15 @@ test("the sitemap keeps the same Korean fallback for every locale pair", async (
   const response = await request.get("/sitemap.xml");
   const xml = await response.text();
   const entries = xml.match(/<url>[\s\S]*?<\/url>/g) ?? [];
-  const paths = [...sections, "/news", "/collection", "/goods", "/reviews", "/experience/board-game", "/experience/wallet", "/notices", ...await publicDetailPaths(request)];
+  const productResponse = await request.get("/api/products");
+  const shopPaths = productResponse.status() === 200
+    ? ["/shop", ...z.object({ data: z.array(z.object({ slug: z.string().min(1) })) }).parse(await productResponse.json()).data.map((product) => `/shop/${product.slug}`)]
+    : [];
+  const paths = [...sections, "/news", "/collection", "/goods", "/reviews", "/experience/board-game", "/experience/wallet", "/notices", ...shopPaths, ...await publicDetailPaths(request)];
 
   expect(response.status()).toBe(200);
   expect(entries).toHaveLength(paths.length * 2);
+  expect(xml).not.toMatch(/<loc>[^<]*\/(?:cart|checkout|orders|payments)(?:\/|<)/);
   for (const locale of ["ko", "en"]) {
     for (const path of paths) {
       const entry = entries.find((value) => value.includes(`<loc>${origin}/${locale}${path}</loc>`));

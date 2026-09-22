@@ -302,6 +302,7 @@
   font-weight: 680;
   letter-spacing: -0.04em;
 }
+.navigation-group-toggle svg { transition: transform var(--duration-overlay) var(--ease-out); }
 .navigation-group-toggle[aria-expanded="true"] svg {
   transform: rotate(180deg);
 }

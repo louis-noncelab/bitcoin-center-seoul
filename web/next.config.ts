@@ -10,6 +10,7 @@ const repositoryRoot = path.resolve(
 );
 
 const nextConfig: NextConfig = {
+  experimental: { globalNotFound: true },
   poweredByHeader: false,
   images: { localPatterns: [{ pathname: "/_next/static/media/**", search: "" }] },
   distDir: process.env.BCS_EVENTS_REVIEW === "true" ? ".next-events" : ".next",

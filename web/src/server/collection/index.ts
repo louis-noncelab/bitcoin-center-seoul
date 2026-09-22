@@ -1,5 +1,5 @@
 import "server-only";
-import { collectionRecordSchema, isPurchasableKind, type CollectionInput, type CollectionKind, type CollectionRecord } from "@/lib/collection-contract";
+import { collectionRecordSchema, type CollectionInput, type CollectionKind, type CollectionRecord } from "@/lib/collection-contract";
 import { contentSlugSchema } from "@/lib/events-contract";
 import { reserveRevision } from "@/server/events/revision";
 import { getDatabase } from "@/server/events/db";
@@ -49,7 +49,7 @@ export function saveCollectionItem(input: CollectionInput, id?: number, revision
   return db.transaction(() => {
     if (id !== undefined) reserveRevision("collection_items", id, revision);
     assertSlugAvailable(input.slug, id);
-    const values = { ...input, purchaseUrl: isPurchasableKind(input.kind) ? input.purchaseUrl : "", soldOut: !isPurchasableKind(input.kind) ? 0 : input.soldOut === undefined ? null : Number(input.soldOut), images: JSON.stringify(input.images) };
+    const values = { ...input, purchaseUrl: "", soldOut: 0, images: JSON.stringify(input.images) };
     let savedId = id;
     if (savedId === undefined) {
       savedId = Number(db.prepare(`INSERT INTO collection_items (kind,slug,purchaseUrl,soldOut,title,titleEn,creator,creatorEn,description,descriptionEn,images,sort_order,is_active)
@@ -73,16 +73,12 @@ export function deleteCollectionItem(id: number, revision: number): void {
   })();
 }
 
-export function setCollectionSoldOut(id: number, soldOut: boolean, revision: number): CollectionRecord {
+export function setCollectionSoldOut(id: number, _soldOut: boolean, revision: number): never {
   const db = getDatabase();
-  return db.transaction(() => {
+  db.transaction(() => {
     reserveRevision("collection_items", id, revision);
-    const item = getCollectionItem(id, true);
-    if (!item) throw new ApiError(404, "NOT_FOUND", "항목을 찾을 수 없습니다.");
-    if (!isPurchasableKind(item.kind)) throw new ApiError(400, "UNSUPPORTED_COLLECTION_KIND", "품절은 도서·굿즈에만 설정할 수 있습니다.");
-    db.prepare("UPDATE collection_items SET soldOut = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(Number(soldOut), id);
-    const saved = getCollectionItem(id, true);
-    if (!saved) throw new ApiError(404, "NOT_FOUND", "항목을 찾을 수 없습니다.");
-    return saved;
+    if (!getCollectionItem(id, true)) throw new ApiError(404, "NOT_FOUND", "항목을 찾을 수 없습니다.");
+    throw new ApiError(400, "UNSUPPORTED_COLLECTION_KIND", "품절은 상점 재고로 관리합니다. 보드게임과 작품은 구매하지 않습니다.");
   }).immediate();
+  throw new ApiError(400, "UNSUPPORTED_COLLECTION_KIND", "품절은 상점 재고로 관리합니다. 보드게임과 작품은 구매하지 않습니다.");
 }

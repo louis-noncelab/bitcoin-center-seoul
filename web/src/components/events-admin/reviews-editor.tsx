@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import { useRef, useState, type FormEvent } from "react";
+import { DateField } from "@/components/ui/date-field";
+import { MenuSelect } from "@/components/ui/menu-select";
 import { Button, ChoiceControl, FormControl } from "@/components/ui/primitives";
 import { reviewKinds, type ReviewRecord } from "@/lib/reviews-contract";
 import { AdminRequestError } from "./request";
@@ -39,10 +41,10 @@ export function ReviewsEditor({ record, disabled, uploading, onUpload, onExpired
     <h2>{record ? "방문 후기 수정" : "방문 후기 등록"}</h2>
     <fieldset className="events-editor-fields" disabled={disabled}>
       <div className="events-field-grid">
-        <label>출처 분류<FormControl><select name="kind" defaultValue={record?.kind ?? "blog"}>{reviewKinds.map((kind) => <option key={kind} value={kind}>{reviewKindLabels[kind]}</option>)}</select></FormControl></label>
+        <label>출처 분류<FormControl><MenuSelect name="kind" defaultValue={record?.kind ?? "blog"}>{reviewKinds.map((kind) => <option key={kind} value={kind}>{reviewKindLabels[kind]}</option>)}</MenuSelect></FormControl></label>
         <label>작성자<FormControl><input name="author" required maxLength={200} defaultValue={record?.author ?? ""} /></FormControl></label>
         <label>원문 링크<FormControl><input name="url" type="url" required maxLength={2048} defaultValue={record?.url ?? ""} placeholder="https://" /></FormControl></label>
-        <label>작성일 (선택)<FormControl><input name="date" type="date" defaultValue={record?.date ?? ""} /></FormControl></label>
+        <DateField name="date" label="작성일 (선택)" defaultValue={record?.date ?? ""} onDirty={onDirty} />
       </div>
       <label>제목<FormControl><input name="title" required maxLength={200} defaultValue={record?.title ?? ""} /></FormControl></label>
       <label>소개<FormControl><textarea name="summary" required maxLength={2000} rows={5} defaultValue={record?.summary ?? ""} /></FormControl></label>

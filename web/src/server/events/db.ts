@@ -135,6 +135,28 @@ function initialize(next: Database.Database, createLegacy: boolean): Database.Da
       if (!eventFields.some(({ name }) => name === "registrationClosed")) {
         next.exec("ALTER TABLE events ADD COLUMN registrationClosed INTEGER NOT NULL DEFAULT 0 CHECK (registrationClosed IN (0, 1))");
       }
+      if (!eventFields.some(({ name }) => name === "ticketPriceKrw")) {
+        next.exec("ALTER TABLE events ADD COLUMN ticketPriceKrw TEXT NOT NULL DEFAULT ''");
+      }
+      if (!eventFields.some(({ name }) => name === "ticketCapacity")) {
+        next.exec("ALTER TABLE events ADD COLUMN ticketCapacity INTEGER NOT NULL DEFAULT 0 CHECK (ticketCapacity BETWEEN 0 AND 100000)");
+      }
+      if (!eventFields.some(({ name }) => name === "externalPayment")) {
+        next.exec("ALTER TABLE events ADD COLUMN externalPayment INTEGER NOT NULL DEFAULT 1 CHECK (externalPayment IN (0, 1))");
+        next.exec("UPDATE events SET externalPayment = 0 WHERE ticketPriceKrw <> ''");
+      }
+      if (!eventFields.some(({ name }) => name === "isOnline")) {
+        next.exec("ALTER TABLE events ADD COLUMN isOnline INTEGER NOT NULL DEFAULT 0 CHECK (isOnline IN (0, 1))");
+      }
+      if (!eventFields.some(({ name }) => name === "onlineUrl")) {
+        next.exec("ALTER TABLE events ADD COLUMN onlineUrl TEXT NOT NULL DEFAULT ''");
+      }
+      if (!eventFields.some(({ name }) => name === "onlineInstructions")) {
+        next.exec("ALTER TABLE events ADD COLUMN onlineInstructions TEXT NOT NULL DEFAULT ''");
+      }
+      if (!eventFields.some(({ name }) => name === "onlineInstructionsEn")) {
+        next.exec("ALTER TABLE events ADD COLUMN onlineInstructionsEn TEXT NOT NULL DEFAULT ''");
+      }
       const reviewColumns = next.prepare<[], { readonly name: string }>("PRAGMA table_info(visit_reviews)").all();
       for (const name of ["slug", "description", "descriptionEn"] as const) {
         if (!reviewColumns.some((column) => column.name === name)) {

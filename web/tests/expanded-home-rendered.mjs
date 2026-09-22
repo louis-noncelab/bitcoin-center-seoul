@@ -110,9 +110,8 @@ test(
         assert.match(home, /home-quick/);
         assert.match(home, /home-discovery/);
         const goods = await html(`/${locale}/goods`);
-        assert.ok(
-          goods.includes("https://www.saturdayblock.com/shop?brand=bcs"),
-        );
+        assert.ok(goods.includes(`/${locale}/shop`));
+        assert.equal(goods.includes("https://www.saturdayblock.com/shop?brand=bcs"), false);
         const magazine = await html(`/${locale}/collection?kind=magazine`);
         for (const [document, currentGroup] of [
           [goods, "goods"],

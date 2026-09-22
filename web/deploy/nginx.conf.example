@@ -20,8 +20,13 @@ http {
     send_timeout 30s;
     keepalive_timeout 65s;
 
+    # Webhook paths contain bearer credentials. Redact them before access logging.
+    map $uri $bcs_log_path {
+        default $uri;
+        ~^/api/webhooks/zaprite/ /api/webhooks/zaprite/[redacted];
+    }
     # Do not log cookies, Authorization headers, request bodies or query strings.
-    log_format bcs escape=json '{"time":"$time_iso8601","method":"$request_method","path":"$uri","status":$status,"bytes":$body_bytes_sent,"seconds":$request_time}';
+    log_format bcs escape=json '{"time":"$time_iso8601","method":"$request_method","path":"$bcs_log_path","status":$status,"bytes":$body_bytes_sent,"seconds":$request_time}';
     access_log /var/log/nginx/bcs-access.log bcs;
 
     limit_req_zone $binary_remote_addr zone=bcs_login:10m rate=5r/m;
@@ -94,6 +99,13 @@ http {
 
         location = /api/admin/login {
             limit_req zone=bcs_login burst=5 nodelay;
+            proxy_pass http://bcs_next;
+        }
+
+        location ^~ /api/webhooks/zaprite/ {
+            # nginx error messages can include the original request URI. The
+            # redacted access log retains delivery status/timing for monitoring.
+            error_log /dev/null crit;
             proxy_pass http://bcs_next;
         }
 

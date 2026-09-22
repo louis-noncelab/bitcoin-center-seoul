@@ -48,11 +48,11 @@ test("keeps runtime database access fail closed and legacy compatible", () => {
     const events = listEvents();
     await login("local-test-password", "global");
     const verify = new Sqlite(process.env.BCS_LEGACY_TEST_PATH, { fileMustExist: true });
-    const { tags, revision, venueType, registrationClosed, ...legacyAfter } = verify.prepare("SELECT * FROM events WHERE id = 1").get();
+    const { tags, revision, venueType, registrationClosed, ticketPriceKrw, ticketCapacity, externalPayment, isOnline, onlineUrl, onlineInstructions, onlineInstructionsEn, ...legacyAfter } = verify.prepare("SELECT * FROM events WHERE id = 1").get();
     const after = JSON.stringify(legacyAfter);
     const additions = verify.prepare("SELECT count(*) AS count FROM sqlite_master WHERE type='table' AND name IN ('content_images','content_slugs','admin_sessions','admin_login_attempts')").get().count;
     verify.close();
-    if (registrationClosed !== 0 || events[0].registrationClosed !== false || venueType !== 'external' || revision !== 1 || events[0].revision !== 1 || events.length !== 1 || events[0].slug !== '' || tags !== '[]' || events[0].tags.length !== 0 || before !== after || additions !== 4) process.exit(1);
+    if (registrationClosed !== 0 || events[0].registrationClosed !== false || ticketPriceKrw !== '' || ticketCapacity !== 0 || externalPayment !== 1 || events[0].externalPayment !== true || isOnline !== 0 || onlineUrl !== '' || onlineInstructions !== '' || onlineInstructionsEn !== '' || events[0].isOnline !== false || events[0].ticketPriceKrw !== '' || events[0].ticketCapacity !== 0 || venueType !== 'external' || revision !== 1 || events[0].revision !== 1 || events.length !== 1 || events[0].slug !== '' || tags !== '[]' || events[0].tags.length !== 0 || before !== after || additions !== 4) process.exit(1);
     process.stdout.write("ok");
   `;
 

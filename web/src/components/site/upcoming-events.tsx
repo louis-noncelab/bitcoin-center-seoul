@@ -10,6 +10,7 @@ import type { Locale } from "@/i18n/routing";
 import type { HomeEvent } from "@/lib/home-events";
 import { eventListLocation } from "@/lib/event-location";
 import { eventBookingHref } from "@/lib/event-booking";
+import "@/styles/event-booking.css";
 import "@/styles/home-upcoming.css";
 
 type Props = {
@@ -141,7 +142,7 @@ export function UpcomingEvents({ events, locale, today }: Props) {
         {events.map((event, index) => {
           const title = ko ? event.title : event.titleEn || event.title;
           const location = eventListLocation(event, locale);
-          const booking = eventBookingHref(event.link, event.date, today, event.registrationClosed);
+          const booking = event.paymentHref || eventBookingHref(event.link, event.date, today, event.registrationClosed);
           return (
             <li
               className="upcoming-slide"
@@ -212,6 +213,7 @@ export function UpcomingEvents({ events, locale, today }: Props) {
                 locale={locale}
                 today={today}
                 className="upcoming-booking"
+                paymentHref={event.paymentHref}
               />
             </li>
           );

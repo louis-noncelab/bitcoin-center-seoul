@@ -1,3 +1,56 @@
+## Current owner decision — 2026-09-21 commerce restored
+
+The owner authorized restoring cart, KRW→satoshi conversion, Zaprite checkout, redirect and
+webhook, plus lightning-address payment, on `feat/commerce-payments-port`. **This supersedes the
+2026-09-09 "no shop, checkout, cart, payments, PostgreSQL migration" boundary below.** Everything
+else from that decision still applies: no push, no deployment, no GitHub Actions, no real
+payments, refunds or operational email; never inspect existing `.env`/`.env.local`; never output
+secret values.
+
+Scope actually built: guest-only checkout. No customer accounts, no bookings, no BTCPay.
+
+The commerce slice lives in PostgreSQL through Prisma (`web/prisma/schema.prisma`,
+`web/src/server/{config,db,money,http}.ts`, `payments/`, `orders/`, `commerce/`, `shipping/`).
+Events, collection, notices and reviews stay in better-sqlite3 and are untouched. Two catalogs
+exist on purpose: `collection_items.purchaseUrl` still points at external shops, while
+`Product`/`ProductVariant` back the in-house cart. Linking them is a separate decision.
+
+`PAYMENT_MODE` is `review` (in-process fixtures, no network), `sandbox` (real Zaprite sandbox
+organization from a local origin, Zaprite only — a lightning address is mainnet money with no
+test network) or `live` (production only). `Payment.mode` mirrors it, and the provider unique
+constraints are per mode so the three can never collide.
+
+Zaprite publishes no webhook signature — verified against the published OpenAPI document, which
+declares no header parameters and returns no signing secret from `POST /v1/webhooks`. The
+delivery path therefore carries an unguessable secret compared in constant time, the body is
+never trusted, and the order is always re-read from Zaprite. The sandbox organization is shared
+with another product, so deliveries are filtered by `orgId` and foreign orders are acknowledged
+rather than retried; this app's orders carry `tags: ["bcs"]` and `metadata.source`.
+
+Surfaces: public `/shop`, `/shop/[slug]`, `/cart`, `/checkout`, `/orders/[id]`, `/payments/[id]`;
+admin `/admin/products` (+ categories), `/admin/orders`, `/admin/shipping`, `/admin/settings`,
+`/admin/review`. The admin panels use this branch's own vocabulary — `events-admin-workspace`,
+`events-form`, `events-field-grid`, `events-checkbox`, `events-error`, `AdminTabs`, `LoginForm`,
+`useConfirmation`, `adminRequest` — and authenticate with the existing SQLite admin session, not
+the backup's account system. The shop listing reuses the `review-card`/`collection-card` markup.
+`commerce.css` is namespaced `.commerce-*` and defines nothing main already defines; it still
+carries dead rules for dropped features (wishlist, product gallery, reviews, change requests).
+
+`ADMIN_PASSWORD_HASH` cannot be set plainly in `.env.local`: a scrypt verifier contains `$`, which
+both shell sourcing and dotenv expansion mangle. It needs single quotes **and** `\$` escapes, and
+`npm run dev` must not be run with `.env.local` sourced into the shell, or the shell's mangled
+value wins over the file.
+
+Still missing, deliberately: email delivery (the outbox is written, never drained — operational
+mail is out of scope), customer accounts, bookings, BTCPay, wishlists, product reviews and
+questions, change requests. Not yet proven: a completed sandbox payment, and the lightning path,
+which is live-only because a lightning address has no test network.
+
+Checks: `npm run check` (typecheck + lint), `npm run test:commerce` (isolated `center_test`
+database, REVIEW mode, no network), `npm run db:seed`, and `PAYMENT_MODE=sandbox npm run
+check:zaprite-sandbox` for one real sandbox order. Contract evidence and open questions:
+`.local/docs-archive/2026-09-21-zaprite-lnurl-verified-contract.md`.
+
 ## Latest owner additions — 2026-09-09
 The owner also authorizes notices draft/publish/edit/delete, editable URL slugs, journal pagination and the local wallet learning guide. Public pages stay bilingual; administration stays Korean-only. SQLite/password compatibility and the no-deployment boundaries still apply.
 
@@ -130,7 +183,7 @@ npx tsc -p tsconfig.app.json --noEmit   # no typecheck script exists
 - `public/images/events/uploads/` (3 tracked files) is a leftover from an older upload path; current uploads go to `public/images/highlights/uploads/` (untracked, not ignored -> shows in `git status` on the server; survives `git reset --hard`).
 - `DEPLOY.md` is the new web service manual-release guide and links to `docs/security/operations.md`. Root `deploy.sh` remains the legacy on-host script. `README.md` indexes the current project documentation.
 - Keep temporary checkpoints, reviews and handoffs in ignored `.local/docs-archive/`; do not commit new session reports.
-- `sqlite3` is in dependencies but unused (driver is `better-sqlite3`); `crypto-browserify` / `stream-browserify` / `buffer` vite aliases are unused by `src/`.
+- The SQLite driver is `better-sqlite3`. Do not add the unused `sqlite3` package back, and do not restore the unused `crypto-browserify` / `stream-browserify` / `buffer` Vite aliases.
 - `index.html` has `lang="en"` while the default UI is Korean; no `word-break: keep-all` anywhere, so long Korean strings wrap mid-word.
 - `lovable-tagger` runs only in dev mode; `.dark` and `sidebar-*` tokens are template residue.
 

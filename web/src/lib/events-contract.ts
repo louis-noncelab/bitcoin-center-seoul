@@ -71,8 +71,21 @@ const eventFields = {
   descriptionEn: requiredText(20_000),
   image: imagePathSchema,
   link: externalLink,
+  ticketPriceKrw: z.string().trim().regex(/^$|^[1-9]\d{0,8}$/, "참가비는 1원 이상의 정수로 입력해 주세요.").default(""),
+  ticketCapacity: z.number().int().min(0).max(100_000).default(0),
+  externalPayment: z.boolean().default(true),
+  isOnline: z.boolean().default(false),
+  onlineUrl: externalLink.default(""),
+  onlineInstructions: optionalText(1000).default(""),
+  onlineInstructionsEn: optionalText(1000).default(""),
   images: contentImagesSchema,
 } as const;
+
+const ticketFieldsConsistent = (event: { readonly externalPayment: boolean; readonly ticketPriceKrw: string; readonly ticketCapacity: number }, context: z.RefinementCtx) => {
+  if (event.externalPayment) return;
+  if (!event.ticketPriceKrw) context.addIssue({ code: "custom", path: ["ticketPriceKrw"], message: "센터 결제를 쓰려면 참가비를 입력해 주세요." });
+  if (event.ticketCapacity < 1) context.addIssue({ code: "custom", path: ["ticketCapacity"], message: "센터 결제를 쓰려면 정원을 1명 이상 입력해 주세요." });
+};
 
 const highlightFields = {
   slug: contentSlugSchema,
@@ -123,7 +136,8 @@ export const eventRecordSchema = z
     ...eventFields,
     registrationClosed: z.boolean().default(false),
   })
-  .strict();
+  .strict()
+  .superRefine(ticketFieldsConsistent);
 
 export const highlightRecordSchema = z
   .object({
@@ -134,10 +148,11 @@ export const highlightRecordSchema = z
   .strict()
   .superRefine(validateHighlightPeriod);
 
-export const eventInputSchema = z.object(eventFields).strict().refine(
-  (event) => event.venueType !== "external" || event.location.length > 0,
-  { path: ["location"], message: "외부 장소를 입력해 주세요." },
-);
+export const eventInputSchema = z.object(eventFields).strict().superRefine((event, context) => {
+  if (event.isOnline && event.onlineUrl.length === 0) context.addIssue({ code: "custom", path: ["onlineUrl"], message: "온라인 밋업은 참여 링크가 필요합니다." });
+  if (event.venueType === "external" && !event.isOnline && event.location.length === 0) context.addIssue({ code: "custom", path: ["location"], message: "외부 장소를 입력해 주세요." });
+  ticketFieldsConsistent(event, context);
+});
 export const highlightInputSchema = z.object(highlightFields).strict().superRefine(validateHighlightPeriod);
 
 export type EventRecord = z.infer<typeof eventRecordSchema>;

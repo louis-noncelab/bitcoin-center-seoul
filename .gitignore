@@ -16,6 +16,8 @@ dist-ssr
 .env
 .env.*
 !.env.example
+commerce.env
+admin-password.env
 *.pem
 
 # Database files (runtime DB is data/events.db, created by database.js)

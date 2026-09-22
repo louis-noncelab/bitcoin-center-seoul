@@ -62,7 +62,7 @@
 | 데이터·이미지 | SQLite · better-sqlite3 · Sharp |
 | 운영 구성 | 단일 호스트 · nginx · systemd · 수동 배포 |
 
-정확한 런타임 버전은 [web/.nvmrc](web/.nvmrc), 의존성 버전은 [web/package.json](web/package.json)과 잠금 파일을 기준으로 합니다. 기존 SQLite 콘텐츠를 유지하며 결제·상점·회원·자체 예약은 현재 범위에 포함하지 않습니다.
+정확한 런타임 버전은 [web/.nvmrc](web/.nvmrc), 의존성 버전은 [web/package.json](web/package.json)과 잠금 파일을 기준으로 합니다. 센터 소개, 프로그램, 전시, 방문 후기와 공지를 한국어와 영어로 보여 줍니다.
 
 ## 로컬에서 시작하기
 

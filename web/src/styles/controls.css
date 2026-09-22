@@ -75,7 +75,6 @@
   inset: 0;
   z-index: var(--layer-selection);
   background: var(--selection);
-  border-inline-start: var(--focus-width) solid var(--blue-ink);
 }
 
 .selection-label,

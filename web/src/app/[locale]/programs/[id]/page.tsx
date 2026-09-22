@@ -11,7 +11,10 @@ import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { seoulDate } from "@/lib/center-status";
 import { getEventByPath } from "@/server/events";
+import { meetupPaymentHrefs } from "@/server/events/tickets";
 import "@/styles/events-public.css";
+import "@/styles/event-booking.css";
+import "@/styles/reviews.css";
 import "@/styles/site.css";
 
 type Props = { readonly params: Promise<{ locale: string; id: string }> };
@@ -42,7 +45,7 @@ export default async function EventPage({ params }: Props) {
         <div className="detail-heading">
           <h1>{title}</h1>
         </div>
-        <EventDetail event={event} locale={locale} today={seoulDate()} />
+        <EventDetail event={event} locale={locale} today={seoulDate()} paymentHref={(await meetupPaymentHrefs([event.id]))[event.id]} />
         <PageMotion pageKey={`${locale}-program-${event.id}`} />
       </main>
       <SiteFooter locale={locale} />

@@ -1,4 +1,5 @@
-.wallet-guide { max-inline-size: calc(var(--measure) + var(--space-16)); margin-inline: auto; }
+.wallet-guide,
+.wallet-page > .detail-heading { inline-size: min(100%, calc(var(--measure) + var(--space-16))); margin-inline: auto; }
 .wallet-toolbar, .wallet-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3); }
 .wallet-toolbar { justify-content: space-between; margin-block-end: var(--space-5); }
 .wallet-panel { padding: var(--space-8); border: var(--border-width) solid var(--line); border-radius: var(--radius-panel); }
@@ -13,7 +14,7 @@
 .wallet-options label:has(:checked) { border-color: var(--blue-ink); background: var(--selection); }
 .wallet-options label:has(:focus-visible) { outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); }
 .wallet-model { color: var(--blue-ink); font-weight: var(--weight-semibold); margin-block-end: var(--space-4); }
-.wallet-notice { padding: var(--space-5); background: var(--surface); border-inline-start: var(--space-1) solid var(--focus); margin-block-end: var(--space-6); }
+.wallet-notice { padding: var(--space-5); background: var(--surface); margin-block-end: var(--space-6); }
 .wallet-instructions { padding-inline-start: var(--space-6); margin: 0; }
 .wallet-instructions li { padding-inline-start: var(--space-2); margin-block-end: var(--space-4); }
 .wallet-instructions li::marker { color: var(--muted); font-weight: var(--weight-semibold); }

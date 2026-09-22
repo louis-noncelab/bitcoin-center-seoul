@@ -8,6 +8,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { pageMetadata } from "@/content/site";
 import { routing } from "@/i18n/routing";
 import { listEvents, listHighlights } from "@/server/events";
+import { meetupPaymentHrefs } from "@/server/events/tickets";
 import { homeEvents, upcomingHomeEvents } from "@/lib/home-events";
 import { buildNewsFeed } from "@/lib/news";
 import { listNotices } from "@/server/notices";
@@ -34,7 +35,9 @@ export default async function HomePage({ params }: Props) {
   const today = new Date().toLocaleDateString("sv-SE", {
     timeZone: "Asia/Seoul",
   });
-  const events = homeEvents(listEvents());
+  const records = listEvents();
+  const paymentHrefs = await meetupPaymentHrefs(records.map((event) => event.id));
+  const events = homeEvents(records).map((event) => ({ ...event, paymentHref: paymentHrefs[event.id] }));
   const upcoming = upcomingHomeEvents(events, today);
   return (
     <div className="home-expanded">

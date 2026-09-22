@@ -142,6 +142,17 @@ export function requireAdmin(request: NextRequest): void {
   if (!isAuthenticated(request)) throw new ApiError(401, "UNAUTHORIZED", "관리자 인증이 필요합니다.");
 }
 
+export function currentSessionExpiry(request: NextRequest): number | null {
+  const token = request.cookies.get(cookieName)?.value;
+  if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) return null;
+  const now = Date.now();
+  const row = getDatabase().prepare<[string, number, number, string], { expires_at: number }>(`
+    SELECT expires_at FROM admin_sessions
+    WHERE token_hash = ? AND expires_at > ? AND last_seen_at > ? AND credential_version = ?
+  `).get(hash(token), now, now - idleMilliseconds, hash(passwordHash()));
+  return row?.expires_at ?? null;
+}
+
 export function logout(request: NextRequest): void {
   const token = request.cookies.get(cookieName)?.value;
   if (token && /^[A-Za-z0-9_-]{43}$/.test(token)) {

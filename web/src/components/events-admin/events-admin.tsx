@@ -11,6 +11,7 @@ import type { ContentKind, ContentRecord } from "./editor-fields";
 import { CenterStatusAdmin } from "./center-status-admin";
 import { LoginForm } from "./login-form";
 import { AdminTabs } from "./admin-tabs";
+import { useRegisterLeave } from "./leave-guard";
 import { RecordEditor } from "./record-editor";
 import { adminRequest, AdminRequestError, errorText, jsonBody, revisionHeaders } from "./request";
 import "@/styles/news.css";
@@ -64,6 +65,7 @@ export function EventsAdmin({ locale }: { readonly locale: Locale }) {
     const accepted = !dirty || await confirm({ title: ko ? "변경사항을 버릴까요?" : "Discard changes?", description: ko ? "저장하지 않은 변경사항은 사라집니다." : "Your unsaved changes will be lost.", confirmLabel: ko ? "버리기" : "Discard", cancelLabel: ko ? "취소" : "Cancel" });
     return accepted && !busy.current && !editorBusyRef.current;
   }
+  useRegisterLeave(canLeave);
   function refresh() { setLoading(true); setError(""); setRevision((value) => value + 1); }
   async function pick(next: ContentKind) {
     if (next === kind && !editing) return;
@@ -92,28 +94,15 @@ export function EventsAdmin({ locale }: { readonly locale: Locale }) {
       if (caught instanceof AdminRequestError && caught.status === 401) setExpired(true);
     } finally { busy.current = false; setPending(false); }
   }
-  async function logout() {
-    if (!(await canLeave())) return;
-    busy.current = true; setPending(true);
-    try {
-      await adminRequest("/api/admin/logout", z.unknown(), jsonBody({}));
-      setAuthenticated(false); setExpired(false); setEditing(false); setDirty(false); setRecords([]); setNotice("");
-    } catch (caught) { setError(errorText(caught, locale)); }
-    finally { busy.current = false; setPending(false); }
-  }
   if (authenticated === null) return <p role="status">{ko ? "로그인 확인 중…" : "Checking your session…"}</p>;
   if (!authenticated) return <><p className="events-error" role="alert">{error}</p><LoginForm locale={locale} onLogin={() => { setError(""); setLoading(true); setAuthenticated(true); }} /></>;
   return (
     <div className="events-admin-workspace">
       {dialog}
       <div className="events-admin-toolbar">
-        <AdminTabs label={ko ? "콘텐츠 관리" : "Content management"} items={[{ value: "events", label: ko ? "행사" : "Events" }, { value: "highlights", label: ko ? "하이라이트" : "Highlights" }]} value={kind} disabled={pending || editorBusy} onChange={(next) => void pick(next)}>
-          <Link href="/admin/notices" locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void canLeave().then((accepted) => { if (accepted) router.push("/admin/notices", { locale: "ko" }); }); }}>공지사항</Link>
-          <Link href="/admin/collection" locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void canLeave().then((accepted) => { if (accepted) router.push("/admin/collection", { locale: "ko" }); }); }}>도서·작품·보드게임·굿즈</Link>
-          <Link href="/admin/reviews" locale="ko" className="button" data-variant="secondary" onNavigate={(event) => { event.preventDefault(); void canLeave().then((accepted) => { if (accepted) router.push("/admin/reviews", { locale: "ko" }); }); }}>방문 후기</Link>
-          <Link href="/news" locale="ko" prefetch={false} className="button" data-variant="quiet" onNavigate={(event) => { event.preventDefault(); void canLeave().then((accepted) => { if (accepted) router.push("/news", { locale: "ko" }); }); }}>공개 소식 보기</Link>
+        <AdminTabs label={ko ? "콘텐츠 관리" : "Content"} items={[{ value: "events", label: ko ? "행사" : "Events" }, { value: "highlights", label: ko ? "하이라이트" : "Highlights" }]} value={kind} disabled={pending || editorBusy} onChange={(next) => void pick(next)}>
+          <Link href="/news" locale="ko" prefetch={false} className="button" data-variant="quiet" onNavigate={(event) => { event.preventDefault(); void canLeave().then((accepted) => { if (accepted) router.push("/news", { locale: "ko" }); }); }}>{ko ? "공개 소식 보기" : "View public news"}</Link>
         </AdminTabs>
-        <Button variant="quiet" disabled={pending || editorBusy} onClick={() => void logout()}>{ko ? "로그아웃" : "Sign out"}</Button>
       </div>
       {kind === "highlights" && <p className="news-admin-guide">공개한 하이라이트는 소식의 ‘현장 스케치’에 반영됩니다. 첫 번째 사진은 ‘사진과 영상’의 대표 이미지로 사용됩니다. 최근 소식과 사진 일부는 홈에도 표시됩니다. 비공개 항목은 제외됩니다.</p>}
       {expired && <aside className="events-reauth"><p role="alert">{ko ? "세션이 만료되었습니다. 작성한 내용은 유지됩니다. 다시 로그인한 뒤 저장해 주세요." : "Your session expired. Your draft is preserved. Sign in again to save."}</p><LoginForm locale={locale} onLogin={() => { setExpired(false); setError(""); refresh(); }} /></aside>}

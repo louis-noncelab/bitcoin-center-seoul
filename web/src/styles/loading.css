@@ -1,0 +1,110 @@
+.page-spinner {
+  box-sizing: border-box;
+  inline-size: var(--space-11);
+  block-size: var(--space-11);
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  border-block-start-color: color-mix(in srgb, var(--ink) 72%, transparent);
+}
+
+.page-loading-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 70vh;
+  background: var(--canvas);
+  color: var(--ink);
+}
+
+.page-loading-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.page-loading-bar {
+  inline-size: var(--space-24);
+  block-size: var(--space-1);
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.page-loading-bar-fill {
+  display: block;
+  block-size: 100%;
+  inline-size: 50%;
+  border-radius: inherit;
+  background: var(--ink);
+}
+
+.route-progress {
+  pointer-events: none;
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 100;
+  block-size: 2px;
+  contain: layout paint;
+}
+
+.route-progress-bar {
+  block-size: 100%;
+  transform-origin: left;
+  background: color-mix(in srgb, var(--ink) 70%, transparent);
+  will-change: transform, opacity;
+}
+
+.button-spinner {
+  display: inline-block;
+  inline-size: var(--space-4);
+  block-size: var(--space-4);
+  flex-shrink: 0;
+}
+
+@keyframes page-spinner-turn {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes page-loading-bar-slide {
+  from { transform: translate3d(-60%, 0, 0); }
+  to { transform: translate3d(180%, 0, 0); }
+}
+
+@keyframes page-template-enter {
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .page-spinner {
+    animation: page-spinner-turn 0.95s linear infinite;
+  }
+
+  .page-loading-bar-fill {
+    animation: page-loading-bar-slide 0.95s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  .page-template {
+    animation: page-template-enter var(--duration-page) var(--ease-out) both;
+  }
+
+  .button-spinner {
+    animation: page-spinner-turn 0.8s linear infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-spinner,
+  .page-loading-bar-fill,
+  .page-template,
+  .button-spinner {
+    animation: none;
+  }
+
+  .page-loading-bar-fill {
+    margin-inline: auto;
+  }
+}

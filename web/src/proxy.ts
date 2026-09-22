@@ -25,7 +25,9 @@ export default function proxy(request: NextRequest) {
     /^[a-z]{2}(?:-[a-z]{2})?$/i.test(segment) &&
     !hasLocale(routing.locales, segment)
   ) {
-    response = new NextResponse(null, { status: 404 });
+    const url = request.nextUrl.clone();
+    url.pathname = "/ko/404";
+    response = NextResponse.rewrite(url, { status: 404 });
   } else {
     const nonce = randomBytes(16).toString("base64");
     const development = process.env.NODE_ENV === "development";
@@ -43,6 +45,7 @@ export default function proxy(request: NextRequest) {
       ...(secure ? ["upgrade-insecure-requests"] : []),
     ].join("; ");
     const headers = new Headers(request.headers);
+    headers.set("x-bcs-pathname", pathname);
     headers.set("x-nonce", nonce);
     headers.set("Content-Security-Policy", policy);
     response = intlProxy(new NextRequest(request, { headers }));
