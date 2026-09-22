@@ -3,7 +3,7 @@ import { collectionRecordSchema, type CollectionInput, type CollectionKind, type
 import { contentSlugSchema } from "@/lib/events-contract";
 import { prisma } from "@/server/db";
 import { ApiError } from "@/server/events/errors";
-import { placeImagesInSlugFolder, requireExistingImages, rewriteImagePaths } from "@/server/events/images";
+import { collectImagePaths, deleteUnusedImages, placeImagesInSlugFolder, requireExistingImages, rewriteImagePaths } from "@/server/events/images";
 import { reserveRevision } from "@/server/events/revision";
 
 function storedTime(value: Date): string {
@@ -65,6 +65,7 @@ async function assertSlugAvailable(slug: string, id?: number): Promise<void> {
 
 export async function saveCollectionItem(input: CollectionInput, id?: number, revision?: number): Promise<CollectionRecord> {
   requireExistingImages(input.images);
+  const previous = id === undefined ? null : await getCollectionItem(id, true);
   const placed = await placeImagesInSlugFolder("collection", input.slug, input.images);
   const description = rewriteImagePaths(input.description, input.images, placed.images);
   const descriptionEn = rewriteImagePaths(input.descriptionEn, input.images, placed.images);
@@ -82,6 +83,8 @@ export async function saveCollectionItem(input: CollectionInput, id?: number, re
   });
   const saved = await getCollectionItem(savedId, true);
   if (!saved) throw new ApiError(500, "SAVE_FAILED", "항목을 저장하지 못했습니다.");
+  const kept = new Set(collectImagePaths(placed.images, description, descriptionEn));
+  await deleteUnusedImages(collectImagePaths(previous?.images, previous?.description, previous?.descriptionEn).filter((image) => !kept.has(image)));
   return saved;
   } catch (error) {
     await placed.restore();
@@ -90,10 +93,12 @@ export async function saveCollectionItem(input: CollectionInput, id?: number, re
 }
 
 export async function deleteCollectionItem(id: number, revision: number): Promise<void> {
+  const previous = await getCollectionItem(id, true);
   await prisma.$transaction(async (tx) => {
     await reserveRevision(tx, "collection_items", id, revision);
     await tx.collectionItem.delete({ where: { id } });
   });
+  await deleteUnusedImages(collectImagePaths(previous?.images, previous?.description, previous?.descriptionEn));
 }
 
 export async function setCollectionSoldOut(id: number, _soldOut: boolean, revision: number): Promise<never> {

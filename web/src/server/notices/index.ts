@@ -1,6 +1,7 @@
 import "server-only";
 import { noticeRecordSchema, type NoticeInput, type NoticeRecord } from "@/lib/notices-contract";
 import { prisma } from "@/server/db";
+import { collectImagePaths, deleteUnusedImages } from "@/server/events/images";
 import { ApiError } from "@/server/events/errors";
 import { reserveRevision } from "@/server/events/revision";
 import { storedTagsSchema } from "@/server/events/tags";
@@ -39,6 +40,7 @@ export async function noticeBySlug(slug: string): Promise<NoticeRecord | null> {
 }
 
 export async function saveNotice(input: NoticeInput, id?: number, revision?: number): Promise<NoticeRecord> {
+  const previous = id === undefined ? null : await getNotice(id, true);
   const savedId = await prisma.$transaction(async (tx) => {
     if (id !== undefined) {
       await reserveRevision(tx, "notices", id, revision);
@@ -53,13 +55,17 @@ export async function saveNotice(input: NoticeInput, id?: number, revision?: num
   });
   const saved = await getNotice(savedId, true);
   if (!saved) throw new ApiError(500, "SAVE_FAILED", "공지를 저장하지 못했습니다.");
+  const kept = new Set(collectImagePaths(input.description, input.descriptionEn));
+  await deleteUnusedImages(collectImagePaths(previous?.description, previous?.descriptionEn).filter((image) => !kept.has(image)));
   return saved;
 }
 
 export async function deleteNotice(id: number, revision: number): Promise<void> {
+  const previous = await getNotice(id, true);
   await prisma.$transaction(async (tx) => {
     await reserveRevision(tx, "notices", id, revision);
     await tx.notice.delete({ where: { id } });
     await tx.noticeSlug.deleteMany({ where: { noticeId: id } });
   });
+  await deleteUnusedImages(collectImagePaths(previous?.description, previous?.descriptionEn));
 }

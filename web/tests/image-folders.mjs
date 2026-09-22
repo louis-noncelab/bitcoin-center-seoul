@@ -6,7 +6,7 @@ import test from "node:test";
 
 const root = fs.mkdtempSync(path.join(os.tmpdir(), "bcs-image-folders-"));
 process.env.BCS_EVENTS_UPLOADS = root;
-const { placeImagesInSlugFolder, rewriteImagePaths } = await import("../src/server/events/images.ts");
+const { deleteUnusedImages, placeImagesInSlugFolder, rewriteImagePaths } = await import("../src/server/events/images.ts");
 
 test("a slug collects attached images into that post's folder", async () => {
   const source = path.join(root, "uploads", "2026-09");
@@ -37,6 +37,19 @@ test("a slug collects attached images into that post's folder", async () => {
   ]);
   assert.equal(fs.existsSync(path.join(root, "uploads/events/saturday-meetup/cover.webp")), false);
   assert.equal(fs.existsSync(path.join(root, "uploads/events/weekend-meetup/room.webp")), true);
+});
+
+test("removing a picture deletes the file when nothing else uses it", async () => {
+  const folder = path.join(root, "uploads", "events", "photo-drop");
+  fs.mkdirSync(folder, { recursive: true });
+  const file = path.join(folder, "gone.webp");
+  fs.writeFileSync(file, "gone");
+  const publicPath = "/images/uploads/events/photo-drop/gone.webp";
+  await deleteUnusedImages([publicPath], new Set([publicPath]));
+  assert.equal(fs.existsSync(file), true);
+  await deleteUnusedImages([publicPath], new Set());
+  assert.equal(fs.existsSync(file), false);
+  assert.equal(fs.existsSync(folder), false);
 });
 
 test.after(() => fs.rmSync(root, { recursive: true, force: true }));
