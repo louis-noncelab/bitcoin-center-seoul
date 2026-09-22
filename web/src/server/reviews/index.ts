@@ -7,13 +7,21 @@ import { markdownImageReferences } from "@/server/events/image-references";
 import { requireExistingImages } from "@/server/events/images";
 import { reserveRevision } from "@/server/events/revision";
 
+function storedTime(value: Date): string {
+  return value.toISOString().slice(0, 19).replace("T", " ");
+}
+
 function fromReview(row: {
   id: number; revision: number; kind: string; url: string; author: string; date: string; title: string; titleEn: string;
   summary: string; summaryEn: string; slug: string; description: string; descriptionEn: string; featureTitle: string;
-  featureTitleEn: string; image: string; sortOrder: number; isActive: number;
+  featureTitleEn: string; image: string; sortOrder: number; isActive: number; createdAt: Date; updatedAt: Date;
 }): ReviewRecord {
   return reviewRecordSchema.parse({
-    ...row, feature_title: row.featureTitle, feature_titleEn: row.featureTitleEn, sort_order: row.sortOrder, is_active: row.isActive === 1 ? 1 : 0,
+    id: row.id, revision: row.revision, kind: row.kind, url: row.url, author: row.author, date: row.date,
+    title: row.title, titleEn: row.titleEn, summary: row.summary, summaryEn: row.summaryEn, slug: row.slug,
+    description: row.description, descriptionEn: row.descriptionEn, feature_title: row.featureTitle,
+    feature_titleEn: row.featureTitleEn, image: row.image, sort_order: row.sortOrder,
+    is_active: row.isActive === 1 ? 1 : 0, created_at: storedTime(row.createdAt), updated_at: storedTime(row.updatedAt),
   });
 }
 

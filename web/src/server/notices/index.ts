@@ -7,8 +7,19 @@ import { storedTagsSchema } from "@/server/events/tags";
 
 const noticeRowSchema = noticeRecordSchema.extend({ tags: storedTagsSchema });
 
-function fromRow(row: { id: number; revision: number; slug: string; title: string; titleEn: string; description: string; descriptionEn: string; isActive: number; tags: string }): NoticeRecord {
-  return noticeRowSchema.parse({ ...row, is_active: row.isActive === 1 ? 1 : 0, tags: row.tags });
+function storedTime(value: Date): string {
+  return value.toISOString().slice(0, 19).replace("T", " ");
+}
+
+function fromRow(row: {
+  id: number; revision: number; slug: string; title: string; titleEn: string; description: string; descriptionEn: string;
+  isActive: number; tags: string; createdAt: Date; updatedAt: Date;
+}): NoticeRecord {
+  return noticeRowSchema.parse({
+    id: row.id, revision: row.revision, slug: row.slug, title: row.title, titleEn: row.titleEn,
+    description: row.description, descriptionEn: row.descriptionEn, is_active: row.isActive === 1 ? 1 : 0, tags: row.tags,
+    created_at: storedTime(row.createdAt), updated_at: storedTime(row.updatedAt),
+  });
 }
 
 export async function listNotices(includeInactive = false): Promise<NoticeRecord[]> {
