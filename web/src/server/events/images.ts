@@ -8,6 +8,7 @@ import type { Metadata } from "sharp";
 import { imagePathSchema } from "@/lib/events-contract";
 import { configuredUploadsPath } from "@/server/events/config";
 import { ApiError } from "@/server/events/errors";
+import { markdownImageReferences } from "@/server/events/image-references";
 
 const maximumFileBytes = 10 * 1024 * 1024;
 const maximumTotalBytes = 30 * 1024 * 1024;
@@ -104,6 +105,58 @@ export async function placeImagesInSlugFolder(folder: ImageFolder, slug: string,
     throw error;
   }
   return { images: placed, restore: () => undoMoves(moved) };
+}
+
+export function collectImagePaths(...values: readonly (string | readonly string[] | null | undefined)[]): string[] {
+  const paths = new Set<string>();
+  for (const value of values) {
+    if (!value) continue;
+    if (typeof value === "string") {
+      if (value.startsWith("/images/")) paths.add(value);
+      for (const image of markdownImageReferences(value)) paths.add(image);
+    } else {
+      for (const image of value) if (image.startsWith("/images/")) paths.add(image);
+    }
+  }
+  return [...paths];
+}
+
+export async function deleteUnusedImages(candidates: readonly string[], used?: ReadonlySet<string>): Promise<void> {
+  const unique = [...new Set(candidates.filter((image) => image.startsWith("/images/")))];
+  if (unique.length === 0) return;
+  let referenced: ReadonlySet<string>;
+  if (used) referenced = used;
+  else {
+    try {
+      referenced = new Set(await (await import("@/server/events/content-images")).referencedImagePaths(false));
+    } catch {
+      return;
+    }
+  }
+  const root = imageRoot();
+  const uploads = path.join(root, "uploads");
+  for (const image of unique) {
+    if (referenced.has(image)) continue;
+    const parsed = imagePathSchema.safeParse(image);
+    if (!parsed.success || parsed.data === "") continue;
+    let file: string;
+    try {
+      file = fs.realpathSync(resolveImageFile(parsed.data));
+    } catch {
+      continue;
+    }
+    if (!file.startsWith(`${root}${path.sep}`)) continue;
+    await fs.promises.unlink(file).catch(() => undefined);
+    let directory = path.dirname(file);
+    while (directory.startsWith(`${uploads}${path.sep}`)) {
+      try {
+        await fs.promises.rmdir(directory);
+      } catch {
+        break;
+      }
+      directory = path.dirname(directory);
+    }
+  }
 }
 
 export function requireExistingImages(images: readonly string[]): void {

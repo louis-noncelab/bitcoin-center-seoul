@@ -4,7 +4,7 @@ import { reviewRecordSchema, reviewSelectionSchema, type ReviewInput, type Revie
 import { prisma } from "@/server/db";
 import { ApiError } from "@/server/events/errors";
 import { markdownImageReferences } from "@/server/events/image-references";
-import { placeImagesInSlugFolder, requireExistingImages, rewriteImagePaths } from "@/server/events/images";
+import { collectImagePaths, deleteUnusedImages, placeImagesInSlugFolder, requireExistingImages, rewriteImagePaths } from "@/server/events/images";
 import { reserveRevision } from "@/server/events/revision";
 
 function storedTime(value: Date): string {
@@ -59,6 +59,7 @@ export const publicReviews = cache(async () => {
 });
 
 export async function saveReview(input: ReviewInput, id?: number, revision?: number): Promise<ReviewRecord> {
+  const previous = id === undefined ? null : await getReview(id);
   const sources = [...new Set([...(input.image ? [input.image] : []), ...markdownImageReferences(input.description), ...markdownImageReferences(input.descriptionEn)])];
   requireExistingImages(sources);
   const placed = await placeImagesInSlugFolder("reviews", input.slug, sources);
@@ -83,6 +84,8 @@ export async function saveReview(input: ReviewInput, id?: number, revision?: num
   });
   const saved = await getReview(savedId);
   if (!saved) throw new ApiError(500, "SAVE_FAILED", "후기를 저장하지 못했습니다.");
+  const kept = new Set(collectImagePaths(image, description, descriptionEn));
+  await deleteUnusedImages(collectImagePaths(previous?.image, previous?.description, previous?.descriptionEn).filter((item) => !kept.has(item)));
   return saved;
   } catch (error) {
     await placed.restore();
@@ -91,10 +94,12 @@ export async function saveReview(input: ReviewInput, id?: number, revision?: num
 }
 
 export async function deleteReview(id: number, revision: number): Promise<void> {
+  const previous = await getReview(id);
   await prisma.$transaction(async (tx) => {
     await reserveRevision(tx, "visit_reviews", id, revision);
     await tx.visitReview.delete({ where: { id } });
   });
+  await deleteUnusedImages(collectImagePaths(previous?.image, previous?.description, previous?.descriptionEn));
 }
 
 export async function saveReviewSelection(input: ReviewSelectionInput, revision: number) {

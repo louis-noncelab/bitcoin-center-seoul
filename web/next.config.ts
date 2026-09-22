@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
   distDir: process.env.BCS_EVENTS_REVIEW === "true" ? ".next-events" : ".next",
   serverExternalPackages: ["better-sqlite3"],
   outputFileTracingExcludes: { "/*": ["./.local/**/*", "./src/generated/**/*", "../.local/**/*", "../data/**/*"] },
+  typescript: { ignoreBuildErrors: process.env.BCS_SKIP_TYPECHECK === "true" },
   output: "standalone",
   outputFileTracingRoot: repositoryRoot,
   turbopack: {

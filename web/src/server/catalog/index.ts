@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/server/db";
-import { placeImagesInSlugFolder, rewriteImagePaths } from "@/server/events/images";
+import { collectImagePaths, deleteUnusedImages, placeImagesInSlugFolder, rewriteImagePaths } from "@/server/events/images";
 import { markdownImageReferences } from "@/server/events/image-references";
 import { HttpError } from "@/server/http";
 import { resolveCategoryId } from "./categories";
@@ -72,13 +72,14 @@ export async function listAdminProducts() {
 }
 
 export async function saveProduct(input: ProductInput, actorId: string, id?: string) {
+  const previous = id ? await prisma.product.findUnique({ where: { id }, select: { imageUrl: true, images: true, descriptionKo: true, descriptionEn: true } }) : null;
   const rawImages = [...new Set([...(input.images?.length ? input.images : (input.imageUrl ? [input.imageUrl] : [])).slice(0, 12), ...markdownImageReferences(input.descriptionKo), ...markdownImageReferences(input.descriptionEn)])];
   const placed = await placeImagesInSlugFolder("products", input.slug, rawImages);
   const descriptionKo = rewriteImagePaths(input.descriptionKo, rawImages, placed.images);
   const descriptionEn = rewriteImagePaths(input.descriptionEn, rawImages, placed.images);
   const gallery = (input.images?.length ? input.images : (input.imageUrl ? [input.imageUrl] : [])).slice(0, 12).map((image) => placed.images[rawImages.indexOf(image)] ?? image);
   try {
-  return await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     if (id) await tx.$queryRaw`SELECT id FROM "Product" WHERE id = ${id} FOR UPDATE`;
     const current = id ? await tx.product.findUnique({ where: { id }, include: { variants: true } }) : null;
     if (id && !current) throw new HttpError(404, "NOT_FOUND", "상품을 찾을 수 없습니다. / Product not found.");
@@ -131,8 +132,12 @@ export async function saveProduct(input: ProductInput, actorId: string, id?: str
       targetType: "Product", targetId: product.id,
       summary: { slug: product.slug, published: product.published, variantCount: variants.length },
     } });
-    return tx.product.findUniqueOrThrow({ where: { id: product.id }, include: { variants: true, category: true } });
+    const saved = await tx.product.findUniqueOrThrow({ where: { id: product.id }, include: { variants: true, category: true } });
+    return saved;
   });
+  const kept = new Set(collectImagePaths(gallery, descriptionKo, descriptionEn));
+  await deleteUnusedImages(collectImagePaths(previous?.imageUrl, previous?.images, previous?.descriptionKo, previous?.descriptionEn).filter((image) => !kept.has(image)));
+  return result;
   } catch (error) {
     await placed.restore();
     throw error;

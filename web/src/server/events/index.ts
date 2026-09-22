@@ -13,7 +13,7 @@ import {
 import { centerEventLocation } from "@/lib/event-location";
 import { prisma } from "@/server/db";
 import { ApiError } from "@/server/events/errors";
-import { placeImagesInSlugFolder, requireExistingImages, rewriteImagePaths } from "@/server/events/images";
+import { collectImagePaths, deleteUnusedImages, placeImagesInSlugFolder, requireExistingImages, rewriteImagePaths } from "@/server/events/images";
 import { reserveRevision } from "@/server/events/revision";
 import { storedTagsSchema } from "@/server/events/tags";
 
@@ -211,6 +211,7 @@ export async function setEventRegistration(id: number, registrationClosed: boole
 
 export async function updateEvent(id: number, input: EventInput, revision: number): Promise<EventRecord> {
   requireExistingImages(input.images);
+  const previous = await getEvent(id);
   const placed = await placeImagesInSlugFolder("events", input.slug, input.images);
   const description = rewriteImagePaths(input.description, input.images, placed.images);
   const descriptionEn = rewriteImagePaths(input.descriptionEn, input.images, placed.images);
@@ -235,6 +236,8 @@ export async function updateEvent(id: number, input: EventInput, revision: numbe
   });
   const event = await getEvent(id);
   if (!event) throw new ApiError(500, "WRITE_FAILED", "행사 저장에 실패했습니다.");
+  const kept = new Set(collectImagePaths(placed.images, description, descriptionEn));
+  await deleteUnusedImages(collectImagePaths(previous?.images, previous?.description, previous?.descriptionEn).filter((image) => !kept.has(image)));
   return event;
   } catch (error) {
     await placed.restore();
@@ -253,12 +256,14 @@ export async function paidOnlineSessions(skus: readonly string[]) {
 }
 
 export async function deleteEvent(id: number, revision: number): Promise<void> {
+  const previous = await getEvent(id);
   await prisma.$transaction(async (tx) => {
     await reserveRevision(tx, "events", id, revision);
     await tx.centerEvent.delete({ where: { id } });
     await tx.contentImage.deleteMany({ where: { kind: "event", contentId: id } });
     await tx.contentSlug.deleteMany({ where: { kind: "event", contentId: id } });
   });
+  await deleteUnusedImages(collectImagePaths(previous?.images, previous?.description, previous?.descriptionEn));
 }
 
 export async function createHighlight(input: HighlightInput): Promise<HighlightRecord> {
@@ -291,6 +296,7 @@ export async function createHighlight(input: HighlightInput): Promise<HighlightR
 
 export async function updateHighlight(id: number, input: HighlightInput, revision: number): Promise<HighlightRecord> {
   requireExistingImages(input.images);
+  const previous = await getHighlight(id, { includeInactive: true });
   const placed = await placeImagesInSlugFolder("highlights", input.slug, input.images);
   const description = rewriteImagePaths(input.description, input.images, placed.images);
   const descriptionEn = rewriteImagePaths(input.descriptionEn, input.images, placed.images);
@@ -311,6 +317,8 @@ export async function updateHighlight(id: number, input: HighlightInput, revisio
   });
   const highlight = await getHighlight(id, { includeInactive: true });
   if (!highlight) throw new ApiError(500, "WRITE_FAILED", "하이라이트 저장에 실패했습니다.");
+  const kept = new Set(collectImagePaths(placed.images, description, descriptionEn));
+  await deleteUnusedImages(collectImagePaths(previous?.images, previous?.description, previous?.descriptionEn).filter((image) => !kept.has(image)));
   return highlight;
   } catch (error) {
     await placed.restore();
@@ -319,10 +327,12 @@ export async function updateHighlight(id: number, input: HighlightInput, revisio
 }
 
 export async function deleteHighlight(id: number, revision: number): Promise<void> {
+  const previous = await getHighlight(id, { includeInactive: true });
   await prisma.$transaction(async (tx) => {
     await reserveRevision(tx, "highlights", id, revision);
     await tx.centerHighlight.delete({ where: { id } });
     await tx.contentImage.deleteMany({ where: { kind: "highlight", contentId: id } });
     await tx.contentSlug.deleteMany({ where: { kind: "highlight", contentId: id } });
   });
+  await deleteUnusedImages(collectImagePaths(previous?.images, previous?.description, previous?.descriptionEn));
 }
