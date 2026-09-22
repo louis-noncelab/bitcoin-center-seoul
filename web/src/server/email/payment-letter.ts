@@ -238,7 +238,7 @@ export async function enqueuePaymentLetter(tx: Tx, input: { readonly eventKey: s
   const settings = await getCommerceSettings(tx);
   const origin = getServerConfig().appOrigin;
   const url = input.url.startsWith(`${origin}/`) ? input.url : `${origin}/${locale}/orders/confirm/${input.order.confirmationCode ?? ""}`;
-  const joins = input.kind === "order.paid" ? paidOnlineSessions(input.order.items.flatMap((item) => item.sku ? [item.sku] : [])) : [];
+  const joins = input.kind === "order.paid" ? await paidOnlineSessions(input.order.items.flatMap((item) => item.sku ? [item.sku] : [])) : [];
   const rendered = buildPaymentLetter(locale, input.kind, input.order, url, settings.productDisplayUnit, origin, joins);
   await enqueue(tx, input.eventKey, input.to, locale, input.kind, {
     id: input.order.id,

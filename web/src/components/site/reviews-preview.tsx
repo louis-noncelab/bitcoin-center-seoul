@@ -7,9 +7,9 @@ import type { Locale } from "@/i18n/routing";
 import { ReviewCard } from "./review-card";
 import "@/styles/reviews.css";
 
-export function ReviewsPreview({ locale }: { readonly locale: Locale }) {
+export async function ReviewsPreview({ locale }: { readonly locale: Locale }) {
   const t = reviewCopy[locale];
-  const reviews = publicReviews().home.map(visitReview);
+  const reviews = (await publicReviews()).home.map(visitReview);
   if (!reviews.length) return null;
   return <section className="section-frame reviews-preview" aria-labelledby="reviews-preview-title" id="reviews">
     <div className="section-heading" data-reveal-part><div><h2 id="reviews-preview-title">{t.homeTitle}</h2><p className="muted">{t.homeIntro}</p></div><Link href="/reviews" locale={locale} className="section-link">{t.explore}<ArrowRight className="icon" aria-hidden="true" /></Link></div>

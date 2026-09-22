@@ -16,5 +16,5 @@ export default async function BoardGamePage({ params }: Props) {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   await connection();
-  return <CollectionFrame locale={locale} section="boardgame" title={boardGameCopy[locale].title}><CollectionGrid records={listCollection(false, boardGameKinds)} locale={locale} empty={boardGameCopy[locale].empty} /></CollectionFrame>;
+  return <CollectionFrame locale={locale} section="boardgame" title={boardGameCopy[locale].title}><CollectionGrid records={await listCollection(false, boardGameKinds)} locale={locale} empty={boardGameCopy[locale].empty} /></CollectionFrame>;
 }

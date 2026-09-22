@@ -45,8 +45,8 @@ export async function meetupAudiences(): Promise<readonly MeetupAudience[]> {
       groups.set(id, group);
     }
   }
-  return [...groups.entries()].map(([id, group]) => {
-    const event = getEvent(id);
+  return (await Promise.all([...groups.entries()].map(async ([id, group]) => {
+    const event = await getEvent(id);
     return {
       id,
       title: event?.title || group.title,
@@ -54,7 +54,7 @@ export async function meetupAudiences(): Promise<readonly MeetupAudience[]> {
       online: Boolean(event?.isOnline && event.onlineUrl),
       recipients: group.emails.size,
     };
-  }).sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+  }))).sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
 }
 
 function letter(input: {
@@ -96,12 +96,12 @@ ${input.confirmUrl ? `<tr><td style="padding:28px 0 0;font-family:${font};"><a h
 }
 
 export async function sendMeetupBroadcast(input: { readonly eventId: number; readonly subject: string; readonly message: string }, actorId: string): Promise<{ recipients: number; queued: number; skipped: number }> {
-  const event = getEvent(input.eventId);
+  const event = await getEvent(input.eventId);
   const orders = await prisma.order.findMany({
     where: { status: "PAID", items: { some: { sku: `MEETUP-${input.eventId}` } } },
     select: { customerEmail: true, locale: true, confirmationCode: true, items: { where: { sku: `MEETUP-${input.eventId}` }, select: { titleKo: true, titleEn: true } } },
   });
-  const join = paidOnlineSessions([`MEETUP-${input.eventId}`])[0] ?? null;
+  const join = (await paidOnlineSessions([`MEETUP-${input.eventId}`]))[0] ?? null;
   const people = new Map<string, { email: string; locale: "ko" | "en"; code: string | null; title: string }>();
   for (const order of orders) {
     const email = openString(order.customerEmail).trim();

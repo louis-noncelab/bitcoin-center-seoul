@@ -144,12 +144,12 @@ async function main(): Promise<void> {
         copied.push(destination);
         if (digest(destination) !== image.sha256) throw new ImportError("SOURCE_IMAGE_CHANGED");
       }
-      for (const { key, input } of plan.pending) plan.ids.set(key, saveReview(input).id);
-      if (plan.updateSelection) {
-        const idFor = (key: string): number => { const id = plan.ids.get(key); if (id === undefined) throw new ImportError("INVALID_SELECTION"); return id; };
-        saveReviewSelection({ featured_id: bundle.selection.featured_key === null ? null : idFor(bundle.selection.featured_key), home_ids: bundle.selection.home_keys.map(idFor) }, plan.selection.revision);
-      }
     }).immediate();
+    for (const { key, input } of plan.pending) plan.ids.set(key, (await saveReview(input)).id);
+    if (plan.updateSelection) {
+      const idFor = (key: string): number => { const id = plan.ids.get(key); if (id === undefined) throw new ImportError("INVALID_SELECTION"); return id; };
+      await saveReviewSelection({ featured_id: bundle.selection.featured_key === null ? null : idFor(bundle.selection.featured_key), home_ids: bundle.selection.home_keys.map(idFor) }, plan.selection.revision);
+    }
   } catch (error) {
     for (const filename of copied) fs.unlinkSync(filename);
     throw error;

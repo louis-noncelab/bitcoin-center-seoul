@@ -35,7 +35,7 @@ export default async function ReviewsPage({ params, searchParams }: Props) {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   await connection();
-  const { records, featured } = publicReviews();
+  const { records, featured } = await publicReviews();
   const reviews = records.map(visitReview);
   const { type } = await searchParams;
   const filter = reviewFilters.find((kind) => kind === type) ?? "all";

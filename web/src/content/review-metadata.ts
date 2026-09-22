@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReviewRecord } from "@/lib/reviews-contract";
 import type { Locale } from "@/i18n/routing";
 import { markdownExcerpt } from "@/lib/markdown";
+import { defaultShareImage, shareCardPath, shareImages } from "./share";
 import { pageMetadata, siteOrigin } from "./site";
 import { visitReview } from "./visit-reviews";
 
@@ -11,12 +12,12 @@ export function reviewMetadata(record: ReviewRecord, locale: Locale): Metadata {
   const title = review.title[locale];
   const description = markdownExcerpt(review.summary[locale]);
   const path = `/reviews/${record.slug}`;
-  const images = record.image ? [{ url: record.image, alt: title }] : base.openGraph?.images;
+  const imageUrl = record.image ? shareCardPath("reviews", record.slug) : defaultShareImage;
   return {
     ...base, title: `${title} | Bitcoin Center Seoul`, description,
     alternates: { canonical: `/${locale}${path}`, languages: { ko: `/ko${path}`, en: `/en${path}`, "x-default": `/ko${path}` } },
-    openGraph: { ...base.openGraph, type: "article", title, description, url: `/${locale}${path}`, images },
-    twitter: { ...base.twitter, title, description, ...(record.image ? { images: [record.image] } : {}) },
+    openGraph: { ...base.openGraph, type: "article", title, description, url: `/${locale}${path}`, images: shareImages(imageUrl, title) },
+    twitter: { ...base.twitter, title, description, images: [imageUrl] },
   };
 }
 
@@ -32,7 +33,7 @@ export function reviewStructuredData(record: ReviewRecord, locale: Locale) {
         author: { "@type": "Organization", name: "Bitcoin Center Seoul", url: siteOrigin },
         publisher: { "@type": "Organization", name: "Bitcoin Center Seoul", url: siteOrigin },
         citation: record.url,
-        ...(record.image ? { image: [`${siteOrigin}${record.image}`] } : {}),
+        image: [`${siteOrigin}${record.image ? shareCardPath("reviews", record.slug) : defaultShareImage}`],
       },
       {
         "@type": "BreadcrumbList", itemListElement: [

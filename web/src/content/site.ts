@@ -3,7 +3,7 @@ import type { Locale } from "@/i18n/routing";
 import { markdownExcerpt } from "@/lib/markdown";
 import { publicIndexingEnabled } from "@/lib/public-indexing";
 import { centerContent } from "./center";
-import { centerMedia } from "./media";
+import { defaultShareAlt, defaultShareImage, shareImages } from "./share";
 
 export const publicSections = [
   "about",
@@ -30,7 +30,7 @@ export function pageMetadata(
   const title = pageTitle.includes(siteName)
     ? pageTitle
     : `${pageTitle} | ${siteName}`;
-  const image = centerMedia.lounge.image;
+  const imageAlt = defaultShareAlt(locale);
 
   return {
     metadataBase: new URL(siteOrigin),
@@ -53,20 +53,13 @@ export function pageMetadata(
       locale: locale === "ko" ? "ko_KR" : "en_US",
       alternateLocale: locale === "ko" ? "en_US" : "ko_KR",
       type: "website",
-      images: [
-        {
-          url: image.src,
-          width: image.width,
-          height: image.height,
-          alt: centerMedia.lounge.alt[locale],
-        },
-      ],
+      images: shareImages(defaultShareImage, imageAlt),
     },
     twitter: {
       card: "summary_large_image",
       title,
       description: content.introduction,
-      images: [image.src],
+      images: [defaultShareImage],
     },
   };
 }
@@ -77,6 +70,7 @@ export function recordMetadata(
   identifier: string | number,
   title: string,
   description: string,
+  imageUrl = defaultShareImage,
 ): Metadata {
   const metadata = pageMetadata(locale, section);
   const path = `/${section}/${identifier}`;
@@ -98,11 +92,14 @@ export function recordMetadata(
       title,
       description: excerpt,
       url: `/${locale}${path}`,
+      type: section === "journal" ? "article" : "website",
+      images: shareImages(imageUrl, title),
     },
     twitter: {
       card: "summary_large_image",
       title,
       description: excerpt,
+      images: [imageUrl],
     },
   };
 }

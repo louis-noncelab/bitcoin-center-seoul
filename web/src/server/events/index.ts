@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { Prisma } from "@/generated/prisma/client";
 import {
   contentSlugSchema,
   eventRecordSchema,
@@ -9,266 +10,287 @@ import {
   type HighlightInput,
   type HighlightRecord,
 } from "@/lib/events-contract";
-import { getDatabase } from "@/server/events/db";
+import { centerEventLocation } from "@/lib/event-location";
+import { prisma } from "@/server/db";
 import { ApiError } from "@/server/events/errors";
 import { requireExistingImages } from "@/server/events/images";
 import { reserveRevision } from "@/server/events/revision";
 import { storedTagsSchema } from "@/server/events/tags";
-import { centerEventLocation } from "@/lib/event-location";
 
-type EventRow = Omit<EventRecord, "images" | "tags" | "registrationClosed" | "ticketCapacity" | "externalPayment" | "isOnline"> & { readonly tags: string; readonly registrationClosed: number; readonly ticketCapacity: number; readonly externalPayment: number; readonly isOnline: number };
-type HighlightRow = Omit<HighlightRecord, "images" | "tags"> & { readonly tags: string };
 type ContentKind = "event" | "highlight";
 type Visibility = { readonly includeInactive?: boolean };
-
-const eventSelect = `
-  SELECT id, revision, registrationClosed, title, titleEn, date, time, venueType, location, locationEn,
-         description, descriptionEn, image, link, ticketPriceKrw, ticketCapacity, externalPayment, isOnline, onlineUrl, onlineInstructions, onlineInstructionsEn, tags,
-         COALESCE((SELECT slug FROM content_slugs WHERE kind = 'event' AND content_id = events.id AND is_current = 1), '') AS slug
-  FROM events`;
-const highlightSelect = `
-  SELECT id, revision, title, titleEn, meta, metaEn, category, categoryEn, date,
-         startDate, endDate, host, hostEn, description, descriptionEn,
-         image, link, icon, sort_order, is_active, tags,
-         COALESCE((SELECT slug FROM content_slugs WHERE kind = 'highlight' AND content_id = highlights.id AND is_current = 1), '') AS slug
-  FROM highlights`;
-const highlightOrder = `
-  ORDER BY COALESCE(NULLIF(endDate, ''), NULLIF(startDate, ''), REPLACE(date, '.', '-')) DESC, id DESC`;
-
-function imagesFor(kind: ContentKind, contentId: number, legacyImage: string): string[] {
-  const rows = getDatabase()
-    .prepare<[ContentKind, number], { readonly path: string }>(
-      "SELECT path FROM content_images WHERE kind = ? AND content_id = ? ORDER BY position",
-    )
-    .all(kind, contentId);
-  return rows.length > 0 ? rows.map(({ path }) => path) : legacyImage ? [legacyImage] : [];
-}
-
-function eventFrom(row: EventRow): EventRecord {
-  const images = imagesFor("event", row.id, row.image);
-  return eventRecordSchema.parse({ ...row, registrationClosed: row.registrationClosed === 1, externalPayment: row.externalPayment === 1, isOnline: row.isOnline === 1, tags: storedTagsSchema.parse(row.tags), image: images[0] ?? "", link: normalizedLink(row.link), onlineUrl: normalizedLink(row.onlineUrl), images });
-}
-
-function highlightFrom(row: HighlightRow): HighlightRecord {
-  const images = imagesFor("highlight", row.id, row.image);
-  return highlightRecordSchema.parse({ ...row, tags: storedTagsSchema.parse(row.tags), image: images[0] ?? "", link: normalizedLink(row.link), images });
-}
+type Db = Prisma.TransactionClient;
 
 function normalizedLink(link: string): string {
   const value = link.trim();
   return /^www\./i.test(value) ? `https://${value}` : value;
 }
 
-function replaceImages(kind: ContentKind, contentId: number, images: readonly string[]): void {
-  const db = getDatabase();
-  db.prepare<[ContentKind, number]>("DELETE FROM content_images WHERE kind = ? AND content_id = ?").run(kind, contentId);
-  const insert = db.prepare<[ContentKind, number, number, string]>(
-    "INSERT INTO content_images (kind, content_id, position, path) VALUES (?, ?, ?, ?)",
-  );
-  images.forEach((image, position) => insert.run(kind, contentId, position, image));
+function highlightRank(row: { readonly endDate: string; readonly startDate: string; readonly date: string }): string {
+  return row.endDate || row.startDate || row.date.replaceAll(".", "-");
 }
 
-function setSlug(kind: ContentKind, contentId: number, slug: string): void {
-  const db = getDatabase();
-  const owner = db.prepare<[ContentKind, string], { readonly content_id: number }>(
-    "SELECT content_id FROM content_slugs WHERE kind = ? AND slug = ?",
-  ).get(kind, slug);
-  if (owner && owner.content_id !== contentId) {
-    throw new ApiError(409, "SLUG_CONFLICT", "다른 게시물에서 사용 중이거나 이전에 사용한 주소입니다. 다른 주소를 입력해주세요.");
+async function imageMap(kind: ContentKind, ids: readonly number[]): Promise<Map<number, string[]>> {
+  const rows = ids.length === 0 ? [] : await prisma.contentImage.findMany({
+    where: { kind, contentId: { in: [...ids] } },
+    orderBy: { position: "asc" },
+  });
+  const grouped = new Map<number, string[]>();
+  for (const row of rows) {
+    const list = grouped.get(row.contentId) ?? [];
+    list.push(row.path);
+    grouped.set(row.contentId, list);
   }
-  db.prepare<[ContentKind, number]>("UPDATE content_slugs SET is_current = 0 WHERE kind = ? AND content_id = ? AND is_current = 1").run(kind, contentId);
+  return grouped;
+}
+
+async function slugMap(kind: ContentKind): Promise<Map<number, string>> {
+  const rows = await prisma.contentSlug.findMany({ where: { kind, isCurrent: true } });
+  return new Map(rows.map((row) => [row.contentId, row.slug]));
+}
+
+function eventFrom(row: {
+  readonly id: number; readonly revision: number; readonly registrationClosed: boolean; readonly title: string; readonly titleEn: string;
+  readonly date: string; readonly time: string; readonly venueType: string; readonly location: string; readonly locationEn: string;
+  readonly description: string; readonly descriptionEn: string; readonly image: string; readonly link: string; readonly ticketPriceKrw: string;
+  readonly ticketCapacity: number; readonly externalPayment: boolean; readonly isOnline: boolean; readonly onlineUrl: string;
+  readonly onlineInstructions: string; readonly onlineInstructionsEn: string; readonly tags: string;
+}, images: readonly string[], slug: string): EventRecord {
+  const gallery = images.length > 0 ? [...images] : row.image ? [row.image] : [];
+  return eventRecordSchema.parse({
+    id: row.id, revision: row.revision, registrationClosed: row.registrationClosed, slug, tags: storedTagsSchema.parse(row.tags),
+    title: row.title, titleEn: row.titleEn, date: row.date, time: row.time, venueType: row.venueType,
+    location: row.location, locationEn: row.locationEn, description: row.description, descriptionEn: row.descriptionEn,
+    image: gallery[0] ?? "", link: normalizedLink(row.link), ticketPriceKrw: row.ticketPriceKrw, ticketCapacity: row.ticketCapacity,
+    externalPayment: row.externalPayment, isOnline: row.isOnline, onlineUrl: normalizedLink(row.onlineUrl),
+    onlineInstructions: row.onlineInstructions, onlineInstructionsEn: row.onlineInstructionsEn, images: gallery,
+  });
+}
+
+function highlightFrom(row: {
+  readonly id: number; readonly revision: number; readonly title: string; readonly titleEn: string; readonly meta: string; readonly metaEn: string;
+  readonly category: string; readonly categoryEn: string; readonly date: string; readonly startDate: string; readonly endDate: string;
+  readonly host: string; readonly hostEn: string; readonly description: string; readonly descriptionEn: string; readonly image: string;
+  readonly link: string; readonly icon: string; readonly sortOrder: number; readonly isActive: number; readonly tags: string;
+}, images: readonly string[], slug: string): HighlightRecord {
+  const gallery = images.length > 0 ? [...images] : row.image ? [row.image] : [];
+  return highlightRecordSchema.parse({
+    id: row.id, revision: row.revision, slug, tags: storedTagsSchema.parse(row.tags), title: row.title, titleEn: row.titleEn,
+    meta: row.meta, metaEn: row.metaEn, category: row.category, categoryEn: row.categoryEn, date: row.date,
+    startDate: row.startDate, endDate: row.endDate, host: row.host, hostEn: row.hostEn,
+    description: row.description, descriptionEn: row.descriptionEn, image: gallery[0] ?? "", link: normalizedLink(row.link),
+    icon: row.icon, sort_order: row.sortOrder, is_active: row.isActive === 1 ? 1 : 0, images: gallery,
+  });
+}
+
+async function replaceImages(tx: Db, kind: ContentKind, contentId: number, images: readonly string[]): Promise<void> {
+  await tx.contentImage.deleteMany({ where: { kind, contentId } });
+  if (images.length) {
+    await tx.contentImage.createMany({ data: images.map((path, position) => ({ kind, contentId, position, path })) });
+  }
+}
+
+async function setSlug(tx: Db, kind: ContentKind, contentId: number, slug: string): Promise<void> {
   if (slug) {
-    db.prepare<[ContentKind, string, number]>(`
-      INSERT INTO content_slugs (kind, slug, content_id, is_current) VALUES (?, ?, ?, 1)
-      ON CONFLICT (kind, slug) DO UPDATE SET is_current = 1
-    `).run(kind, slug, contentId);
+    const owner = await tx.contentSlug.findUnique({ where: { kind_slug: { kind, slug } } });
+    if (owner && owner.contentId !== contentId) {
+      throw new ApiError(409, "SLUG_CONFLICT", "다른 게시물에서 사용 중이거나 이전에 사용한 주소입니다. 다른 주소를 입력해주세요.");
+    }
+  }
+  await tx.contentSlug.updateMany({ where: { kind, contentId, isCurrent: true }, data: { isCurrent: false } });
+  if (slug) {
+    await tx.contentSlug.upsert({
+      where: { kind_slug: { kind, slug } },
+      create: { kind, slug, contentId, isCurrent: true },
+      update: { contentId, isCurrent: true },
+    });
   }
 }
 
-function contentIdByPath(kind: ContentKind, value: string): number | null {
+async function contentIdByPath(kind: ContentKind, value: string): Promise<number | null> {
   if (/^[1-9]\d*$/.test(value)) {
     const id = Number(value);
     return Number.isSafeInteger(id) ? id : null;
   }
   const slug = contentSlugSchema.safeParse(value);
   if (!slug.success || slug.data === "") return null;
-  return getDatabase().prepare<[ContentKind, string], { readonly content_id: number }>(
-    "SELECT content_id FROM content_slugs WHERE kind = ? AND slug = ?",
-  ).get(kind, slug.data)?.content_id ?? null;
+  return (await prisma.contentSlug.findUnique({ where: { kind_slug: { kind, slug: slug.data } } }))?.contentId ?? null;
 }
 
-export function getEventByPath(value: string): EventRecord | null {
-  const id = contentIdByPath("event", value);
+export async function getEventByPath(value: string): Promise<EventRecord | null> {
+  const id = await contentIdByPath("event", value);
   return id === null ? null : getEvent(id);
 }
 
-export function getHighlightByPath(value: string, options: Visibility = {}): HighlightRecord | null {
-  const id = contentIdByPath("highlight", value);
+export async function getHighlightByPath(value: string, options: Visibility = {}): Promise<HighlightRecord | null> {
+  const id = await contentIdByPath("highlight", value);
   return id === null ? null : getHighlight(id, options);
 }
 
-export function listEvents(): EventRecord[] {
-  return getDatabase()
-    .prepare<[], EventRow>(`${eventSelect} ORDER BY date DESC, time DESC, id DESC`)
-    .all()
-    .map(eventFrom);
+export async function listEvents(): Promise<EventRecord[]> {
+  const rows = await prisma.centerEvent.findMany({ orderBy: [{ date: "desc" }, { time: "desc" }, { id: "desc" }] });
+  const [images, slugs] = await Promise.all([imageMap("event", rows.map((row) => row.id)), slugMap("event")]);
+  return rows.map((row) => eventFrom(row, images.get(row.id) ?? [], slugs.get(row.id) ?? ""));
 }
 
-export function getEvent(id: number): EventRecord | null {
-  const row = getDatabase().prepare<[number], EventRow>(`${eventSelect} WHERE id = ?`).get(id);
-  return row ? eventFrom(row) : null;
+export async function getEvent(id: number): Promise<EventRecord | null> {
+  const row = await prisma.centerEvent.findUnique({ where: { id } });
+  if (!row) return null;
+  const [images, slug] = await Promise.all([
+    imageMap("event", [id]),
+    prisma.contentSlug.findFirst({ where: { kind: "event", contentId: id, isCurrent: true } }),
+  ]);
+  return eventFrom(row, images.get(id) ?? [], slug?.slug ?? "");
 }
 
-export function listHighlights(options: Visibility = {}): HighlightRecord[] {
-  const where = options.includeInactive ? "" : " WHERE is_active = 1";
-  return getDatabase()
-    .prepare<[], HighlightRow>(`${highlightSelect}${where}${highlightOrder}`)
-    .all()
-    .map(highlightFrom);
+export async function listHighlights(options: Visibility = {}): Promise<HighlightRecord[]> {
+  const rows = await prisma.centerHighlight.findMany({ where: options.includeInactive ? {} : { isActive: 1 } });
+  rows.sort((left, right) => highlightRank(right).localeCompare(highlightRank(left)) || right.id - left.id);
+  const [images, slugs] = await Promise.all([imageMap("highlight", rows.map((row) => row.id)), slugMap("highlight")]);
+  return rows.map((row) => highlightFrom(row, images.get(row.id) ?? [], slugs.get(row.id) ?? ""));
 }
 
-export function listHighlightsPage(requestedPage: number) {
-  const db = getDatabase();
-  return db.transaction(() => {
-    const total = db.prepare<[], { readonly total: number }>("SELECT COUNT(*) AS total FROM highlights WHERE is_active = 1").get()?.total ?? 0;
-    const totalPages = Math.max(1, Math.ceil(total / 12));
-    const page = Math.min(totalPages, Math.max(1, requestedPage));
-    const highlights = db.prepare<[number, number], HighlightRow>(`${highlightSelect} WHERE is_active = 1${highlightOrder} LIMIT ? OFFSET ?`)
-      .all(12, (page - 1) * 12).map(highlightFrom);
-    return { highlights, page, totalPages };
-  })();
+export async function listHighlightsPage(requestedPage: number) {
+  const total = await prisma.centerHighlight.count({ where: { isActive: 1 } });
+  const totalPages = Math.max(1, Math.ceil(total / 12));
+  const page = Math.min(totalPages, Math.max(1, requestedPage));
+  const highlights = (await listHighlights()).slice((page - 1) * 12, page * 12);
+  return { highlights, page, totalPages };
 }
 
-export function getHighlight(id: number, options: Visibility = {}): HighlightRecord | null {
-  const active = options.includeInactive ? "" : " AND is_active = 1";
-  const row = getDatabase()
-    .prepare<[number], HighlightRow>(`${highlightSelect} WHERE id = ?${active}`)
-    .get(id);
-  return row ? highlightFrom(row) : null;
+export async function getHighlight(id: number, options: Visibility = {}): Promise<HighlightRecord | null> {
+  const row = await prisma.centerHighlight.findFirst({ where: { id, ...(options.includeInactive ? {} : { isActive: 1 }) } });
+  if (!row) return null;
+  const [images, slug] = await Promise.all([
+    imageMap("highlight", [id]),
+    prisma.contentSlug.findFirst({ where: { kind: "highlight", contentId: id, isCurrent: true } }),
+  ]);
+  return highlightFrom(row, images.get(id) ?? [], slug?.slug ?? "");
 }
 
-export function createEvent(input: EventInput): EventRecord {
+export async function createEvent(input: EventInput): Promise<EventRecord> {
   requireExistingImages(input.images);
-  const db = getDatabase();
-  const create = db.transaction(() => {
+  const id = await prisma.$transaction(async (tx) => {
     const image = input.images[0] ?? "";
-    const result = db.prepare(`
-      INSERT INTO events (registrationClosed, title, titleEn, date, time, venueType, location, locationEn, description, descriptionEn, image, link, ticketPriceKrw, ticketCapacity, externalPayment, isOnline, onlineUrl, onlineInstructions, onlineInstructionsEn, tags)
-      VALUES (@registrationClosed, @title, @titleEn, @date, @time, @venueType, @location, @locationEn, @description, @descriptionEn, @image, @link, @ticketPriceKrw, @ticketCapacity, @externalPayment, @isOnline, @onlineUrl, @onlineInstructions, @onlineInstructionsEn, @tags)
-    `).run({ ...input, registrationClosed: input.registrationClosed ? 1 : 0, externalPayment: input.externalPayment ? 1 : 0, isOnline: input.isOnline ? 1 : 0, ...(input.venueType === "center" && !input.isOnline ? centerEventLocation : {}), image, tags: JSON.stringify(input.tags) });
-    const id = Number(result.lastInsertRowid);
-    replaceImages("event", id, input.images);
-    setSlug("event", id, input.slug);
-    return id;
+    const created = await tx.centerEvent.create({
+      data: {
+        registrationClosed: input.registrationClosed ?? false, title: input.title, titleEn: input.titleEn, date: input.date, time: input.time,
+        venueType: input.venueType, location: input.location, locationEn: input.locationEn, description: input.description,
+        descriptionEn: input.descriptionEn, image, link: input.link, ticketPriceKrw: input.ticketPriceKrw, ticketCapacity: input.ticketCapacity,
+        externalPayment: input.externalPayment, isOnline: input.isOnline, onlineUrl: input.onlineUrl, onlineInstructions: input.onlineInstructions,
+        onlineInstructionsEn: input.onlineInstructionsEn, tags: JSON.stringify(input.tags),
+        ...(input.venueType === "center" && !input.isOnline ? centerEventLocation : {}),
+      },
+    });
+    await replaceImages(tx, "event", created.id, input.images);
+    await setSlug(tx, "event", created.id, input.slug);
+    return created.id;
   });
-  const event = getEvent(create());
+  const event = await getEvent(id);
   if (!event) throw new ApiError(500, "WRITE_FAILED", "행사 저장에 실패했습니다.");
   return event;
 }
 
-export function setEventRegistration(id: number, registrationClosed: boolean, revision: number): EventRecord {
-  const db = getDatabase();
-  return db.transaction(() => {
-    reserveRevision("events", id, revision);
-    db.prepare("UPDATE events SET registrationClosed = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(Number(registrationClosed), id);
-    return getEvent(id)!;
-  }).immediate();
+export async function setEventRegistration(id: number, registrationClosed: boolean, revision: number): Promise<EventRecord> {
+  await prisma.$transaction(async (tx) => {
+    await reserveRevision(tx, "events", id, revision);
+    await tx.centerEvent.update({ where: { id }, data: { registrationClosed } });
+  });
+  const event = await getEvent(id);
+  if (!event) throw new ApiError(404, "NOT_FOUND", "행사를 찾을 수 없습니다.");
+  return event;
 }
 
-export function updateEvent(id: number, input: EventInput, revision: number): EventRecord {
+export async function updateEvent(id: number, input: EventInput, revision: number): Promise<EventRecord> {
   requireExistingImages(input.images);
-  const db = getDatabase();
-  db.transaction(() => {
-    reserveRevision("events", id, revision);
-    const image = input.images[0] ?? "";
-    const result = db.prepare(`
-      UPDATE events SET registrationClosed = COALESCE(@registrationClosed, registrationClosed), title = @title, titleEn = @titleEn, date = @date, time = @time,
-        venueType = @venueType, location = @location, locationEn = @locationEn, description = @description,
-        descriptionEn = @descriptionEn, image = @image, link = @link, ticketPriceKrw = @ticketPriceKrw, ticketCapacity = @ticketCapacity, externalPayment = @externalPayment, isOnline = @isOnline, onlineUrl = @onlineUrl, onlineInstructions = @onlineInstructions, onlineInstructionsEn = @onlineInstructionsEn, tags = @tags, updated_at = CURRENT_TIMESTAMP
-      WHERE id = @id
-    `).run({ ...input, registrationClosed: input.registrationClosed === undefined ? null : Number(input.registrationClosed), externalPayment: input.externalPayment ? 1 : 0, isOnline: input.isOnline ? 1 : 0, ...(input.venueType === "center" && !input.isOnline ? centerEventLocation : {}), id, image, tags: JSON.stringify(input.tags) });
-    if (result.changes === 0) throw new ApiError(404, "NOT_FOUND", "행사를 찾을 수 없습니다.");
-    replaceImages("event", id, input.images);
-    setSlug("event", id, input.slug);
-  })();
-  const event = getEvent(id);
+  await prisma.$transaction(async (tx) => {
+    await reserveRevision(tx, "events", id, revision);
+    const current = await tx.centerEvent.findUnique({ where: { id } });
+    if (!current) throw new ApiError(404, "NOT_FOUND", "행사를 찾을 수 없습니다.");
+    await tx.centerEvent.update({
+      where: { id },
+      data: {
+        registrationClosed: input.registrationClosed ?? false, title: input.title, titleEn: input.titleEn, date: input.date, time: input.time,
+        venueType: input.venueType, location: input.location, locationEn: input.locationEn, description: input.description,
+        descriptionEn: input.descriptionEn, image: input.images[0] ?? "", link: input.link, ticketPriceKrw: input.ticketPriceKrw,
+        ticketCapacity: input.ticketCapacity, externalPayment: input.externalPayment, isOnline: input.isOnline, onlineUrl: input.onlineUrl,
+        onlineInstructions: input.onlineInstructions, onlineInstructionsEn: input.onlineInstructionsEn, tags: JSON.stringify(input.tags),
+        ...(input.venueType === "center" && !input.isOnline ? centerEventLocation : {}),
+      },
+    });
+    await replaceImages(tx, "event", id, input.images);
+    await setSlug(tx, "event", id, input.slug);
+  });
+  const event = await getEvent(id);
   if (!event) throw new ApiError(500, "WRITE_FAILED", "행사 저장에 실패했습니다.");
   return event;
 }
 
-export function paidOnlineSessions(skus: readonly string[]) {
+export async function paidOnlineSessions(skus: readonly string[]) {
   const ids = [...new Set(skus.flatMap((sku) => {
     const match = /^MEETUP-(\d+)$/.exec(sku);
     return match ? [Number(match[1])] : [];
   }))];
   if (!ids.length) return [];
-  const rows = getDatabase().prepare<number[], { readonly title: string; readonly titleEn: string; readonly onlineUrl: string; readonly onlineInstructions: string; readonly onlineInstructionsEn: string }>(
-    `SELECT title, titleEn, onlineUrl, onlineInstructions, onlineInstructionsEn FROM events WHERE isOnline = 1 AND onlineUrl <> '' AND id IN (${ids.map(() => "?").join(",")})`,
-  ).all(...ids);
+  const rows = await prisma.centerEvent.findMany({ where: { id: { in: ids }, isOnline: true, NOT: { onlineUrl: "" } } });
   return rows.map((row) => ({ titleKo: row.title, titleEn: row.titleEn, url: normalizedLink(row.onlineUrl), note: row.onlineInstructions, noteEn: row.onlineInstructionsEn }));
 }
 
-export function deleteEvent(id: number, revision: number): void {
-  const db = getDatabase();
-  db.transaction(() => {
-    reserveRevision("events", id, revision);
-    const result = db.prepare<[number]>("DELETE FROM events WHERE id = ?").run(id);
-    if (result.changes === 0) throw new ApiError(404, "NOT_FOUND", "행사를 찾을 수 없습니다.");
-    db.prepare<[ContentKind, number]>("DELETE FROM content_images WHERE kind = ? AND content_id = ?").run("event", id);
-    db.prepare<[ContentKind, number]>("DELETE FROM content_slugs WHERE kind = ? AND content_id = ?").run("event", id);
-  })();
-}
-
-export function createHighlight(input: HighlightInput): HighlightRecord {
-  requireExistingImages(input.images);
-  const db = getDatabase();
-  const create = db.transaction(() => {
-    const image = input.images[0] ?? "";
-    const result = db.prepare(`
-      INSERT INTO highlights (title, titleEn, meta, metaEn, category, categoryEn, date, startDate, endDate,
-        host, hostEn, description, descriptionEn, image, link, icon, sort_order, is_active, tags)
-      VALUES (@title, @titleEn, @meta, @metaEn, @category, @categoryEn, @date, @startDate, @endDate,
-        @host, @hostEn, @description, @descriptionEn, @image, @link, @icon, @sort_order, @is_active, @tags)
-    `).run({ ...input, image, tags: JSON.stringify(input.tags) });
-    const id = Number(result.lastInsertRowid);
-    replaceImages("highlight", id, input.images);
-    setSlug("highlight", id, input.slug);
-    return id;
+export async function deleteEvent(id: number, revision: number): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    await reserveRevision(tx, "events", id, revision);
+    await tx.centerEvent.delete({ where: { id } });
+    await tx.contentImage.deleteMany({ where: { kind: "event", contentId: id } });
+    await tx.contentSlug.deleteMany({ where: { kind: "event", contentId: id } });
   });
-  const highlight = getHighlight(create(), { includeInactive: true });
-  if (!highlight) throw new ApiError(500, "WRITE_FAILED", "하이라이트 저장에 실패했습니다.");
-  return highlight;
 }
 
-export function updateHighlight(id: number, input: HighlightInput, revision: number): HighlightRecord {
+export async function createHighlight(input: HighlightInput): Promise<HighlightRecord> {
   requireExistingImages(input.images);
-  const db = getDatabase();
-  db.transaction(() => {
-    reserveRevision("highlights", id, revision);
-    const image = input.images[0] ?? "";
-    const result = db.prepare(`
-      UPDATE highlights SET title = @title, titleEn = @titleEn, meta = @meta, metaEn = @metaEn,
-        category = @category, categoryEn = @categoryEn, date = @date, startDate = @startDate, endDate = @endDate,
-        host = @host, hostEn = @hostEn, description = @description, descriptionEn = @descriptionEn,
-        image = @image, link = @link, icon = @icon, sort_order = @sort_order, is_active = @is_active, tags = @tags,
-        updated_at = CURRENT_TIMESTAMP WHERE id = @id
-    `).run({ ...input, id, image, tags: JSON.stringify(input.tags) });
-    if (result.changes === 0) throw new ApiError(404, "NOT_FOUND", "하이라이트를 찾을 수 없습니다.");
-    replaceImages("highlight", id, input.images);
-    setSlug("highlight", id, input.slug);
-  })();
-  const highlight = getHighlight(id, { includeInactive: true });
+  const id = await prisma.$transaction(async (tx) => {
+    const created = await tx.centerHighlight.create({
+      data: {
+        title: input.title, titleEn: input.titleEn, meta: input.meta, metaEn: input.metaEn, category: input.category, categoryEn: input.categoryEn,
+        date: input.date, startDate: input.startDate, endDate: input.endDate, host: input.host, hostEn: input.hostEn,
+        description: input.description, descriptionEn: input.descriptionEn, image: input.images[0] ?? "", link: input.link, icon: input.icon,
+        sortOrder: input.sort_order, isActive: input.is_active, tags: JSON.stringify(input.tags),
+      },
+    });
+    await replaceImages(tx, "highlight", created.id, input.images);
+    await setSlug(tx, "highlight", created.id, input.slug);
+    return created.id;
+  });
+  const highlight = await getHighlight(id, { includeInactive: true });
   if (!highlight) throw new ApiError(500, "WRITE_FAILED", "하이라이트 저장에 실패했습니다.");
   return highlight;
 }
 
-export function deleteHighlight(id: number, revision: number): void {
-  const db = getDatabase();
-  db.transaction(() => {
-    reserveRevision("highlights", id, revision);
-    const result = db.prepare<[number]>("DELETE FROM highlights WHERE id = ?").run(id);
-    if (result.changes === 0) throw new ApiError(404, "NOT_FOUND", "하이라이트를 찾을 수 없습니다.");
-    db.prepare<[ContentKind, number]>("DELETE FROM content_images WHERE kind = ? AND content_id = ?").run("highlight", id);
-    db.prepare<[ContentKind, number]>("DELETE FROM content_slugs WHERE kind = ? AND content_id = ?").run("highlight", id);
-  })();
+export async function updateHighlight(id: number, input: HighlightInput, revision: number): Promise<HighlightRecord> {
+  requireExistingImages(input.images);
+  await prisma.$transaction(async (tx) => {
+    await reserveRevision(tx, "highlights", id, revision);
+    await tx.centerHighlight.update({
+      where: { id },
+      data: {
+        title: input.title, titleEn: input.titleEn, meta: input.meta, metaEn: input.metaEn, category: input.category, categoryEn: input.categoryEn,
+        date: input.date, startDate: input.startDate, endDate: input.endDate, host: input.host, hostEn: input.hostEn,
+        description: input.description, descriptionEn: input.descriptionEn, image: input.images[0] ?? "", link: input.link, icon: input.icon,
+        sortOrder: input.sort_order, isActive: input.is_active, tags: JSON.stringify(input.tags),
+      },
+    });
+    await replaceImages(tx, "highlight", id, input.images);
+    await setSlug(tx, "highlight", id, input.slug);
+  });
+  const highlight = await getHighlight(id, { includeInactive: true });
+  if (!highlight) throw new ApiError(500, "WRITE_FAILED", "하이라이트 저장에 실패했습니다.");
+  return highlight;
+}
+
+export async function deleteHighlight(id: number, revision: number): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    await reserveRevision(tx, "highlights", id, revision);
+    await tx.centerHighlight.delete({ where: { id } });
+    await tx.contentImage.deleteMany({ where: { kind: "highlight", contentId: id } });
+    await tx.contentSlug.deleteMany({ where: { kind: "highlight", contentId: id } });
+  });
 }

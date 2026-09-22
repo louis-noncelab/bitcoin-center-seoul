@@ -13,7 +13,7 @@ const boardGameKinds = ["boardgame"] as const;
 type Props = { readonly params: Promise<{ locale: string; id: string }> };
 const readItem = cache(async (value: string) => {
   await connection();
-  const item = getCollectionByPath(value, false, boardGameKinds);
+  const item = await getCollectionByPath(value, false, boardGameKinds);
   if (!item) notFound();
   return item;
 });

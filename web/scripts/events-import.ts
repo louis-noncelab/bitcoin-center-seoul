@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 import type Database from "better-sqlite3";
 import { z } from "zod";
 import { imagePathSchema } from "../src/lib/events-contract";
-import { configuredDatabasePath, configuredUploadsPath } from "../src/server/events/config";
-import { openDatabase } from "../src/server/events/db";
+import { configuredUploadsPath } from "../src/server/events/config";
+import { openDatabase, sqliteDatabasePath } from "../src/server/events/db";
 import { ApiError } from "../src/server/events/errors";
 
 const expectedSnapshotHash = "1fb988fe27003823f27a1958f72b8b24ea37f18f22c162119c04c4d096a5cb3a";
@@ -139,7 +139,7 @@ function importRows(db: Database.Database, snapshot: z.infer<typeof snapshotSche
 }
 
 async function main(): Promise<void> {
-  const databasePath = configuredDatabasePath();
+  const databasePath = sqliteDatabasePath();
   if (!databasePath.startsWith(`${localRoot}${path.sep}`)) {
     throw new ApiError(400, "UNSAFE_IMPORT_TARGET", "가져오기 대상은 web/.local 아래의 명시적 검토 DB여야 합니다.");
   }

@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { ContentLink } from "@/components/controls/content-link";
 import { pageMetadata } from "@/content/site";
+import { defaultShareImage, shareCardPath, shareImages, type ShareKind } from "@/content/share";
 import type { Locale } from "@/i18n/routing";
 import { Link } from "@/i18n/navigation";
 import { isPurchasableKind, type CollectionRecord } from "@/lib/collection-contract";
@@ -110,9 +111,8 @@ export function collectionMetadata(
     : copy.introduction;
   const path = `${sectionPath(record ? recordSection(record) : section)}${record ? `/${record.slug || record.id}` : ""}`;
   const base = pageMetadata(locale, "experience");
-  const images = record?.images[0]
-    ? [{ url: record.images[0], alt: title }]
-    : undefined;
+  const shareKind: ShareKind = record && recordSection(record) === "boardgame" ? "boardgame" : record && recordSection(record) === "goods" ? "goods" : "collection";
+  const imageUrl = record?.images[0] ? shareCardPath(shareKind, record.slug || record.id) : defaultShareImage;
   return {
     ...base,
     title: `${title} | Bitcoin Center Seoul`,
@@ -130,13 +130,13 @@ export function collectionMetadata(
       title,
       description,
       url: `/${locale}${path}`,
-      ...(images ? { images } : {}),
+      images: shareImages(imageUrl, title),
     },
     twitter: {
       ...base.twitter,
       title,
       description,
-      ...(images ? { images } : {}),
+      images: [imageUrl],
     },
   };
 }

@@ -14,7 +14,7 @@ import { getCollectionByPath } from "@/server/collection";
 type Props = { readonly params: Promise<{ locale: string; id: string }> };
 const readItem = cache(async (value: string) => {
   await connection();
-  const item = getCollectionByPath(value, false, libraryKinds);
+  const item = await getCollectionByPath(value, false, libraryKinds);
   if (!item) notFound();
   return item;
 });

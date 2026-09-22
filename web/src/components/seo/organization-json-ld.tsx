@@ -11,6 +11,7 @@ export function OrganizationJsonLd({ locale }: { readonly locale: Locale }) {
     name: hero.title,
     alternateName: centerContent[locale === "ko" ? "en" : "ko"].hero.title,
     url: siteOrigin,
+    logo: `${siteOrigin}/brand/bcs-horizontal-color.png`,
     description: hero.introduction,
     email: visit.contact.email.label,
     telephone: visit.contact.phone.label,

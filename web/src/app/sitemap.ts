@@ -21,10 +21,15 @@ async function listedShopPaths(): Promise<string[]> {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   await connection();
-  const [events, highlights, shopPaths] = await Promise.all([
+  const [events, highlights, shopPaths, reviews, library, boardGames, goods, notices] = await Promise.all([
     listEvents(),
     listHighlights(),
     listedShopPaths(),
+    listReviews(),
+    listCollection(false, libraryKinds),
+    listCollection(false, ["boardgame"]),
+    listCollection(false, ["goods"]),
+    listNotices(),
   ]);
   const paths = [
     "",
@@ -36,17 +41,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/goods",
     "/experience/board-game",
     "/reviews",
-    ...listReviews()
+    ...reviews
       .filter((review) => review.slug && review.description)
       .map((review) => `/reviews/${review.slug}`),
-    ...listCollection(false, libraryKinds).map(
+    ...library.map(
       (item) => `/collection/${item.slug || item.id}`,
     ),
-    ...listCollection(false, ["boardgame"]).map(
+    ...boardGames.map(
       (item) => `/experience/board-game/${item.slug || item.id}`,
     ),
-    ...listCollection(false, ["goods"]).map((item) => `/goods/${item.slug || item.id}`),
-    ...listNotices().map((notice) => `/notices/${notice.slug}`),
+    ...goods.map((item) => `/goods/${item.slug || item.id}`),
+    ...notices.map((notice) => `/notices/${notice.slug}`),
     ...publicSections.map((section) => `/${section}`),
     ...events.map((event) => `/programs/${event.slug || event.id}`),
     ...highlights.map(

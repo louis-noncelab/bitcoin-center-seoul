@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: Props) {
   const { locale, slug } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   await connection();
-  const notice = noticeBySlug(slug);
+  const notice = await noticeBySlug(slug);
   if (!notice) notFound();
   return noticesMetadata(locale, notice);
 }
@@ -20,7 +20,7 @@ export default async function NoticePage({ params }: Props) {
   const { locale, slug } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   await connection();
-  const notice = noticeBySlug(slug);
+  const notice = await noticeBySlug(slug);
   if (!notice) notFound();
   if (notice.slug !== slug) permanentRedirect(`/${locale}/notices/${notice.slug}`);
   const content = noticeText(locale, notice);
