@@ -6,6 +6,8 @@ import { EventDetail } from "@/components/site/events-public";
 import { PageMotion } from "@/components/site/page-motion";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
+import { EventJsonLd } from "@/components/seo/event-json-ld";
+import { shareCardPath } from "@/content/share";
 import { recordMetadata } from "@/content/site";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
@@ -25,7 +27,10 @@ export async function generateMetadata({ params }: Props) {
   await connection();
   const event = await getEventByPath(value);
   if (!event) notFound();
-  return recordMetadata(locale, "programs", event.slug || event.id, locale === "ko" ? event.title : event.titleEn || event.title, locale === "ko" ? event.description : event.descriptionEn || event.description);
+  const title = locale === "ko" ? event.title : event.titleEn || event.title;
+  const description = locale === "ko" ? event.description : event.descriptionEn || event.description;
+  const image = event.images[0] || event.image;
+  return recordMetadata(locale, "programs", event.slug || event.id, title, description, image ? shareCardPath("programs", event.slug || event.id) : undefined);
 }
 
 export default async function EventPage({ params }: Props) {
@@ -45,6 +50,7 @@ export default async function EventPage({ params }: Props) {
         <div className="detail-heading">
           <h1>{title}</h1>
         </div>
+        <EventJsonLd locale={locale} event={event} />
         <EventDetail event={event} locale={locale} today={seoulDate()} paymentHref={(await meetupPaymentHrefs([event.id]))[event.id]} />
         <PageMotion pageKey={`${locale}-program-${event.id}`} />
       </main>

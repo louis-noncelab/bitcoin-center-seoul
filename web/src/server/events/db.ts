@@ -3,7 +3,6 @@ import "server-only";
 import fs from "node:fs";
 import path from "node:path";
 import Database from "better-sqlite3";
-import { configuredDatabasePath } from "@/server/events/config";
 import { ApiError } from "@/server/events/errors";
 import { migrateEventVenues } from "@/server/events/venue-migration";
 
@@ -243,9 +242,15 @@ function assertColumns(
   }
 }
 
+export function sqliteDatabasePath(): string {
+  const value = process.env.BCS_EVENTS_DB?.trim() ?? "";
+  if (!path.isAbsolute(value)) throw new ApiError(503, "DATABASE_UNAVAILABLE", "설정된 SQLite 데이터베이스를 열 수 없습니다.");
+  return path.resolve(value);
+}
+
 export function getDatabase(): Database.Database {
   if (database) return database;
-  const filename = configuredDatabasePath();
+  const filename = sqliteDatabasePath();
   let file: fs.Stats;
   try {
     file = fs.statSync(filename);

@@ -31,11 +31,12 @@ export default async function HomePage({ params }: Props) {
   if (!hasLocale(routing.locales, locale)) notFound();
   await connection();
   const highlights = await listHighlights();
-  const news = buildNewsFeed(listNotices(), highlights);
+  const notices = await listNotices();
+  const news = buildNewsFeed(notices, highlights);
   const today = new Date().toLocaleDateString("sv-SE", {
     timeZone: "Asia/Seoul",
   });
-  const records = listEvents();
+  const records = await listEvents();
   const paymentHrefs = await meetupPaymentHrefs(records.map((event) => event.id));
   const events = homeEvents(records).map((event) => ({ ...event, paymentHref: paymentHrefs[event.id] }));
   const upcoming = upcomingHomeEvents(events, today);
@@ -49,7 +50,7 @@ export default async function HomePage({ params }: Props) {
         events={events}
         upcoming={upcoming}
         today={today}
-        collection={listCollection(false)}
+        collection={await listCollection(false)}
       />
       <SiteFooter locale={locale} />
       <OrganizationJsonLd locale={locale} />

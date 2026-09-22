@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: Props) {
   const { locale, slug } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   await connection();
-  const record = reviewBySlug(slug);
+  const record = await reviewBySlug(slug);
   if (!record) notFound();
   return reviewMetadata(record, locale);
 }
@@ -31,12 +31,12 @@ export default async function ReviewPage({ params }: Props) {
   const { locale, slug } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   await connection();
-  const record = reviewBySlug(slug);
+  const record = await reviewBySlug(slug);
   if (!record) notFound();
   if (record.slug !== slug) permanentRedirect(`/${locale}/reviews/${record.slug}`);
   const review = visitReview(record);
   const t = reviewCopy[locale];
-  const related = listReviews().filter((item) => item.id !== record.id).sort((a, b) => Number(b.kind === record.kind) - Number(a.kind === record.kind)).slice(0, 3);
+  const related = (await listReviews()).filter((item) => item.id !== record.id).sort((a, b) => Number(b.kind === record.kind) - Number(a.kind === record.kind)).slice(0, 3);
   return <><SiteHeader locale={locale} section="news" /><main id="main" tabIndex={-1} className="container detail-page event-page reviews-page">
     <Link href="/reviews" prefetch={false} locale={locale} className="button event-back" data-variant="secondary"><ArrowLeft className="icon" aria-hidden="true" />{locale === "ko" ? "방문 후기로" : "Back to visitor stories"}</Link>
     <article className="review-story">

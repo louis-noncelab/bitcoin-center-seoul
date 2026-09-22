@@ -1,48 +1,54 @@
 import "server-only";
-import { reserveRevision } from "@/server/events/revision";
-import { getDatabase } from "@/server/events/db";
-import { ApiError } from "@/server/events/errors";
 import { noticeRecordSchema, type NoticeInput, type NoticeRecord } from "@/lib/notices-contract";
+import { prisma } from "@/server/db";
+import { ApiError } from "@/server/events/errors";
+import { reserveRevision } from "@/server/events/revision";
 import { storedTagsSchema } from "@/server/events/tags";
 
 const noticeRowSchema = noticeRecordSchema.extend({ tags: storedTagsSchema });
 
-export function listNotices(includeInactive = false): NoticeRecord[] {
-  return getDatabase().prepare(`SELECT * FROM notices ${includeInactive ? "" : "WHERE is_active = 1"} ORDER BY created_at DESC, id DESC`).all().map((row) => noticeRowSchema.parse(row));
+function fromRow(row: { id: number; revision: number; slug: string; title: string; titleEn: string; description: string; descriptionEn: string; isActive: number; tags: string }): NoticeRecord {
+  return noticeRowSchema.parse({ ...row, is_active: row.isActive === 1 ? 1 : 0, tags: row.tags });
 }
-export function getNotice(id: number, includeInactive = false): NoticeRecord | null {
-  const row = getDatabase().prepare(`SELECT * FROM notices WHERE id = ? ${includeInactive ? "" : "AND is_active = 1"}`).get(id);
-  return row ? noticeRowSchema.parse(row) : null;
+
+export async function listNotices(includeInactive = false): Promise<NoticeRecord[]> {
+  const rows = await prisma.notice.findMany({ where: includeInactive ? {} : { isActive: 1 }, orderBy: [{ createdAt: "desc" }, { id: "desc" }] });
+  return rows.map(fromRow);
 }
-export function noticeBySlug(slug: string): NoticeRecord | null {
-  const row = getDatabase().prepare("SELECT notices.* FROM notices JOIN notice_slugs ON notices.id = notice_slugs.notice_id WHERE notice_slugs.slug = ? AND is_active = 1").get(slug);
-  return row ? noticeRowSchema.parse(row) : null;
+
+export async function getNotice(id: number, includeInactive = false): Promise<NoticeRecord | null> {
+  const row = await prisma.notice.findFirst({ where: { id, ...(includeInactive ? {} : { isActive: 1 }) } });
+  return row ? fromRow(row) : null;
 }
-export function saveNotice(input: NoticeInput, id?: number, revision?: number): NoticeRecord {
-  const db = getDatabase();
-  return db.transaction(() => {
-    if (id !== undefined) reserveRevision("notices", id, revision);
-    if (id !== undefined && !getNotice(id, true)) throw new ApiError(404, "NOT_FOUND", "공지를 찾을 수 없습니다.");
-    const owner = db.prepare<[string], { readonly notice_id: number }>("SELECT notice_id FROM notice_slugs WHERE slug = ?").get(input.slug);
-    if (owner && owner.notice_id !== id) throw new ApiError(409, "SLUG_CONFLICT", "이미 사용 중인 URL 슬러그입니다.");
-    const values = [input.slug, input.title, input.titleEn, input.description, input.descriptionEn, input.is_active, JSON.stringify(input.tags)];
-    let noticeId = id;
-    if (noticeId === undefined) {
-      noticeId = Number(db.prepare("INSERT INTO notices (slug,title,titleEn,description,descriptionEn,is_active,tags) VALUES (?,?,?,?,?,?,?)").run(...values).lastInsertRowid);
-    } else {
-      db.prepare("UPDATE notices SET slug=?,title=?,titleEn=?,description=?,descriptionEn=?,is_active=?,tags=?,updated_at=CURRENT_TIMESTAMP WHERE id=?").run(...values, noticeId);
+
+export async function noticeBySlug(slug: string): Promise<NoticeRecord | null> {
+  const alias = await prisma.noticeSlug.findUnique({ where: { slug } });
+  if (!alias) return null;
+  return getNotice(alias.noticeId);
+}
+
+export async function saveNotice(input: NoticeInput, id?: number, revision?: number): Promise<NoticeRecord> {
+  const savedId = await prisma.$transaction(async (tx) => {
+    if (id !== undefined) {
+      await reserveRevision(tx, "notices", id, revision);
+      if (!await tx.notice.findUnique({ where: { id } })) throw new ApiError(404, "NOT_FOUND", "공지를 찾을 수 없습니다.");
     }
-    db.prepare("INSERT OR IGNORE INTO notice_slugs (slug,notice_id) VALUES (?,?)").run(input.slug, noticeId);
-    const saved = getNotice(noticeId, true);
-    if (!saved) throw new ApiError(500, "SAVE_FAILED", "공지를 저장하지 못했습니다.");
-    return saved;
-  })();
+    const owner = await tx.noticeSlug.findUnique({ where: { slug: input.slug } });
+    if (owner && owner.noticeId !== id) throw new ApiError(409, "SLUG_CONFLICT", "이미 사용 중인 URL 슬러그입니다.");
+    const data = { slug: input.slug, title: input.title, titleEn: input.titleEn, description: input.description, descriptionEn: input.descriptionEn, isActive: input.is_active, tags: JSON.stringify(input.tags) };
+    const noticeId = id === undefined ? (await tx.notice.create({ data })).id : (await tx.notice.update({ where: { id }, data })).id;
+    await tx.noticeSlug.upsert({ where: { slug: input.slug }, create: { slug: input.slug, noticeId }, update: { noticeId } });
+    return noticeId;
+  });
+  const saved = await getNotice(savedId, true);
+  if (!saved) throw new ApiError(500, "SAVE_FAILED", "공지를 저장하지 못했습니다.");
+  return saved;
 }
-export function deleteNotice(id: number, revision: number): void {
-  const db = getDatabase();
-  db.transaction(() => {
-    reserveRevision("notices", id, revision);
-    if (!db.prepare("DELETE FROM notices WHERE id = ?").run(id).changes) throw new ApiError(404, "NOT_FOUND", "공지를 찾을 수 없습니다.");
-    db.prepare("DELETE FROM notice_slugs WHERE notice_id = ?").run(id);
-  })();
+
+export async function deleteNotice(id: number, revision: number): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    await reserveRevision(tx, "notices", id, revision);
+    await tx.notice.delete({ where: { id } });
+    await tx.noticeSlug.deleteMany({ where: { noticeId: id } });
+  });
 }

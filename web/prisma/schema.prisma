@@ -1,6 +1,4 @@
-// Commerce slice ported from backup/center-web-before-events-only-20260909-175952 (b1cc3f8).
-// Only cart -> quote -> order -> payment is modelled here. Editorial content (events,
-// collection, notices, reviews) stays in the existing better-sqlite3 database.
+// Shop, orders, payments, and the public center content live in this database.
 //
 // Deliberate omissions vs. the backup schema: customer accounts and sessions (guest-only
 // checkout), bookings, BTCPay. `accountId` / `bookingId` remain as plain nullable columns so
@@ -434,4 +432,192 @@ model AuditLog {
   createdAt  DateTime @default(now())
 
   @@index([targetType, targetId, createdAt])
+}
+
+model CenterEvent {
+  id                   Int      @id @default(autoincrement())
+  revision             Int      @default(1)
+  registrationClosed   Boolean  @default(false)
+  title                String
+  titleEn              String
+  date                 String
+  time                 String
+  venueType            String   @default("external")
+  location             String
+  locationEn           String
+  description          String
+  descriptionEn        String
+  image                String   @default("")
+  link                 String   @default("")
+  ticketPriceKrw       String   @default("")
+  ticketCapacity       Int      @default(0)
+  externalPayment      Boolean  @default(true)
+  isOnline             Boolean  @default(false)
+  onlineUrl            String   @default("")
+  onlineInstructions   String   @default("")
+  onlineInstructionsEn String   @default("")
+  tags                 String   @default("[]")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@map("center_events")
+}
+
+model CenterHighlight {
+  id            Int      @id @default(autoincrement())
+  revision      Int      @default(1)
+  title         String
+  titleEn       String
+  meta          String   @default("")
+  metaEn        String   @default("")
+  category      String   @default("행사")
+  categoryEn    String   @default("Event")
+  date          String   @default("")
+  startDate     String   @default("")
+  endDate       String   @default("")
+  host          String   @default("비트코인 센터 서울")
+  hostEn        String   @default("Bitcoin Center Seoul")
+  description   String
+  descriptionEn String
+  image         String   @default("")
+  link          String   @default("")
+  icon          String   @default("calendar")
+  sortOrder     Int      @default(0) @map("sort_order")
+  isActive      Int      @default(1) @map("is_active")
+  tags          String   @default("[]")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("center_highlights")
+}
+
+model ContentImage {
+  kind      String
+  contentId Int    @map("content_id")
+  position  Int
+  path      String
+
+  @@id([kind, contentId, position])
+  @@map("content_images")
+}
+
+model ContentSlug {
+  kind      String
+  slug      String
+  contentId Int     @map("content_id")
+  isCurrent Boolean @map("is_current")
+
+  @@id([kind, slug])
+  @@map("content_slugs")
+}
+
+model Notice {
+  id            Int      @id @default(autoincrement())
+  revision      Int      @default(1)
+  slug          String   @unique
+  title         String
+  titleEn       String   @default("")
+  description   String
+  descriptionEn String   @default("")
+  isActive      Int      @default(0) @map("is_active")
+  tags          String   @default("[]")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("notices")
+}
+
+model NoticeSlug {
+  slug     String @id
+  noticeId Int    @map("notice_id")
+
+  @@map("notice_slugs")
+}
+
+model CollectionItem {
+  id            Int      @id @default(autoincrement())
+  revision      Int      @default(1)
+  kind          String
+  slug          String   @default("")
+  purchaseUrl   String   @default("")
+  soldOut       Boolean  @default(false)
+  title         String
+  titleEn       String   @default("")
+  creator       String   @default("")
+  creatorEn     String   @default("")
+  description   String   @default("")
+  descriptionEn String   @default("")
+  images        String   @default("[]")
+  sortOrder     Int      @default(0) @map("sort_order")
+  isActive      Int      @default(0) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("collection_items")
+}
+
+model VisitReview {
+  id             Int      @id @default(autoincrement())
+  revision       Int      @default(1)
+  kind           String
+  url            String
+  author         String
+  date           String   @default("")
+  title          String
+  titleEn        String   @default("")
+  summary        String
+  summaryEn      String   @default("")
+  slug           String   @default("")
+  description    String   @default("")
+  descriptionEn  String   @default("")
+  featureTitle   String   @default("") @map("feature_title")
+  featureTitleEn String   @default("") @map("feature_titleEn")
+  image          String   @default("")
+  sortOrder      Int      @default(0) @map("sort_order")
+  isActive       Int      @default(0) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("visit_reviews")
+}
+
+model ReviewSlug {
+  slug     String @id
+  reviewId Int    @map("review_id")
+
+  @@map("review_slugs")
+}
+
+model ReviewSelection {
+  id         Int     @id
+  revision   Int     @default(1)
+  featuredId Int?    @map("featured_id")
+  homeIds    String  @default("[]") @map("home_ids")
+
+  @@map("review_selection")
+}
+
+model CenterOpeningOverride {
+  date   String @id
+  status String
+
+  @@map("center_opening_overrides")
+}
+
+model AdminSession {
+  tokenHash         String @id @map("token_hash")
+  expiresAt         BigInt @map("expires_at")
+  lastSeenAt        BigInt @default(0) @map("last_seen_at")
+  credentialVersion String @default("") @map("credential_version")
+
+  @@map("admin_sessions")
+}
+
+model AdminLoginAttempt {
+  clientHash    String @id @map("client_hash")
+  windowStarted BigInt @map("window_started")
+  failures      Int
+  blockedUntil  BigInt @map("blocked_until")
+
+  @@map("admin_login_attempts")
 }

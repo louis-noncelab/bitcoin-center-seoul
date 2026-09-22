@@ -27,7 +27,7 @@ type Props = {
 const journalPage = cache(async (locale: Locale, value: string | string[] | undefined) => {
   await connection();
   if (value !== undefined && (typeof value !== "string" || !/^[1-9]\d*$/.test(value))) redirect(`/${locale}/journal`);
-  const result = listHighlightsPage(value === undefined ? 1 : Number(value));
+  const result = await listHighlightsPage(value === undefined ? 1 : Number(value));
   if (value !== undefined && (result.page === 1 || value !== String(result.page))) {
     redirect(`/${locale}/journal${result.page === 1 ? "" : `?page=${result.page}`}`);
   }

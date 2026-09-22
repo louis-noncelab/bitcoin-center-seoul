@@ -1,7 +1,7 @@
 import { requireAccount } from "@/server/auth";
 import { getServerConfig } from "@/server/config";
 import { prisma } from "@/server/db";
-import { getDatabase } from "@/server/events/db";
+
 import { listEvents } from "@/server/events";
 import { handleApi, json } from "@/server/http";
 
@@ -25,12 +25,12 @@ export const GET = (request: Request) => handleApi(async () => {
     }),
   ]);
   const now = Date.now();
-  const sessions = Number(getDatabase().prepare<[number], { n: number }>("SELECT COUNT(*) AS n FROM admin_sessions WHERE expires_at > ?").get(now)?.n ?? 0);
+  const sessions = await prisma.adminSession.count({ where: { expiresAt: { gt: BigInt(now) } } });
   const outbox = Object.fromEntries(outboxRows.map((row) => [row.status, row._count._all]));
   return json({
     products, listedProducts, categories,
     orders: { pending, paid, review },
-    events: listEvents().length,
+    events: (await listEvents()).length,
     sessions,
     outbox,
     emailMode: getServerConfig().emailMode,

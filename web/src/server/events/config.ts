@@ -3,20 +3,16 @@ import "server-only";
 import path from "node:path";
 import { ApiError, configurationError } from "@/server/events/errors";
 
-function required(name: "APP_ORIGIN" | "BCS_EVENTS_DB" | "BCS_EVENTS_UPLOADS"): string {
+function required(name: "APP_ORIGIN" | "BCS_EVENTS_UPLOADS"): string {
   const value = process.env[name]?.trim();
   if (!value) throw configurationError(name);
   return value;
 }
 
-function absolutePath(name: "BCS_EVENTS_DB" | "BCS_EVENTS_UPLOADS"): string {
+function absolutePath(name: "BCS_EVENTS_UPLOADS"): string {
   const value = required(name);
   if (!path.isAbsolute(value)) throw configurationError(name);
   return path.resolve(value);
-}
-
-export function configuredDatabasePath(): string {
-  return absolutePath("BCS_EVENTS_DB");
 }
 
 export function configuredUploadsPath(): string {

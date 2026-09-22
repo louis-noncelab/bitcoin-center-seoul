@@ -35,7 +35,7 @@ function withCookieJar(request: Request): NextRequest {
 }
 
 export async function requireAccount(request: Request): Promise<PublicAccount> {
-  if (!isAuthenticated(withCookieJar(request))) {
+  if (!await isAuthenticated(withCookieJar(request))) {
     throw new HttpError(401, "AUTH_REQUIRED", "관리자 인증이 필요합니다. / Administrator sign-in is required.");
   }
   return { id: "admin" };

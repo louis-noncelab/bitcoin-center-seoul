@@ -6,6 +6,8 @@ import { HighlightDetail } from "@/components/site/events-public";
 import { PageMotion } from "@/components/site/page-motion";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
+import { ArticleJsonLd, articleStructuredData } from "@/components/seo/article-json-ld";
+import { shareCardPath } from "@/content/share";
 import { recordMetadata } from "@/content/site";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
@@ -22,7 +24,10 @@ export async function generateMetadata({ params }: Props) {
   await connection();
   const highlight = await getHighlightByPath(value);
   if (!highlight) notFound();
-  return recordMetadata(locale, "journal", highlight.slug || highlight.id, locale === "ko" ? highlight.title : highlight.titleEn || highlight.title, locale === "ko" ? highlight.description : highlight.descriptionEn || highlight.description);
+  const title = locale === "ko" ? highlight.title : highlight.titleEn || highlight.title;
+  const description = locale === "ko" ? highlight.description : highlight.descriptionEn || highlight.description;
+  const image = highlight.images[0] || highlight.image;
+  return recordMetadata(locale, "journal", highlight.slug || highlight.id, title, description, image ? shareCardPath("journal", highlight.slug || highlight.id) : undefined);
 }
 
 export default async function HighlightPage({ params }: Props) {
@@ -42,6 +47,15 @@ export default async function HighlightPage({ params }: Props) {
         <div className="detail-heading">
           <h1>{title}</h1>
         </div>
+        <ArticleJsonLd data={articleStructuredData({
+          locale,
+          section: "journal",
+          id: highlight.slug || highlight.id,
+          title,
+          description: locale === "ko" ? highlight.description : highlight.descriptionEn || highlight.description,
+          date: highlight.endDate || highlight.startDate || highlight.date,
+          image: highlight.images[0] || highlight.image,
+        })} />
         <HighlightDetail highlight={highlight} locale={locale} />
         <PageMotion pageKey={`${locale}-journal-${highlight.id}`} />
       </main>

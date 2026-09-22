@@ -37,5 +37,5 @@ export default async function GoodsPage({ params }: Props) {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   await connection();
-  return <GoodsContent locale={locale} records={listCollection(false, ["goods"])} />;
+  return <GoodsContent locale={locale} records={await listCollection(false, ["goods"])} />;
 }

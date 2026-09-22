@@ -33,7 +33,8 @@ export default async function NewsPage({ params, searchParams }: Props) {
   const { view } = await searchParams;
   if (view !== undefined && view !== "media") redirect(`/${locale}/news`);
   await connection();
-  const highlights = listHighlights(), items = buildNewsFeed(listNotices(), highlights), t = newsCopy[locale];
+  const [highlights, notices] = await Promise.all([listHighlights(), listNotices()]);
+  const items = buildNewsFeed(notices, highlights), t = newsCopy[locale];
   const media = view === "media";
   return <>
     <SiteHeader locale={locale} section="news" />

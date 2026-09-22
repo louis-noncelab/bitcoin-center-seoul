@@ -16,7 +16,7 @@ export default function proxy(request: NextRequest) {
   let response: NextResponse;
 
   if (
-    /^\/(?:api|_next|dev-tools|images|brand|fonts|certificate)(?:\/|$)/.test(pathname)
+    /^\/(?:api|_next|dev-tools|images|brand|fonts|certificate|og)(?:\/|$)/.test(pathname)
     || /^\/(?:robots\.txt|sitemap\.xml|favicon\.ico|icon\.png|apple-icon\.png)$/.test(pathname)
   ) {
     response = NextResponse.next();

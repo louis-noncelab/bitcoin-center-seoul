@@ -86,6 +86,7 @@ for (const locale of ["ko", "en"] as const) {
       name: brands[locale],
       alternateName: brands[locale === "ko" ? "en" : "ko"],
       url: origin,
+      logo: `${origin}/brand/bcs-horizontal-color.png`,
       description: await page.locator('meta[name="description"]').getAttribute("content"),
       email: (await email.getAttribute("href"))?.slice("mailto:".length),
       telephone: phoneNumber,
