@@ -13,7 +13,7 @@ import {
 import { centerEventLocation } from "@/lib/event-location";
 import { prisma } from "@/server/db";
 import { ApiError } from "@/server/events/errors";
-import { requireExistingImages } from "@/server/events/images";
+import { placeImagesInSlugFolder, requireExistingImages, rewriteImagePaths } from "@/server/events/images";
 import { reserveRevision } from "@/server/events/revision";
 import { storedTagsSchema } from "@/server/events/tags";
 
@@ -170,25 +170,33 @@ export async function getHighlight(id: number, options: Visibility = {}): Promis
 
 export async function createEvent(input: EventInput): Promise<EventRecord> {
   requireExistingImages(input.images);
+  const placed = await placeImagesInSlugFolder("events", input.slug, input.images);
+  const description = rewriteImagePaths(input.description, input.images, placed.images);
+  const descriptionEn = rewriteImagePaths(input.descriptionEn, input.images, placed.images);
+  try {
   const id = await prisma.$transaction(async (tx) => {
-    const image = input.images[0] ?? "";
+    const image = placed.images[0] ?? "";
     const created = await tx.centerEvent.create({
       data: {
         registrationClosed: input.registrationClosed ?? false, title: input.title, titleEn: input.titleEn, date: input.date, time: input.time,
-        venueType: input.venueType, location: input.location, locationEn: input.locationEn, description: input.description,
-        descriptionEn: input.descriptionEn, image, link: input.link, ticketPriceKrw: input.ticketPriceKrw, ticketCapacity: input.ticketCapacity,
+        venueType: input.venueType, location: input.location, locationEn: input.locationEn, description,
+        descriptionEn, image, link: input.link, ticketPriceKrw: input.ticketPriceKrw, ticketCapacity: input.ticketCapacity,
         externalPayment: input.externalPayment, isOnline: input.isOnline, onlineUrl: input.onlineUrl, onlineInstructions: input.onlineInstructions,
         onlineInstructionsEn: input.onlineInstructionsEn, tags: JSON.stringify(input.tags),
         ...(input.venueType === "center" && !input.isOnline ? centerEventLocation : {}),
       },
     });
-    await replaceImages(tx, "event", created.id, input.images);
+    await replaceImages(tx, "event", created.id, placed.images);
     await setSlug(tx, "event", created.id, input.slug);
     return created.id;
   });
   const event = await getEvent(id);
   if (!event) throw new ApiError(500, "WRITE_FAILED", "행사 저장에 실패했습니다.");
   return event;
+  } catch (error) {
+    await placed.restore();
+    throw error;
+  }
 }
 
 export async function setEventRegistration(id: number, registrationClosed: boolean, revision: number): Promise<EventRecord> {
@@ -203,6 +211,10 @@ export async function setEventRegistration(id: number, registrationClosed: boole
 
 export async function updateEvent(id: number, input: EventInput, revision: number): Promise<EventRecord> {
   requireExistingImages(input.images);
+  const placed = await placeImagesInSlugFolder("events", input.slug, input.images);
+  const description = rewriteImagePaths(input.description, input.images, placed.images);
+  const descriptionEn = rewriteImagePaths(input.descriptionEn, input.images, placed.images);
+  try {
   await prisma.$transaction(async (tx) => {
     await reserveRevision(tx, "events", id, revision);
     const current = await tx.centerEvent.findUnique({ where: { id } });
@@ -211,19 +223,23 @@ export async function updateEvent(id: number, input: EventInput, revision: numbe
       where: { id },
       data: {
         registrationClosed: input.registrationClosed ?? false, title: input.title, titleEn: input.titleEn, date: input.date, time: input.time,
-        venueType: input.venueType, location: input.location, locationEn: input.locationEn, description: input.description,
-        descriptionEn: input.descriptionEn, image: input.images[0] ?? "", link: input.link, ticketPriceKrw: input.ticketPriceKrw,
+        venueType: input.venueType, location: input.location, locationEn: input.locationEn, description,
+        descriptionEn, image: placed.images[0] ?? "", link: input.link, ticketPriceKrw: input.ticketPriceKrw,
         ticketCapacity: input.ticketCapacity, externalPayment: input.externalPayment, isOnline: input.isOnline, onlineUrl: input.onlineUrl,
         onlineInstructions: input.onlineInstructions, onlineInstructionsEn: input.onlineInstructionsEn, tags: JSON.stringify(input.tags),
         ...(input.venueType === "center" && !input.isOnline ? centerEventLocation : {}),
       },
     });
-    await replaceImages(tx, "event", id, input.images);
+    await replaceImages(tx, "event", id, placed.images);
     await setSlug(tx, "event", id, input.slug);
   });
   const event = await getEvent(id);
   if (!event) throw new ApiError(500, "WRITE_FAILED", "행사 저장에 실패했습니다.");
   return event;
+  } catch (error) {
+    await placed.restore();
+    throw error;
+  }
 }
 
 export async function paidOnlineSessions(skus: readonly string[]) {
@@ -247,26 +263,38 @@ export async function deleteEvent(id: number, revision: number): Promise<void> {
 
 export async function createHighlight(input: HighlightInput): Promise<HighlightRecord> {
   requireExistingImages(input.images);
+  const placed = await placeImagesInSlugFolder("highlights", input.slug, input.images);
+  const description = rewriteImagePaths(input.description, input.images, placed.images);
+  const descriptionEn = rewriteImagePaths(input.descriptionEn, input.images, placed.images);
+  try {
   const id = await prisma.$transaction(async (tx) => {
     const created = await tx.centerHighlight.create({
       data: {
         title: input.title, titleEn: input.titleEn, meta: input.meta, metaEn: input.metaEn, category: input.category, categoryEn: input.categoryEn,
         date: input.date, startDate: input.startDate, endDate: input.endDate, host: input.host, hostEn: input.hostEn,
-        description: input.description, descriptionEn: input.descriptionEn, image: input.images[0] ?? "", link: input.link, icon: input.icon,
+        description, descriptionEn, image: placed.images[0] ?? "", link: input.link, icon: input.icon,
         sortOrder: input.sort_order, isActive: input.is_active, tags: JSON.stringify(input.tags),
       },
     });
-    await replaceImages(tx, "highlight", created.id, input.images);
+    await replaceImages(tx, "highlight", created.id, placed.images);
     await setSlug(tx, "highlight", created.id, input.slug);
     return created.id;
   });
   const highlight = await getHighlight(id, { includeInactive: true });
   if (!highlight) throw new ApiError(500, "WRITE_FAILED", "하이라이트 저장에 실패했습니다.");
   return highlight;
+  } catch (error) {
+    await placed.restore();
+    throw error;
+  }
 }
 
 export async function updateHighlight(id: number, input: HighlightInput, revision: number): Promise<HighlightRecord> {
   requireExistingImages(input.images);
+  const placed = await placeImagesInSlugFolder("highlights", input.slug, input.images);
+  const description = rewriteImagePaths(input.description, input.images, placed.images);
+  const descriptionEn = rewriteImagePaths(input.descriptionEn, input.images, placed.images);
+  try {
   await prisma.$transaction(async (tx) => {
     await reserveRevision(tx, "highlights", id, revision);
     await tx.centerHighlight.update({
@@ -274,16 +302,20 @@ export async function updateHighlight(id: number, input: HighlightInput, revisio
       data: {
         title: input.title, titleEn: input.titleEn, meta: input.meta, metaEn: input.metaEn, category: input.category, categoryEn: input.categoryEn,
         date: input.date, startDate: input.startDate, endDate: input.endDate, host: input.host, hostEn: input.hostEn,
-        description: input.description, descriptionEn: input.descriptionEn, image: input.images[0] ?? "", link: input.link, icon: input.icon,
+        description, descriptionEn, image: placed.images[0] ?? "", link: input.link, icon: input.icon,
         sortOrder: input.sort_order, isActive: input.is_active, tags: JSON.stringify(input.tags),
       },
     });
-    await replaceImages(tx, "highlight", id, input.images);
+    await replaceImages(tx, "highlight", id, placed.images);
     await setSlug(tx, "highlight", id, input.slug);
   });
   const highlight = await getHighlight(id, { includeInactive: true });
   if (!highlight) throw new ApiError(500, "WRITE_FAILED", "하이라이트 저장에 실패했습니다.");
   return highlight;
+  } catch (error) {
+    await placed.restore();
+    throw error;
+  }
 }
 
 export async function deleteHighlight(id: number, revision: number): Promise<void> {

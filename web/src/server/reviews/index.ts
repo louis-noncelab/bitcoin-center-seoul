@@ -4,7 +4,7 @@ import { reviewRecordSchema, reviewSelectionSchema, type ReviewInput, type Revie
 import { prisma } from "@/server/db";
 import { ApiError } from "@/server/events/errors";
 import { markdownImageReferences } from "@/server/events/image-references";
-import { requireExistingImages } from "@/server/events/images";
+import { placeImagesInSlugFolder, requireExistingImages, rewriteImagePaths } from "@/server/events/images";
 import { reserveRevision } from "@/server/events/revision";
 
 function storedTime(value: Date): string {
@@ -59,7 +59,13 @@ export const publicReviews = cache(async () => {
 });
 
 export async function saveReview(input: ReviewInput, id?: number, revision?: number): Promise<ReviewRecord> {
-  requireExistingImages([...(input.image ? [input.image] : []), ...markdownImageReferences(input.description), ...markdownImageReferences(input.descriptionEn)]);
+  const sources = [...new Set([...(input.image ? [input.image] : []), ...markdownImageReferences(input.description), ...markdownImageReferences(input.descriptionEn)])];
+  requireExistingImages(sources);
+  const placed = await placeImagesInSlugFolder("reviews", input.slug, sources);
+  const image = input.image ? placed.images[sources.indexOf(input.image)] ?? "" : "";
+  const description = rewriteImagePaths(input.description, sources, placed.images);
+  const descriptionEn = rewriteImagePaths(input.descriptionEn, sources, placed.images);
+  try {
   const savedId = await prisma.$transaction(async (tx) => {
     if (id !== undefined) await reserveRevision(tx, "visit_reviews", id, revision);
     if (input.slug) {
@@ -68,8 +74,8 @@ export async function saveReview(input: ReviewInput, id?: number, revision?: num
     }
     const data = {
       kind: input.kind, url: input.url, author: input.author, date: input.date, title: input.title, titleEn: input.titleEn,
-      summary: input.summary, summaryEn: input.summaryEn, slug: input.slug, description: input.description, descriptionEn: input.descriptionEn,
-      featureTitle: input.feature_title, featureTitleEn: input.feature_titleEn, image: input.image, sortOrder: input.sort_order, isActive: input.is_active,
+      summary: input.summary, summaryEn: input.summaryEn, slug: input.slug, description, descriptionEn,
+      featureTitle: input.feature_title, featureTitleEn: input.feature_titleEn, image, sortOrder: input.sort_order, isActive: input.is_active,
     };
     const reviewId = id === undefined ? (await tx.visitReview.create({ data })).id : (await tx.visitReview.update({ where: { id }, data })).id;
     if (input.slug) await tx.reviewSlug.upsert({ where: { slug: input.slug }, create: { slug: input.slug, reviewId }, update: {} });
@@ -78,6 +84,10 @@ export async function saveReview(input: ReviewInput, id?: number, revision?: num
   const saved = await getReview(savedId);
   if (!saved) throw new ApiError(500, "SAVE_FAILED", "후기를 저장하지 못했습니다.");
   return saved;
+  } catch (error) {
+    await placed.restore();
+    throw error;
+  }
 }
 
 export async function deleteReview(id: number, revision: number): Promise<void> {
