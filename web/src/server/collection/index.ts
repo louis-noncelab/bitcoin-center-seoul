@@ -3,7 +3,7 @@ import { collectionRecordSchema, type CollectionInput, type CollectionKind, type
 import { contentSlugSchema } from "@/lib/events-contract";
 import { prisma } from "@/server/db";
 import { ApiError } from "@/server/events/errors";
-import { requireExistingImages } from "@/server/events/images";
+import { placeImagesInSlugFolder, requireExistingImages, rewriteImagePaths } from "@/server/events/images";
 import { reserveRevision } from "@/server/events/revision";
 
 function storedTime(value: Date): string {
@@ -65,13 +65,17 @@ async function assertSlugAvailable(slug: string, id?: number): Promise<void> {
 
 export async function saveCollectionItem(input: CollectionInput, id?: number, revision?: number): Promise<CollectionRecord> {
   requireExistingImages(input.images);
+  const placed = await placeImagesInSlugFolder("collection", input.slug, input.images);
+  const description = rewriteImagePaths(input.description, input.images, placed.images);
+  const descriptionEn = rewriteImagePaths(input.descriptionEn, input.images, placed.images);
+  try {
   const savedId = await prisma.$transaction(async (tx) => {
     if (id !== undefined) await reserveRevision(tx, "collection_items", id, revision);
     await assertSlugAvailable(input.slug, id);
     const data = {
       kind: input.kind, slug: input.slug, purchaseUrl: "", soldOut: false, title: input.title, titleEn: input.titleEn,
-      creator: input.creator, creatorEn: input.creatorEn, description: input.description, descriptionEn: input.descriptionEn,
-      images: JSON.stringify(input.images), sortOrder: input.sort_order, isActive: input.is_active,
+      creator: input.creator, creatorEn: input.creatorEn, description, descriptionEn,
+      images: JSON.stringify(placed.images), sortOrder: input.sort_order, isActive: input.is_active,
     };
     const saved = id === undefined ? await tx.collectionItem.create({ data }) : await tx.collectionItem.update({ where: { id }, data });
     return saved.id;
@@ -79,6 +83,10 @@ export async function saveCollectionItem(input: CollectionInput, id?: number, re
   const saved = await getCollectionItem(savedId, true);
   if (!saved) throw new ApiError(500, "SAVE_FAILED", "항목을 저장하지 못했습니다.");
   return saved;
+  } catch (error) {
+    await placed.restore();
+    throw error;
+  }
 }
 
 export async function deleteCollectionItem(id: number, revision: number): Promise<void> {

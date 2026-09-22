@@ -89,17 +89,19 @@ test("article slugs keep old links, hide drafts and reserve deleted URLs", async
   assert.throws(() => saveReview(draft), { code: "SLUG_CONFLICT" });
 });
 
-test("article body images are validated and retained in backups but hidden publicly", () => {
+test("article body images are validated and retained in backups but hidden publicly", async () => {
   const folder = path.join(process.env.BCS_EVENTS_UPLOADS, "uploads", "reviews");
   fs.mkdirSync(folder, { recursive: true });
-  fs.copyFileSync(path.join(folder, "fixture.webp"), path.join(folder, "body-only.webp"));
+  fs.writeFileSync(path.join(folder, "body-only.webp"), "body");
   const image = "/images/uploads/reviews/body-only.webp";
   const draft = { kind: "blog", title: "Body", author: "Visitor", summary: "Summary", url: "https://example.com/body", slug: "body-images", description: `![Scene][photo]\n\n[photo]: ${image}`, is_active: 1 };
   assert.equal(reviewInputSchema.safeParse({ ...draft, slug: "" }).success, false);
-  assert.throws(() => saveReview(reviewInputSchema.parse({ ...draft, description: "![Missing](/images/uploads/missing.webp)" })), { code: "IMAGE_NOT_FOUND" });
-  const saved = saveReview(reviewInputSchema.parse(draft));
-  assert.ok(imageReferences(getDatabase(), true).includes(image));
-  saveReview({ ...input(saved), is_active: 0 }, saved.id, saved.revision);
-  assert.ok(!imageReferences(getDatabase(), true).includes(image));
-  assert.ok(imageReferences(getDatabase()).includes(image));
+  await assert.rejects(() => saveReview(reviewInputSchema.parse({ ...draft, description: "![Missing](/images/uploads/missing.webp)" })), { code: "IMAGE_NOT_FOUND" });
+  const saved = await saveReview(reviewInputSchema.parse(draft));
+  const stored = "/images/uploads/reviews/body-images/body-only.webp";
+  assert.equal(saved.description.includes(stored), true);
+  assert.ok(imageReferences(getDatabase(), true).includes(stored));
+  await saveReview({ ...input(saved), is_active: 0 }, saved.id, saved.revision);
+  assert.ok(!imageReferences(getDatabase(), true).includes(stored));
+  assert.ok(imageReferences(getDatabase()).includes(stored));
 });

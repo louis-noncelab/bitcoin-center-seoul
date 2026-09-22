@@ -1,5 +1,7 @@
 import "server-only";
 import { prisma } from "@/server/db";
+import { placeImagesInSlugFolder, rewriteImagePaths } from "@/server/events/images";
+import { markdownImageReferences } from "@/server/events/image-references";
 import { HttpError } from "@/server/http";
 import { resolveCategoryId } from "./categories";
 import type { ProductInput } from "./validation";
@@ -70,7 +72,13 @@ export async function listAdminProducts() {
 }
 
 export async function saveProduct(input: ProductInput, actorId: string, id?: string) {
-  return prisma.$transaction(async (tx) => {
+  const rawImages = [...new Set([...(input.images?.length ? input.images : (input.imageUrl ? [input.imageUrl] : [])).slice(0, 12), ...markdownImageReferences(input.descriptionKo), ...markdownImageReferences(input.descriptionEn)])];
+  const placed = await placeImagesInSlugFolder("products", input.slug, rawImages);
+  const descriptionKo = rewriteImagePaths(input.descriptionKo, rawImages, placed.images);
+  const descriptionEn = rewriteImagePaths(input.descriptionEn, rawImages, placed.images);
+  const gallery = (input.images?.length ? input.images : (input.imageUrl ? [input.imageUrl] : [])).slice(0, 12).map((image) => placed.images[rawImages.indexOf(image)] ?? image);
+  try {
+  return await prisma.$transaction(async (tx) => {
     if (id) await tx.$queryRaw`SELECT id FROM "Product" WHERE id = ${id} FOR UPDATE`;
     const current = id ? await tx.product.findUnique({ where: { id }, include: { variants: true } }) : null;
     if (id && !current) throw new HttpError(404, "NOT_FOUND", "상품을 찾을 수 없습니다. / Product not found.");
@@ -89,15 +97,17 @@ export async function saveProduct(input: ProductInput, actorId: string, id?: str
     } else if (input.variants.some((variant) => variant.id)) {
       throw new HttpError(400, "INVALID_VARIANT", "새 옵션에는 ID를 지정할 수 없습니다. / New variants cannot specify an ID.");
     }
-    const { variants, priceAmount, listPriceAmount, categoryId, contentFormat, images: imageList, imageUrl, ...fields } = input;
-    const images = (imageList?.length ? imageList : (imageUrl ? [imageUrl] : [])).slice(0, 12);
+    const { variants, priceAmount, listPriceAmount, categoryId, contentFormat, images: listedImages, imageUrl, ...fields } = input;
+    void listedImages;
+    void imageUrl;
+    const images = gallery;
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`product:${fields.slug}`}, 0))`;
     const clash = await tx.product.findUnique({ where: { slug: fields.slug } });
     if (clash && clash.id !== current?.id) throw new HttpError(409, "SLUG_EXISTS", "이미 사용 중인 주소입니다. / Slug is already in use.");
     const resolvedCategoryId = await resolveCategoryId(tx, categoryId);
     const listPrice = listPriceAmount === undefined ? undefined : (listPriceAmount === "" ? null : BigInt(listPriceAmount));
     const data = {
-      ...fields, imageUrl: images[0] ?? "", images, priceAmount: BigInt(priceAmount), categoryId: resolvedCategoryId,
+      ...fields, descriptionKo, descriptionEn, imageUrl: images[0] ?? "", images, priceAmount: BigInt(priceAmount), categoryId: resolvedCategoryId,
       ...(contentFormat !== undefined ? { contentFormat } : {}),
       ...(listPrice !== undefined ? { listPriceAmount: listPrice } : {}),
     };
@@ -123,6 +133,10 @@ export async function saveProduct(input: ProductInput, actorId: string, id?: str
     } });
     return tx.product.findUniqueOrThrow({ where: { id: product.id }, include: { variants: true, category: true } });
   });
+  } catch (error) {
+    await placed.restore();
+    throw error;
+  }
 }
 
 export async function archiveProduct(id: string, actorId: string) {
