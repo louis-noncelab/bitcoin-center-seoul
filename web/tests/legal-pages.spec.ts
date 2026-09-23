@@ -33,7 +33,9 @@ for (const locale of ["ko", "en"] as const) {
 }
 
 test("legal language switch keeps the same document", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 900 });
   await page.goto("/ko/privacy-policy");
+  await page.getByRole("button", { name: "메뉴", exact: true }).click();
   await page.getByRole("link", { name: "EN · Switch to English" }).click();
   await expect(page).toHaveURL(/\/en\/privacy-policy$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Privacy policy");
