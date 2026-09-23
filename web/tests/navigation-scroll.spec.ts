@@ -1,5 +1,40 @@
-import { expect, test } from "@playwright/test";
-import type { Page } from "@playwright/test";
+import { randomUUID } from "node:crypto";
+import { expect, request, test, type APIRequestContext, type Page } from "@playwright/test";
+import { z } from "zod";
+import { deleteContentFixture } from "./content-cleanup";
+import { reviewRuntime } from "./helpers/review-runtime";
+
+let admin: APIRequestContext;
+let origin: string;
+const highlightIds: number[] = [];
+
+test.beforeAll(async ({ baseURL }) => {
+  const runtime = await reviewRuntime();
+  expect(baseURL).toBe(runtime.APP_ORIGIN);
+  origin = runtime.APP_ORIGIN;
+  admin = await request.newContext({ baseURL: origin, extraHTTPHeaders: { origin } });
+  expect((await admin.post("/api/admin/login", { data: { password: runtime.ADMIN_PASSWORD } })).status()).toBe(200);
+  const prefix = randomUUID();
+  for (let index = 0; index < 25; index++) {
+    const response = await admin.post("/api/admin/highlights", { data: {
+      slug: `navigation-scroll-${prefix}-${index}`, tags: [], title: `[검토] 저널 탐색 ${index}`, titleEn: `[Review] Journal navigation ${index}`,
+      meta: "", metaEn: "", category: "행사", categoryEn: "Event", date: "2026-01-01", startDate: "", endDate: "",
+      host: "", hostEn: "", description: "합성 저널 페이지 기록", descriptionEn: "Synthetic journal page record",
+      image: "", images: [], link: "", icon: "calendar", sort_order: 0, is_active: 1,
+    } });
+    expect(response.status()).toBe(201);
+    highlightIds.push(z.object({ data: z.object({ id: z.number().int().positive() }) }).parse(await response.json()).data.id);
+  }
+});
+
+test.afterAll(async () => {
+  if (!admin) return;
+  try {
+    for (const id of highlightIds) await deleteContentFixture(admin, `/api/admin/highlights/${id}`, origin);
+  } finally {
+    await admin.dispose();
+  }
+});
 
 async function scrollFrames(page: Page) {
   return page.evaluate(

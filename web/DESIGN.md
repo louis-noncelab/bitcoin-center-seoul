@@ -218,24 +218,30 @@ Reuse the existing neutral surfaces, Pretendard, controls and selection primitiv
 - Composition: after the owner's width revision, the tour fills the page content
   width and aligns with the page heading. A 3:2 column split enlarges the video
   alongside its description, with shared 32/40px gaps, 16:9 frame and 12px corners.
-  Under 768px the image and description stack. Following the image-quality fix,
-  the real 640×360 footage is capped at its native pixel size divided by the
-  display pixel ratio; its actual colors and watermark remain. No invented frames,
+  Under 768px the image and description stack and the poster fills the available
+  width. Authentic 1920×1080 center photographs serve as responsive still posters;
+  the existing 640×360 video retains its actual colors and watermark. The motion
+  picture has limited detail on high-density mobile screens. No invented frames,
   faux grain, decorative subtitles or audio. Scene changes use a 500ms
   opacity dissolve with the existing image/exit tokens and selection lifecycle.
   The owner's latest revision removes every visible playback icon and the bottom
-  control rail. The unobstructed film loops automatically. A transparent native
+  control rail. The unobstructed film loops automatically on desktop when motion
+  and data preferences allow it. A transparent native
   button covers the frame for pointer/touch and keyboard pause/play, with an outer-frame
   focus outline and bilingual accessible action labels. No icon appears on hover,
   focus, touch or pause. Reduced-motion/no-JavaScript behavior remains intact.
-- Delivery: H.264/yuv420p MP4 derivatives with fast-start and WebP posters,
-  same-origin under `/images/space-tour/`; no remote video requests or new CSP
+- Delivery: H.264/yuv420p MP4 derivatives with fast-start and 1920×1080 WebP
+  photographic posters. Next.js serves responsive poster widths from hashed
+  static assets; videos stay same-origin under `/images/space-tour/`. No remote
+  video requests or new CSP
   allowance. Source URLs, cuts and sizes are recorded with the assets. No media
   source is attached until its scene is on screen or explicitly played.
   Offscreen/background video pauses. Reduced-motion users initially see the
   poster and can explicitly play; changing the preference pauses playback.
   Manual pause persists through visibility changes. Failed/autoplay-blocked
   playback retains a poster, a useful label and a working retry/play action.
+  The responsive image stays visible until a video frame is decoded; the video
+  omits its native `poster` attribute so hidden tabs do not fetch full-size stills.
   No-JavaScript retains the initial poster, description and destination. Gallery
   photographs keep their native aspect ratio and, with JavaScript, are capped
   to their original pixels at the current display density instead of enlarged.
@@ -253,8 +259,13 @@ Reuse the existing neutral surfaces, Pretendard, controls and selection primitiv
   reordered cuts; 101–104.8s adds the corridor painting at the end. Each is
   640×360 at 24fps and 90% source speed, with 0.5s dissolves only between separate
   shots and at the end-to-start loop boundary.
-  H.264 CRF 22, yuv420p, fast-start, no audio; first-frame WebP poster quality 85.
-  Original footage remains untouched; the derivatives preserve its watermark.
+  H.264 CRF 22, yuv420p, fast-start, no audio. Original footage remains untouched;
+  the video derivatives preserve its watermark. The still posters use owner-supplied
+  center photographs from the `security-baseline-727a882` backup: `lounge.jpeg`
+  for lounge, `exhibition.jpeg` for library's bookcase, and `gallery.jpeg` for
+  exhibition art. They were downsampled without generative edits to 1920×1080
+  WebP at quality 82. The previous 640×360 first-frame posters remain as legacy
+  assets; the displayed still can differ from the first video frame.
 - Verify both locales/themes, 375/768/1280 and wide layouts, pointer/keyboard,
   history, motion frames, actual decoded playback, offscreen/background pause,
   reduced motion, blocked/failed media and no-JavaScript. No auth/data changes.

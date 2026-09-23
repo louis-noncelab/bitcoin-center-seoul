@@ -85,18 +85,17 @@ for (const locale of ["ko", "en"] as const) {
     if (!product) throw new Error("The catalog is empty: no product has a variant.");
     await page.goto(`${origin}/${locale}/shop/${product.slug}`);
     const optionName = locale === "ko" ? "옵션" : "Option";
-    const option = page.locator("#product-option").or(page.getByRole("button", { name: optionName, exact: true })).or(page.getByRole("combobox", { name: optionName, exact: true }));
+    const option = page.getByRole("combobox", { name: optionName, exact: true });
     await expect(page.locator("h1")).toHaveCount(1);
     await expect(option).toBeVisible();
 
-    // When the keyboard focuses the option menu.
     await option.focus();
 
     // Then the control is usable and each visible label is human-readable, not a raw variant id.
     await expect(option).toBeFocused();
     expect(await option.evaluate((node) => node.getBoundingClientRect().height)).toBeGreaterThanOrEqual(48);
-    await option.click();
-    const labels = (await page.getByRole("listbox").getByRole("option").allTextContents()).map((label) => label.trim());
+    await expect(option).toHaveJSProperty("required", true);
+    const labels = (await option.locator("option").allTextContents()).map((label) => label.trim());
     expect(labels.length).toBe(product.variants.length);
     const variantIds = new Set(product.variants.map((variant) => variant.id));
     for (const label of labels) {

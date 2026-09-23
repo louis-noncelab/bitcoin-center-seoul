@@ -1,8 +1,9 @@
 import { expect, test } from "@playwright/test";
+import { reviewOrigin, reviewRuntime } from "./helpers/review-runtime";
 
 test("reselecting an admin list keeps its rows while editor navigation still protects drafts", async ({ page, baseURL }) => {
-  expect(baseURL).toBe("http://127.0.0.1:3102");
-  expect((await page.request.post("/api/admin/login", { headers: { origin: baseURL ?? "" }, data: { password: process.env.ADMIN_PASSWORD } })).status()).toBe(200);
+  expect(baseURL).toBe(reviewOrigin(baseURL));
+  expect((await page.request.post("/api/admin/login", { headers: { origin: baseURL ?? "" }, data: { password: (await reviewRuntime()).ADMIN_PASSWORD } })).status()).toBe(200);
   await page.goto("/ko/admin");
   const list = page.locator(".events-admin-list");
   await expect(list).toBeVisible();

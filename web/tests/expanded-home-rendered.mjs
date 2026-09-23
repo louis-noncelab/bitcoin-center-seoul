@@ -6,6 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import { once } from "node:events";
 import { test } from "node:test";
+import { renderedServerEnv, resetRenderedContent } from "./helpers/rendered-pg.mjs";
 
 test(
   "expanded home connects six destinations and public discovery in both locales",
@@ -14,17 +15,10 @@ test(
     const directory = fs.mkdtempSync(
       path.join(os.tmpdir(), "bcs-expanded-home-"),
     );
-    const database = path.join(directory, "events.db");
     fs.mkdirSync(path.join(directory, "images/uploads"), { recursive: true });
-    fs.copyFileSync(
-      path.resolve("../public/images/what-we-do/retail.jpeg"),
-      path.join(directory, "images/uploads/collection-fixture.jpeg"),
-    );
-    const { openDatabase } = await import("../src/server/events/db.ts");
     const { createPasswordHash } =
       await import("../src/server/events/password.ts");
-    const db = openDatabase(database);
-    db.close();
+    await resetRenderedContent();
     const socket = net.createServer();
     socket.listen(0, "127.0.0.1");
     await once(socket, "listening");
@@ -37,21 +31,10 @@ test(
       [path.join(standalone, "server.js")],
       {
         cwd: standalone,
-        env: {
-          PATH: process.env.PATH || "",
-          NODE_ENV: "production",
-          HOSTNAME: "127.0.0.1",
-          PORT: String(port),
-          APP_ORIGIN: origin,
-          ADMIN_PASSWORD_HASH: await createPasswordHash(
-            "expanded-local-fixture",
-          ),
-          BCS_EVENTS_DB: database,
-          BCS_EVENTS_UPLOADS: path.join(directory, "images"),
-          BCS_EVENTS_REVIEW: "true",
-          BCS_TRUST_PROXY: "false",
-          __NEXT_PROCESSED_ENV: "true",
-        },
+        env: renderedServerEnv({
+          origin, port, directory, uploads: path.join(directory, "images"),
+          passwordHash: await createPasswordHash("expanded-local-fixture"),
+        }),
         stdio: "ignore",
       },
     );
@@ -180,6 +163,11 @@ test(
       for (const kind of ["book", "boardgame", "artwork"]) {
         for (const active of [0, 1]) {
           const title = `expanded-${kind}-${active ? "public" : "private"}`;
+          const imageName = `${title}.jpeg`;
+          fs.copyFileSync(
+            path.resolve("../public/images/what-we-do/retail.jpeg"),
+            path.join(directory, "images/uploads", imageName),
+          );
           const response = await fetch(origin + "/api/admin/collection", {
             method: "POST",
             headers: { "content-type": "application/json", origin, cookie },
@@ -192,7 +180,7 @@ test(
               creatorEn: "",
               description: "Fixture",
               descriptionEn: "Fixture",
-              images: ["/images/uploads/collection-fixture.jpeg"],
+              images: [`/images/uploads/${imageName}`],
               sort_order: 0,
               is_active: active,
             }),
@@ -280,6 +268,7 @@ test(
       child.kill("SIGTERM");
       await once(child, "exit");
       fs.rmSync(directory, { recursive: true, force: true });
+      await resetRenderedContent();
     }
   },
 );

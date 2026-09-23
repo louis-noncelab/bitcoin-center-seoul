@@ -1,8 +1,12 @@
+"use client";
+
+import { useRef, useState } from "react";
 import { MenuSelect } from "@/components/ui/menu-select";
 import { FieldError, fieldError } from "./field-error";
 import { FormField, FormNotice } from "@/components/ui/form-field";
 import type { Locale } from "@/i18n/routing";
 import type { Countries, Fulfillment } from "./contracts";
+import { DomesticAddressSearch } from "./domestic-address-search";
 
 export function ShippingFields({ locale, fulfillment, country, countries, onCountry, error }: {
   readonly locale: Locale; readonly fulfillment: Fulfillment; readonly country: string;
@@ -12,6 +16,11 @@ export function ShippingFields({ locale, fulfillment, country, countries, onCoun
   const requiredPostal = fulfillment === "DOMESTIC" || countries.find((item) => item.code === country)?.requiresPostalCode;
   const regionNames = new Intl.DisplayNames([locale], { type: "region" });
   const destinations = countries.filter((item) => fulfillment === "DOMESTIC" ? item.code === "KR" : item.code !== "KR");
+  const [line1, setLine1] = useState("");
+  const [city, setCity] = useState("");
+  const [region, setRegion] = useState("");
+  const [postal, setPostal] = useState("");
+  const detailRef = useRef<HTMLInputElement>(null);
   const countryError = fieldError(error, "countryCode", locale);
   const line1Error = fieldError(error, "address.line1", locale);
   const line2Error = fieldError(error, "address.line2", locale);
@@ -29,25 +38,26 @@ export function ShippingFields({ locale, fulfillment, country, countries, onCoun
       <FieldError id="shipping-country" error={countryError} />
     </FormField>
     <FormField id="shipping-line1" label={ko ? "주소" : "Street address"}>
-      <input aria-invalid={Boolean(line1Error)} aria-describedby={line1Error ? "shipping-line1-error" : undefined} id="shipping-line1" name="line1" autoComplete="shipping address-line1" maxLength={200} required />
+      <input aria-invalid={Boolean(line1Error)} aria-describedby={line1Error ? "shipping-line1-error" : undefined} id="shipping-line1" name="line1" autoComplete="shipping address-line1" maxLength={200} required value={line1} onChange={(event) => setLine1(event.target.value)} />
+      {fulfillment === "DOMESTIC" && country === "KR" && <DomesticAddressSearch locale={locale} onComplete={(address) => { setLine1(address.line1); setCity(address.city); setRegion(address.region); setPostal(address.postalCode); }} onFocusDetail={() => detailRef.current?.focus()} />}
       <FieldError id="shipping-line1" error={line1Error} />
     </FormField>
     <FormField id="shipping-line2" label={ko ? "상세주소 (선택)" : "Apartment, suite, etc. (optional)"}>
-      <input aria-invalid={Boolean(line2Error)} aria-describedby={line2Error ? "shipping-line2-error" : undefined} id="shipping-line2" name="line2" autoComplete="shipping address-line2" maxLength={200} />
+      <input ref={detailRef} aria-invalid={Boolean(line2Error)} aria-describedby={line2Error ? "shipping-line2-error" : undefined} id="shipping-line2" name="line2" autoComplete="shipping address-line2" maxLength={200} />
       <FieldError id="shipping-line2" error={line2Error} />
     </FormField>
     <div className="form-row">
       <FormField id="shipping-city" label={ko ? "시·군·구" : "City"}>
-        <input aria-invalid={Boolean(cityError)} aria-describedby={cityError ? "shipping-city-error" : undefined} id="shipping-city" name="city" autoComplete="shipping address-level2" maxLength={100} required />
+        <input aria-invalid={Boolean(cityError)} aria-describedby={cityError ? "shipping-city-error" : undefined} id="shipping-city" name="city" autoComplete="shipping address-level2" maxLength={100} required value={city} onChange={(event) => setCity(event.target.value)} />
         <FieldError id="shipping-city" error={cityError} />
       </FormField>
       <FormField id="shipping-region" label={ko ? "시·도 / 주 (선택)" : "State / province (optional)"}>
-        <input aria-invalid={Boolean(regionError)} aria-describedby={regionError ? "shipping-region-error" : undefined} id="shipping-region" name="region" autoComplete="shipping address-level1" maxLength={100} />
+        <input aria-invalid={Boolean(regionError)} aria-describedby={regionError ? "shipping-region-error" : undefined} id="shipping-region" name="region" autoComplete="shipping address-level1" maxLength={100} value={region} onChange={(event) => setRegion(event.target.value)} />
         <FieldError id="shipping-region" error={regionError} />
       </FormField>
     </div>
     <FormField id="shipping-postal" label={ko ? `우편번호${requiredPostal ? "" : " (선택)"}` : `Postal code${requiredPostal ? "" : " (optional)"}`}>
-      <input aria-invalid={Boolean(postalError)} aria-describedby={postalError ? "shipping-postal-error" : undefined} id="shipping-postal" name="postalCode" autoComplete="shipping postal-code" inputMode={fulfillment === "DOMESTIC" ? "numeric" : "text"} {...(fulfillment === "DOMESTIC" ? { pattern: "[0-9]{5}", maxLength: 5 } : { maxLength: 20 })} required={Boolean(requiredPostal)} />
+      <input aria-invalid={Boolean(postalError)} aria-describedby={postalError ? "shipping-postal-error" : undefined} id="shipping-postal" name="postalCode" autoComplete="shipping postal-code" inputMode={fulfillment === "DOMESTIC" ? "numeric" : "text"} {...(fulfillment === "DOMESTIC" ? { pattern: "[0-9]{5}", maxLength: 5 } : { maxLength: 20 })} required={Boolean(requiredPostal)} value={postal} onChange={(event) => setPostal(event.target.value)} />
       <FieldError id="shipping-postal" error={postalError} />
     </FormField>
   </fieldset>;

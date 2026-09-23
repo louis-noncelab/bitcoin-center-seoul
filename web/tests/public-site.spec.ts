@@ -1,6 +1,7 @@
 import { mkdir } from "node:fs/promises";
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { z } from "zod";
+import { reviewOrigin } from "./helpers/review-runtime";
 
 const evidence = `${process.env.BCS_EVIDENCE_DIR ?? "../docs/checkpoints/evidence"}/public-site`;
 const pages = [
@@ -39,7 +40,7 @@ for (const locale of ["ko", "en"] as const) {
         }) => {
           await page.setViewportSize({ width, height: 900 });
           await page.emulateMedia({ reducedMotion: "reduce" });
-          await context.addCookies([{ name: "bcs-theme", value: theme, url: baseURL ?? "http://127.0.0.1:3100" }]);
+          await context.addCookies([{ name: "bcs-theme", value: theme, url: reviewOrigin(baseURL) }]);
           const errors: string[] = [];
           page.on("pageerror", (error) => errors.push(error.message));
 

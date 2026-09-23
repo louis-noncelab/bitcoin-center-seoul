@@ -41,7 +41,8 @@ export async function createLnurlInvoice({ payment, receiver, transport }: Provi
   if (result.verify === undefined) throw new PaymentError("LNURL_VERIFY_UNSUPPORTED");
   const verifyUrl = publicHttpsUrl(result.verify).href;
   const invoice = validateBolt11(result.pr, { amountSats: payment.amountSats, review: payment.mode === "REVIEW", metadata: resolved.metadata, future: true });
-  // Some providers issue month-long invoices; never hold stock past the payment's own window.
+  // Some providers issue month-long invoices. The local timeout triggers REVIEW, not stock release;
+  // manual unpaid resolution separately verifies the signed provider expiry.
   const expiresAt = invoice.expiresAt < payment.expiresAt ? invoice.expiresAt : payment.expiresAt;
   return { externalId: invoice.paymentHash, paymentHash: invoice.paymentHash, expiresAt, paymentRequest: result.pr, verifyUrl, checkoutUrl: null, lnurlMetadata: resolved.metadata };
 }

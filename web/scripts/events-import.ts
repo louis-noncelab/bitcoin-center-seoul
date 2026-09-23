@@ -156,7 +156,7 @@ async function main(): Promise<void> {
   const db = openDatabase(databasePath);
   try {
     const imported = importRows(db, snapshot);
-    process.stdout.write(`events=${imported.events} highlights=${imported.highlights} images=${images}\n`);
+    process.stdout.write(`legacy SQLite import only: events=${imported.events} highlights=${imported.highlights} images=${images}; PostgreSQL content unchanged\n`);
   } finally {
     db.close();
   }

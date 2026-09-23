@@ -11,22 +11,29 @@ import { imageReferences as contentImageReferences } from "../src/server/events/
 const absolutePath = z.string().min(1).refine((value) => path.isAbsolute(value) && !value.includes("\0")).transform((value) => path.resolve(value));
 const optionsSchema = z.discriminatedUnion("command", [
   z.object({ command: z.literal("backup"), database: absolutePath, images: absolutePath, output: absolutePath }).strict(),
+  z.object({ command: z.literal("backup-images"), images: absolutePath, output: absolutePath }).strict(),
   z.object({ command: z.literal("restore-check"), backup: absolutePath }).strict(),
 ]);
 const archivedPath = z.string().refine((value) => value === "events.db" || imagePathSchema.safeParse(`/${value}`).success);
 const fileSchema = z.object({ path: archivedPath, bytes: z.number().int().nonnegative(), sha256: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
-const manifestSchema = z.object({
+const legacyManifestSchema = z.object({
   version: z.literal(1), createdAt: z.iso.datetime(), files: z.array(fileSchema).min(1).max(100_000),
 }).strict().refine(({ files }) => files.filter((file) => file.path === "events.db").length === 1 && new Set(files.map((file) => file.path)).size === files.length);
+const imageManifestSchema = z.object({
+  version: z.literal(2), kind: z.literal("uploads-only"), createdAt: z.iso.datetime(),
+  files: z.array(fileSchema).max(100_000),
+}).strict().refine(({ files }) => files.every((file) => file.path !== "events.db") && new Set(files.map((file) => file.path)).size === files.length);
+const manifestSchema = z.union([legacyManifestSchema, imageManifestSchema]);
 const maximumManifestBytes = 16 * 1024 * 1024;
 const help = `Usage:
   node --import tsx scripts/events-backup.ts backup --database /absolute/events.db --images /absolute/images --output /private/backups/new-directory
+  node --import tsx scripts/events-backup.ts backup-images --images /absolute/images --output /private/backups/new-directory
   node --import tsx scripts/events-backup.ts restore-check --backup /private/backups/existing-directory
   node --import tsx scripts/events-backup.ts --help
 
 Node 24. No environment files are loaded. The output parent must already exist and be private (0700).
-backup creates a new directory with an online SQLite snapshot, all shared uploads and a SHA-256 manifest.
-Product-only and unpublished uploads are included. PostgreSQL needs its own pg_dump backup.
+backup is a legacy SQLite archive, not an active site backup. backup-images preserves shared uploads without requiring SQLite.
+Both include a SHA-256 manifest. PostgreSQL always requires a separate pg_dump backup.
 restore-check verifies and restores only inside a fresh temporary directory, then removes it. It never replaces an active database.
 `;
 
@@ -86,7 +93,8 @@ function uploadedImages(root: string): readonly string[] {
       if (entry.isDirectory()) visit(filename);
       else if (entry.isFile()) {
         const parsed = imagePathSchema.safeParse(`/images/${path.relative(root, filename).split(path.sep).join("/")}`);
-        if (parsed.success && parsed.data) images.push(parsed.data);
+        if (!parsed.success || !parsed.data) throw new BackupError("UNSUPPORTED_UPLOAD_FILE");
+        images.push(parsed.data);
       }
     }
   }
@@ -125,7 +133,7 @@ async function backup(options: z.infer<typeof optionsSchema> & { readonly comman
       copyPrivate(containedFile(images, publicPath.slice("/images/".length)), destination);
       files.push({ path: archivePath, ...await digest(destination) });
     }
-    const manifest = manifestSchema.parse({ version: 1, createdAt: new Date().toISOString(), files });
+    const manifest = legacyManifestSchema.parse({ version: 1, createdAt: new Date().toISOString(), files });
     const filename = path.join(output, "manifest.json");
     const serialized = Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`);
     if (serialized.length > maximumManifestBytes) throw new BackupError("MANIFEST_TOO_LARGE");
@@ -134,6 +142,35 @@ async function backup(options: z.infer<typeof optionsSchema> & { readonly comman
     synchronize(output);
     synchronize(parent);
     return references.length;
+  } catch (error) {
+    fs.rmSync(output, { recursive: true, force: true });
+    throw error;
+  }
+}
+
+async function backupImages(options: z.infer<typeof optionsSchema> & { readonly command: "backup-images" }): Promise<number> {
+  const images = fs.realpathSync(options.images);
+  const parent = fs.realpathSync(path.dirname(options.output));
+  const output = path.join(parent, path.basename(options.output));
+  if (!fs.statSync(images).isDirectory() || (fs.statSync(parent).mode & 0o077) !== 0 || output === images || output.startsWith(`${images}${path.sep}`)) throw new BackupError("UNSAFE_OUTPUT");
+  fs.mkdirSync(output, { mode: 0o700 });
+  try {
+    const files: z.infer<typeof fileSchema>[] = [];
+    for (const publicPath of [...uploadedImages(images)].sort()) {
+      const archivePath = publicPath.slice(1);
+      const destination = path.join(output, archivePath);
+      copyPrivate(containedFile(images, publicPath.slice("/images/".length)), destination);
+      files.push({ path: archivePath, ...await digest(destination) });
+    }
+    const manifest = imageManifestSchema.parse({ version: 2, kind: "uploads-only", createdAt: new Date().toISOString(), files });
+    const serialized = Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`);
+    if (serialized.length > maximumManifestBytes) throw new BackupError("MANIFEST_TOO_LARGE");
+    const filename = path.join(output, "manifest.json");
+    fs.writeFileSync(filename, serialized, { flag: "wx", mode: 0o600 });
+    synchronize(filename);
+    synchronize(output);
+    synchronize(parent);
+    return files.length;
   } catch (error) {
     fs.rmSync(output, { recursive: true, force: true });
     throw error;
@@ -153,6 +190,7 @@ async function restoreCheck(archive: string): Promise<number> {
       const actual = await digest(destination);
       if (actual.bytes !== file.bytes || actual.sha256 !== file.sha256) throw new BackupError("FILE_HASH_MISMATCH");
     }
+    if (manifest.version === 2) return manifest.files.length;
     const db = new Database(path.join(temporary, "events.db"), { readonly: true, fileMustExist: true });
     let references: readonly string[];
     try {
@@ -177,7 +215,8 @@ async function main(): Promise<void> {
   const options = optionsSchema.parse({ command: positionals[0], ...values });
   process.umask(0o077);
   switch (options.command) {
-    case "backup": process.stdout.write(`backup complete: images=${await backup(options)}\n`); return;
+    case "backup": process.stdout.write(`legacy SQLite archive complete (PostgreSQL excluded): images=${await backup(options)}\n`); return;
+    case "backup-images": process.stdout.write(`uploads archive complete (PostgreSQL excluded): images=${await backupImages(options)}\n`); return;
     case "restore-check": process.stdout.write(`restore-check complete: images=${await restoreCheck(options.backup)}\n`); return;
     default: { const impossible: never = options; throw impossible; }
   }

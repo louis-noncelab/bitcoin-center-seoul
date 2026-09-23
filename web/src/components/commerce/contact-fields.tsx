@@ -1,6 +1,7 @@
 import { FormField } from "@/components/ui/form-field";
 import type { Locale } from "@/i18n/routing";
 import { FieldError, fieldError } from "./field-error";
+import { IntlPhoneInput } from "./intl-phone-input";
 
 export function ContactFields({ locale, shipping = false, phoneRequired = false, error }: { readonly locale: Locale; readonly shipping?: boolean; readonly phoneRequired?: boolean; readonly error?: unknown }) {
   const ko = locale === "ko";
@@ -18,8 +19,8 @@ export function ContactFields({ locale, shipping = false, phoneRequired = false,
       <input id="customer-email" name="email" type="email" autoComplete="email" aria-describedby={`customer-email-hint${emailError ? " customer-email-error" : ""}`} aria-invalid={Boolean(emailError)} required maxLength={254} />
       <FieldError id="customer-email" error={emailError} />
     </FormField>
-    <FormField id="customer-phone" label={ko ? `전화번호${needPhone ? "" : " (선택)"}` : `Phone number${needPhone ? "" : " (optional)"}`} {...(shipping || phoneRequired ? { hint: shipping ? (ko ? "국가번호를 포함해 입력해 주세요." : "Include your country calling code.") : (ko ? "숫자 8자리 이상 입력해 주세요." : "Enter at least 8 digits.") } : {})}>
-      <input id="customer-phone" name="phone" type="tel" autoComplete="tel" inputMode="tel" required={needPhone} minLength={phoneRequired ? 8 : undefined} maxLength={40} pattern={String.raw`[+0-9\(\) .\-]*`} aria-invalid={Boolean(phoneError)} aria-describedby={[shipping || phoneRequired ? "customer-phone-hint" : "", phoneError ? "customer-phone-error" : ""].filter(Boolean).join(" ") || undefined} />
+    <FormField id="customer-phone" label={ko ? `전화번호${needPhone ? "" : " (선택)"}` : `Phone number${needPhone ? "" : " (optional)"}`} hint={ko ? "국가번호를 선택하고 전화번호를 입력해 주세요." : "Choose a country code, then enter your phone number."}>
+      <IntlPhoneInput locale={locale} required={needPhone} invalid={Boolean(phoneError)} describedBy={`customer-phone-hint${phoneError ? " customer-phone-error" : ""}`} />
       <FieldError id="customer-phone" error={phoneError} />
     </FormField>
   </fieldset>;

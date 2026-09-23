@@ -59,7 +59,7 @@
 | 런타임 | Node.js 24 · npm |
 | 웹 | Next.js · React · TypeScript |
 | 스타일·모션 | Tailwind CSS · Motion |
-| 데이터·이미지 | SQLite · better-sqlite3 · Sharp |
+| 데이터·이미지 | PostgreSQL · Prisma · Sharp (SQLite는 이관 도구) |
 | 운영 구성 | 단일 호스트 · nginx · systemd · 수동 배포 |
 
 정확한 런타임 버전은 [web/.nvmrc](web/.nvmrc), 의존성 버전은 [web/package.json](web/package.json)과 잠금 파일을 기준으로 합니다. 센터 소개, 프로그램, 전시, 방문 후기와 공지를 한국어와 영어로 보여 줍니다.

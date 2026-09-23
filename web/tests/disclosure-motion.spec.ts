@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { inspectSlide } from "./disclosure-motion";
 import { chooseVenue, venueField } from "./venue-menu";
+import { reviewOrigin, reviewRuntime } from "./helpers/review-runtime";
 
 for (const locale of ["ko", "en"] as const) {
   test(`${locale} navigation and calendars slide in both directions`, async ({ page }, info) => {
@@ -51,15 +52,15 @@ for (const locale of ["ko", "en"] as const) {
 }
 
 test("venue fields and date picker keep closing content and keyboard boundaries", async ({ page }, info) => {
-  if (!process.env.ADMIN_PASSWORD || process.env.BCS_EVENTS_REVIEW !== "true") throw new Error("Use isolated review runner");
+  const runtime = await reviewRuntime();
   await page.setViewportSize({ width: 375, height: 900 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  expect((await page.request.post("/api/admin/login", { headers: { origin: "http://127.0.0.1:3102" }, data: { password: process.env.ADMIN_PASSWORD } })).ok()).toBe(true);
+  expect((await page.request.post("/api/admin/login", { headers: { origin: reviewOrigin() }, data: { password: runtime.ADMIN_PASSWORD } })).ok()).toBe(true);
   await page.goto("/ko/admin");
   await page.getByRole("button", { name: "새 항목 등록", exact: true }).click();
   const venue = venueField(page);
   const region = page.locator(".event-venue-details .slide-region").last();
-  await venue.getByRole("button").scrollIntoViewIfNeeded();
+  await venue.getByRole("combobox").scrollIntoViewIfNeeded();
   let external = false;
   await inspectSlide(page, region, () => { external = !external; return chooseVenue(page, external ? "external" : "center"); }, "venue", info);
   await expect(page.locator('input[name="location"]')).toBeDisabled();

@@ -1,3 +1,13 @@
+## Current runtime fact — 2026-09-23
+
+Active content, center status overrides, and admin authentication/session tables are now in
+PostgreSQL through Prisma. Historical SQLite requirements below describe the old increment and
+legacy snapshot tools. `BCS_EVENTS_DB` is not an active web runtime store; `BCS_EVENTS_UPLOADS`
+still names the shared image root. To backfill old content, use the guarded, explicit
+`scripts/sqlite-to-pg-content.mjs` CLI with a verified SQLite snapshot. Old admin session hashes
+and login attempts are excluded. A complete current backup requires a PostgreSQL dump and all
+uploads; the SQLite archive command alone is insufficient. The no-deployment boundaries remain.
+
 ## Runtime — 2026-09-10
 The owner authorized Node 24 for the new web application. Use the version pinned in `.nvmrc`, npm and a fresh `npm ci` after switching major versions. Local review and backup tools enforce Node 24. This supersedes historical Node 22 references; the root legacy application and production runtime remain outside this local upgrade.
 

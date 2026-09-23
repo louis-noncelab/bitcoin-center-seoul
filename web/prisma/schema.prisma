@@ -139,6 +139,8 @@ model RateLimitBucket {
   key       String   @id
   count     Int      @default(0)
   expiresAt DateTime
+
+  @@index([expiresAt])
 }
 
 // Last live ticker that priced an order. Used only when Upbit and Bithumb are both unreachable.
@@ -290,6 +292,8 @@ model Order {
   accessTokenExpiresAt DateTime          @default(dbgenerated("(now() + interval '30 days')"))
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
+  privacyRedactedAt    DateTime?
+  privacyHold          Boolean           @default(false)
   items                OrderItem[]
   payments             Payment[]
   couponUsage          CouponUsage?
@@ -298,6 +302,20 @@ model Order {
   @@index([customerEmailHash])
   @@index([accountId, createdAt])
   @@index([status, holdExpiresAt])
+  @@index([privacyRedactedAt, createdAt])
+}
+
+// Purpose-limited encrypted records, deliberately absent from ordinary order projections.
+model PrivacyLegalRecord {
+  id               String   @id @default(cuid())
+  orderId          String
+  kind             String
+  encryptedPayload String
+  expiresAt        DateTime
+  createdAt        DateTime @default(now())
+
+  @@unique([orderId, kind])
+  @@index([expiresAt])
 }
 
 model OrderItem {
@@ -403,6 +421,7 @@ model CouponUsage {
 
 model EmailOutbox {
   id               String      @id @default(cuid())
+  orderId          String?
   eventKey         String      @unique
   to               String
   locale           String      @default("ko")
@@ -420,6 +439,7 @@ model EmailOutbox {
   updatedAt        DateTime    @updatedAt
 
   @@index([status, nextAttemptAt])
+  @@index([orderId])
 }
 
 model AuditLog {

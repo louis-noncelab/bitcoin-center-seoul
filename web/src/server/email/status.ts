@@ -5,8 +5,7 @@ import { HttpError } from "@/server/http";
 import { decryptPayload, renderEmail } from "@/server/email";
 import { EMAIL_QUEUE_STALE_MS, scheduleEmailDelivery } from "@/server/email/queue";
 
-const statuses = ["CAPTURED", "PENDING", "PROCESSING", "SENT", "FAILED"] as const;
-export type EmailDeliveryStatus = (typeof statuses)[number];
+export type EmailDeliveryStatus = "CAPTURED" | "PENDING" | "PROCESSING" | "SENT" | "FAILED";
 
 export type EmailLetter = {
   readonly id: string;

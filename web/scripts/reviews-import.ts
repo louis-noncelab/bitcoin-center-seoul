@@ -8,7 +8,6 @@ import { z } from "zod";
 import { reviewInputSchema, reviewRecordSchema, reviewSelectionSchema, type ReviewInput } from "../src/lib/reviews-contract";
 import { markdownImageReferences } from "../src/server/events/image-references";
 import { getDatabase } from "../src/server/events/db";
-import { saveReview, saveReviewSelection } from "../src/server/reviews";
 import { ApiError } from "../src/server/events/errors";
 
 const absolutePath = z.string().min(1).refine(value => path.isAbsolute(value) && !value.includes("\0")).transform(value => path.resolve(value));
@@ -22,7 +21,7 @@ const bundleSchema = z.object({
 type Bundle = z.infer<typeof bundleSchema>;
 type ImageFile = { readonly source: string; readonly relative: string; readonly sha256: string };
 class ImportError extends Error { constructor(readonly code: string) { super(code); } }
-const help = "Usage: node --conditions=react-server --import tsx scripts/reviews-import.ts --bundle /absolute/bundle --db /absolute/existing.db --uploads /absolute/images [--apply]\nDefault: dry-run. Node 24. No environment files are loaded. Back up before --apply.\n";
+const help = "Legacy SQLite bundle importer. Active site content is PostgreSQL; run sqlite-to-pg-content after preparing this legacy source.\nUsage: node --conditions=react-server --import tsx scripts/reviews-import.ts --bundle /absolute/bundle --db /absolute/existing.db --uploads /absolute/images [--apply]\nDefault: dry-run. Node 24. No environment files are loaded. Back up before --apply.\n";
 
 function stat(filename: string): fs.Stats | undefined {
   try { return fs.lstatSync(filename); }
@@ -144,12 +143,30 @@ async function main(): Promise<void> {
         copied.push(destination);
         if (digest(destination) !== image.sha256) throw new ImportError("SOURCE_IMAGE_CHANGED");
       }
+      const insert = db.prepare(`INSERT INTO visit_reviews
+        (kind,url,author,date,title,titleEn,summary,summaryEn,slug,description,descriptionEn,
+         feature_title,feature_titleEn,image,sort_order,is_active)
+        VALUES (@kind,@url,@author,@date,@title,@titleEn,@summary,@summaryEn,@slug,@description,@descriptionEn,
+         @feature_title,@feature_titleEn,@image,@sort_order,@is_active)`);
+      const insertSlug = db.prepare("INSERT INTO review_slugs (slug,review_id) VALUES (?,?)");
+      for (const { key, input } of plan.pending) {
+        const id = Number(insert.run(input).lastInsertRowid);
+        plan.ids.set(key, id);
+        if (input.slug) insertSlug.run(input.slug, id);
+      }
+      if (plan.updateSelection) {
+        const idFor = (key: string): number => {
+          const id = plan.ids.get(key);
+          if (id === undefined) throw new ImportError("INVALID_SELECTION");
+          return id;
+        };
+        const featured = bundle.selection.featured_key === null ? null : idFor(bundle.selection.featured_key);
+        const home = JSON.stringify(bundle.selection.home_keys.map(idFor));
+        const changed = db.prepare("UPDATE review_selection SET featured_id=?,home_ids=?,revision=revision+1 WHERE id=1 AND revision=?")
+          .run(featured, home, plan.selection.revision).changes;
+        if (changed !== 1) throw new ImportError("SELECTION_CONFLICT");
+      }
     }).immediate();
-    for (const { key, input } of plan.pending) plan.ids.set(key, (await saveReview(input)).id);
-    if (plan.updateSelection) {
-      const idFor = (key: string): number => { const id = plan.ids.get(key); if (id === undefined) throw new ImportError("INVALID_SELECTION"); return id; };
-      await saveReviewSelection({ featured_id: bundle.selection.featured_key === null ? null : idFor(bundle.selection.featured_key), home_ids: bundle.selection.home_keys.map(idFor) }, plan.selection.revision);
-    }
   } catch (error) {
     for (const filename of copied) fs.unlinkSync(filename);
     throw error;

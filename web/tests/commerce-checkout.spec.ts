@@ -4,18 +4,71 @@ const configuredBase = process.env.COMMERCE_BASE_URL ?? process.env.COMMERCE_REV
 if (configuredBase) test.use({ baseURL: configuredBase });
 const product = { id: "book", slug: "book", titleKo: "책", titleEn: "Book", descriptionKo: "", descriptionEn: "", imageUrl: "", contentFormat: "PLAIN", priceKind: "BTC_FIXED", priceAmount: "100", memberOnly: false, allowedFulfillments: ["PICKUP", "DOMESTIC"], variants: [{ id: "book-option", sku: "book", optionLabelKo: "단권", optionLabelEn: "Single", availableStock: 10 }] };
 const quote = { id: "q", amountSats: "100", expiresAt: "2030-01-01T00:00:00Z", snapshot: { items: [{ titleKo: "책", titleEn: "Book", optionLabelKo: "단권", optionLabelEn: "Single", quantity: 1, amountSats: "100" }], shippingAmountSats: "0", amountSats: "100", shipping: { countryCode: null, requiresPostalCode: false } } };
-async function checkout(page: Page, items = [{ variantId: "book-option", quantity: 1 }]) {
+async function checkout(page: Page, items = [{ variantId: "book-option", quantity: 1 }], international = false) {
   await page.addInitScript((selection) => { localStorage.setItem("center-cart", JSON.stringify({ v: 1, items: selection })); }, items);
-  await page.route("**/api/products", (route) => route.fulfill({ json: { data: [product] } }));
-  await page.route("**/api/shipping/countries", (route) => route.fulfill({ json: { data: [{ code: "KR", requiresPostalCode: true, zone: { nameKo: "국내", nameEn: "Domestic" } }] } }));
+  await page.route("**/api/products", (route) => route.fulfill({ json: { data: [{ ...product, allowedFulfillments: international ? [...product.allowedFulfillments, "INTERNATIONAL"] : product.allowedFulfillments }] } }));
+  await page.route("**/api/shipping/countries", (route) => route.fulfill({ json: { data: [{ code: "KR", requiresPostalCode: true, zone: { nameKo: "국내", nameEn: "Domestic" } }, ...(international ? [{ code: "US", requiresPostalCode: true, zone: { nameKo: "미국", nameEn: "United States" } }] : [])] } }));
   await page.route("**/api/orders/quote", (route) => route.fulfill({ json: { data: quote } }));
   await page.goto("/en/checkout");
 }
 async function contact(page: Page) {
-  await page.locator('input[name="name"]').fill("Review Guest");
-  await page.locator('input[name="email"]').fill("review@example.invalid");
-  await page.locator('input[name="phone"]').fill("01012345678");
+  await page.locator("#customer-name").fill("Review Guest");
+  await page.locator("#customer-email").fill("review@example.invalid");
+  await page.locator("#customer-phone").fill("01012345678");
 }
+
+test("postcode frame policy is limited to checkout", async ({ page }) => {
+  const checkoutResponse = await page.request.get("/en/checkout");
+  const homeResponse = await page.request.get("/en");
+  expect(checkoutResponse.headers()["content-security-policy"]).toContain("https://postcode.map.kakao.com");
+  expect(homeResponse.headers()["content-security-policy"]).not.toContain("postcode.map.kakao.com");
+});
+
+test("phone country search stores one prefix and rejects unknown pasted prefixes", async ({ page }) => {
+  await checkout(page);
+  await page.getByRole("button", { name: /Phone country code/ }).click();
+  await page.getByRole("combobox", { name: "Search country or calling code" }).fill("Italy");
+  await page.getByRole("combobox", { name: "Search country or calling code" }).press("Enter");
+  await page.locator("#customer-phone").fill("+39 02 12345678");
+  await expect(page.locator('input[type="hidden"][name="phone"]')).toHaveValue("+39 02 12345678");
+  await page.locator("#customer-phone").fill("1234");
+  expect(await page.locator("#customer-phone").evaluate((input: HTMLInputElement) => input.checkValidity())).toBe(false);
+  await page.locator("#customer-phone").fill("123456");
+  expect(await page.locator("#customer-phone").evaluate((input: HTMLInputElement) => input.checkValidity())).toBe(true);
+  await page.locator("#customer-phone").fill("+999 12345678");
+  await expect(page.locator('input[type="hidden"][name="phone"]')).toHaveValue("");
+  await expect(page.locator("#customer-phone")).toHaveAttribute("aria-invalid", "true");
+});
+
+test("domestic address search preloads only for Korea and opens with one click", async ({ page }) => {
+  let scriptRequests = 0;
+  let releaseScript: () => void = () => {};
+  const scriptReady = new Promise<void>((resolve) => { releaseScript = resolve; });
+  await page.route("https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js", async (route) => {
+    scriptRequests += 1;
+    await scriptReady;
+    return route.fulfill({ contentType: "application/javascript", body: `window.kakao = { Postcode: class { constructor(options) { this.options = options; } open() { setTimeout(() => { this.options.oncomplete({ userSelectedType: "R", roadAddress: "서울 마포구 월드컵북로 123", jibunAddress: "", zonecode: "03930", sido: "서울", sigungu: "마포구" }); this.options.onclose(); }, 0); } } };` });
+  });
+  await checkout(page, undefined, true);
+  expect(scriptRequests).toBe(0);
+  await page.locator('input[value="INTERNATIONAL"]').check();
+  await expect(page.getByRole("button", { name: "Find address" })).toHaveCount(0);
+  expect(scriptRequests).toBe(0);
+  await page.locator('input[value="DOMESTIC"]').check();
+  await expect(page.getByRole("button", { name: "Loading address search…" })).toBeDisabled();
+  await expect.poll(() => scriptRequests).toBe(1);
+  releaseScript();
+  await expect(page.getByRole("button", { name: "Find address", exact: true })).toBeEnabled();
+  await page.getByRole("button", { name: "Find address", exact: true }).click();
+  await expect(page.locator('input[name="postalCode"]')).toHaveValue("03930");
+  await expect(page.locator('input[name="region"]')).toHaveValue("서울");
+  await expect(page.locator('input[name="city"]')).toHaveValue("마포구");
+  await expect(page.locator('input[name="line1"]')).toHaveValue("월드컵북로 123");
+  await page.locator('input[name="line1"]').fill("직접 수정한 주소");
+  await expect(page.locator('input[name="line1"]')).toHaveValue("직접 수정한 주소");
+  await page.locator('input[value="PICKUP"]').check();
+  await expect(page.getByRole("button", { name: "Find address" })).toHaveCount(0);
+});
 
 test("checkout blocks missing selections without discarding them", async ({ page }) => {
   // Given one orderable item and one removed or hidden option.

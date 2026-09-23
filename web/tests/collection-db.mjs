@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { after, test } from "node:test";
 import Database from "better-sqlite3";
+import "./helpers/pg-content-env.mjs";
 
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "bcs-collection-"));
 process.env.BCS_EVENTS_DB = path.join(directory, "events.db");
@@ -27,27 +28,35 @@ legacy.prepare("INSERT INTO collection_items (id,kind,title,is_active) VALUES (7
 legacy.close();
 
 const { openDatabase, getDatabase } = await import("../src/server/events/db.ts");
+const { prisma } = await import("../src/server/db.ts");
 const { listCollection, getCollectionItem, saveCollectionItem, setCollectionSoldOut } = await import("../src/server/collection/index.ts");
 const { collectionInputSchema, libraryKinds } = await import("../src/lib/collection-contract.ts");
 openDatabase(process.env.BCS_EVENTS_DB).close();
-after(() => { getDatabase().close(); fs.rmSync(directory, { recursive: true, force: true }); });
+after(async () => {
+  await prisma.collectionItem.deleteMany();
+  await prisma.$disconnect();
+  getDatabase().close();
+  fs.rmSync(directory, { recursive: true, force: true });
+});
 
-test("widening the kind check keeps existing rows and admits board games", () => {
-  const existing = getCollectionItem(7, true);
+test("widening the legacy kind check keeps existing rows and admits board games", async () => {
+  const existing = getDatabase().prepare("SELECT * FROM collection_items WHERE id=7").get();
   assert.equal(existing.title, "오래된 도서");
   assert.equal(existing.id, 7);
   assert.equal(existing.revision, 1);
 
-  const game = saveCollectionItem(collectionInputSchema.parse({ kind: "boardgame", title: "검증용 보드게임", images: [] }));
+  const game = await saveCollectionItem(collectionInputSchema.parse({ kind: "boardgame", title: "검증용 보드게임", images: [] }));
   assert.equal(game.kind, "boardgame");
+  getDatabase().prepare("INSERT INTO collection_items (kind,title) VALUES ('boardgame','이전 DB의 보드게임')").run();
   assert.throws(() => getDatabase().prepare("INSERT INTO collection_items (kind,title) VALUES ('puzzle','거부')").run());
 });
 
-test("kind filters keep board games off the books and art pages", () => {
-  assert.deepEqual(listCollection(true, libraryKinds).map((record) => record.title), ["오래된 도서"]);
-  assert.deepEqual(listCollection(true, ["boardgame"]).map((record) => record.title), ["검증용 보드게임"]);
-  assert.equal(listCollection(true).length, 2);
-  assert.equal(getCollectionItem(7, true, ["boardgame"]), null);
+test("kind filters keep board games off the books and art pages", async () => {
+  const book = await saveCollectionItem(collectionInputSchema.parse({ kind: "book", title: "오래된 도서", images: [] }));
+  assert.deepEqual((await listCollection(true, libraryKinds)).map((record) => record.title), ["오래된 도서"]);
+  assert.deepEqual((await listCollection(true, ["boardgame"])).map((record) => record.title), ["검증용 보드게임"]);
+  assert.equal((await listCollection(true)).length, 2);
+  assert.equal(await getCollectionItem(book.id, true, ["boardgame"]), null);
 });
 
 test("reopening an already widened database leaves it untouched", () => {
@@ -57,19 +66,19 @@ test("reopening an already widened database leaves it untouched", () => {
   reopened.close();
 });
 
-test("오래된 수정 버전으로는 보드게임을 덮어쓰지 못한다", () => {
+test("오래된 수정 버전으로는 보드게임을 덮어쓰지 못한다", async () => {
   const input = collectionInputSchema.parse({ kind: "boardgame", title: "충돌 검증용 보드게임", images: [] });
-  const game = saveCollectionItem(input);
-  saveCollectionItem({ ...input, title: "먼저 저장" }, game.id, game.revision);
-  assert.throws(() => saveCollectionItem({ ...input, title: "덮어쓰기" }, game.id, game.revision), { status: 409, code: "EDIT_CONFLICT" });
+  const game = await saveCollectionItem(input);
+  await saveCollectionItem({ ...input, title: "먼저 저장" }, game.id, game.revision);
+  await assert.rejects(saveCollectionItem({ ...input, title: "덮어쓰기" }, game.id, game.revision), { status: 409, code: "EDIT_CONFLICT" });
 });
 
 
-test("collection items do not store purchase links", () => {
+test("collection items do not store purchase links", async () => {
   const input = collectionInputSchema.parse({ kind: "goods", title: "센터 티셔츠", images: [] });
-  const item = saveCollectionItem(input);
-  assert.equal(getCollectionItem(item.id), null);
-  assert.equal(getCollectionItem(item.id, true).purchaseUrl, "");
+  const item = await saveCollectionItem(input);
+  assert.equal(await getCollectionItem(item.id), null);
+  assert.equal((await getCollectionItem(item.id, true)).purchaseUrl, "");
   assert.equal(item.soldOut, false);
   for (const purchaseUrl of ["https://pay.example.com/ticket?item=shirt", "javascript:alert(1)", "data:text/html,test", "//example.com", "/checkout", "https://", "x".repeat(2049)]) {
     assert.equal(collectionInputSchema.safeParse({ ...input, purchaseUrl }).success, false);
@@ -109,31 +118,31 @@ test("current collection migration preserves slugs, revisions, rows, unique inde
 });
 
 
-test("sold-out is managed by shop stock, not the collection", () => {
+test("sold-out is managed by shop stock, not the collection", async () => {
   const input = collectionInputSchema.parse({ kind: "goods", title: "품절 검증", images: [] });
-  const item = saveCollectionItem(input);
-  assert.throws(() => setCollectionSoldOut(item.id, true, item.revision), { status: 400, code: "UNSUPPORTED_COLLECTION_KIND" });
-  assert.equal(getCollectionItem(item.id, true).revision, item.revision);
-  assert.equal(getCollectionItem(item.id, true).soldOut, false);
+  const item = await saveCollectionItem(input);
+  await assert.rejects(setCollectionSoldOut(item.id, true, item.revision), { status: 400, code: "UNSUPPORTED_COLLECTION_KIND" });
+  assert.equal((await getCollectionItem(item.id, true)).revision, item.revision);
+  assert.equal((await getCollectionItem(item.id, true)).soldOut, false);
 });
 
-test("no collection kind stores a purchase link, including kind changes and legacy rows", () => {
+test("no collection kind stores a purchase link, including kind changes and legacy rows", async () => {
   for (const kind of ["book", "goods", "boardgame", "artwork"]) {
     const input = { kind, title: "구매 제외 검증", images: [] };
     assert.equal(collectionInputSchema.safeParse({ ...input, purchaseUrl: "https://pay.example.com/item" }).success, false);
     assert.equal(collectionInputSchema.safeParse({ ...input, soldOut: true }).success, false);
-    const item = saveCollectionItem(collectionInputSchema.parse(input));
-    assert.throws(() => setCollectionSoldOut(item.id, true, item.revision), { status: 400, code: "UNSUPPORTED_COLLECTION_KIND" });
-    assert.equal(getCollectionItem(item.id, true).revision, item.revision);
-    getDatabase().prepare("UPDATE collection_items SET purchaseUrl = ?, soldOut = 1 WHERE id = ?").run("https://pay.example.com/legacy", item.id);
-    assert.equal(getCollectionItem(item.id, true).title, input.title);
-    const cleaned = saveCollectionItem(collectionInputSchema.parse(input), item.id, item.revision + 0);
+    const item = await saveCollectionItem(collectionInputSchema.parse(input));
+    await assert.rejects(setCollectionSoldOut(item.id, true, item.revision), { status: 400, code: "UNSUPPORTED_COLLECTION_KIND" });
+    assert.equal((await getCollectionItem(item.id, true)).revision, item.revision);
+    await prisma.collectionItem.update({ where: { id: item.id }, data: { purchaseUrl: "https://pay.example.com/legacy", soldOut: true } });
+    assert.equal((await getCollectionItem(item.id, true)).title, input.title);
+    const cleaned = await saveCollectionItem(collectionInputSchema.parse(input), item.id, item.revision);
     assert.equal(cleaned.purchaseUrl, "");
     assert.equal(cleaned.soldOut, false);
   }
-  const book = saveCollectionItem(collectionInputSchema.parse({ kind: "book", title: "분류 변경 검증", images: [] }));
-  getDatabase().prepare("UPDATE collection_items SET purchaseUrl = ?, soldOut = 1 WHERE id = ?").run("https://pay.example.com/book", book.id);
-  const changed = saveCollectionItem(collectionInputSchema.parse({ kind: "artwork", title: book.title, images: [] }), book.id, book.revision);
+  const book = await saveCollectionItem(collectionInputSchema.parse({ kind: "book", title: "분류 변경 검증", images: [] }));
+  await prisma.collectionItem.update({ where: { id: book.id }, data: { purchaseUrl: "https://pay.example.com/book", soldOut: true } });
+  const changed = await saveCollectionItem(collectionInputSchema.parse({ kind: "artwork", title: book.title, images: [] }), book.id, book.revision);
   assert.equal(changed.purchaseUrl, "");
   assert.equal(changed.soldOut, false);
 });

@@ -200,7 +200,7 @@ export function MailAdmin() {
       </MenuSelect></FormControl></label>
       <label>제목<FormControl><input value={subject} onChange={(event) => setSubject(event.target.value)} required maxLength={120} disabled={pending} /></FormControl></label>
       <label>내용<FormControl><textarea value={message} onChange={(event) => setMessage(event.target.value)} required rows={6} maxLength={4000} disabled={pending} /></FormControl></label>
-      <div className="button-row"><Button disabled={pending || !eventId}>안내 메일 보내기</Button></div>
+      <div className="button-row"><Button type="submit" disabled={pending || !eventId}>안내 메일 보내기</Button></div>
       {broadcastNote && <p role="status">{broadcastNote}</p>}
       {!meetups.length && report && <p className="muted">결제 완료된 밋업 예약이 없습니다.</p>}
     </form>

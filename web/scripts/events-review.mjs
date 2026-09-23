@@ -10,7 +10,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const directory = join(root, ".local/events-review");
 const file = join(directory, "runtime.json");
 const [command, ...args] = process.argv.slice(2);
-const help = "Usage: npm run review -- <init|import|dev|build|start|check|test> [arguments]\nIsolated SQLite review on http://127.0.0.1:3102. Existing environment files and production data are not used.";
+const help = "Usage: npm run review -- <init|import|dev|build|start|check|test> [arguments]\nLegacy SQLite review fixture on http://127.0.0.1:3102. Import does not populate active PostgreSQL content. Existing environment files and production data are not used.";
 if (!command || command === "--help") { console.log(help); process.exit(0); }
 if (Number(process.versions.node.split(".")[0]) !== 24) { console.error("Use Node 24 for the local review."); process.exit(1); }
 if (command === "init") {

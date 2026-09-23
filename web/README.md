@@ -2,18 +2,16 @@
 
 Next.js 공개 사이트와 한국어 관리 화면입니다. 공개 페이지는 한영·라이트/다크를 지원합니다. 센터 소개, 프로그램, 전시, 방문 후기, 공지와 사진을 관리합니다.
 
-## 기존 DB와 비밀번호
+## 현재 DB와 비밀번호
 
-기존 SQLite `events`, `highlights` 테이블과 ID를 유지합니다. 콘텐츠·운영 상태·관리자 세션은 SQLite, 상품·주문·결제·배송·outbox는 별도 PostgreSQL/Prisma에 저장합니다. SQLite를 PostgreSQL로 이전하지 않습니다. 외부 구매 링크를 가진 collection과 자체 상품 catalog도 별개입니다. SQLite 파일이 없거나 잘못되면 빈 DB를 만들지 않고 오류를 반환하며 새 SQLite 생성은 명시적인 로컬 사본 가져오기에서만 허용합니다.
+행사·하이라이트·공지·컬렉션·후기·운영 상태·관리자 세션과 상품·주문·결제·배송·메일 outbox는 모두 PostgreSQL/Prisma에 저장합니다. SQLite는 이전 콘텐츠의 스냅샷과 로컬 레거시 가져오기 도구에만 사용합니다. 새 PG 테이블은 migration만 실행하면 비어 있으므로 기존 SQLite 데이터는 [운영 절차](../docs/security/operations.md)의 `content:backfill`로 명시적으로 옮기고 검증합니다. 이미 PG에 내용이 있으면 차이를 조사하며 덮어쓰지 않습니다. `collection_items.purchaseUrl`은 과거 데이터에 남아 있을 수 있지만 현재 공개 컬렉션은 전시용이고 자체 Product catalog가 구매 화면입니다.
 
-- `BCS_EVENTS_DB`: SQLite 파일의 절대 경로.
-- `BCS_EVENTS_UPLOADS`: `/images/` 아래 상대 경로에 대응하는 이미지 폴더의 절대 경로.
+- `DATABASE_URL`: PostgreSQL 접속 URL. 비밀 설정 파일에 보관합니다.
+- `BCS_EVENTS_UPLOADS`: `/images/` URL에 대응하는 공용 이미지 폴더의 절대 경로.
 - `ADMIN_PASSWORD_HASH`: 기존 관리자 비밀번호로 만든 scrypt 검증값. 앱은 원문 `ADMIN_PASSWORD`를 받지 않습니다.
 - `APP_ORIGIN`: 사이트의 정확한 HTTPS origin. 루프백 검토 환경에서만 HTTP를 허용합니다.
 - `BCS_PUBLIC_INDEXING`: 정식 공개 시 `true`로 설정합니다. 미설정 시 검색을 차단하며 관리자 경로는 이 설정과 관계없이 차단합니다.
-- `BCS_TRUST_PROXY`: 운영에서 `true`로 설정하고, 외부 접근이 차단된 앱 앞의 nginx가 `X-BCS-Client-IP`를 실제 연결 IP로 덮어써야 합니다. 설정되지 않은 운영 로그인은 거부됩니다.
-- `TRUST_PROXY`: 결제 API도 같은 `X-BCS-Client-IP`를 쓰도록 운영에서 `true`로 설정합니다.
-- commerce 설정과 PostgreSQL·워커 운영은 [운영 절차](../docs/security/operations.md)를 따릅니다. 이미지 저장소 `BCS_EVENTS_UPLOADS`는 콘텐츠와 상품이 공유합니다.
+- `BCS_TRUST_PROXY`와 `TRUST_PROXY`: 운영에서 `true`; nginx가 `X-BCS-Client-IP`를 실제 연결 IP로 덮어써야 합니다.
 
 기존 비밀번호를 변경할 필요 없이 다음 도구로 검증값을 만듭니다. 입력은 화면에 표시되지 않으며 새 비공개 파일(0600)에만 기록합니다. 이 파일의 `ADMIN_PASSWORD_HASH`를 앱에 제공하고 원문 환경변수는 제거합니다.
 
@@ -25,50 +23,28 @@ npm run admin:password -- --output /absolute/private/new-admin-password.env
 
 ## 로컬 검토
 
-Node 24.21.0(`.nvmrc`)과 npm을 사용합니다. nvm을 사용한다면 `web/`에서 `nvm install`, `nvm use`로 버전을 맞춥니다. 기존 `.env`/`.env.local`은 열지 않습니다. 메이저 버전 전환 후에는 기존 `node_modules`를 재사용하지 않고 잠금 파일로 새로 설치합니다.
-
-아래 명령은 `web/`에서 실행합니다. `review -- import`에는 이 작업 환경에 별도로 보관된 공개 콘텐츠 사본이 필요합니다. 새로 복제한 저장소에는 이 사본이 없으므로 담당자에게 로컬 검토용 자료를 받아야 하며, 이 명령을 운영 데이터 이전에 사용하지 않습니다.
+Node 24.21.0(`.nvmrc`)과 npm을 사용합니다. 기존 `.env`/`.env.local`을 열지 않습니다. 메이저 버전 전환 후에는 잠금 파일로 새로 설치합니다. 일반 검사·빌드는 자동 환경 파일 로드를 막는 `__NEXT_PROCESSED_ENV=true`를 지정합니다.
 
 ```sh
 node --version
 npm ci
-npm run review -- init
-npm run review -- import
-npm run review -- check
-npm run review -- build
-npm run review -- start
+__NEXT_PROCESSED_ENV=true npm run check
+__NEXT_PROCESSED_ENV=true npm run build
 ```
 
-공개: `http://127.0.0.1:3102/ko`, 관리: `http://127.0.0.1:3102/ko/admin`.
-지갑 체험: `http://127.0.0.1:3102/ko/experience/wallet`. 기존 `/walletExperence`도 로컬 가이드로 연결합니다.
+전체 화면 검토는 **분리된 PostgreSQL DB**에 migration을 적용하고 보호된 REVIEW 설정 파일을 명시적으로 전달합니다. `DATABASE_URL`, `APP_MODE=review`, `PAYMENT_MODE=review`, `EMAIL_MODE=capture`, 루프백 `APP_ORIGIN`, `DATA_DIR`, 암호화 키, 이미지 루트와 관리자 검증값이 필요합니다. 운영 DB나 결제 조직을 사용하지 않습니다. 이 설정으로 `npm run dev`를 실행하고 공개 `/ko`·`/en`, 관리 `/ko/admin`을 확인합니다. 이전 `review -- init/import`는 로컬 SQLite 검토 사본만 준비하며 현재 PostgreSQL 콘텐츠를 채우지 않습니다.
 
-관리자는 새 글의 URL 슬러그를 지정합니다. 기존 글은 지정 전까지 숫자 주소로 열리며, 지정·변경 후에는 숫자 주소와 과거 슬러그가 최신 주소로 연결됩니다. 영문 소문자·숫자·하이픈을 사용하고 중복 주소는 저장할 수 없습니다. 현장 스케치는 12개씩 페이지를 나누며 `?page=2` 주소로 공유할 수 있습니다.
-로컬 설정은 ignored `.local/events-review/runtime.json`에 생성합니다. 여기의 무작위 비밀번호 원문은 브라우저 테스트용이며 운영 자격 증명이 아닙니다. 검토 실행기는 기존 검토 비밀번호의 해시를 한 번 추가하고 앱 프로세스에는 해시만 전달합니다. 검증된 운영 공개 사본에서 별도 로컬 SQLite·이미지를 만들며 원본은 보존합니다. `init`은 기존 설정을 덮어쓰지 않습니다.
-
-서버를 실행한 상태에서 다음을 실행합니다.
-
-```sh
-npm run review -- test
-npm run test:security
-npm run test:backup
-npm run test:image-optimizer
-npm run audit
-npm run test:release
-```
-
-이미지 처리에는 이전 검증에서 필요했던 Next16.3.4 고정 패치를 유지합니다. 설치 시 원본 해시를 확인하고 요청 중단·용량 제한 회귀를 검사합니다.
-
-`npm ci`의 postinstall, `npm run typecheck`, `npm run build`는 Prisma client를 생성합니다. `prisma.config.ts`는 환경 파일을 읽지 않으며 `db:generate`에는 `DATABASE_URL`도 필요하지 않습니다. 직접 `next build`를 실행하거나 install script를 생략했다면 먼저 `npm run db:generate`를 실행합니다. 기존 환경 파일 자동 로드를 막는 일반 검사·빌드는 `__NEXT_PROCESSED_ENV=true npm run check`와 `__NEXT_PROCESSED_ENV=true npm run build`입니다.
+`npm ci`의 postinstall, `npm run typecheck`, `npm run build`는 Prisma client를 생성합니다. `prisma.config.ts`는 환경 파일을 읽지 않으며 `db:generate`에는 DB 접속이 필요하지 않습니다. `db:seed`는 로컬 데모 상품의 재고를 20으로 되돌리므로 격리된 DB에만 사용합니다.
 
 ## Commerce 로컬 검토
 
-콘텐츠용 `review` 실행기는 commerce 설정을 만들지 않습니다. 테스트 전용 PostgreSQL DB를 따로 준비하고 **명시적 `TEST_DATABASE_URL`**로 `npm run test:commerce`를 실행합니다. 이 테스트는 데이터를 작성·삭제하므로 개발 중인 주문 DB나 공유 sandbox DB를 지정하지 않습니다. 테스트는 REVIEW fixture를 사용하며 네트워크 결제나 이메일을 보내지 않습니다. migration은 해당 테스트 DB에만 적용합니다.
+레거시 SQLite용 `review` 실행기는 PostgreSQL 콘텐츠 설정을 만들지 않습니다. 테스트 전용 PostgreSQL DB를 따로 준비하고 **명시적 `TEST_DATABASE_URL`**로 `npm run test:commerce`를 실행합니다. 이 테스트는 데이터를 작성·삭제하므로 개발 중인 주문 DB나 공유 sandbox DB를 지정하지 않습니다. 테스트는 REVIEW fixture를 사용하며 네트워크 결제나 이메일을 보내지 않습니다. migration은 해당 테스트 DB에만 적용합니다.
 
-전체 화면 검토에는 보호된 새 설정 파일을 명시적으로 Node `--env-file`로 전달합니다. `APP_MODE=review`, `PAYMENT_MODE=review`, `EMAIL_MODE=capture`, 루프백 `APP_ORIGIN`/`DATABASE_URL`, 검토용 `DATA_DIR`·암호화 키·SQLite/업로드 경로가 필요합니다. `db:seed`는 로컬 데모 상품을 만들고 같은 SKU의 재고를 20으로 되돌리므로 테스트 DB에만 사용합니다. 운영에 자동 seed하지 않습니다.
+전체 화면 검토에는 보호된 새 설정 파일을 명시적으로 Node `--env-file`로 전달합니다. `APP_MODE=review`, `PAYMENT_MODE=review`, `EMAIL_MODE=capture`, 루프백 `APP_ORIGIN`/`DATABASE_URL`, 검토용 `DATA_DIR`·암호화 키·업로드 경로가 필요합니다. `db:seed`는 로컬 데모 상품을 만들고 같은 SKU의 재고를 20으로 되돌리므로 테스트 DB에만 사용합니다. 운영에 자동 seed하지 않습니다.
 
 `PAYMENT_MODE=sandbox`는 실제 Zaprite sandbox 조직을 호출하며 별도 승인된 검증에서만 사용합니다. lightning address에는 테스트 네트워크가 없어 live 전용입니다. sandbox 주문 생성/조회가 완료 결제 증거는 아닙니다. 완료된 sandbox 결제와 live lightning 결제는 아직 검증하지 않았습니다.
 
-관리 화면은 기존 관리자 세션을 사용합니다. 설정 파일은 Git에 포함하지 않으며 셸에서 불러오지 않습니다.
+관리 화면은 PostgreSQL 관리자 세션을 사용합니다. 설정 파일은 Git에 포함하지 않으며 셸에서 불러오지 않습니다.
 
 ## 복구 지점
 
@@ -79,20 +55,21 @@ npm run test:release
 현재는 noindex 로컬 검토본입니다. 푸시·배포·GitHub Actions·운영 데이터 변경은 수행하지 않습니다. 루트 Vite/Express 앱과 배포 스크립트는 보존된 레거시이며 보안 개선 대상인 새 서비스의 실행 경로로 사용하지 않습니다. 특히 구버전 API를 같은 도메인에 병행 노출하거나 기존 업로드/배포 스크립트를 실행하지 않습니다.
 
 ## 공지사항
-`/ko/admin/notices`에서 공지를 등록·수정·삭제합니다. 새 공지는 비공개로 저장되며 공개 체크 후 저장하면 `/ko/notices`와 `/en/notices`에 표시됩니다. 영어 제목·본문은 선택이며 미입력 시 한국어를 표시합니다. URL 슬러그를 바꿔도 이전 주소가 연결됩니다. 기존 SQLite에 notices/notice_slugs 테이블만 추가하며 기존 비밀번호와 데이터는 유지합니다.
+`/ko/admin/notices`에서 공지를 등록·수정·삭제합니다. 새 공지는 비공개로 저장되며 공개 체크 후 저장하면 `/ko/notices`와 `/en/notices`에 표시됩니다. 영어 제목·본문은 선택이며 미입력 시 한국어를 표시합니다. URL 슬러그를 바꿔도 이전 주소가 연결됩니다. 공지·slug는 PostgreSQL에 저장합니다.
 
 ## 콘텐츠와 이미지
 
-관리자가 등록하는 후기·행사·현장 스케치·공지·도서·작품은 SQLite에 저장하며 사진은 `BCS_EVENTS_UPLOADS`에 둡니다. 실제 콘텐츠, 수집 사진, DB, 배포용 데이터 묶음은 Git에 넣지 않습니다. 로고·폰트·공간 소개용 고정 사진과 영상은 UI 자산으로 관리합니다. 페이지 조회나 앱 재시작은 콘텐츠를 자동 등록하지 않습니다.
+관리자가 저장하는 콘텐츠는 PostgreSQL에, 업로드 사진은 `BCS_EVENTS_UPLOADS`에 둡니다. 실제 DB·사진·개인 자료는 Git에 넣지 않습니다. `npm run backup -- backup-images`는 이미지 전용 archive를 만들며 PostgreSQL은 별도 `pg_dump`로 보관합니다. 두 산출물의 복구를 같은 배치로 연습합니다. 이전 SQLite용 `npm run backup -- backup`의 성공은 현재 사이트 백업 성공을 뜻하지 않습니다.
 
-후기를 처음 반영할 때는 별도로 받은 `reviews.json`과 `images/` 폴더를 사용합니다. 아래 명령은 환경 파일을 읽지 않으며 `--apply` 없이는 검사만 수행합니다. 운영 반영 전 SQLite와 전체 공용 업로드를 백업하고 `restore-check`를 통과시켜야 합니다. 기존 기록이 다르거나 사진 경로가 충돌하면 덮어쓰지 않고 중단합니다.
+예전 `reviews.json` 번들은 `reviews:import`로 **이전 SQLite 사본**에만 반영할 수 있습니다. 이 도구는 현재 PostgreSQL 사이트에 직접 쓰지 않습니다. 반영한 SQLite 스냅샷을 검증한 뒤 `content:backfill` dry-run, `--apply`, `--verify`로 이관합니다. 이미 PG에서 수정한 콘텐츠와 충돌하면 중단하고 수동 검토합니다. 유료 밋업 참가권은 신규 상품으로 함께 만들고 기존 `meetup-ID` 상품과 충돌하면 중단합니다. 이전 관리자 세션과 로그인 시도는 이관하지 않습니다.
 
 ```sh
-npm run reviews:import -- --bundle /absolute/private/reviews-bundle --db /absolute/events.db --uploads /absolute/images
-npm run reviews:import -- --bundle /absolute/private/reviews-bundle --db /absolute/events.db --uploads /absolute/images --apply
+npm run content:backfill -- --source /absolute/legacy/events.db --images /absolute/legacy/images
+npm run content:backfill -- --source /absolute/legacy/events.db --images /absolute/legacy/images --apply
+npm run content:backfill -- --source /absolute/legacy/events.db --images /absolute/legacy/images --verify
 ```
 
-데이터 형식은 `{version:1,reviews:[{key,...ReviewInput}],selection:{featured_key,home_keys}}`입니다. `key`는 가져오기 묶음의 고유 키이며, 사진 경로 `/images/uploads/example.webp`는 묶음의 `images/uploads/example.webp`에 대응합니다. 수정은 관리자에서 하며 같은 묶음을 다시 적용해도 기록을 중복 생성하지 않습니다.
+이 명령들은 `DATABASE_URL`을 프로세스 환경에서 읽으며 `.env` 파일을 자동 로드하지 않습니다. 운영에서는 보호된 설정 파일을 Node `--env-file`로 명시해 실행합니다. `--verify`는 생성된 밋업 상품·변형의 가격과 초기 재고도 검사합니다. 참가권 주문이 있으면 현재 재고는 주문 원장에 의해 달라질 수 있어 검증이 수동 대조를 요구하며, 반복 `--apply`도 상품을 수정하지 않습니다. 로컬 검증은 별도 `TEST_DATABASE_URL`의 `npm run test:backfill`로 수행합니다.
 
 ### 주문 수동 처리와 환불 기록
 

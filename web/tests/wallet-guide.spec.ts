@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { reviewOrigin } from "./helpers/review-runtime";
 
 const models = ["SeedSigner", "Jade Plus", "Krux", "Keystone 3 Pro", "Coldcard Q", "Coconut Vault"];
 
@@ -76,7 +77,7 @@ test("supports keyboard selection and retry on a small dark reduced-motion scree
   // Given: a phone-size dark screen with reduced motion.
   await page.setViewportSize({ width: 375, height: 812 });
   await page.emulateMedia({ reducedMotion: "reduce", colorScheme: "dark" });
-  await context.addCookies([{ name: "bcs-theme", value: "dark", url: baseURL ?? "http://127.0.0.1:3102" }]);
+  await context.addCookies([{ name: "bcs-theme", value: "dark", url: reviewOrigin(baseURL) }]);
   await page.goto("/ko/experience/wallet");
   await page.getByRole("button", { name: "시작해볼까요?" }).click();
   await page.getByRole("radio", { name: "안드로이드", exact: true }).focus();

@@ -3,20 +3,21 @@ import { randomUUID } from "node:crypto";
 import sharp from "sharp";
 import { z } from "zod";
 import { reviewAdminSchema, reviewRecordSchema, type ReviewRecord } from "@/lib/reviews-contract";
+import { reviewOrigin, reviewRuntime } from "./helpers/review-runtime";
 
 const endpoint = "/api/admin/reviews";
-const origin = "http://127.0.0.1:3102";
+const origin = reviewOrigin();
 const headers = { origin };
 const version = (revision: number) => ({ ...headers, "If-Match": `"${revision}"` });
 const recordInput = ({ id, revision, created_at, updated_at, ...input }: ReviewRecord) => { void id; void revision; void created_at; void updated_at; return input; };
 async function chooseReview(page: import("@playwright/test").Page, label: string, title: string) {
   const field = page.locator("label").filter({ hasText: label });
-  await field.getByRole("button").click();
-  await field.getByRole("option", { name: title }).click();
+  const value = await field.locator("option").filter({ hasText: title }).getAttribute("value");
+  if (!value) throw new Error(`Missing review option for ${label}`);
+  await field.getByRole("combobox").selectOption(value);
 }
 async function login(request: APIRequestContext) {
-  const password = process.env.ADMIN_PASSWORD;
-  if (!password) throw new Error("Run through npm run review -- test.");
+  const password = (await reviewRuntime()).ADMIN_PASSWORD;
   expect((await request.post("/api/admin/login", { headers, data: { password } })).status()).toBe(200);
 }
 async function state(request: APIRequestContext) { return z.object({ data: reviewAdminSchema }).parse(await (await request.get(endpoint)).json()).data; }
@@ -134,7 +135,7 @@ test("admin uploads, publishes, selects, edits and hides a review without rebuil
     await page.getByLabel("공개", { exact: true }).uncheck();
     await page.getByRole("button", { name: "저장", exact: true }).click();
     await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
-    await expect(page.locator("label").filter({ hasText: "후기 페이지 대표" }).getByRole("button")).toContainText("비공개");
+    await expect(page.locator("label").filter({ hasText: "후기 페이지 대표" }).getByRole("combobox").locator("option:checked")).toContainText("비공개");
     expect((await request.get(record.image)).status()).toBe(404);
     expect((await page.request.get(record.image)).status()).toBe(200);
     await page.goto("/ko/reviews");

@@ -1,4 +1,6 @@
 import "server-only";
+import { isEventProduct, requireOrdinaryProduct } from "./event-products";
+import { eventAcceptsTickets, ticketEventId } from "@/server/events/ticket-eligibility";
 import { prisma } from "@/server/db";
 import { collectImagePaths, deleteUnusedImages, placeImagesInSlugFolder, rewriteImagePaths } from "@/server/events/images";
 import { markdownImageReferences } from "@/server/events/image-references";
@@ -18,6 +20,11 @@ export async function listCheckoutProduct(variantId: string) {
     where: { id: variantId, active: true, product: { published: true } },
     include: { product: { include: publicInclude } },
   });
+  const eventId = variant ? ticketEventId(variant.sku) : null;
+  if (eventId !== null) {
+    const event = await prisma.centerEvent.findUnique({ where: { id: eventId } });
+    if (!event || !eventAcceptsTickets(event)) return [];
+  }
   return variant ? [publicProduct(variant.product)] : [];
 }
 
@@ -53,7 +60,7 @@ export async function listAdminProducts() {
     orderBy: { updatedAt: "desc" },
     include: { variants: { orderBy: { sku: "asc" } }, category: true },
   });
-  return products.map((product) => ({
+  return products.filter((product) => !isEventProduct(product)).map((product) => ({
     id: product.id, slug: product.slug, titleKo: product.titleKo, titleEn: product.titleEn,
     descriptionKo: product.descriptionKo, descriptionEn: product.descriptionEn,
     imageUrl: product.imageUrl, images: product.images?.length ? product.images : (product.imageUrl ? [product.imageUrl] : []), published: product.published, memberOnly: product.memberOnly,
@@ -72,6 +79,7 @@ export async function listAdminProducts() {
 }
 
 export async function saveProduct(input: ProductInput, actorId: string, id?: string) {
+  requireOrdinaryProduct(input);
   const previous = id ? await prisma.product.findUnique({ where: { id }, select: { imageUrl: true, images: true, descriptionKo: true, descriptionEn: true } }) : null;
   const rawImages = [...new Set([...(input.images?.length ? input.images : (input.imageUrl ? [input.imageUrl] : [])).slice(0, 12), ...markdownImageReferences(input.descriptionKo), ...markdownImageReferences(input.descriptionEn)])];
   const placed = await placeImagesInSlugFolder("products", input.slug, rawImages);
@@ -84,6 +92,7 @@ export async function saveProduct(input: ProductInput, actorId: string, id?: str
     const current = id ? await tx.product.findUnique({ where: { id }, include: { variants: true } }) : null;
     if (id && !current) throw new HttpError(404, "NOT_FOUND", "상품을 찾을 수 없습니다. / Product not found.");
     if (current) {
+      requireOrdinaryProduct(current);
       // Product first, then SKU order: quote and order creation take the same locks in this order.
       for (const variant of [...current.variants].sort((a, b) => a.sku.localeCompare(b.sku))) {
         await tx.$queryRaw`SELECT id FROM "ProductVariant" WHERE id = ${variant.id} FOR UPDATE`;
@@ -147,8 +156,9 @@ export async function saveProduct(input: ProductInput, actorId: string, id?: str
 export async function archiveProduct(id: string, actorId: string) {
   return prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM "Product" WHERE id = ${id} FOR UPDATE`;
-    const product = await tx.product.findUnique({ where: { id } });
+    const product = await tx.product.findUnique({ where: { id }, include: { variants: true } });
     if (!product) throw new HttpError(404, "NOT_FOUND", "상품을 찾을 수 없습니다. / Product not found.");
+    requireOrdinaryProduct(product);
     await tx.product.update({ where: { id }, data: { published: false } });
     await tx.auditLog.create({ data: { actorId, action: "product.archived", targetType: "Product", targetId: id, summary: { published: false } } });
     return { id, archived: true };

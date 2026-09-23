@@ -1,4 +1,6 @@
 import Database from "better-sqlite3";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "@/generated/prisma/client";
 import { expect, test } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { mkdir } from "node:fs/promises";
@@ -6,6 +8,7 @@ import sharp from "sharp";
 import { z } from "zod";
 import { collectionRecordSchema, type CollectionRecord } from "@/lib/collection-contract";
 import { deleteContentFixture } from "./content-cleanup";
+import { reviewOrigin, reviewRuntime } from "./helpers/review-runtime";
 
 const labels = { book: "도서", goods: "굿즈", boardgame: "보드게임", artwork: "작품" } as const;
 const kinds = ["book", "goods", "boardgame", "artwork"] as const;
@@ -13,9 +16,9 @@ const rowsSchema = z.object({ data: z.array(collectionRecordSchema) });
 const evidence = ".local/events-review/collection-filters";
 
 test("filter motion glides, handles rapid selection and respects reduced motion", async ({ page, baseURL }) => {
-  expect(baseURL).toBe("http://127.0.0.1:3102");
+  expect(baseURL).toBe(reviewOrigin(baseURL));
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  expect((await page.request.post("/api/admin/login", { headers: { origin: baseURL ?? "" }, data: { password: process.env.ADMIN_PASSWORD } })).status()).toBe(200);
+  expect((await page.request.post("/api/admin/login", { headers: { origin: baseURL ?? "" }, data: { password: (await reviewRuntime()).ADMIN_PASSWORD } })).status()).toBe(200);
   await page.goto("/ko/admin/collection");
   const filters = page.getByRole("navigation", { name: "종류별 필터" });
   await expect(filters.getByRole("button", { name: "전체", exact: true })).toHaveAttribute("aria-pressed", "true");
@@ -56,33 +59,39 @@ test("filter motion glides, handles rapid selection and respects reduced motion"
 });
 
 test("kind filters limit purchasing to books and goods and follow saved kind changes", async ({ page, baseURL }) => {
-  expect(baseURL).toBe("http://127.0.0.1:3102");
-  const database = process.env.BCS_EVENTS_DB;
-  if (!database) throw new Error("Run with the isolated review command.");
+  const runtime = await reviewRuntime();
+  expect(baseURL).toBe(runtime.APP_ORIGIN);
   const origin = baseURL ?? "";
   const headers = { origin };
-  expect((await page.request.post("/api/admin/login", { headers, data: { password: process.env.ADMIN_PASSWORD } })).status()).toBe(200);
+  expect((await page.request.post("/api/admin/login", { headers, data: { password: runtime.ADMIN_PASSWORD } })).status()).toBe(200);
   const image = await sharp({ create: { width: 40, height: 60, channels: 3, background: "#ff8000" } }).png().toBuffer();
-  const upload = await page.request.post("/api/admin/images", { headers, multipart: { files: { name: "filter.png", mimeType: "image/png", buffer: image } } });
-  const uploaded = z.object({ data: z.object({ images: z.array(z.string()) }) }).parse(await upload.json());
   const records: CollectionRecord[] = [];
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
   await mkdir(evidence, { recursive: true });
   try {
     for (const kind of kinds) {
+      const upload = await page.request.post("/api/admin/images", { headers, multipart: { files: { name: `filter-${kind}.png`, mimeType: "image/png", buffer: image } } });
+      expect(upload.status()).toBe(200);
+      const uploaded = z.object({ data: z.object({ images: z.array(z.string()) }) }).parse(await upload.json());
       const data = { kind, title: `필터 검증 ${labels[kind]} ${randomUUID()}`, slug: `filter-${randomUUID()}`, images: uploaded.data.images, is_active: 1 };
       const created = await page.request.post("/api/admin/collection", { headers, data });
-      expect(created.status()).toBe(201);
+      expect(created.status(), `${kind}: ${JSON.stringify(await created.json())}`).toBe(201);
       const record = collectionRecordSchema.parse((await created.json()).data);
       records.push(record);
       if (kind === "boardgame" || kind === "artwork") {
         expect((await page.request.post("/api/admin/collection", { headers, data: { ...data, slug: `rejected-${randomUUID()}`, purchaseUrl: "https://pay.example.com/item" } })).status()).toBe(400);
         expect((await page.request.put(`/api/admin/collection/${record.id}`, { headers: { ...headers, "If-Match": `"${record.revision}"` }, data: { ...data, soldOut: true } })).status()).toBe(400);
         expect((await page.request.patch(`/api/admin/collection/${record.id}`, { headers: { ...headers, "If-Match": `"${record.revision}"` }, data: { soldOut: true } })).status()).toBe(400);
-        const db = new Database(database);
-        try { db.prepare("UPDATE collection_items SET purchaseUrl = ?, soldOut = 1 WHERE id = ?").run("https://pay.example.com/legacy", record.id); }
-        finally { db.close(); }
+        if (runtime.DATABASE_URL) {
+          const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: runtime.DATABASE_URL }) });
+          try { await db.collectionItem.update({ where: { id: record.id }, data: { purchaseUrl: "https://pay.example.com/legacy", soldOut: true } }); }
+          finally { await db.$disconnect(); }
+        } else if (runtime.BCS_EVENTS_DB) {
+          const db = new Database(runtime.BCS_EVENTS_DB);
+          try { db.prepare("UPDATE collection_items SET purchaseUrl = ?, soldOut = 1 WHERE id = ?").run("https://pay.example.com/legacy", record.id); }
+          finally { db.close(); }
+        }
         for (const locale of ["ko", "en"]) {
           const path = kind === "boardgame" ? "experience/board-game" : "collection";
           await page.goto(`/${locale}/${path}/${record.slug}`);

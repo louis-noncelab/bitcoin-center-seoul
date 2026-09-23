@@ -41,6 +41,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/goods",
     "/experience/board-game",
     "/reviews",
+    "/business-info",
+    "/privacy-policy",
+    "/terms-of-service",
+    "/refund-policy",
     ...reviews
       .filter((review) => review.slug && review.description)
       .map((review) => `/reviews/${review.slug}`),

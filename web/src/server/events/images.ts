@@ -31,8 +31,7 @@ export function resolveImageFile(publicPath: string): string {
   return candidate;
 }
 
-const imageFolders = ["events", "highlights", "collection", "reviews", "products"] as const;
-export type ImageFolder = (typeof imageFolders)[number];
+export type ImageFolder = "events" | "highlights" | "collection" | "reviews" | "products";
 
 export function rewriteImagePaths(value: string, sources: readonly string[], targets: readonly string[]): string {
   return sources.reduce((text, source, index) => {

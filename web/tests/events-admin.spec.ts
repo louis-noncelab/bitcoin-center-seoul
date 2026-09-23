@@ -1,14 +1,14 @@
 import { deleteContentFixture } from "./content-cleanup";
 import { expectVenue } from "./venue-menu";
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
 import { z } from "zod";
 import { eventRecordSchema, highlightRecordSchema } from "../src/lib/events-contract";
+import { reviewOrigin, reviewRuntime } from "./helpers/review-runtime";
 
 async function login(page: Page) {
-  const { ADMIN_PASSWORD } = z.object({ ADMIN_PASSWORD: z.string() }).parse(JSON.parse(await readFile(new URL("../.local/events-review/runtime.json", import.meta.url), "utf8")));
+  const { ADMIN_PASSWORD } = await reviewRuntime();
   await page.getByLabel("관리자 비밀번호", { exact: true }).fill(ADMIN_PASSWORD);
   await page.getByRole("button", { name: "로그인", exact: true }).click();
   await expect(page.getByRole("heading", { name: "행사 목록", exact: true })).toBeVisible();
@@ -48,7 +48,7 @@ async function expectSmoothFocus(field: Locator) {
 
 for (const theme of ["light", "dark"]) {
   test(`입력 하단 선이 중앙에서 펼쳐지고 모션 감소에서는 즉시 표시된다 · ${theme}`, async ({ page, context, baseURL }) => {
-    await context.addCookies([{ name: "bcs-theme", value: theme, url: baseURL ?? "http://127.0.0.1:3102" }]);
+    await context.addCookies([{ name: "bcs-theme", value: theme, url: reviewOrigin(baseURL) }]);
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/ko/admin");
     await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
@@ -136,7 +136,7 @@ test("행사 등록, 사진 두 장 업로드, 수정, 세션 만료 후 초안 
     await page.getByRole("button", { name: "저장", exact: true }).click();
     await expect(page.getByText("세션이 만료되었습니다. 작성한 내용은 유지됩니다. 다시 로그인한 뒤 저장해 주세요.")).toBeVisible();
     await expect(page.getByLabel("제목 · 한국어", { exact: true })).toHaveValue(title + " 수정");
-    const { ADMIN_PASSWORD } = z.object({ ADMIN_PASSWORD: z.string() }).parse(JSON.parse(await readFile(new URL("../.local/events-review/runtime.json", import.meta.url), "utf8")));
+    const { ADMIN_PASSWORD } = await reviewRuntime();
     await page.getByLabel("관리자 비밀번호", { exact: true }).fill(ADMIN_PASSWORD);
     await page.getByRole("button", { name: "로그인", exact: true }).click();
     await expect(page.getByLabel("관리자 비밀번호", { exact: true })).toHaveCount(0);
@@ -149,7 +149,7 @@ test("행사 등록, 사진 두 장 업로드, 수정, 세션 만료 후 초안 
     const previousUrl = await page.request.get(`/en/programs/${slug}`, { maxRedirects: 0 });
     expect(previousUrl.status()).toBe(308);
     expect(previousUrl.headers().location).toBe(`/en/programs/${slug}-updated`);
-    expect(amended.images).toEqual([...initial.images].reverse());
+    expect(amended.images).toEqual([...initial.images].reverse().map((image) => image.replace(`/${slug}/`, `/${slug}-updated/`)));
     await page.locator(".events-admin-list > li").filter({ hasText: title + " 수정" }).getByRole("button", { name: "삭제", exact: true }).click();
     await page.getByRole("dialog", { name: "항목 삭제", exact: true }).getByRole("button", { name: "삭제", exact: true }).click();
     await expect(page.getByText("삭제했습니다.", { exact: true })).toBeVisible();

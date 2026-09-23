@@ -5,11 +5,13 @@ import { eventRecordSchema } from "../src/lib/events-contract";
 import { centerEventLocation } from "../src/lib/event-location";
 import { deleteContentFixture } from "./content-cleanup";
 import { chooseVenue, expectVenue, venueField } from "./venue-menu";
+import { reviewOrigin, reviewRuntime } from "./helpers/review-runtime";
 
 const events = z.object({ data: z.array(eventRecordSchema) });
 
 test("관리자가 센터 자동 주소와 외부 장소를 전환하고 저장한다", async ({ page, baseURL }, testInfo) => {
-  if (baseURL !== "http://127.0.0.1:3102" || process.env.BCS_EVENTS_REVIEW !== "true" || !process.env.ADMIN_PASSWORD) throw new Error("Use the isolated review runner.");
+  const runtime = await reviewRuntime();
+  if (baseURL !== reviewOrigin(baseURL) || baseURL !== runtime.APP_ORIGIN) throw new Error("Use the isolated review runner.");
   const slug = `venue-${randomUUID()}`;
   const title = `[검토] 장소 ${slug}`;
   const errors: string[] = [];
@@ -17,7 +19,7 @@ test("관리자가 센터 자동 주소와 외부 장소를 전환하고 저장�
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 375, height: 900 });
   await page.goto("/ko/admin");
-  await page.getByLabel("관리자 비밀번호", { exact: true }).fill(process.env.ADMIN_PASSWORD);
+  await page.getByLabel("관리자 비밀번호", { exact: true }).fill(runtime.ADMIN_PASSWORD);
   await page.getByRole("button", { name: "로그인", exact: true }).click();
   await page.getByRole("button", { name: "새 항목 등록", exact: true }).click();
   const venue = venueField(page);

@@ -1,15 +1,15 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
 import { z } from "zod";
 import { eventRecordSchema } from "../src/lib/events-contract";
 import { noticeRecordSchema } from "../src/lib/notices-contract";
+import { reviewRuntime } from "./helpers/review-runtime";
 
 type Photo = { readonly name: string; readonly mimeType: string; readonly buffer: Buffer };
 
 async function signIn(page: Page) {
-  const { ADMIN_PASSWORD } = z.object({ ADMIN_PASSWORD: z.string() }).parse(JSON.parse(await readFile(new URL("../.local/events-review/runtime.json", import.meta.url), "utf8")));
+  const { ADMIN_PASSWORD } = await reviewRuntime();
   await page.getByLabel("관리자 비밀번호", { exact: true }).fill(ADMIN_PASSWORD);
   await page.getByRole("button", { name: "로그인", exact: true }).click();
   await expect(page.getByLabel("관리자 비밀번호", { exact: true })).toHaveCount(0);

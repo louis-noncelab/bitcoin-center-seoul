@@ -72,8 +72,8 @@ export const goodsCopy = {
   en: { title: "Center goods", introduction: "Keep Bitcoin close in everyday life. Center goods and purchasing information.", back: "Back to goods" },
 } as const;
 
-export function ShopPurchaseLink({ locale }: { readonly locale: Locale }) {
-  return <Link href="/shop" locale={locale} className="button" data-variant="primary">{locale === "ko" ? "상점에서 구매" : "Buy in the shop"}</Link>;
+export function ShopBrowseLink({ locale }: { readonly locale: Locale }) {
+  return <Link href="/shop" locale={locale} className="button" data-variant="primary">{locale === "ko" ? "상점 둘러보기" : "Browse the shop"}</Link>;
 }
 
 const sectionCopy = (locale: Locale, section: CollectionSection) =>
@@ -245,7 +245,7 @@ export function CollectionGrid({
                 </div>
               </div>
             </ContentLink>
-            {isPurchasableKind(record.kind) && <div className="collection-purchase"><ShopPurchaseLink locale={locale} /></div>}
+            {isPurchasableKind(record.kind) && <div className="collection-purchase"><ShopBrowseLink locale={locale} /></div>}
           </article>
         );
       })}

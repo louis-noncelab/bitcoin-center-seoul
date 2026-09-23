@@ -1,10 +1,11 @@
 import { expect, test } from "@playwright/test";
+import { reviewOrigin } from "./helpers/review-runtime";
 
 const routes = ["", "/programs", "/experience", "/collection", "/goods", "/news", "/visit"];
 for (const locale of ["ko", "en"] as const) for (const theme of ["light", "dark"] as const) {
-  test(`${locale} ${theme} public pages share the home header and responsive frame`, async ({ page, context }, info) => {
+  test(`${locale} ${theme} public pages share the home header and responsive frame`, async ({ page, context, baseURL }, info) => {
     test.setTimeout(120_000);
-    await context.addCookies([{ name: "bcs-theme", value: theme, url: "http://127.0.0.1:3102" }]);
+    await context.addCookies([{ name: "bcs-theme", value: theme, url: reviewOrigin(baseURL) }]);
     await page.emulateMedia({ reducedMotion: "reduce", colorScheme: theme });
     const measurements = [];
     for (const width of [320, 768, 1440, 1920, 2560]) {

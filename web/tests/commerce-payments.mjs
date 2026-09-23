@@ -103,9 +103,9 @@ test("exchange tickers are rejected unless the quote is fresh", () => {
   const bithumb = { status: "0000", data: { closing_price: "150000000.0000", date: String(now) } };
   assert.equal(parseBithumbRate(bithumb, now).krwPerBtc, "150000000");
   assert.throws(() => parseBithumbRate({ status: "5600", data: {} }, now), (error) => error.code === "RATE_UNAVAILABLE");
-  const cached = { krwPerBtc: "149000000", source: "upbit:KRW-BTC", timestamp: new Date(now - 86_400_000) };
+  const cached = { krwPerBtc: "149000000", source: "upbit:KRW-BTC", timestamp: new Date(now - 300_000) };
   assert.equal(rateFromSources({ krwPerBtc: "150000000", source: "bithumb:BTC_KRW", timestamp: new Date(now) }, cached).source, "bithumb:BTC_KRW");
-  const fallback = rateFromSources(null, cached);
+  const fallback = rateFromSources(null, cached, now);
   assert.equal(fallback.krwPerBtc, "149000000");
   assert.equal(fallback.source, "cache:upbit:KRW-BTC");
   assert.equal(fallback.timestamp.toISOString(), cached.timestamp.toISOString());

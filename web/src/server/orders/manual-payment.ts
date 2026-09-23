@@ -8,6 +8,7 @@ import { scheduleEmailDelivery } from "@/server/email/queue";
 import { openString } from "@/server/privacy";
 import { HttpError } from "@/server/http";
 import { lockPayment } from "@/server/payments/state";
+import { assertLnurlUnpaidResolution } from "@/server/payments/unpaid-resolution";
 import { orderIncludes, orderView, type OrderDetails } from "./projection";
 import { quoteSnapshot } from "./quote";
 
@@ -16,6 +17,10 @@ export const manualPaymentSchema = z.object({
   expectedPaymentUpdatedAt: z.iso.datetime({ offset: true }),
   decision: z.enum(["PAID", "CANCELLED"]),
   reason: z.string().trim().min(1).max(2000),
+  unpaidEvidence: z.object({
+    providerReference: z.string().trim().min(1).max(500),
+    pendingHtlcsCleared: z.literal(true),
+  }).strict().optional(),
 }).strict();
 type ManualPaymentInput = z.infer<typeof manualPaymentSchema>;
 
@@ -60,6 +65,7 @@ export async function resolveManualPayment(orderId: string, input: ManualPayment
     if (payment.orderId !== orderId) throw new HttpError(404, "NOT_FOUND", "주문의 결제를 찾을 수 없습니다.");
     await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${orderId} FOR UPDATE`;
     const order = await tx.order.findUniqueOrThrow({ where: { id: orderId }, include: orderIncludes });
+    if (order.privacyRedactedAt) throw new HttpError(409, "ORDER_REDACTED", "개인정보가 파기된 주문은 변경할 수 없습니다.");
     if (order.payments.length !== 1) throw new HttpError(409, "PAYMENT_CONFLICT", "여러 결제가 연결된 주문은 수동 처리할 수 없습니다.");
     if (order.refundStatus !== "NONE") throw new HttpError(409, "REFUND_IN_PROGRESS", "환불 처리 중이거나 완료된 주문의 입금 상태를 변경할 수 없습니다.");
     const paid = input.decision === "PAID";
@@ -83,6 +89,7 @@ export async function resolveManualPayment(orderId: string, input: ManualPayment
     if (order.status === "PAID" || payment.status === "PAID" || (!paid && (payment.paidAt !== null || payment.status === "PROCESSING"))) {
       throw new HttpError(409, "PAYMENT_RECEIVED", "입금 완료 또는 처리 중인 결제를 미입금 취소할 수 없습니다.");
     }
+    if (!paid) assertLnurlUnpaidResolution(payment, Boolean(input.unpaidEvidence));
     await updateInventory(tx, order, paid);
     if (paid) await restoreCouponUsage(tx, order);
     else await releaseCouponUsage(tx, order.id);
@@ -95,7 +102,7 @@ export async function resolveManualPayment(orderId: string, input: ManualPayment
     await tx.order.update({ where: { id: order.id }, data: { status: input.decision, holdExpiresAt: null } });
     await tx.auditLog.create({ data: {
       actorId, action: "order.payment.manual", targetType: "Order", targetId: order.id,
-      summary: { decision: input.decision, reason: input.reason, paymentId: payment.id, expectedPaymentUpdatedAt: input.expectedPaymentUpdatedAt,
+      summary: { decision: input.decision, reason: input.reason, ...(input.unpaidEvidence ? { unpaidEvidence: input.unpaidEvidence } : {}), paymentId: payment.id, expectedPaymentUpdatedAt: input.expectedPaymentUpdatedAt,
         fromOrderStatus: order.status, fromPaymentStatus: payment.status, toOrderStatus: input.decision, toPaymentStatus },
     } });
     await enqueue(tx, `order:${order.id}:${input.decision}`, openString(order.customerEmail), order.locale === "en" ? "en" : "ko", `order.${input.decision.toLowerCase()}`, { id: order.id, status: input.decision });

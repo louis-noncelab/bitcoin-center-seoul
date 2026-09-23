@@ -174,6 +174,7 @@ export function HomeEventCalendar({ events, locale, today }: Props) {
                         event={event}
                         locale={locale}
                         today={today}
+                        paymentHref={event.paymentHref}
                       />
                     </li>
                   );

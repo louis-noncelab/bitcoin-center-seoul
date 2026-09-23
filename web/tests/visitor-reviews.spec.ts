@@ -3,16 +3,16 @@ import { inspectSlide } from "./disclosure-motion";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { reviewAdminSchema, reviewKinds, reviewRecordSchema } from "@/lib/reviews-contract";
+import { reviewOrigin, reviewRuntime } from "./helpers/review-runtime";
 
 const endpoint = "/api/admin/reviews";
-const headers = { origin: "http://127.0.0.1:3102" };
+const headers = { origin: reviewOrigin() };
 const created: number[] = [];
 let counts = new Map<string, number>();
 let total = 0;
 
 test.beforeAll(async ({ request }) => {
-  const password = process.env.ADMIN_PASSWORD;
-  if (!password) throw new Error("Run through npm run review -- test.");
+  const password = (await reviewRuntime()).ADMIN_PASSWORD;
   expect((await request.post("/api/admin/login", { headers, data: { password } })).status()).toBe(200);
   for (let index = 0; index < 13; index++) {
     const key = randomUUID();
@@ -31,7 +31,7 @@ test.beforeAll(async ({ request }) => {
 
 test.afterAll(async ({ request }) => {
   if (!created.length) return;
-  await request.post("/api/admin/login", { headers, data: { password: process.env.ADMIN_PASSWORD } });
+  await request.post("/api/admin/login", { headers, data: { password: (await reviewRuntime()).ADMIN_PASSWORD } });
   const records = z.object({ data: reviewAdminSchema }).parse(await (await request.get(endpoint)).json()).data.records;
   for (const record of records.filter(record => created.includes(record.id))) {
     expect((await request.delete(`${endpoint}/${record.id}`, { headers: { ...headers, "If-Match": `"${record.revision}"` } })).status()).toBe(200);

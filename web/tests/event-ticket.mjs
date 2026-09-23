@@ -20,5 +20,13 @@ test("center payment is chosen with the external-link toggle off", () => {
 test("ticket stock follows capacity changes without releasing a held seat", () => {
   assert.equal(nextTicketStock(null, 0, 20), 20);
   assert.equal(nextTicketStock({ stockOnHand: 18, reservedStock: 2 }, 20, 25), 23);
-  assert.equal(nextTicketStock({ stockOnHand: 18, reservedStock: 2 }, 20, 1), 2);
+  assert.throws(() => nextTicketStock({ stockOnHand: 18, reservedStock: 2 }, 20, 1), { code: "CAPACITY_BELOW_COMMITMENTS" });
+});
+
+test("rejected capacity reduction preserves the next capacity calculation", () => {
+  // Given: eight sold and two remaining.
+  const stock = { stockOnHand: 2, reservedStock: 0 };
+  // When / Then: an impossible reduction fails; preserving capacity still leaves two seats.
+  assert.throws(() => nextTicketStock(stock, 10, 1), { code: "CAPACITY_BELOW_COMMITMENTS" });
+  assert.equal(nextTicketStock(stock, 10, 10), 2);
 });

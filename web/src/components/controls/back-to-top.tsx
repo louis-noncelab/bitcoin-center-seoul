@@ -4,8 +4,10 @@ import { ArrowUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ActionLink } from "@/components/ui/primitives";
 import type { Locale } from "@/i18n/routing";
+import { usePathname } from "@/i18n/navigation";
 
 export function BackToTop({ locale }: { readonly locale: Locale }) {
+  const pathname = usePathname();
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     const update = () => setVisible(window.scrollY > 0);
@@ -17,6 +19,8 @@ export function BackToTop({ locale }: { readonly locale: Locale }) {
       window.removeEventListener("pageshow", update);
     };
   }, []);
+
+  if (pathname === "/checkout") return null;
 
   return (
     <ActionLink href="#top" variant="quiet" className="back-to-top" data-visible={visible}

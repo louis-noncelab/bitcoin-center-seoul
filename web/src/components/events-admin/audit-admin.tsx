@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/primitives";
-import { adminRequest, errorText } from "./request";
+import { LoginForm } from "./login-form";
+import { adminRequest, AdminRequestError, errorText } from "./request";
 import { CommerceAdminNav } from "./commerce-admin-nav";
 
 const schema = z.object({
@@ -21,14 +22,17 @@ export function AuditAdmin() {
   const [logs, setLogs] = useState<z.infer<typeof schema>["logs"]>([]);
   const [error, setError] = useState("");
   const [pending, setPending] = useState(true);
+  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
 
   async function load() {
     setPending(true);
     setError("");
     try {
       setLogs((await adminRequest("/api/admin/audit-logs", schema)).logs);
+      setAuthenticated(true);
     } catch (caught) {
-      setError(errorText(caught, "ko"));
+      if (caught instanceof AdminRequestError && caught.status === 401) setAuthenticated(false);
+      else setError(errorText(caught, "ko"));
     } finally {
       setPending(false);
     }
@@ -40,15 +44,22 @@ export function AuditAdmin() {
       .then((result) => {
         if (abort.signal.aborted) return;
         setLogs(result.logs);
+        setAuthenticated(true);
         setError("");
       })
       .catch((caught: unknown) => {
         if (abort.signal.aborted) return;
-        setError(errorText(caught, "ko"));
+        if (caught instanceof AdminRequestError && caught.status === 401) setAuthenticated(false);
+        else setError(errorText(caught, "ko"));
       })
       .finally(() => { if (!abort.signal.aborted) setPending(false); });
     return () => abort.abort();
   }, []);
+
+  if (authenticated === null) return error
+    ? <><p className="events-error" role="alert">{error}</p><Button onClick={() => void load()}>다시 시도</Button></>
+    : <p role="status">로그인 확인 중…</p>;
+  if (!authenticated) return <LoginForm locale="ko" onLogin={() => void load()} />;
 
   return <div className="events-admin-workspace">
     <CommerceAdminNav current="/admin/logs" disabled={pending} />

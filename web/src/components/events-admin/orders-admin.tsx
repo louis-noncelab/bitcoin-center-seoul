@@ -163,23 +163,23 @@ export function OrdersAdmin() {
     {loading && <p role="status">주문을 불러오는 중…</p>}
     <ul key={`orders:${query}`} className="events-admin-list" aria-busy={loading}>
       {orders.map((order) => {
-        const step = nextFulfillment(order);
+        const step = order.privacyRedactedAt ? null : nextFulfillment(order);
         const open = openId === order.id;
-        const trackingEditable = order.status === "PAID" && order.refundStatus === "NONE" && order.fulfillment !== "PICKUP" && ["SHIPPED", "DELIVERED"].includes(order.fulfillmentStatus);
+        const trackingEditable = !order.privacyRedactedAt && order.status === "PAID" && order.refundStatus === "NONE" && order.fulfillment !== "PICKUP" && ["SHIPPED", "DELIVERED"].includes(order.fulfillmentStatus);
         return <li key={order.id}>
           <div>
-            <h3>{order.customerName}<span className="muted"> · {sats(order.amountSats)}</span></h3>
+            <h3>{order.privacyRedactedAt ? "개인정보 파기 완료" : order.customerName}<span className="muted"> · {sats(order.amountSats)}</span></h3>
             <p className="muted">
               {orderStatusLabels[order.status]} · {fulfillmentLabels[order.fulfillment]} · {fulfillmentStatusLabels[order.fulfillmentStatus]} · {stamp(order.createdAt)}
             </p>
             <SlideRegion open={open}><div className="events-editor-fields">
               <p className="muted">주문 번호 {order.id}</p>
-              <p>{order.customerEmail}{order.customerPhone && ` · ${order.customerPhone}`}</p>
-              {order.address && <p className="muted">{addressText(order.address)}</p>}
+              {order.privacyRedactedAt ? <p className="muted">{stamp(order.privacyRedactedAt)} 연락처와 배송지 등 일반 개인정보를 파기했습니다. 법정 보존 기록은 별도로 관리합니다.</p> : <p>{order.customerEmail}{order.customerPhone && ` · ${order.customerPhone}`}</p>}
+              {!order.privacyRedactedAt && order.address && <p className="muted">{addressText(order.address)}</p>}
               <ul>{order.items.map((item) => <li key={item.id}>{item.titleKo} · {item.optionLabelKo || item.sku} × {item.quantity} · {sats(item.amountSats)}</li>)}</ul>
               <p className="muted">배송비 {sats(order.shippingAmountSats)}{order.amountKrw ? ` · 주문 시점 ₩${new Intl.NumberFormat("ko").format(BigInt(order.amountKrw))}` : ""}</p>
-              {order.trackingNumber && <p className="muted">{order.carrier} · {order.trackingNumber}</p>}
-              {order.customerNotes && <p>요청 사항: {order.customerNotes}</p>}
+              {!order.privacyRedactedAt && order.trackingNumber && <p className="muted">{order.carrier} · {order.trackingNumber}</p>}
+              {!order.privacyRedactedAt && order.customerNotes && <p>요청 사항: {order.customerNotes}</p>}
               <p className="muted">결제 {order.payments.map((payment) => `${payment.mode}/${payment.status}`).join(", ") || "없음"}</p>
               {(step === "SHIPPED" || trackingEditable) && <div className="events-field-grid">
                 <label>택배사<FormControl><input disabled={blocked || expired} value={shipping[order.id]?.carrier ?? order.carrier ?? ""} maxLength={100} onChange={(event) => updateShipping(order, { carrier: event.target.value })} /></FormControl></label>
@@ -191,8 +191,8 @@ export function OrdersAdmin() {
           </div>
           <div className="button-row">
             <Button variant="quiet" disabled={blocked} onClick={() => setOpenId(open ? null : order.id)} aria-expanded={open}>{open ? "접기" : "자세히"}</Button>
-            {order.confirmationCode && <a className="button" data-variant="secondary" href={`/ko/orders/confirm/${order.confirmationCode}`} target="_blank" rel="noopener noreferrer">{order.items.some((item) => item.sku.startsWith("MEETUP-")) ? "예약 확인" : "주문 확인"}</a>}
-            {order.items.some((item) => item.sku.startsWith("MEETUP-")) && <Link href="/admin/meetups/checkin" locale="ko" className="button" data-variant="quiet">체크인</Link>}
+            {!order.privacyRedactedAt && order.confirmationCode && <a className="button" data-variant="secondary" href={`/ko/orders/confirm/${order.confirmationCode}`} target="_blank" rel="noopener noreferrer">{order.items.some((item) => item.sku.startsWith("MEETUP-")) ? "예약 확인" : "주문 확인"}</a>}
+            {!order.privacyRedactedAt && order.items.some((item) => item.sku.startsWith("MEETUP-")) && <Link href="/admin/meetups/checkin" locale="ko" className="button" data-variant="quiet">체크인</Link>}
             {step && <Button variant="secondary" disabled={blocked || expired} onClick={() => void advance(order, step)}>{fulfillmentStatusLabels[step]}로 변경</Button>}
           </div>
         </li>;

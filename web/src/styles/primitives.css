@@ -195,8 +195,9 @@ button:not(:disabled), summary {
 }
 
 .form-control > .menu-select { inline-size: 100%; }
-.form-control .menu-select-trigger {
+.form-control .menu-select-control {
   padding: calc(var(--space-3) - var(--border-width)) var(--space-3);
+  padding-inline-end: calc(var(--space-4) * 3);
   font-size: var(--text-small);
 }
 .form-control > :is(input, select, textarea) {

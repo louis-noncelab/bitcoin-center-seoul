@@ -5,6 +5,7 @@ import { centerContent } from "@/content/center";
 import { publicNavigation } from "@/content/public-navigation";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
+import { CollaborationTrigger } from "./collaboration-trigger";
 import "@/styles/footer.css";
 
 export function SiteFooter({ locale }: { readonly locale: Locale }) {
@@ -150,14 +151,25 @@ export function SiteFooter({ locale }: { readonly locale: Locale }) {
                 </svg>
               </ActionLink>
             </div>
-            <a href={visit.contact.email.href} className="footer-collaboration">
-              {locale === "ko" ? "협업 제안" : "Propose a collaboration"}
-              <ArrowUpRight className="icon" aria-hidden="true" />
-            </a>
+            <CollaborationTrigger locale={locale} />
           </div>
         </div>
         <div className="footer-bottom">
-          <span lang="en">© Bitcoin Center Seoul</span>
+          <div className="footer-business">
+            <p>{locale === "ko" ? "논스랩 주식회사 · 대표 고덕윤 · 사업자등록번호 568-88-01463" : "Nonce Lab Inc. · CEO Deokyoon Ko · Business registration 568-88-01463"}</p>
+            <p>{locale === "ko" ? "통신판매업 신고번호 제 2022-서울강서-0536" : "Mail-order registration: 2022-Seoul Gangseo-0536"}</p>
+            <address>{locale === "ko" ? "센터 주소: 서울특별시 마포구 신촌로2안길 30, 2층" : "Center address: 2F, 30 Sinchon-ro 2an-gil, Mapo-gu, Seoul 04056"}</address>
+            <p><a href="tel:+8227021718">{locale === "ko" ? "02-702-1718" : "+82 2-702-1718"}</a><span aria-hidden="true"> · </span><a href="mailto:hello@noncelab.com">hello@noncelab.com</a></p>
+          </div>
+          <nav className="footer-legal" aria-label={locale === "ko" ? "사업자 및 법적 안내" : "Business and legal information"}>
+            <ul>
+              <li><Link href="/business-info" locale={locale}>{locale === "ko" ? "사업자정보" : "Business information"}</Link></li>
+              <li><Link href="/privacy-policy" locale={locale}>{locale === "ko" ? "개인정보 처리방침" : "Privacy policy"}</Link></li>
+              <li><Link href="/terms-of-service" locale={locale}>{locale === "ko" ? "이용약관" : "Terms of service"}</Link></li>
+              <li><Link href="/refund-policy" locale={locale}>{locale === "ko" ? "환불 및 반품정책" : "Refund and returns"}</Link></li>
+            </ul>
+          </nav>
+          <span className="footer-copyright" lang="en">© Bitcoin Center Seoul</span>
         </div>
       </div>
       <BackToTop locale={locale} />

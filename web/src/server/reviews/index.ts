@@ -111,7 +111,7 @@ export async function saveReviewSelection(input: ReviewSelectionInput, revision:
       if (!review || review.isActive !== 1) throw new ApiError(400, "REVIEW_UNAVAILABLE", "공개된 후기를 선택해 주세요. 삭제되거나 비공개된 항목이 포함되어 있습니다.");
       if (id === input.featured_id && !review.image) throw new ApiError(400, "COVER_REQUIRED", "대표 후기는 썸네일이 필요합니다.");
     }
-    await tx.reviewSelection.update({ where: { id: 1 }, data: { featuredId: input.featured_id, homeIds: JSON.stringify(input.home_ids) } });
-    return getReviewSelection();
+    const saved = await tx.reviewSelection.update({ where: { id: 1 }, data: { featuredId: input.featured_id, homeIds: JSON.stringify(input.home_ids) } });
+    return reviewSelectionSchema.parse({ featured_id: saved.featuredId, home_ids: JSON.parse(saved.homeIds), revision: saved.revision });
   });
 }

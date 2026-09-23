@@ -20,6 +20,7 @@
 .space-film :is(video, .space-film-poster) { display: block; inline-size: 100%; block-size: 100%; }
 .space-film-poster { position: absolute; inset: 0; }
 .space-film video { position: relative; }
+.space-film[data-frame="false"] video { opacity: 0; }
 .space-film .space-film-toggle { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; padding: 0; border: 0; border-radius: var(--radius); background: transparent; box-shadow: none; transform: none; }
 .space-film:has(.space-film-toggle:focus-visible) { outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); }
 .space-film .space-film-toggle:focus-visible { outline: none; }

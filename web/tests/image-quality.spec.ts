@@ -1,6 +1,10 @@
 import { mkdir, writeFile } from "node:fs/promises";
-import { expect, test } from "@playwright/test";
+import { randomUUID } from "node:crypto";
+import { expect, request, test, type APIRequestContext } from "@playwright/test";
+import sharp from "sharp";
 import { z } from "zod";
+import { deleteContentFixture } from "./content-cleanup";
+import { reviewRuntime } from "./helpers/review-runtime";
 
 const staticPhotos = [
   { path: "/ko", selector: ".home-space-collage img" },
@@ -13,6 +17,57 @@ const staticPhotos = [
 const publicRowsSchema = z.object({
   data: z.array(z.object({ id: z.number().int().positive(), images: z.array(z.string()) })),
 });
+const createdSchema = z.object({ data: z.object({ id: z.number().int().positive() }) });
+const uploadedSchema = z.object({ data: z.object({ images: z.array(z.string()).length(1) }) });
+const fixtureDate = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" }).format(new Date(Date.now() + 7 * 86_400_000));
+
+test.describe("public image crops", () => {
+  let admin: APIRequestContext;
+  let origin: string;
+  let eventId: number | undefined;
+  let highlightId: number | undefined;
+
+  test.beforeAll(async ({ baseURL }) => {
+    const runtime = await reviewRuntime();
+    expect(baseURL).toBe(runtime.APP_ORIGIN);
+    origin = runtime.APP_ORIGIN;
+    admin = await request.newContext({ baseURL: origin, extraHTTPHeaders: { origin } });
+    expect((await admin.post("/api/admin/login", { data: { password: runtime.ADMIN_PASSWORD } })).status()).toBe(200);
+    const image = await sharp({ create: { width: 2400, height: 1600, channels: 3, background: "#f38b28" } }).webp().toBuffer();
+    const upload = async (name: string) => {
+      const response = await admin.post("/api/admin/images", { multipart: { files: { name, mimeType: "image/webp", buffer: image } } });
+      expect(response.status()).toBe(200);
+      return uploadedSchema.parse(await response.json()).data.images[0];
+    };
+    const eventImage = await upload("image-quality-event.webp");
+    const highlightImage = await upload("image-quality-highlight.webp");
+    const slug = `image-quality-${randomUUID()}`;
+    const event = await admin.post("/api/admin/events", { data: {
+      slug, title: "[검토] 이미지 품질 행사", titleEn: "[Review] Image quality event", date: fixtureDate, time: "12:00",
+      venueType: "center", location: "", locationEn: "", description: "합성 검토 이미지", descriptionEn: "Synthetic review image",
+      image: eventImage, images: [eventImage], link: "", tags: [],
+    } });
+    expect(event.status()).toBe(201);
+    eventId = createdSchema.parse(await event.json()).data.id;
+    const highlight = await admin.post("/api/admin/highlights", { data: {
+      slug: `${slug}-highlight`, title: "[검토] 이미지 품질 기록", titleEn: "[Review] Image quality journal", date: fixtureDate,
+      description: "합성 검토 이미지", descriptionEn: "Synthetic review image", image: highlightImage, images: [highlightImage], is_active: 1, tags: [],
+      meta: "", metaEn: "", category: "행사", categoryEn: "Event", startDate: "", endDate: "", host: "", hostEn: "",
+      link: "", icon: "calendar", sort_order: 0,
+    } });
+    expect(highlight.status()).toBe(201);
+    highlightId = createdSchema.parse(await highlight.json()).data.id;
+  });
+
+  test.afterAll(async () => {
+    if (!admin) return;
+    try {
+      if (highlightId) await deleteContentFixture(admin, `/api/admin/highlights/${highlightId}`, origin);
+      if (eventId) await deleteContentFixture(admin, `/api/admin/events/${eventId}`, origin);
+    } finally {
+      await admin.dispose();
+    }
+  });
 
 for (const dpr of [1, 2, 3]) {
   test.describe(`image quality at DPR ${dpr}`, () => {
@@ -77,3 +132,4 @@ for (const dpr of [1, 2, 3]) {
     });
   });
 }
+});

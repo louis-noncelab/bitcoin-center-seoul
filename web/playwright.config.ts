@@ -7,7 +7,7 @@ export default defineConfig({
   retries: 0,
   reporter: "list",
   use: {
-    baseURL: "http://127.0.0.1:3100",
+    baseURL: process.env.COMMERCE_REVIEW_ORIGIN ?? "http://127.0.0.1:3100",
     trace: "off",
     screenshot: "off",
     video: "off",

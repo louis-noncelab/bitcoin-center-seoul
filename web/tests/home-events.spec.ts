@@ -1,20 +1,15 @@
 import { randomUUID } from "node:crypto";
-import { cp, mkdtemp, readFile, rm, symlink } from "node:fs/promises";
+import { cp, mkdtemp, readFile, rm } from "node:fs/promises";
 import { spawn, execFileSync } from "node:child_process";
 import { once } from "node:events";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { expect, request, test, type APIRequestContext, type Locator } from "@playwright/test";
 import { z } from "zod";
 import { eventRecordSchema, type EventRecord } from "../src/lib/events-contract";
+import { reviewRuntime } from "./helpers/review-runtime";
 
-const runtimeSchema = z.object({
-  APP_ORIGIN: z.literal("http://127.0.0.1:3102"),
-  BCS_EVENTS_DB: z.literal(fileURLToPath(new URL("../.local/events-review/events.db", import.meta.url))),
-  ADMIN_PASSWORD: z.string().min(1),
-});
 const eventResponse = z.object({ data: eventRecordSchema });
 const eventsResponse = z.object({ data: z.array(eventRecordSchema) });
 const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" }).format(new Date());
@@ -42,7 +37,7 @@ test.describe.serial("mobile home event discovery", () => {
 
   test.beforeAll(async ({ baseURL }) => {
     // The runtime path and exact origin prevent fixture writes outside the isolated review server.
-    const runtime = runtimeSchema.parse(JSON.parse(await readFile(new URL("../.local/events-review/runtime.json", import.meta.url), "utf8")));
+    const runtime = await reviewRuntime();
     expect(baseURL).toBe(runtime.APP_ORIGIN);
     admin = await request.newContext({ baseURL: runtime.APP_ORIGIN, extraHTTPHeaders: { origin: runtime.APP_ORIGIN } });
     expect((await admin.post("/api/admin/login", { data: { password: runtime.ADMIN_PASSWORD } })).ok()).toBeTruthy();
@@ -95,7 +90,7 @@ test.describe.serial("mobile home event discovery", () => {
       const center = locale === "ko" ? "비트코인 센터 서울" : "Bitcoin Center Seoul";
       for (const [width, theme] of [[320, "light"], [375, "dark"], [768, "light"], [1280, "dark"]] as const) {
         await page.setViewportSize({ width, height: 900 });
-        await context.addCookies([{ name: "bcs-theme", value: theme, url: "http://127.0.0.1:3102" }]);
+        await context.addCookies([{ name: "bcs-theme", value: theme, url: (await reviewRuntime()).APP_ORIGIN }]);
         await page.goto(`/${locale}`);
         await expect(page.locator(`.upcoming-card[href$="${prefix}-2"] .upcoming-meta`)).toHaveCount(0);
         await expect(page.locator(`.upcoming-card[href$="${prefix}-1"] .upcoming-meta`)).toHaveText(external);
@@ -271,15 +266,28 @@ test.describe.serial("mobile home event discovery", () => {
   test("hides the whole upcoming section when an isolated database has only past events", async ({ page, request }) => {
     const directory = await mkdtemp(join(tmpdir(), "bcs-empty-home-"));
     let server: ReturnType<typeof spawn> | undefined;
+    let temporaryDatabase: string | undefined;
+    const runtime = await reviewRuntime();
     try {
       const standalone = join(directory, "server", "web");
       await cp(resolve(".next-events/standalone"), join(directory, "server"), { recursive: true });
-      await symlink(resolve(".next-events/static"), join(standalone, ".next-events/static"));
-      await symlink(resolve("public"), join(standalone, "public"));
       const database = join(directory, "events.db");
-      execFileSync(process.execPath, ["--conditions=react-server", "--import", "tsx", "--input-type=module", "-e",
-        'import { openDatabase } from "./src/server/events/db.ts"; const db = openDatabase(process.argv[1]); db.prepare("INSERT INTO events (title,titleEn,date,time,location,locationEn,description,descriptionEn) VALUES (?,?,?,?,?,?,?,?)").run("지난 행사", "Past event", "2000-01-01", "12:00", "센터", "Center", "지난 행사", "Past event"); db.close();', database],
-      { env: { ...process.env, __NEXT_PROCESSED_ENV: "true" }, stdio: "pipe" });
+      let databaseUrl: string | undefined;
+      if (runtime.DATABASE_URL) {
+        temporaryDatabase = `bcs_home_browser_${randomUUID().replaceAll("-", "")}`;
+        execFileSync("psql", [runtime.DATABASE_URL, "-v", "ON_ERROR_STOP=1", "-c", `CREATE DATABASE "${temporaryDatabase}"`], { stdio: "pipe" });
+        const url = new URL(runtime.DATABASE_URL);
+        url.pathname = `/${temporaryDatabase}`;
+        databaseUrl = url.toString();
+        const schema = execFileSync("pg_dump", ["--schema-only", "--no-owner", "--no-acl", runtime.DATABASE_URL], { stdio: "pipe" });
+        execFileSync("psql", [databaseUrl, "-v", "ON_ERROR_STOP=1"], { input: schema, stdio: "pipe" });
+        execFileSync("psql", [databaseUrl, "-v", "ON_ERROR_STOP=1", "-c", "INSERT INTO center_events (title, \"titleEn\", date, time, location, \"locationEn\", description, \"descriptionEn\") VALUES ('지난 행사', 'Past event', '2000-01-01', '12:00', '센터', 'Center', '지난 행사', 'Past event')"], { stdio: "pipe" });
+        execFileSync("psql", [databaseUrl, "-v", "ON_ERROR_STOP=1", "-c", "INSERT INTO review_selection (id) VALUES (1)"], { stdio: "pipe" });
+      } else {
+        execFileSync(process.execPath, ["--conditions=react-server", "--import", "tsx", "--input-type=module", "-e",
+          'import { openDatabase } from "./src/server/events/db.ts"; const db = openDatabase(process.argv[1]); db.prepare("INSERT INTO events (title,titleEn,date,time,location,locationEn,description,descriptionEn) VALUES (?,?,?,?,?,?,?,?)").run("지난 행사", "Past event", "2000-01-01", "12:00", "센터", "Center", "지난 행사", "Past event"); db.close();', database],
+        { env: { ...process.env, __NEXT_PROCESSED_ENV: "true" }, stdio: "pipe" });
+      }
       const socket = createServer();
       socket.listen(0, "127.0.0.1");
       await once(socket, "listening");
@@ -289,9 +297,10 @@ test.describe.serial("mobile home event discovery", () => {
       const origin = `http://127.0.0.1:${address.port}`;
       server = spawn(process.execPath, [join(standalone, "server.js")], {
         cwd: standalone, stdio: "ignore", env: {
-          PATH: process.env.PATH, NODE_ENV: "production", HOSTNAME: "127.0.0.1", PORT: String(address.port),
-          APP_ORIGIN: origin, BCS_EVENTS_DB: database, BCS_EVENTS_UPLOADS: join(directory, "images"),
-          BCS_EVENTS_REVIEW: "true", BCS_TRUST_PROXY: "false", __NEXT_PROCESSED_ENV: "true",
+          ...process.env, NODE_ENV: "production", HOSTNAME: "127.0.0.1", PORT: String(address.port),
+          APP_ORIGIN: origin, ...(databaseUrl ? { DATABASE_URL: databaseUrl, DATA_DIR: directory } : { BCS_EVENTS_DB: database }),
+          BCS_EVENTS_UPLOADS: join(directory, "images"), BCS_EVENTS_REVIEW: "true",
+          BCS_TRUST_PROXY: "false", __NEXT_PROCESSED_ENV: "true",
         },
       });
       await expect.poll(async () => {
@@ -302,7 +311,8 @@ test.describe.serial("mobile home event discovery", () => {
         }
       }).toBe(200);
       for (const locale of ["ko", "en"]) {
-        await page.goto(`${origin}/${locale}`);
+        const response = await page.goto(`${origin}/${locale}`);
+        expect(response?.status()).toBe(200);
         await expect(page.locator(".home-upcoming")).toHaveCount(0);
         await expect(page.locator(".home-event-calendar")).toBeVisible();
         await expect(page.locator(".home-calendar-empty")).toBeVisible();
@@ -313,6 +323,9 @@ test.describe.serial("mobile home event discovery", () => {
         const exited = once(server, "exit");
         server.kill("SIGTERM");
         await exited;
+      }
+      if (temporaryDatabase && runtime.DATABASE_URL) {
+        execFileSync("psql", [runtime.DATABASE_URL, "-v", "ON_ERROR_STOP=1", "-c", `DROP DATABASE "${temporaryDatabase}" WITH (FORCE)`], { stdio: "pipe" });
       }
       await rm(directory, { recursive: true, force: true });
     }

@@ -105,7 +105,20 @@ test("paid cancellation keeps receipt and stock until external full-refund is re
 test("external refund requires explicit proof, reason, method and restock choice", () => {
   const valid = refundInput({ id: "payment", updatedAt: new Date() });
   assert.equal(externalRefundSchema.safeParse(valid).success, true);
-  for (const invalid of [{ ...valid, proof: " " }, { ...valid, reason: " " }, { ...valid, method: "AUTO" }, { ...valid, restock: undefined }]) assert.equal(externalRefundSchema.safeParse(invalid).success, false);
+  for (const invalid of [{ ...valid, proof: " " }, { ...valid, reason: " " }, { ...valid, method: "AUTO" }, { ...valid, method: "BANK" }, { ...valid, method: "OTHER" }, { ...valid, restock: undefined }]) assert.equal(externalRefundSchema.safeParse(invalid).success, false);
+});
+test("privacy-redacted order cannot enter paid cancellation", async () => {
+  const { order, payment } = await paidOrder();
+  await prisma.order.update({ where: { id: order.id }, data: { privacyRedactedAt: new Date() } });
+  await assert.rejects(cancel(order, payment), (error) => error.code === "PRIVACY_REDACTED");
+  assert.equal(await countAction(order, "order.paid.cancelled"), 0);
+});
+test("privacy-redacted pending refund cannot be marked complete", async () => {
+  const { order, payment } = await paidOrder();
+  await cancel(order, payment);
+  await prisma.order.update({ where: { id: order.id }, data: { privacyRedactedAt: new Date() } });
+  await assert.rejects(refund(order, await reload(payment)), (error) => error.code === "PRIVACY_REDACTED");
+  assert.equal((await orderRow(order)).refundStatus, "PENDING");
 });
 test("concurrent identical paid cancellations are audited once without restoring stock", async () => {
   const { order, payment } = await paidOrder();

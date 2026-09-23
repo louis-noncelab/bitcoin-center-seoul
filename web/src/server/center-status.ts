@@ -8,8 +8,11 @@ import { dataResponse, jsonBody, route } from "@/server/events/http";
 
 export async function getCenterStatus(now = new Date()) {
   const date = seoulDate(now), yesterday = seoulDate(new Date(Date.parse(`${date}T00:00:00+09:00`) - 1));
-  const rows = await prisma.centerEvent.findMany({ where: { venueType: "center" }, select: { date: true, time: true } });
-  const events = rows.filter((row) => [yesterday, date].includes(row.date.trim().replaceAll(".", "-"))) as ScheduledEvent[];
+  const events = await prisma.$queryRaw<ScheduledEvent[]>`
+    SELECT date, time FROM center_events
+    WHERE "venueType" = 'center'
+      AND BTRIM(REPLACE(date, '.', '-')) IN (${yesterday}, ${date})
+  `;
   const exceptions = await prisma.centerOpeningOverride.findMany({ where: { date: { in: [yesterday, date] } } }) as OpeningException[];
   return resolveCenterStatus(now, events, exceptions);
 }

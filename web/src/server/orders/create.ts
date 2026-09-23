@@ -1,4 +1,5 @@
 import "server-only";
+import { ticketEventId } from "@/server/events/ticket-eligibility";
 import { randomBytes, randomUUID } from "node:crypto";
 import { prisma } from "@/server/db";
 import { activePaymentProvider } from "@/server/commerce/settings";
@@ -33,6 +34,11 @@ export async function createOrder(request: Request, input: CreateOrder, account:
     if (quote.expiresAt <= new Date() || quote.order) throw new HttpError(409, "QUOTE_EXPIRED", "Request a fresh quote before continuing.");
     const cart = cartSchema.parse(quote.input);
     const snapshot = quoteSnapshot.parse(quote.snapshot);
+    const eventIds = snapshot.items.flatMap((item) => {
+      const id = ticketEventId(item.sku);
+      return id === null ? [] : [id];
+    });
+    for (const id of [...new Set(eventIds)].sort((a, b) => a - b)) await tx.$queryRaw`SELECT id FROM center_events WHERE id = ${id} FOR UPDATE`;
     for (const id of [...new Set(snapshot.items.map((item) => item.productId))].sort()) await tx.$queryRaw`SELECT id FROM "Product" WHERE id = ${id} FOR UPDATE`;
     for (const item of [...snapshot.items].sort((a, b) => a.sku.localeCompare(b.sku))) await tx.$queryRaw`SELECT id FROM "ProductVariant" WHERE id = ${item.variantId} FOR UPDATE`;
     const variants = await cartProducts(tx, cart, account);

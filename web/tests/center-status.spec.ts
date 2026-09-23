@@ -1,12 +1,35 @@
 import { deleteContentFixture } from "./content-cleanup";
 import { expect, test } from "@playwright/test";
 import Database from "better-sqlite3";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "@/generated/prisma/client";
 import { centerStatusLabels, seoulDate } from "@/lib/center-status";
+import { reviewRuntime } from "./helpers/review-runtime";
+
+async function expiredOverride(runtime: Awaited<ReturnType<typeof reviewRuntime>>, status: "closed" | null) {
+  if (runtime.DATABASE_URL) {
+    const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: runtime.DATABASE_URL }) });
+    try {
+      if (status) await db.centerOpeningOverride.upsert({ where: { date: "2000-01-01" }, create: { date: "2000-01-01", status }, update: { status } });
+      else await db.centerOpeningOverride.deleteMany({ where: { date: "2000-01-01" } });
+    } finally {
+      await db.$disconnect();
+    }
+  } else if (runtime.BCS_EVENTS_DB) {
+    const db = new Database(runtime.BCS_EVENTS_DB);
+    try {
+      if (status) db.prepare("INSERT INTO center_opening_overrides (date, status) VALUES ('2000-01-01', 'closed') ON CONFLICT(date) DO UPDATE SET status = 'closed'").run();
+      else db.prepare("DELETE FROM center_opening_overrides WHERE date = '2000-01-01'").run();
+    } finally {
+      db.close();
+    }
+  }
+}
 
 test("automatic status and daily exceptions keep authentication, live updates and Seoul expiry", async ({ page, request, baseURL }) => {
-  const password = process.env.ADMIN_PASSWORD;
-  const databasePath = process.env.BCS_EVENTS_DB;
-  if (!password || !databasePath || process.env.BCS_EVENTS_REVIEW !== "true") throw new Error("Use the isolated review runner.");
+  const runtime = await reviewRuntime();
+  const password = runtime.ADMIN_PASSWORD;
+  if (baseURL !== runtime.APP_ORIGIN) throw new Error("Use the isolated review runner.");
   const headers = { origin: baseURL ?? "" };
   await page.setViewportSize({ width: 1440, height: 1000 });
   expect(seoulDate(new Date("2026-12-31T14:59:59Z"))).toBe("2026-12-31");
@@ -51,8 +74,7 @@ test("automatic status and daily exceptions keep authentication, live updates an
     await expect(page.locator(".operating-status:visible")).toHaveAttribute("data-status", automatic.status);
     await page.locator(".operating-status:visible").click();
     await expect(page).toHaveURL("/ko/visit");
-    const db = new Database(databasePath);
-    try { db.prepare("INSERT INTO center_opening_overrides (date, status) VALUES ('2000-01-01', 'closed') ON CONFLICT(date) DO UPDATE SET status = 'closed'").run(); } finally { db.close(); }
+    await expiredOverride(runtime, "closed");
     await page.goto("/en");
     await expect(page.locator(".operating-status:visible")).toHaveAttribute("data-status", automatic.status);
     expect((await (await request.get("/api/center-status")).json()).data.override).toBe(null);
@@ -70,8 +92,7 @@ test("automatic status and daily exceptions keep authentication, live updates an
     await page.request.post("/api/admin/login", { headers, data: { password } });
     if (eventId) await deleteContentFixture(page.request, `/api/admin/events/${eventId}`, baseURL ?? "");
     expect((await page.request.put("/api/admin/center-status", { headers, data: { override: saved.override } })).status()).toBe(200);
-    const db = new Database(databasePath);
-    try { db.prepare("DELETE FROM center_opening_overrides WHERE date = '2000-01-01'").run(); } finally { db.close(); }
+    await expiredOverride(runtime, null);
   }
 });
 

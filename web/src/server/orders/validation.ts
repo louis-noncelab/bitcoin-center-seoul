@@ -1,11 +1,20 @@
 import { z } from "zod";
+import { callingCodes } from "@/lib/phone-countries";
+
+const dialPrefixes = [...new Set(Object.values(callingCodes))].sort((a, b) => b.length - a.length);
 
 export const identifier = z.string().min(1).max(100).regex(/^[A-Za-z0-9_-]+$/);
 export const localeSchema = z.enum(["ko", "en"]);
 export const customerSchema = z.object({
   name: z.string().trim().min(1).max(100),
   email: z.email().max(254).transform((value) => value.toLowerCase()),
-  phone: z.string().trim().max(40).regex(/^[+0-9() .-]*$/).default(""),
+  phone: z.string().trim().max(40).regex(/^\+?[0-9() .-]*$/).refine((value) => {
+    if (!value) return true;
+    const digits = value.replace(/\D/g, "");
+    if (!value.startsWith("+")) return digits.length >= 6;
+    const prefix = dialPrefixes.find((item) => digits.startsWith(item));
+    return prefix !== undefined && digits.length - prefix.length >= 6;
+  }, "Enter a phone number with at least six national digits.").default(""),
 }).strict();
 export const cartSchema = z.object({
   items: z.array(z.object({ variantId: identifier, quantity: z.number().int().min(1).max(100) }).strict()).min(1).max(30),

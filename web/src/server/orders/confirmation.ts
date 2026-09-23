@@ -4,10 +4,10 @@ import { paidOnlineSessions } from "@/server/events";
 import { HttpError } from "@/server/http";
 import { orderIncludes, orderView } from "./projection";
 
-const codePattern = /^[a-f0-9]{24}$/;
+export const confirmationCodePattern = /^[a-f0-9]{24}$/;
 
 export async function confirmationByCode(code: string) {
-  if (!codePattern.test(code)) throw new HttpError(404, "NOT_FOUND", "확인 페이지를 찾을 수 없습니다. / Confirmation not found.");
+  if (!confirmationCodePattern.test(code)) throw new HttpError(404, "NOT_FOUND", "확인 페이지를 찾을 수 없습니다. / Confirmation not found.");
   const order = await prisma.order.findUnique({ where: { confirmationCode: code }, include: orderIncludes });
   if (!order) throw new HttpError(404, "NOT_FOUND", "확인 페이지를 찾을 수 없습니다. / Confirmation not found.");
   const view = orderView(order);

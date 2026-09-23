@@ -48,7 +48,7 @@ export default async function ProductPage({ params }: Props) {
     <ProductJsonLd locale={locale} product={product} />
     <article className="commerce-product-page">
       <div className={`commerce-detail-grid${images.length ? "" : " commerce-detail-grid--without-image"}`}>
-        <ProductGallery images={images} name={title} />
+        {images.length > 0 ? <ProductGallery images={images} name={title} locale={locale} /> : null}
         <ProductPurchase product={product} locale={locale} title={title}>
           {category ? <p className="caption">{category}</p> : null}
           <p className="commerce-product-description">{ko ? product.descriptionKo : product.descriptionEn}</p>

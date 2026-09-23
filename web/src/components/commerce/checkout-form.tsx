@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { FormField, FormNotice } from "@/components/ui/form-field";
 import { SlideRegion } from "@/components/ui/slide-region";
 import "@/styles/slide-region.css";
+import "@/styles/checkout-contact-address.css";
 import { Button, ChoiceControl } from "@/components/ui/primitives";
 import { ApiError, apiRequest, jsonRequest } from "@/lib/api-client";
 import { centerContent } from "@/content/center";
@@ -135,6 +136,11 @@ export function CheckoutForm({ locale, items, countries, fromCart }: {
         </FormField>
       </fieldset>
       <RequestError error={error} locale={locale} returnTo={returnTo} />
+      <nav className="commerce-checkout-policies" aria-label={ko ? "주문 관련 정책" : "Order policies"}>
+        <Link href="/terms-of-service" locale={locale} target="_blank" rel="noopener noreferrer">{ko ? "이용약관" : "Terms of service"}<span className="sr-only">{ko ? " (새 창)" : " (new window)"}</span></Link>
+        <Link href="/privacy-policy" locale={locale} target="_blank" rel="noopener noreferrer">{ko ? "개인정보 처리방침" : "Privacy policy"}<span className="sr-only">{ko ? " (새 창)" : " (new window)"}</span></Link>
+        <Link href="/refund-policy" locale={locale} target="_blank" rel="noopener noreferrer">{ko ? "환불 및 반품정책" : "Refund and return policy"}<span className="sr-only">{ko ? " (새 창)" : " (new window)"}</span></Link>
+      </nav>
       <div className="form-actions">
         <Button type="submit" className="commerce-pay" disabled={pending || quoting || !quote || !allowed.length || !shippingAvailable}>{pending ? (ko ? "결제 화면으로 이동 중…" : "Opening payment…") : (ko ? "결제하기" : "Pay")}</Button>
       </div>
