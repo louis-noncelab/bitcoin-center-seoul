@@ -14,6 +14,7 @@ Object.assign(process.env, {
 const { prisma } = await import("../src/server/db.ts");
 const { makeQuote } = await import("../src/server/orders/quote.ts");
 const { createOrder } = await import("../src/server/orders/create.ts");
+const { checkoutPolicyVersion } = await import("../src/server/orders/checkout-policy.ts");
 const { setMeetupCheckin } = await import("../src/server/orders/checkin.ts");
 const { rateFromSources } = await import("../src/server/money.ts");
 const { ensureInvoice, reconcilePayment } = await import("../src/server/payments/index.ts");
@@ -56,7 +57,7 @@ async function issuedOrder() {
     origin: "http://127.0.0.1:3100", "idempotency-key": randomUUID(), "x-request-secret": randomBytes(32).toString("base64url"),
     cookie: `bcs_quote_${quote.id}=${token}`,
   } });
-  const { order } = await createOrder(request, { quoteId: quote.id, customer: { name: "Tester", email: `${prefix}@example.invalid`, phone: "" }, locale: "en" }, null);
+  const { order } = await createOrder(request, { quoteId: quote.id, customer: { name: "Tester", email: `${prefix}@example.invalid`, phone: "" }, locale: "en", acceptance: { accepted: true, version: checkoutPolicyVersion("en") } }, null);
   orders.push(order.id);
   const payment = await prisma.payment.findFirstOrThrow({ where: { orderId: order.id } });
   return { order, payment: await ensureInvoice(payment.id) };

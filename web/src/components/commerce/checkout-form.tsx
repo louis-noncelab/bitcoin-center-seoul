@@ -9,6 +9,7 @@ import "@/styles/checkout-contact-address.css";
 import { Button, ChoiceControl } from "@/components/ui/primitives";
 import { ApiError, apiRequest, jsonRequest } from "@/lib/api-client";
 import { centerContent } from "@/content/center";
+import { checkoutDisclosure } from "@/content/checkout-disclosure";
 import type { Locale } from "@/i18n/routing";
 import { quoteRequestBody, sharedFulfillments } from "./cart";
 import { getCartItems, removePurchasedCartItems } from "./cart-store";
@@ -20,8 +21,9 @@ import { RequestError } from "./request-error";
 import { constraintError, FieldError, fieldError } from "./field-error";
 import { fulfillmentLabels, submissionHeaders } from "./format";
 
-export function CheckoutForm({ locale, items, countries, fromCart }: {
+export function CheckoutForm({ locale, policyVersion, items, countries, fromCart }: {
   readonly locale: Locale;
+  readonly policyVersion: string;
   readonly items: readonly { readonly variantId: string; readonly quantity: number; readonly product: Product }[];
   readonly countries: Countries;
   readonly fromCart: boolean;
@@ -103,6 +105,7 @@ export function CheckoutForm({ locale, items, countries, fromCart }: {
           quoteId: quote.id,
           customer: { name: data.get("name"), email: data.get("email"), phone: data.get("phone") },
           locale,
+          acceptance: { accepted: data.get("acceptance") === "on", version: policyVersion },
           ...(notes ? { notes } : {}),
           ...(fulfillment === "PICKUP" ? {} : { address: { countryCode: country, postalCode: data.get("postalCode"), region: data.get("region"), city: data.get("city"), line1: data.get("line1"), line2: data.get("line2") } }),
         }), headers });
@@ -136,11 +139,21 @@ export function CheckoutForm({ locale, items, countries, fromCart }: {
         </FormField>
       </fieldset>
       <RequestError error={error} locale={locale} returnTo={returnTo} />
+      <section className="form-stack" aria-labelledby="checkout-policy-heading">
+        <h2 id="checkout-policy-heading">{ko ? "결제 전 확인할 조건" : "Terms to review before payment"}</h2>
+        <ul className="commerce-checkout-disclosure">{checkoutDisclosure[locale].map((item) => <li key={item}>{item}</li>)}</ul>
+      </section>
       <nav className="commerce-checkout-policies" aria-label={ko ? "주문 관련 정책" : "Order policies"}>
         <Link href="/terms-of-service" locale={locale} target="_blank" rel="noopener noreferrer">{ko ? "이용약관" : "Terms of service"}<span className="sr-only">{ko ? " (새 창)" : " (new window)"}</span></Link>
         <Link href="/privacy-policy" locale={locale} target="_blank" rel="noopener noreferrer">{ko ? "개인정보 처리방침" : "Privacy policy"}<span className="sr-only">{ko ? " (새 창)" : " (new window)"}</span></Link>
         <Link href="/refund-policy" locale={locale} target="_blank" rel="noopener noreferrer">{ko ? "환불 및 반품정책" : "Refund and return policy"}<span className="sr-only">{ko ? " (새 창)" : " (new window)"}</span></Link>
       </nav>
+      <label className="commerce-choice">
+        <ChoiceControl id="checkout-acceptance" type="checkbox" name="acceptance" required aria-invalid={error instanceof ApiError && Boolean(error.fields.acceptance)} aria-describedby={error instanceof ApiError && error.fields.acceptance ? "checkout-acceptance-error" : undefined} />
+        <span>{ko ? "이용약관과 환불 및 반품정책을 확인하고 동의합니다. (필수)" : "I have reviewed and agree to the Terms of Service and Refund and Return Policy. (Required)"}</span>
+      </label>
+      {error instanceof ApiError && error.fields.acceptance && <p id="checkout-acceptance-error" className="commerce-field-error">{ko ? "약관과 환불정책에 동의해 주세요." : "Agree to the terms and refund policy."}</p>}
+      {error instanceof ApiError && error.code === "POLICY_STALE" && <Button onClick={() => window.location.reload()}>{ko ? "변경된 정책 다시 확인" : "Review updated policies"}</Button>}
       <div className="form-actions">
         <Button type="submit" className="commerce-pay" disabled={pending || quoting || !quote || !allowed.length || !shippingAvailable}>{pending ? (ko ? "결제 화면으로 이동 중…" : "Opening payment…") : (ko ? "결제하기" : "Pay")}</Button>
       </div>

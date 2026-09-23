@@ -8,7 +8,7 @@ import { ContentTags } from "@/components/site/content-tags";
 import { EventsCalendar } from "@/components/site/events-calendar";
 import { EventBookingLink } from "@/components/site/event-booking-link";
 import { eventBookingHref } from "@/lib/event-booking";
-import { eventListLocation } from "@/lib/event-location";
+import { eventListLocation, eventTimeZoneLabel } from "@/lib/event-location";
 import { seoulDate } from "@/lib/center-status";
 import type { Locale } from "@/i18n/routing";
 
@@ -47,7 +47,7 @@ function EventMeta({ event, locale }: { readonly event: EventRecord; readonly lo
   return (
     <div className="event-meta">
       {event.date && <span><CalendarDays className="icon" aria-hidden="true" />{dateLabel(event.date, locale)}</span>}
-      {event.time && <span><Clock3 className="icon" aria-hidden="true" />{event.time}</span>}
+      {event.time && <span><Clock3 className="icon" aria-hidden="true" /><span>{event.time} <span className="muted">{eventTimeZoneLabel(locale)}</span></span></span>}
       {location && <span><MapPin className="icon" aria-hidden="true" />{location}</span>}
       {event.isOnline && <span className="muted">{locale === "en" ? "The join link arrives after payment, on the confirmation page and in the email." : "참여 링크는 결제 후 확인 페이지와 메일로 보내 드립니다."}</span>}
     </div>
@@ -87,6 +87,7 @@ export function EventsCatalog({ events, locale, today, paymentHrefs = {} }: { re
     <div className="events-catalog" id="events">
       <EventsCalendar dates={days.map(({ date, events }) => ({ date, count: events.length }))} locale={locale} today={today} />
       <div className="events-timeline">
+        <p className="caption muted">{locale === "ko" ? `행사 일정은 ${eventTimeZoneLabel(locale)} 기준입니다.` : `Event times are shown in ${eventTimeZoneLabel(locale)}.`}</p>
         <EventGroup id="upcoming-events" days={upcoming} locale={locale} today={today} paymentHrefs={paymentHrefs} title={locale === "ko" ? "다가오는 행사" : "Upcoming events"} empty={locale === "ko" ? "예정된 행사가 없습니다." : "There are no upcoming events."} />
         {past.length > 0 && <EventGroup id="past-events" days={past} locale={locale} today={today} paymentHrefs={paymentHrefs} title={locale === "ko" ? "지난 행사" : "Past events"} />}
       </div>

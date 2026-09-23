@@ -158,7 +158,9 @@ export function SiteFooter({ locale }: { readonly locale: Locale }) {
           <div className="footer-business">
             <p>{locale === "ko" ? "논스랩 주식회사 · 대표 고덕윤 · 사업자등록번호 568-88-01463" : "Nonce Lab Inc. · CEO Deokyoon Ko · Business registration 568-88-01463"}</p>
             <p>{locale === "ko" ? "통신판매업 신고번호 제 2022-서울강서-0536" : "Mail-order registration: 2022-Seoul Gangseo-0536"}</p>
-            <address>{locale === "ko" ? "센터 주소: 서울특별시 마포구 신촌로2안길 30, 2층" : "Center address: 2F, 30 Sinchon-ro 2an-gil, Mapo-gu, Seoul 04056"}</address>
+            <p><a href="https://www.ftc.go.kr/bizCommPop.do?wrkr_no=5688801463" target="_blank" rel="noopener noreferrer">{locale === "ko" ? "공정거래위원회 사업자정보 확인" : "Verify business registration with the KFTC"}<span className="sr-only">{locale === "ko" ? " (새 창)" : " (new window)"}</span></a></p>
+            <address>{locale === "ko" ? "사업장 및 센터 주소: 서울특별시 마포구 신촌로2안길 30, 2층" : "Registered business and Center address: 2F, 30 Sinchon-ro 2an-gil, Mapo-gu, Seoul 04056"}</address>
+            <p>{locale === "ko" ? "호스팅 서비스: Amazon Web Services (AWS), 서울 리전" : "Hosting service: Amazon Web Services (AWS), Seoul Region"}</p>
             <p><a href="tel:+8227021718">{locale === "ko" ? "02-702-1718" : "+82 2-702-1718"}</a><span aria-hidden="true"> · </span><a href="mailto:hello@noncelab.com">hello@noncelab.com</a></p>
           </div>
           <nav className="footer-legal" aria-label={locale === "ko" ? "사업자 및 법적 안내" : "Business and legal information"}>

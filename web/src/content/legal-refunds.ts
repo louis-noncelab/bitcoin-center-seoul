@@ -12,8 +12,25 @@ export const refundPolicy: Record<Locale, LegalDocument> = {
         paragraphs: ["주문번호, 구매자 이름, 연락 가능한 이메일, 취소·반품 사유를 hello@noncelab.com으로 보내 주세요. 상품 하자나 오배송은 사진을 함께 보내면 확인에 도움이 됩니다. 센터가 반송 방법과 다음 절차를 안내합니다. 센터의 사전 승인은 법정 청약철회의 요건이 아닙니다. 비트코인 수취 정보는 환급 방법을 합의한 뒤 별도로 확인합니다."],
       },
       {
+        heading: "1-1. 환급 권한과 수취 정보 확인",
+        paragraphs: ["도용·중복 환급을 방지하기 위해 회사는 주문·결제 내역과 신청자의 환급 권한을 확인하는 데 필요한 최소한의 자료를 요청할 수 있습니다. 주문번호, 결제 식별정보, 주문 시 등록한 연락처를 통한 확인 등으로 가능한지 먼저 검토하며, 불필요한 신분증 사본·주민등록번호·개인키·복구 문구를 요구하지 않습니다.", "환급 수취 주소나 인보이스를 보내기 전에 네트워크·유효기간·금액을 확인해 주세요. 제3자 수취 주소로 변경하는 요청에는 도용 방지를 위한 추가 확인을 할 수 있습니다. 회사는 합의한 정보대로 정확히 송금해야 하며, 이용자가 제공한 수취 정보 오류가 있는 경우의 책임은 각 당사자의 귀책사유와 법령에 따라 정합니다. 이 확인 절차가 법정 청약철회의 효력 발생, 환급 기한 또는 법정 입증책임을 바꾸지는 않습니다."],
+      },
+      {
+        heading: "1-2. 반품 배송지와 연락처",
+        bullets: ["수령인: 비트코인 센터 서울", "반품 주소: 04056 서울특별시 마포구 신촌로2안길 30, 2층", "전화: 02-702-1718", "이메일 문의: hello@noncelab.com", "이용 택배사: CJ대한통운"],
+        paragraphs: ["반품 수거·발송 방법은 전화나 이메일로 문의해 주세요. 상품과 함께 주문번호를 알려 주시면 확인에 도움이 됩니다. CJ대한통운 이외의 택배사를 이용했다는 이유만으로 법정 청약철회 권리를 제한하지 않습니다."],
+      },
+      {
         heading: "2. 상품 청약철회와 반품",
         paragraphs: ["통신판매로 구매한 상품은 원칙적으로 계약 내용을 받은 날부터 7일 이내에 청약철회를 요청할 수 있으며, 상품을 더 늦게 받은 경우에는 그날부터 계산합니다. 표시·광고 또는 계약 내용과 다르게 공급된 경우에는 상품을 받은 날부터 3개월 이내이면서 그 사실을 안 날 또는 알 수 있었던 날부터 30일 이내에 요청할 수 있습니다.", "상품의 훼손·사용 등으로 법령상 청약철회가 제한되는 경우에는 해당 법령과 구매 전 고지된 조건을 따릅니다. 내용 확인을 위한 포장 훼손만으로 권리를 제한하지 않습니다. 단순 변심으로 인한 반송비는 관련 법령과 주문 시 표시된 조건에 따라 구매자가 부담할 수 있으며, 하자·오배송으로 인한 반송비는 센터가 부담합니다. 법정 청약철회에 별도 위약금이나 취소 수수료를 부과하지 않습니다."],
+      },
+      {
+        heading: "2-1. 청약철회 제한과 교환",
+        paragraphs: ["이용자에게 책임이 있는 상품의 멸실·훼손, 사용 또는 일부 소비로 인한 현저한 가치 감소, 시간이 지나 재판매가 곤란할 정도의 가치 감소, 복제가 가능한 상품의 포장 훼손 등에는 법령상 요건을 충족할 때 청약철회가 제한될 수 있습니다. 법령이 요구하는 제한 사실의 명확한 표시 등 사전 조치를 하지 않았다면 해당 제한을 적용하지 않습니다. 도서라는 이유만으로 반품을 일괄 거절하지 않으며, 내용 확인을 위한 포장 훼손의 예외와 하자·오배송에 관한 권리는 유지됩니다.", "교환을 원하면 같은 문의 창구로 접수해 주세요. 상품 상태·재고와 요청 사유를 확인하여 가능한 방법과 배송비 부담을 안내합니다. 교환 재고가 없거나 합의되지 않더라도 법정 반품·환급 권리는 유지됩니다. 반송지는 위 반품 배송지를 확인해 주세요."],
+      },
+      {
+        heading: "2-2. 반송비와 반환 상품",
+        paragraphs: ["단순 변심 반품의 반환에 필요한 배송비는 법령과 구매 전 표시한 조건에 따라 구매자가 부담합니다. 하자·오배송 또는 표시·광고·계약 내용과 다르게 공급된 상품의 반품비는 회사가 부담하며, 회사가 더 유리한 조건을 약속했다면 그 약속을 따릅니다. 재입고비·검수비·행정 처리비를 별도 위약금으로 부과하지 않고, 무료배송 상품이라는 이유만으로 일률적인 왕복 배송비를 청구하지 않습니다.", "반환 대상 상품과 함께 제공된 구성품을 가능한 한 함께 포장하고 반송 중 훼손을 방지해 주세요. 구성품 누락이나 사용 흔적을 확인하면 실제 상태와 법정 철회 제한 요건에 따라 처리하며, 정상적인 내용 확인을 위한 개봉이나 정당한 청약철회만으로 환불을 거절하지 않습니다. 추가 비용을 청구할 경우 실제 발생 금액과 법적·계약상 근거를 안내합니다."],
       },
       {
         heading: "3. 유료 행사",
@@ -25,7 +42,7 @@ export const refundPolicy: Record<Locale, LegalDocument> = {
       },
       {
         heading: "5. 분쟁과 문의",
-        paragraphs: ["취소·반품·환급에 이견이 있으면 먼저 센터로 문의해 주세요. 관련 법령에 따른 소비자 분쟁 해결 절차를 이용할 권리는 유지됩니다. 전화는 02-702-1718, 이메일은 hello@noncelab.com입니다."],
+        paragraphs: ["취소·반품·환급에 이견이 있으면 센터로 문의해 주세요. 전화는 02-702-1718, 이메일은 hello@noncelab.com입니다. 1372 소비자상담센터, 한국소비자원(www.kca.go.kr)의 피해구제·분쟁조정 또는 전자문서·전자거래분쟁조정위원회(www.ecmc.or.kr)의 조정을 이용할 수 있습니다. 사전 협의·조정을 거치지 않았다는 이유로 소송 등 법정 권리를 제한하지 않습니다. 준거법과 관할은 이용약관의 해당 조항과 강행 법규를 따릅니다."],
       },
     ],
   },
@@ -39,8 +56,25 @@ export const refundPolicy: Record<Locale, LegalDocument> = {
         paragraphs: ["Email hello@noncelab.com with your order number, purchaser name, contact email, and reason for the request. Photographs can help us review a defect or incorrect shipment. The Center will explain the return method and next steps. The Center's prior approval is not a condition for statutory withdrawal. Bitcoin receiving details will be confirmed separately after agreeing how a refund will be made."],
       },
       {
+        heading: "1-1. Refund entitlement and receiving details",
+        paragraphs: ["To prevent impersonation or duplicate refunds, the Company may request only information necessary to verify the order, payment, and applicant's entitlement. It first considers verification through order numbers, payment references, and the contact details supplied with the order. It does not request unnecessary identity-document copies, resident registration numbers, private keys, or recovery phrases.", "Check the network, expiry, and amount before providing a receiving address or invoice. A request to switch to a third-party recipient may require additional anti-fraud verification. The Company must send accurately according to the agreed details; responsibility for incorrect receiving details is determined by each party's fault and applicable law. Verification does not alter the effectiveness of statutory withdrawal, statutory refund deadlines, or statutory burdens of proof."],
+      },
+      {
+        heading: "1-2. Return address and contact details",
+        bullets: ["Recipient: Bitcoin Center Seoul", "Return address: 2F, 30 Sinchon-ro 2an-gil, Mapo-gu, Seoul 04056, Republic of Korea", "Telephone: +82 2-702-1718", "Email inquiries: hello@noncelab.com", "Courier: CJ Logistics (CJ대한통운)"],
+        paragraphs: ["Contact us by telephone or email for collection and dispatch instructions. Including the order number with your return helps us identify it. Using a courier other than CJ Logistics does not by itself restrict statutory withdrawal rights."],
+      },
+      {
         heading: "2. Product cancellation and returns",
         paragraphs: ["For a distance purchase, you can generally request withdrawal within seven days of receiving the contract information, or of receiving the product if it arrives later. If it differs from its description, advertisement, or contract, you may request withdrawal within three months of receipt and within 30 days of discovering or being able to discover the difference.", "Statutory restrictions may apply where a product has been damaged or used; those restrictions and any conditions disclosed before purchase govern. Opening packaging simply to inspect the contents does not by itself remove your rights. You may bear return shipping for a change of mind as permitted by law and the disclosed order terms. The Center bears it for a defect or incorrect shipment. There is no additional penalty or cancellation fee for statutory withdrawal."],
+      },
+      {
+        heading: "2-1. Withdrawal restrictions and exchanges",
+        paragraphs: ["Where statutory conditions are met, withdrawal may be restricted for destruction or damage attributable to you, a substantial loss of value through use or consumption, a loss of value over time making resale difficult, or damage to the packaging of reproducible goods. Restrictions do not apply where required prior measures, such as clearly displaying the restriction, were not taken. We do not refuse all returns simply because an item is a book. The exception for opening packaging to inspect contents and rights concerning defects or incorrect shipments remain intact.", "Contact the same support channel to request an exchange. We review the item's condition, stock, and reason, then explain available options and shipping costs. Lack of exchange stock or agreement does not remove statutory return or refund rights. Use the return address listed above."],
+      },
+      {
+        heading: "2-2. Return costs and returned items",
+        paragraphs: ["For a change-of-mind return, the purchaser bears necessary return shipping under applicable law and conditions disclosed before purchase. The Company bears return costs for defective or incorrect goods or goods supplied differently from their description, advertisement, or contract, and honors any more favorable promise. No separate restocking, inspection, or administrative penalty applies. Free original shipping does not itself justify a flat round-trip shipping charge.", "Where possible, return the item's supplied components together and package them to prevent transit damage. Missing components or signs of use are assessed according to the actual condition and statutory withdrawal restrictions; ordinary inspection or lawful withdrawal alone is not grounds to refuse a refund. Any additional cost is explained with its actual amount and legal or contractual basis."],
       },
       {
         heading: "3. Paid events",
@@ -52,7 +86,7 @@ export const refundPolicy: Record<Locale, LegalDocument> = {
       },
       {
         heading: "5. Disputes and contact",
-        paragraphs: ["Please contact the Center first if you disagree with a cancellation, return, or refund decision. Your right to use consumer dispute-resolution procedures remains available. Call +82 2-702-1718 or email hello@noncelab.com."],
+        paragraphs: ["Contact the Center about a cancellation, return, or refund disagreement at +82 2-702-1718 or hello@noncelab.com. You may also seek advice from Korea's 1372 Consumer Counseling Center, damage relief or mediation from the Korea Consumer Agency (www.kca.go.kr), or mediation from the Electronic Documents and Electronic Commerce Dispute Mediation Committee (www.ecmc.or.kr). Prior negotiation or mediation is not required to exercise statutory remedies such as litigation. Governing law and jurisdiction follow the corresponding Terms of Service provisions and mandatory law."],
       },
     ],
   },

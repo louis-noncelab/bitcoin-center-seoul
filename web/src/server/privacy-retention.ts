@@ -70,7 +70,7 @@ async function redact(tx: Tx, id: string, options: Options & { readonly now: Dat
     await tx.privacyLegalRecord.upsert({ where: { orderId_kind: { orderId: id, kind: "TRANSACTION" } }, update: {}, create: {
       orderId: id, kind: "TRANSACTION", expiresAt,
       encryptedPayload: sealString(JSON.stringify({ name: order.customerName, email: order.customerEmail,
-        address: order.address, trackingNumber: order.trackingNumber,
+        address: order.address, trackingNumber: order.trackingNumber, contractAcceptance: order.contractAcceptance,
         refunds: audits.filter(({ action }) => action === "order.refund.recorded").map(({ summary, createdAt }) => ({ createdAt,
           evidence: summary && typeof summary === "object" && !Array.isArray(summary)
             ? Object.fromEntries(Object.entries(summary).filter(([key]) => ["paymentId", "method", "proof", "refundedAt", "amountSats", "amountKrw", "currency", "restock"].includes(key))) : {},
@@ -79,7 +79,7 @@ async function redact(tx: Tx, id: string, options: Options & { readonly now: Dat
   }
   await tx.order.update({ where: { id }, data: {
     customerName: "", customerEmail: "", customerPhone: "", customerNotes: "", customerEmailHash: null,
-    address: Prisma.DbNull, accountId: null, carrier: null, trackingNumber: null, confirmationCode: null,
+    address: Prisma.DbNull, contractAcceptance: Prisma.DbNull, accountId: null, carrier: null, trackingNumber: null, confirmationCode: null,
     accessTokenHash: randomUUID(), accessTokenExpiresAt: options.now,
     idempotencyScope: `redacted:${id}`, idempotencyKey: randomUUID(), requestHash: randomUUID(), privacyRedactedAt: options.now,
   } });

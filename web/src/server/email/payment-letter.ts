@@ -4,6 +4,7 @@ import { getServerConfig } from "@/server/config";
 import { paidOnlineSessions } from "@/server/events";
 import { getCommerceSettings } from "@/server/commerce/settings";
 import { enqueue } from "@/server/email";
+import { acceptedContractCopy } from "./contract-copy";
 
 type Locale = "ko" | "en";
 type Unit = "KRW" | "SATS" | "BTC";
@@ -11,6 +12,7 @@ type Kind = "order.created" | "order.paid" | "order.expired" | "order.cancelled"
 
 type Item = { readonly titleKo: string; readonly titleEn: string; readonly quantity: number; readonly sku?: string };
 type OrderMail = {
+  readonly contractAcceptance?: unknown;
   readonly id: string;
   readonly status: string;
   readonly amountSats: bigint;
@@ -106,6 +108,7 @@ export function buildPaymentLetter(locale: Locale, kind: Kind, order: OrderMail,
     const quantity = ko ? `${item.quantity}${item.sku?.startsWith("MEETUP-") ? "명" : "개"}` : item.quantity === 1 ? "1" : String(item.quantity);
     return { title, quantity };
   });
+  const contractCopy = kind === "order.created" ? acceptedContractCopy(order.contractAcceptance) : "";
   const plain = [
     ko ? "비트코인 센터 서울" : "Bitcoin Center Seoul",
     subject,
@@ -116,6 +119,7 @@ export function buildPaymentLetter(locale: Locale, kind: Kind, order: OrderMail,
     `${ko ? "주문 번호" : "Order"}: ${order.id}`,
     url,
     ...joins.flatMap((join) => [`${ko ? "온라인 참여" : "Join online"}: ${join.url}`, ko ? join.note : join.noteEn || join.note].filter(Boolean)),
+    ...(contractCopy ? [contractCopy] : []),
   ].join("\n\n");
   const font = "'Pretendard Variable','Apple SD Gothic Neo','Malgun Gothic',sans-serif";
   const itemRows = rows.map((row) => `<tr><td style="padding:14px 0;border-top:1px solid #d8dcd3;font-size:16px;line-height:1.5;color:#20211f;">${escapeHtml(row.title)}</td><td style="padding:14px 0;border-top:1px solid #d8dcd3;font-size:16px;line-height:1.5;color:#62675f;text-align:right;white-space:nowrap;">${escapeHtml(row.quantity)}</td></tr>`).join("");
@@ -146,6 +150,7 @@ ${joins.map((join) => `<p style="margin:16px 0 0;"><a href="${escapeHtml(join.ur
 <p style="margin:20px 0 0;font-size:14px;line-height:1.6;color:#62675f;">${ko ? "주문 번호" : "Order"} ${escapeHtml(order.id)}<br><a href="${escapeHtml(url)}" style="color:#32699f;text-decoration:underline;">${escapeHtml(url)}</a></p>
 <p style="margin:16px 0 0;font-size:14px;line-height:1.6;color:#62675f;">${ko ? "비트코인 센터 서울 · 서울 마포구" : "Bitcoin Center Seoul · Mapo, Seoul"}</p>
 </td></tr>
+${contractCopy ? `<tr><td style="padding:24px 0;font-family:${font};"><pre style="margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit;font-size:14px;line-height:1.7;color:#20211f;">${escapeHtml(contractCopy)}</pre></td></tr>` : ""}
 </table></td></tr></table></body></html>`;
   return { subject, text: plain, html };
 }

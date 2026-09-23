@@ -7,7 +7,7 @@ import { EventBookingLink } from "@/components/site/event-booking-link";
 import { Calendar } from "@/components/ui/calendar";
 import type { Locale } from "@/i18n/routing";
 import type { HomeEvent } from "@/lib/home-events";
-import { eventListLocation } from "@/lib/event-location";
+import { eventListLocation, eventTimeZoneLabel } from "@/lib/event-location";
 import "@/styles/event-booking.css";
 import "@/styles/home-event-calendar.css";
 import "@/styles/slide-region.css";
@@ -98,6 +98,7 @@ export function HomeEventCalendar({ events, locale, today }: Props) {
           </button>
         </div>
       </div>
+      <p className="caption muted">{locale === "ko" ? `행사 일정은 ${eventTimeZoneLabel(locale)} 기준입니다.` : `Event times are shown in ${eventTimeZoneLabel(locale)}.`}</p>
       <div className="home-calendar-layout" data-view={view} key={view}>
         <div className="home-calendar-month">
           <Calendar

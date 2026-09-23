@@ -80,6 +80,8 @@
 .commerce-choice .choice-input { margin-top: var(--space-1); }
 .commerce-choice small { display: block; font-size: var(--text-caption); color: var(--muted); margin-block-start: var(--space-2); }
 .commerce-pickup { color: var(--muted); }
+.commerce-checkout-disclosure { margin: 0; padding-inline-start: var(--space-6); list-style: disc; }
+.commerce-checkout-disclosure li + li { margin-block-start: var(--space-3); }
 .commerce-loading { min-height: 12rem; display: grid; align-content: center; color: var(--muted); font-size: var(--text-small); }
 .commerce-payment-wait { display: flex; align-items: center; gap: var(--space-3); min-height: var(--control-height); color: var(--muted); font-size: var(--text-small); }
 .commerce-payment-wait .button-spinner { width: 1.25rem; height: 1.25rem; flex: 0 0 auto; }

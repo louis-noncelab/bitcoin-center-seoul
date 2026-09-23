@@ -12,8 +12,9 @@ import { CheckoutForm } from "./checkout-form";
 import { RequestError } from "./request-error";
 import { useCartHydrated, useCartItems } from "./cart-store";
 
-export function Checkout({ locale, selection }: {
+export function Checkout({ locale, policyVersion, selection }: {
   readonly locale: Locale;
+  readonly policyVersion: string;
   readonly selection: { readonly variantId: string; readonly quantity: number } | null;
 }) {
   const hydrated = useCartHydrated();
@@ -39,5 +40,5 @@ export function Checkout({ locale, selection }: {
   const resolved = resolveCartLines(source, data.products);
   if (resolved.missing.length || resolved.lines.some((line) => !line.available)) return <div className="form-stack"><FormNotice>{ko ? "선택한 상품 중 주문할 수 없거나 재고보다 수량이 많은 옵션이 있습니다. 장바구니에서 확인해 주세요." : "Some selected items are unavailable or exceed stock. Review your cart before checkout."}</FormNotice><ActionLink href={`/${locale}/${selection ? "shop" : "cart"}`}>{ko ? "선택 다시 확인" : "Review selection"}</ActionLink></div>;
   const items = resolved.lines;
-  return <CheckoutForm locale={locale} items={items} countries={data.countries} fromCart={!selection} />;
+  return <CheckoutForm locale={locale} policyVersion={policyVersion} items={items} countries={data.countries} fromCart={!selection} />;
 }

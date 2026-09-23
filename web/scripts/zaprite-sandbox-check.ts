@@ -8,6 +8,7 @@ import { getServerConfig } from "@/server/config";
 import { prisma } from "@/server/db";
 import { makeQuote } from "@/server/orders/quote";
 import { createOrder } from "@/server/orders/create";
+import { checkoutPolicyVersion } from "@/server/orders/checkout-policy";
 import { ensureInvoice, reconcilePayment } from "@/server/payments";
 
 const config = getServerConfig();
@@ -31,6 +32,8 @@ const { order } = await createOrder(request, {
   quoteId: quote.id,
   customer: { name: "Sandbox Check", email: "sandbox@example.invalid", phone: "" },
   locale: "ko",
+  // Script operator's own sandbox checkout; never represents a customer acceptance.
+  acceptance: { accepted: true, version: checkoutPolicyVersion("ko") },
 }, null);
 console.log(`order      ${order.id}  ${order.amountSats} sats`);
 

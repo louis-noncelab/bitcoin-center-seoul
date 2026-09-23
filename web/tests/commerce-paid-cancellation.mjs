@@ -13,6 +13,7 @@ Object.assign(process.env, {
 const { prisma } = await import("../src/server/db.ts");
 const { makeQuote } = await import("../src/server/orders/quote.ts");
 const { createOrder } = await import("../src/server/orders/create.ts");
+const { checkoutPolicyVersion } = await import("../src/server/orders/checkout-policy.ts");
 const { applyObservation } = await import("../src/server/payments/state.ts");
 const { resolveManualPayment } = await import("../src/server/orders/manual-payment.ts");
 const { cancelPaidOrder, recordExternalRefund, externalRefundSchema } = await import("../src/server/orders/paid-cancellation.ts");
@@ -71,7 +72,7 @@ async function fromQuote({ quote, token }) {
     origin: "http://127.0.0.1:3100", "idempotency-key": randomUUID(), "x-request-secret": randomBytes(32).toString("base64url"),
     cookie: `bcs_quote_${quote.id}=${token}`,
   } });
-  return createOrder(request, { quoteId: quote.id, customer: { name: "Tester", email, phone: "" }, locale: "en" }, null);
+  return createOrder(request, { quoteId: quote.id, customer: { name: "Tester", email, phone: "" }, locale: "en", acceptance: { accepted: true, version: checkoutPolicyVersion("en") } }, null);
 }
 async function orderWithPayment(code) {
   const { order } = await fromQuote(await makeQuote(cart(code), null));

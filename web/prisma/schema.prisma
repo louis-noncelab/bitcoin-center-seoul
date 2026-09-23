@@ -285,6 +285,7 @@ model Order {
   idempotencyScope     String
   idempotencyKey       String
   requestHash          String
+  contractAcceptance   Json?
   customerNotes        String            @default("")
   confirmationCode     String?           @unique
   checkedInAt          DateTime?

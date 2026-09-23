@@ -38,6 +38,7 @@ export const createOrderSchema = z.object({
   quoteId: identifier,
   customer: customerSchema,
   locale: localeSchema,
+  acceptance: z.object({ accepted: z.literal(true), version: z.string().regex(/^[a-f0-9]{64}$/) }).strict(),
   address: addressSchema.optional(),
   notes: z.string().trim().max(500).optional(),
 }).strict();

@@ -43,11 +43,13 @@ test("dry run reports eligible orders without modifying contact details", async 
   // Then its data is unchanged and no archive is written.
   assert.equal(result.orders, 1);
   assert.equal(openString((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).customerName), "Customer");
+  assert.equal((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).contractAcceptance, null);
   assert.equal(await prisma.privacyLegalRecord.count({ where: { orderId: order.id } }), 0);
 });
 
 test("apply removes operational PII and preserves separately encrypted legal evidence", async () => {
-  const order = await fixture();
+  const acceptance = { locale: "ko", acceptedAt: old.toISOString(), version: "fixture-version", disclosure: ["fixture disclosure"], terms: { title: "fixture terms" }, refunds: { title: "fixture refunds" } };
+  const order = await fixture({ contractAcceptance: acceptance });
   const payment = await prisma.payment.findFirstOrThrow({ where: { orderId: order.id } });
   await prisma.payment.update({ where: { id: payment.id }, data: { metadata: { orderId: order.id, cancelReason: "Private complaint" } } });
   await prisma.auditLog.create({ data: { action: "order.cancelled", targetType: "Order", targetId: order.id, summary: { reason: "Private complaint" }, createdAt: old } });
@@ -58,12 +60,14 @@ test("apply removes operational PII and preserves separately encrypted legal evi
   const view = orderView(row);
   assert.deepEqual([view.customerName, view.customerEmail, view.customerPhone, view.customerNotes, view.address], ["", "", "", "", null]);
   assert.equal(row.customerEmailHash, null);
+  assert.equal(row.contractAcceptance, null);
   assert.notEqual(row.accessTokenHash, order.accessTokenHash);
   assert.equal(row.confirmationCode, null);
   const transaction = await prisma.privacyLegalRecord.findUniqueOrThrow({ where: { orderId_kind: { orderId: order.id, kind: "TRANSACTION" } } });
   assert.ok(transaction.encryptedPayload.startsWith("v1."));
   const sealed = JSON.parse(openString(transaction.encryptedPayload));
   assert.equal(openString(sealed.name), "Customer");
+  assert.deepEqual(sealed.contractAcceptance, acceptance);
   assert.equal(JSON.stringify(sealed).includes("Private complaint"), false);
   const dispute = await prisma.privacyLegalRecord.findUniqueOrThrow({ where: { orderId_kind: { orderId: order.id, kind: "DISPUTE" } } });
   assert.equal(dispute.expiresAt.toISOString(), "2031-02-28T00:00:00.000Z");

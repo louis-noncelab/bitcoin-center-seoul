@@ -14,6 +14,7 @@ import { hashToken, matchesToken, readAccessToken, requestIdentity, resourceToke
 import { quoteCouponDiscount } from "@/server/commerce/coupons";
 import { cartProducts, quoteSnapshot } from "./quote";
 import { orderIncludes, orderView } from "./projection";
+import { checkoutPolicyEvidence } from "./checkout-policy";
 
 export async function createOrder(request: Request, input: CreateOrder, account: CustomerAccount) {
   const identity = requestIdentity(request, account);
@@ -28,6 +29,8 @@ export async function createOrder(request: Request, input: CreateOrder, account:
       if (account?.id !== existing.accountId && !matchesToken(token, existing.accessTokenHash)) throw new HttpError(404, "NOT_FOUND", "Order not found.");
       return { order: orderView(existing), token, created: false };
     }
+    if (input.acceptance?.accepted !== true) throw new HttpError(400, "ACCEPTANCE_REQUIRED", "Accept the terms and refund policy before ordering.");
+    const contractAcceptance = checkoutPolicyEvidence(input.locale, input.acceptance.version);
     await tx.$queryRaw`SELECT id FROM "Quote" WHERE id = ${input.quoteId} FOR UPDATE`;
     const quote = await tx.quote.findUnique({ where: { id: input.quoteId }, include: { order: { select: { id: true } } } });
     if (!quote || (account?.id !== quote.accountId && !matchesToken(readAccessToken(request, "quote", input.quoteId), quote.ownerHash))) throw new HttpError(404, "NOT_FOUND", "Quote not found.");
@@ -79,7 +82,7 @@ export async function createOrder(request: Request, input: CreateOrder, account:
       customerNotes: sealString(input.notes ?? ""),
       amountSats: quote.amountSats, amountKrw: quote.amountKrw, fulfillment: snapshot.fulfillment, ...(input.address ? { address: sealString(JSON.stringify(input.address)) } : {}),
       shippingSnapshot: snapshot.shipping, shippingAmountKrw: BigInt(snapshot.shipping.amountKrw), shippingAmountSats: BigInt(snapshot.shippingAmountSats), billableWeightG: snapshot.shipping.weightG,
-      holdExpiresAt, idempotencyScope: identity.scope, idempotencyKey: identity.key, requestHash, confirmationCode: randomBytes(12).toString("hex"), accessTokenHash: hashToken(token),
+      holdExpiresAt, idempotencyScope: identity.scope, idempotencyKey: identity.key, requestHash, contractAcceptance, confirmationCode: randomBytes(12).toString("hex"), accessTokenHash: hashToken(token),
       items: { create: snapshot.items.map((item) => ({ variantId: item.variantId, quantity: item.quantity, sku: item.sku, titleKo: item.titleKo, titleEn: item.titleEn, optionLabelKo: item.optionLabelKo, optionLabelEn: item.optionLabelEn, priceKind: item.priceKind, unitPriceAmount: BigInt(item.unitPriceAmount), amountSats: BigInt(item.amountSats), snapshot: item })) },
       payments: { create: { provider: await activePaymentProvider(tx), mode: paymentModeOf(config), creationKey: randomUUID(), amountSats: quote.amountSats, metadata: { orderId: id }, expiresAt: holdExpiresAt } },
     }, include: orderIncludes });

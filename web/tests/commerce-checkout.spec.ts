@@ -80,6 +80,33 @@ test("checkout blocks missing selections without discarding them", async ({ page
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("center-cart") ?? "{}").items)).toHaveLength(2);
 });
 
+test("checkout requires explicit policy acceptance before creating an order", async ({ page }) => {
+  await checkout(page);
+  await contact(page);
+  let submitted = 0;
+  let submittedBody: unknown;
+  await page.route("**/api/orders", (route) => { submitted += 1; submittedBody = route.request().postDataJSON(); return route.fulfill({ json: { data: { id: "created-order" } } }); });
+  await expect(page.getByRole("button", { name: "Pay" })).toBeEnabled();
+  await page.getByRole("button", { name: "Pay" }).click();
+  await expect(page.getByText("Agree to the terms and refund policy.")).toBeVisible();
+  expect(submitted).toBe(0);
+  await page.locator("#checkout-acceptance").check();
+  await page.getByRole("button", { name: "Pay" }).click();
+  await expect.poll(() => submitted).toBe(1);
+  expect(submittedBody).toMatchObject({ acceptance: { accepted: true, version: expect.stringMatching(/^[a-f0-9]{64}$/) } });
+});
+
+test("changed policies require a reload and fresh acceptance", async ({ page }) => {
+  await checkout(page);
+  await contact(page);
+  await page.locator("#checkout-acceptance").check();
+  await page.route("**/api/orders", (route) => route.fulfill({ status: 409, json: { error: { code: "POLICY_STALE", message: "Checkout terms changed." } } }));
+  await page.getByRole("button", { name: "Pay" }).click();
+  await expect(page.getByText("The terms or refund policy changed.", { exact: false })).toBeVisible();
+  await page.getByRole("button", { name: "Review updated policies" }).click();
+  await expect(page.locator("#checkout-acceptance")).not.toBeChecked();
+});
+
 test("shipping fields reset after changing to pickup and back", async ({ page }) => {
   // Given typed domestic shipping fields.
   await checkout(page);
@@ -126,6 +153,7 @@ test("an order finishing after cart edits clears only the purchased quantities",
   await checkout(page);
   await contact(page);
   await expect(page.getByRole("button", { name: "Pay" })).toBeEnabled();
+  await page.locator("#checkout-acceptance").check();
   let release: () => void = () => {};
   const released = new Promise<void>((resolve) => { release = resolve; });
   await page.route("**/api/orders", async (route) => { await released; await route.fulfill({ json: { data: { id: "created-order" } } }); });

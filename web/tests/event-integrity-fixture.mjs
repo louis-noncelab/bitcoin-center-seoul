@@ -19,6 +19,7 @@ const { syncEventTicket } = await import("../src/server/events/tickets.ts");
 const { eventInputSchema } = await import("../src/lib/events-contract.ts");
 const { makeQuote } = await import("../src/server/orders/quote.ts");
 const { createOrder } = await import("../src/server/orders/create.ts");
+const { checkoutPolicyVersion } = await import("../src/server/orders/checkout-policy.ts");
 const { ensureInvoice, reconcilePayment } = await import("../src/server/payments/index.ts");
 const prefix = `integrity-${randomUUID()}`;
 const eventIds = [];
@@ -46,7 +47,7 @@ async function fromQuote({ quote, token }) {
   const request = new Request("http://127.0.0.1:3100/api/orders", { headers: {
     "idempotency-key": randomUUID(), "x-request-secret": randomBytes(32).toString("base64url"), "x-quote-token": token,
   } });
-  const result = await createOrder(request, { quoteId: quote.id, customer: { name: "Tester", email: `${prefix}@example.invalid`, phone: "" }, locale: "en" }, null);
+  const result = await createOrder(request, { quoteId: quote.id, customer: { name: "Tester", email: `${prefix}@example.invalid`, phone: "" }, locale: "en", acceptance: { accepted: true, version: checkoutPolicyVersion("en") } }, null);
   orderIds.push(result.order.id);
   return result;
 }

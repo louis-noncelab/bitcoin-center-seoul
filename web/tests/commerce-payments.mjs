@@ -30,6 +30,7 @@ const { PaymentError } = await import("../src/server/payments/types.ts");
 const { prisma } = await import("../src/server/db.ts");
 const { makeQuote } = await import("../src/server/orders/quote.ts");
 const { createOrder } = await import("../src/server/orders/create.ts");
+const { checkoutPolicyVersion } = await import("../src/server/orders/checkout-policy.ts");
 const { ensureInvoice, reconcilePayment } = await import("../src/server/payments/index.ts");
 
 const prefix = `t${Date.now().toString(36)}`;
@@ -240,6 +241,7 @@ test("cart to paid order holds then consumes stock", async () => {
     quoteId: quote.id,
     customer: { name: "Tester", email: `${prefix}@example.invalid`, phone: "010-0000-0000" },
     locale: "ko",
+    acceptance: { accepted: true, version: checkoutPolicyVersion("ko") },
     address: { countryCode: "KR", postalCode: "04000", region: "서울", city: "마포구", line1: "와우산로", line2: "" },
   }, null);
   assert.equal(created.created, true);
@@ -289,6 +291,7 @@ test("a quote is refused once a product runs short", async () => {
       quoteId: quote.id,
       customer: { name: "Tester", email: `${prefix}@example.invalid`, phone: "" },
       locale: "ko",
+      acceptance: { accepted: true, version: checkoutPolicyVersion("ko") },
     }, null),
     (error) => error.code === "OUT_OF_STOCK",
   );

@@ -88,13 +88,16 @@ test.describe.serial("mobile home event discovery", () => {
     test(`omits center locations only from lists and preserves external venues and details in ${locale}`, async ({ page, context }, testInfo) => {
       const external = locale === "ko" ? "외부 행사장" : "External venue";
       const center = locale === "ko" ? "비트코인 센터 서울" : "Bitcoin Center Seoul";
+      const zone = locale === "ko" ? "한국 시간 (KST, UTC+9)" : "Korea Standard Time (KST, UTC+9)";
       for (const [width, theme] of [[320, "light"], [375, "dark"], [768, "light"], [1280, "dark"]] as const) {
         await page.setViewportSize({ width, height: 900 });
         await context.addCookies([{ name: "bcs-theme", value: theme, url: (await reviewRuntime()).APP_ORIGIN }]);
         await page.goto(`/${locale}`);
+        await expect(page.locator(".upcoming-heading")).toContainText(zone);
         await expect(page.locator(`.upcoming-card[href$="${prefix}-2"] .upcoming-meta`)).toHaveCount(0);
         await expect(page.locator(`.upcoming-card[href$="${prefix}-1"] .upcoming-meta`)).toHaveText(external);
         const calendar = page.locator(".home-event-calendar");
+        await expect(calendar).toContainText(zone);
         await expect(calendar.locator(".home-calendar-event-location")).toHaveCount(0);
         await selectDate(calendar, pairedDate, locale);
         await expect(calendar.locator(".home-calendar-event-location")).toHaveText(external);
@@ -102,12 +105,14 @@ test.describe.serial("mobile home event discovery", () => {
         await calendar.getByRole("button", { name: locale === "ko" ? "목록 보기" : "List view", exact: true }).click();
         await expect(calendar.locator(".home-calendar-event-location")).toHaveText(external);
         await page.goto(`/${locale}/programs`);
+        await expect(page.locator(".events-timeline")).toContainText(zone);
         await expect(page.locator(`.event-card[href$="${prefix}-2"] .event-card-location`)).toHaveCount(0);
         await expect(page.locator(`.event-card[href$="${prefix}-3"] .event-card-location`)).toHaveCount(0);
         await expect(page.locator(`.event-card[href$="${prefix}-1"] .event-card-location`)).toHaveText(external);
         await page.locator(".events-timeline").screenshot({ path: testInfo.outputPath(`${locale}-${width}-${theme}-programs.png`) });
         await page.locator(`.event-card[href$="${prefix}-2"]`).click();
         await expect(page.locator(".event-meta")).toContainText(center);
+        await expect(page.locator(".event-meta")).toContainText(zone);
         await page.locator(".event-meta").screenshot({ path: testInfo.outputPath(`${locale}-${width}-${theme}-detail.png`) });
         expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
       }

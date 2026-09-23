@@ -11,3 +11,7 @@ export function eventListLocation(event: Pick<EventRecord, "venueType" | "locati
   if (event.venueType === "center") return "";
   return locale === "en" && event.locationEn ? event.locationEn : event.location;
 }
+
+export function eventTimeZoneLabel(locale: Locale): string {
+  return locale === "ko" ? "한국 시간 (KST, UTC+9)" : "Korea Standard Time (KST, UTC+9)";
+}
