@@ -6,6 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import { once } from "node:events";
 import { test } from "node:test";
+import { renderedServerEnv, resetRenderedContent } from "./helpers/rendered-pg.mjs";
 
 const projectDirectory = path.resolve(import.meta.dirname, "..");
 const standaloneDirectory = path.join(projectDirectory, ".next-events", "standalone", "web");
@@ -129,7 +130,6 @@ test("event booking is available directly from bilingual home, schedule and deta
   assert.ok(fs.existsSync(serverFile), "Build .next-events/standalone/web/server.js before running this test.");
 
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "bcs-event-booking-rendered-"));
-  const database = path.join(directory, "events.db");
   const uploads = path.join(directory, "images");
   const password = "event-booking-local-fixture-only";
   const createdAssetLinks = [];
@@ -137,12 +137,11 @@ test("event booking is available directly from bilingual home, schedule and deta
 
   try {
     if (visualReview) visualAssetLinks(createdAssetLinks);
-    const [{ openDatabase }, { createPasswordHash }, { seoulDate }] = await Promise.all([
-      import("../src/server/events/db.ts"),
+    const [{ createPasswordHash }, { seoulDate }] = await Promise.all([
       import("../src/server/events/password.ts"),
       import("../src/lib/center-status.ts"),
     ]);
-    openDatabase(database).close();
+    await resetRenderedContent();
     const passwordHash = await createPasswordHash(password);
     const today = seoulDate();
     const bookingUrl = "https://www.saturdayblock.com/events/rendered-booking?session=fixture&source=homepage#reserve";
@@ -157,19 +156,7 @@ test("event booking is available directly from bilingual home, schedule and deta
     const origin = `http://127.0.0.1:${port}`;
     child = spawn(process.execPath, [serverFile], {
       cwd: standaloneDirectory,
-      env: {
-        PATH: process.env.PATH || "",
-        NODE_ENV: "production",
-        HOSTNAME: "127.0.0.1",
-        PORT: String(port),
-        APP_ORIGIN: origin,
-        ADMIN_PASSWORD_HASH: passwordHash,
-        BCS_EVENTS_DB: database,
-        BCS_EVENTS_UPLOADS: uploads,
-        BCS_EVENTS_REVIEW: "true",
-        BCS_TRUST_PROXY: "false",
-        __NEXT_PROCESSED_ENV: "true",
-      },
+      env: renderedServerEnv({ origin, port, directory, uploads, passwordHash }),
       stdio: ["ignore", "ignore", "pipe"],
     });
     let serverErrors = "";
@@ -246,10 +233,11 @@ test("event booking is available directly from bilingual home, schedule and deta
 
     const genericUrl = "https://saturdayblock.com.example.test/events/fixture?source=calendar&ticket=1#reserve";
     assert.ok(todayEvent);
+    const savedInput = { ...baseInput, image: todayEvent.image, images: todayEvent.images };
     const genericEvent = (await jsonRequest(origin, `/api/admin/events/${todayEvent.id}`, cookie, {
       method: "PUT",
       headers: { origin, "if-match": `"${todayEvent.revision}"` },
-      body: JSON.stringify({ ...baseInput, link: genericUrl }),
+      body: JSON.stringify({ ...savedInput, link: genericUrl }),
     })).data;
     for (const locale of ["ko", "en"]) {
       for (const [pathname, expected] of [[`/${locale}`, 2], [`/${locale}/programs`, 1], [`/${locale}/programs/${baseInput.slug}`, 1]]) {
@@ -265,7 +253,7 @@ test("event booking is available directly from bilingual home, schedule and deta
       await jsonRequest(origin, `/api/admin/events/${todayEvent.id}`, cookie, {
         method: "PUT",
         headers: { origin, "if-match": `"${genericEvent.revision}"` },
-        body: JSON.stringify(baseInput),
+        body: JSON.stringify(savedInput),
       });
       process.stdout.write(`EVENT_BOOKING_VISUAL_REVIEW origin=${origin} pid=${process.pid} fixture=${directory}\n`);
       await new Promise((resolve) => {
@@ -291,5 +279,6 @@ test("event booking is available directly from bilingual home, schedule and deta
       if (fs.lstatSync(destination, { throwIfNoEntry: false })?.isSymbolicLink() && fs.readlinkSync(destination) === source) fs.unlinkSync(destination);
     }
     fs.rmSync(directory, { recursive: true, force: true });
+    await resetRenderedContent();
   }
 });

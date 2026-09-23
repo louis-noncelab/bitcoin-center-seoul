@@ -1,15 +1,17 @@
 import Database from "better-sqlite3";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "@/generated/prisma/client";
 import { test, expect, request } from "@playwright/test";
-import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { eventRecordSchema } from "../src/lib/events-contract";
 import { deleteContentFixture } from "./content-cleanup";
+import { reviewRuntime } from "./helpers/review-runtime";
 
 test("admin can close and reopen participation without losing the link or bypassing revisions", async ({ page, baseURL }, info) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  expect(baseURL).toBe("http://127.0.0.1:3102");
-  const runtime = JSON.parse(await readFile(new URL("../.local/events-review/runtime.json", import.meta.url), "utf8"));
-  const origin = "http://127.0.0.1:3102";
+  const runtime = await reviewRuntime();
+  expect(baseURL).toBe(runtime.APP_ORIGIN);
+  const origin = runtime.APP_ORIGIN;
   const admin = await request.newContext({ baseURL: origin, extraHTTPHeaders: { origin } });
   const guest = await request.newContext({ baseURL: origin, extraHTTPHeaders: { origin } });
   expect((await admin.post("/api/admin/login", { data: { password: runtime.ADMIN_PASSWORD } })).ok()).toBeTruthy();
@@ -23,9 +25,15 @@ test("admin can close and reopen participation without losing the link or bypass
   try {
     expect(event.registrationClosed).toBe(false);
     // Simulate an imported event with no venue; closing must not require editing legacy fields.
-    const db = new Database(runtime.BCS_EVENTS_DB);
-    try { db.prepare("UPDATE events SET venueType = 'external', location = '', locationEn = '' WHERE id = ?").run(event.id); }
-    finally { db.close(); }
+    if (runtime.DATABASE_URL) {
+      const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: runtime.DATABASE_URL }) });
+      try { await db.centerEvent.update({ where: { id: event.id }, data: { venueType: "external", location: "", locationEn: "" } }); }
+      finally { await db.$disconnect(); }
+    } else if (runtime.BCS_EVENTS_DB) {
+      const db = new Database(runtime.BCS_EVENTS_DB);
+      try { db.prepare("UPDATE events SET venueType = 'external', location = '', locationEn = '' WHERE id = ?").run(event.id); }
+      finally { db.close(); }
+    }
     const patch = { headers: { "If-Match": `"${event.revision}"` }, data: { registrationClosed: true } };
     expect((await guest.patch(`/api/admin/events/${event.id}`, patch)).status()).toBe(401);
     expect((await admin.patch(`/api/admin/events/${event.id}`, { ...patch, headers: { ...patch.headers, origin: "https://invalid.example" } })).status()).toBe(403);

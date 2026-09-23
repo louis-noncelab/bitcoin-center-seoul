@@ -118,17 +118,17 @@ function isRateFailure(error: unknown) {
   return error instanceof HttpError || error instanceof TypeError || error instanceof SyntaxError || error instanceof DOMException;
 }
 
-/** A live ticker wins. When both exchanges failed, the last stored ticker is the price. */
-export function rateFromSources(live: ExchangeRate | null, cached: ExchangeRate | null): ExchangeRate {
+/** Executable cached prices tolerate at most five minutes of exchange outage. */
+export function rateFromSources(live: ExchangeRate | null, cached: ExchangeRate | null, now = Date.now()): ExchangeRate {
   if (live) return live;
-  if (cached && ratePattern.test(cached.krwPerBtc)) {
+  if (cached && ratePattern.test(cached.krwPerBtc) && now - cached.timestamp.getTime() <= 300_000 && cached.timestamp.getTime() - now <= 5_000) {
     return {
       krwPerBtc: cached.krwPerBtc,
       source: cached.source.startsWith("cache:") ? cached.source : `cache:${cached.source}`,
       timestamp: cached.timestamp,
     };
   }
-  throw new HttpError(503, "RATE_UNAVAILABLE", "환율 제공자에 연결할 수 없고, 이전에 받은 시세도 없습니다.");
+  throw new HttpError(503, "RATE_UNAVAILABLE", "최신 환율을 확인할 수 없습니다. 잠시 후 다시 시도해 주세요. / A recent exchange rate is unavailable.");
 }
 
 async function readCachedRate(): Promise<ExchangeRate | null> {

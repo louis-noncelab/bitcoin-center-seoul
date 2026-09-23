@@ -7,9 +7,10 @@ import { join } from "node:path";
 import { migrateEventVenues } from "../src/server/events/venue-migration.ts";
 import { centerEventLocation } from "../src/lib/event-location.ts";
 import { eventInputSchema } from "../src/lib/events-contract.ts";
-import { openDatabase, getDatabase } from "../src/server/events/db.ts";
 import { createEvent, setEventRegistration, updateEvent } from "../src/server/events/index.ts";
 import { getCenterStatus } from "../src/server/center-status.ts";
+import "./helpers/pg-content-env.mjs";
+const { prisma } = await import("../src/server/db.ts");
 
 test("legacy migration preserves locations, distinguishes unknown venues and never overwrites later choices", () => {
   const db = new Database(":memory:");
@@ -40,33 +41,38 @@ test("saved venue choice fills center addresses and excludes external events fro
   process.env.BCS_EVENTS_DB = join(directory, "events.db");
   process.env.BCS_EVENTS_UPLOADS = join(directory, "images");
   mkdirSync(process.env.BCS_EVENTS_UPLOADS);
-  openDatabase(process.env.BCS_EVENTS_DB).close();
+  let createdId;
   try {
     const input = eventInputSchema.parse({ venueType: "external", title: "장소 검증", titleEn: "Venue test", date: "2026-09-13", time: "13:00 ~ 15:00", location: "외부 행사장", locationEn: "External venue", description: "검증", descriptionEn: "Test", images: [], image: "", link: "" });
     const now = new Date("2026-09-13T13:30:00+09:00");
-    const external = createEvent(input);
+    const external = await createEvent(input);
+    createdId = external.id;
     assert.equal(external.venueType, "external");
     assert.equal(external.location, input.location);
     assert.equal((await getCenterStatus(now)).status, "open");
-    const center = updateEvent(external.id, { ...input, venueType: "center" }, external.revision);
+    const center = await updateEvent(external.id, { ...input, venueType: "center" }, external.revision);
     assert.equal(center.location, centerEventLocation.location);
     assert.equal(center.locationEn, centerEventLocation.locationEn);
     assert.equal((await getCenterStatus(now)).status, "event");
-    const changed = updateEvent(center.id, { ...input, locationEn: "" }, center.revision);
+    const changed = await updateEvent(center.id, { ...input, locationEn: "" }, center.revision);
     assert.equal(changed.venueType, "external");
     assert.equal(changed.locationEn, "");
     assert.equal((await getCenterStatus(now)).status, "open");
-    getDatabase().prepare("UPDATE events SET venueType = 'external', location = '', locationEn = '' WHERE id = ?").run(changed.id);
-    const closed = setEventRegistration(changed.id, true, changed.revision);
+    await prisma.centerEvent.update({ where: { id: changed.id }, data: { venueType: "external", location: "", locationEn: "" } });
+    const closed = await setEventRegistration(changed.id, true, changed.revision);
     assert.equal(closed.registrationClosed, true);
     assert.equal(closed.venueType, "external");
     assert.equal(closed.location, "");
     assert.equal(closed.locationEn, "");
-    const stored = getDatabase().prepare("SELECT venueType, location, locationEn, registrationClosed FROM events WHERE id = ?").get(changed.id);
+    const stored = await prisma.centerEvent.findUnique({ where: { id: changed.id } });
     assert.equal(stored.venueType, "external");
     assert.equal(stored.location, "");
     assert.equal(stored.locationEn, "");
-    assert.equal(stored.registrationClosed, 1);
-    assert.throws(() => updateEvent(center.id, { ...input, venueType: "center" }, center.revision));
-  } finally { getDatabase().close(); rmSync(directory, { recursive: true, force: true }); }
+    assert.equal(stored.registrationClosed, true);
+    await assert.rejects(updateEvent(center.id, { ...input, venueType: "center" }, center.revision), { code: "EDIT_CONFLICT" });
+  } finally {
+    if (createdId !== undefined) await prisma.centerEvent.delete({ where: { id: createdId } });
+    await prisma.$disconnect();
+    rmSync(directory, { recursive: true, force: true });
+  }
 });

@@ -1,14 +1,18 @@
 import { expect, request, test, type APIRequestContext } from "@playwright/test";
 import Database from "better-sqlite3";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "@/generated/prisma/client";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import sharp from "sharp";
 import { z } from "zod";
 import { eventInputSchema, highlightInputSchema, highlightRecordSchema } from "@/lib/events-contract";
+import { reviewOrigin, reviewRuntime } from "./helpers/review-runtime";
 
-const origin = process.env.APP_ORIGIN ?? "http://127.0.0.1:3102";
+const origin = reviewOrigin();
 const password = process.env.ADMIN_PASSWORD ?? "local-review-password";
 const highlight = {
   title: "Range", titleEn: "Range", meta: "", metaEn: "", category: "행사", categoryEn: "Event",
@@ -42,17 +46,16 @@ test("keeps runtime database access fail closed and legacy compatible", () => {
     const before = JSON.stringify(seed.prepare("SELECT * FROM events WHERE id = 1").get());
     seed.close();
     process.env.BCS_EVENTS_DB = process.env.BCS_LEGACY_TEST_PATH;
-    const { createPasswordHash } = await import("./src/server/events/password.ts");
-    process.env.ADMIN_PASSWORD_HASH = await createPasswordHash("local-test-password");
-    const [{ listEvents }, { login }] = await Promise.all([import("./src/server/events/index.ts"), import("./src/server/events/auth.ts")]);
-    const events = listEvents();
-    await login("local-test-password", "global");
+    const { createPasswordHash, verifyPassword } = await import("./src/server/events/password.ts");
+    const hash = await createPasswordHash("local-test-password");
+    if (!await verifyPassword("local-test-password", hash) || await verifyPassword("wrong-password", hash)) process.exit(1);
     const verify = new Sqlite(process.env.BCS_LEGACY_TEST_PATH, { fileMustExist: true });
+    getDatabase();
     const { tags, revision, venueType, registrationClosed, ticketPriceKrw, ticketCapacity, externalPayment, isOnline, onlineUrl, onlineInstructions, onlineInstructionsEn, ...legacyAfter } = verify.prepare("SELECT * FROM events WHERE id = 1").get();
     const after = JSON.stringify(legacyAfter);
     const additions = verify.prepare("SELECT count(*) AS count FROM sqlite_master WHERE type='table' AND name IN ('content_images','content_slugs','admin_sessions','admin_login_attempts')").get().count;
     verify.close();
-    if (registrationClosed !== 0 || events[0].registrationClosed !== false || ticketPriceKrw !== '' || ticketCapacity !== 0 || externalPayment !== 1 || events[0].externalPayment !== true || isOnline !== 0 || onlineUrl !== '' || onlineInstructions !== '' || onlineInstructionsEn !== '' || events[0].isOnline !== false || events[0].ticketPriceKrw !== '' || events[0].ticketCapacity !== 0 || venueType !== 'external' || revision !== 1 || events[0].revision !== 1 || events.length !== 1 || events[0].slug !== '' || tags !== '[]' || events[0].tags.length !== 0 || before !== after || additions !== 4) process.exit(1);
+    if (registrationClosed !== 0 || ticketPriceKrw !== '' || ticketCapacity !== 0 || externalPayment !== 1 || isOnline !== 0 || onlineUrl !== '' || onlineInstructions !== '' || onlineInstructionsEn !== '' || venueType !== 'external' || revision !== 1 || tags !== '[]' || before !== after || additions !== 4) process.exit(1);
     process.stdout.write("ok");
   `;
 
@@ -85,16 +88,20 @@ test("normalizes slugs and rejects ambiguous or unsafe URL segments", () => {
   expect(rejected).toEqual(schemas.map(() => invalid.map(() => false)));
 });
 
-test("preserves slug aliases, ownership, visibility and transactional legacy writes", () => {
-  // Given a fresh isolated SQLite database and real content adapters
+test("preserves slug aliases, ownership, visibility and transactional PostgreSQL writes", async () => {
+  // Given a fresh isolated PostgreSQL database and real content adapters
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "bcs-slugs-"));
+  const runtime = await reviewRuntime();
+  if (!runtime.DATABASE_URL) throw new Error("Slug transaction test requires an isolated PostgreSQL review runtime");
+  const databaseName = `bcs_slugs_${randomUUID().replaceAll("-", "")}`;
+  const databaseUrl = new URL(runtime.DATABASE_URL);
+  databaseUrl.pathname = `/${databaseName}`;
   const check = `
     const assert = (await import("node:assert/strict")).default;
-    const { openDatabase, getDatabase } = await import("./src/server/events/db.ts");
     const api = await import("./src/server/events/index.ts");
+    const { prisma } = await import("./src/server/db.ts");
     const { eventInputSchema, highlightInputSchema } = await import("./src/lib/events-contract.ts");
     const { ApiError } = await import("./src/server/events/errors.ts");
-    openDatabase(process.env.BCS_EVENTS_DB).close();
     const event = eventInputSchema.parse({ title:'행사', titleEn:'Event', date:'2026-01-01', time:'', venueType:'center', location:'', locationEn:'', description:'설명', descriptionEn:'Description', image:'', link:'', images:[] });
     const highlight = highlightInputSchema.parse(${JSON.stringify(highlight)});
     const collision = (error) => error instanceof ApiError && error.status === 409 && error.code === 'SLUG_CONFLICT';
@@ -102,51 +109,55 @@ test("preserves slug aliases, ownership, visibility and transactional legacy wri
       const input = kind === 'Event' ? event : highlight;
       const create = api['create' + kind], update = api['update' + kind], get = api['get' + kind];
       const byPath = api['get' + kind + 'ByPath'], remove = api['delete' + kind], list = api['list' + kind + 's'];
-      const first = create({ ...input, slug:'first-name' });
-      const second = create({ ...input, slug:'second-name' });
-      assert.equal(byPath(String(first.id)).slug, 'first-name');
-      assert.equal(byPath('first-name').id, first.id);
-      assert.equal(list().find(row => row.id === first.id).slug, 'first-name');
-      assert.throws(() => create({ ...input, slug:'first-name' }), collision);
-      assert.equal(list().length, 2);
-      assert.throws(() => update(second.id, { ...input, title:'Must rollback', slug:'first-name' }, get(second.id, { includeInactive:true }).revision), collision);
-      assert.equal(get(second.id).title, input.title);
-      assert.equal(get(second.id).revision, second.revision);
-      assert.equal(get(second.id).slug, 'second-name');
-      update(first.id, { ...input, slug:'renamed' }, get(first.id, { includeInactive:true }).revision);
-      assert.equal(byPath('first-name').slug, 'renamed');
-      assert.equal(byPath('renamed').id, first.id);
-      assert.throws(() => update(second.id, { ...input, slug:'first-name' }, get(second.id, { includeInactive:true }).revision), collision);
-      update(first.id, { ...input, slug:'' }, get(first.id, { includeInactive:true }).revision);
-      assert.equal(byPath('first-name').slug, '');
-      assert.equal(byPath('renamed').id, first.id);
-      assert.throws(() => create({ ...input, slug:'renamed' }), collision);
-      update(first.id, { ...input, slug:'first-name' }, get(first.id, { includeInactive:true }).revision);
-      assert.equal(byPath('renamed').slug, 'first-name');
-      for (const value of ['', '../first-name', "' OR 1=1--", '0', '1e0', '9007199254740992', 'not-found']) assert.equal(byPath(value), null);
+      const first = await create({ ...input, slug:'first-name' });
+      const second = await create({ ...input, slug:'second-name' });
+      assert.equal((await byPath(String(first.id))).slug, 'first-name');
+      assert.equal((await byPath('first-name')).id, first.id);
+      assert.equal((await list()).find(row => row.id === first.id).slug, 'first-name');
+      await assert.rejects(create({ ...input, slug:'first-name' }), collision);
+      assert.equal((await list()).length, 2);
+      await assert.rejects(update(second.id, { ...input, title:'Must rollback', slug:'first-name' }, (await get(second.id, { includeInactive:true })).revision), collision);
+      assert.equal((await get(second.id)).title, input.title);
+      assert.equal((await get(second.id)).revision, second.revision);
+      assert.equal((await get(second.id)).slug, 'second-name');
+      await update(first.id, { ...input, slug:'renamed' }, (await get(first.id, { includeInactive:true })).revision);
+      assert.equal((await byPath('first-name')).slug, 'renamed');
+      assert.equal((await byPath('renamed')).id, first.id);
+      await assert.rejects(update(second.id, { ...input, slug:'first-name' }, (await get(second.id, { includeInactive:true })).revision), collision);
+      await update(first.id, { ...input, slug:'' }, (await get(first.id, { includeInactive:true })).revision);
+      assert.equal((await byPath('first-name')).slug, '');
+      assert.equal((await byPath('renamed')).id, first.id);
+      await assert.rejects(create({ ...input, slug:'renamed' }), collision);
+      await update(first.id, { ...input, slug:'first-name' }, (await get(first.id, { includeInactive:true })).revision);
+      assert.equal((await byPath('renamed')).slug, 'first-name');
+      for (const value of ['', '../first-name', "' OR 1=1--", '0', '1e0', '9007199254740992', 'not-found']) assert.equal(await byPath(value), null);
       if (kind === 'Highlight') {
-        update(first.id, { ...input, slug:'private-name', is_active:0 }, get(first.id, { includeInactive:true }).revision);
-        assert.equal(byPath('private-name'), null);
-        assert.equal(byPath('first-name'), null);
-        assert.equal(byPath(String(first.id)), null);
-        assert.equal(byPath('first-name', { includeInactive:true }).id, first.id);
+        await update(first.id, { ...input, slug:'private-name', is_active:0 }, (await get(first.id, { includeInactive:true })).revision);
+        assert.equal(await byPath('private-name'), null);
+        assert.equal(await byPath('first-name'), null);
+        assert.equal(await byPath(String(first.id)), null);
+        assert.equal((await byPath('first-name', { includeInactive:true })).id, first.id);
       }
-      remove(first.id, get(first.id, { includeInactive:true }).revision);
-      assert.equal(byPath('first-name', { includeInactive:true }), null);
-      assert.equal(getDatabase().prepare('SELECT count(*) AS count FROM content_slugs WHERE kind = ? AND content_id = ?').get(kind.toLowerCase(), first.id).count, 0);
-      assert.equal(create({ ...input, slug:'first-name' }).slug, 'first-name');
+      await remove(first.id, (await get(first.id, { includeInactive:true })).revision);
+      assert.equal(await byPath('first-name', { includeInactive:true }), null);
+      assert.equal(await prisma.contentSlug.count({ where: { kind: kind.toLowerCase(), contentId:first.id } }), 0);
+      assert.equal((await create({ ...input, slug:'first-name' })).slug, 'first-name');
     }
-    getDatabase().close();
+    await prisma.$disconnect();
     process.stdout.write('ok');
   `;
   try {
+    execFileSync("psql", [runtime.DATABASE_URL, "-v", "ON_ERROR_STOP=1", "-c", `CREATE DATABASE "${databaseName}"`], { stdio: "pipe" });
+    const schema = execFileSync("pg_dump", ["--schema-only", "--no-owner", "--no-acl", runtime.DATABASE_URL], { stdio: "pipe" });
+    execFileSync("psql", [databaseUrl.toString(), "-v", "ON_ERROR_STOP=1"], { input: schema, stdio: "pipe" });
     // When public lookups and admin CRUD exercise collisions, renames, clearing and deletion
     const output = execFileSync(process.execPath, ["--conditions=react-server", "--import", "tsx", "--input-type=module", "-e", check], {
-      cwd: process.cwd(), env: { ...process.env, BCS_EVENTS_DB: path.join(directory, "events.db"), BCS_EVENTS_UPLOADS: path.join(directory, "images") }, encoding: "utf8",
+      cwd: process.cwd(), env: { ...process.env, DATABASE_URL: databaseUrl.toString(), BCS_EVENTS_UPLOADS: path.join(directory, "images") }, encoding: "utf8",
     });
     // Then every operation preserves the expected record ownership and canonical slug
     expect(output).toBe("ok");
   } finally {
+    execFileSync("psql", [runtime.DATABASE_URL, "-v", "ON_ERROR_STOP=1", "-c", `DROP DATABASE IF EXISTS "${databaseName}" WITH (FORCE)`], { stdio: "pipe" });
     fs.rmSync(directory, { recursive: true, force: true });
   }
 });
@@ -393,14 +404,12 @@ test.describe.serial("events-only HTTP API", () => {
 
   test("rate limits password attempts even when forwarding headers rotate", async () => {
     // Given a clean global login bucket and changing untrusted proxy headers
-    const databasePath = process.env.BCS_EVENTS_DB;
-    test.skip(!databasePath, "isolated review launcher is required");
-    if (!databasePath) return;
+    const runtime = await reviewRuntime();
 
-    // When five invalid passwords are attempted
+    // When six invalid passwords are attempted
     const statuses: number[] = [];
     try {
-      for (let index = 0; index < 5; index += 1) {
+      for (let index = 0; index < 6; index += 1) {
         const response = await admin.post("/api/admin/login", {
           headers: { origin, "x-forwarded-for": `198.51.100.${index}` },
           data: { password: `wrong-${index}` },
@@ -408,12 +417,18 @@ test.describe.serial("events-only HTTP API", () => {
         statuses.push(response.status());
       }
     } finally {
-      const database = new Database(databasePath);
-      database.prepare("DELETE FROM admin_login_attempts WHERE client_hash = 'global'").run();
-      database.close();
+      if (runtime.DATABASE_URL) {
+        const database = new PrismaClient({ adapter: new PrismaPg({ connectionString: runtime.DATABASE_URL }) });
+        try { await database.adminLoginAttempt.deleteMany({ where: { clientHash: "global" } }); }
+        finally { await database.$disconnect(); }
+      } else if (runtime.BCS_EVENTS_DB) {
+        const database = new Database(runtime.BCS_EVENTS_DB);
+        try { database.prepare("DELETE FROM admin_login_attempts WHERE client_hash = 'global'").run(); }
+        finally { database.close(); }
+      }
     }
 
-    // Then the shared limit blocks the fifth attempt
-    expect(statuses).toEqual([401, 401, 401, 401, 429]);
+    // Then the shared limit blocks attempts after five failures
+    expect(statuses).toEqual([401, 401, 401, 401, 401, 429]);
   });
 });

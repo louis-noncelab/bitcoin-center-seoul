@@ -1,5 +1,4 @@
-import { rateLimit } from "@/server/auth/rate-limit";
-import { getClientKey } from "@/server/http";
+import { boundedRequestRateLimit } from "@/server/auth/rate-limit";
 import { optionalAccount } from "@/server/auth";
 import { assertSameOrigin, handleApi, json, readBody } from "@/server/http";
 import { createOrderSchema } from "@/server/orders/validation";
@@ -8,7 +7,7 @@ import { createOrder } from "@/server/orders/create";
 import { resourceAccessCookie } from "@/server/orders/access";
 export const POST = (request: Request) => handleApi(async () => {
   assertSameOrigin(request);
-  await rateLimit("order-create", getClientKey(request), 40);
+  await boundedRequestRateLimit(request, "order-create", 40, 400, 900);
   const result = await createOrder(request, await readBody(request, createOrderSchema), await optionalAccount());
   if (result.created) {
     void notifyOrder(result.order.id, "접수");

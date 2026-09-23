@@ -59,7 +59,7 @@ for (const kind of ["book", "goods"] as const) {
           await page.goto(`/${locale}/${path}${kind === "book" ? "?kind=book" : ""}`);
           const card = page.locator(".review-card").filter({ hasText: title });
           await expect(card).toBeVisible();
-          const buy = card.getByRole("link", { name: locale === "ko" ? "상점에서 구매" : "Buy in the shop", exact: true });
+          const buy = card.getByRole("link", { name: locale === "ko" ? "상점 둘러보기" : "Browse the shop", exact: true });
           await expect(buy).toHaveAttribute("href", `/${locale}/shop`);
           await expect(card.locator("a[target='_blank']")).toHaveCount(0);
           await card.scrollIntoViewIfNeeded();
@@ -67,7 +67,7 @@ for (const kind of ["book", "goods"] as const) {
           await card.locator(".review-card-link").click();
           await expect(page).toHaveURL(`/${locale}/${path}/${slug}`);
           await expect(page.locator("main h1")).toHaveText(title);
-          await expect(page.locator("main").getByRole("link", { name: locale === "ko" ? "상점에서 구매" : "Buy in the shop", exact: true })).toHaveAttribute("href", `/${locale}/shop`);
+          await expect(page.locator("main").getByRole("link", { name: locale === "ko" ? "상점 둘러보기" : "Browse the shop", exact: true })).toHaveAttribute("href", `/${locale}/shop`);
           expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
           await capture(page, { path: `${evidence}/${kind}-${locale}-${width}-detail.png`, fullPage: true });
         }

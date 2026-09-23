@@ -13,6 +13,7 @@ Object.assign(process.env, {
 const { prisma } = await import("../src/server/db.ts");
 const { makeQuote } = await import("../src/server/orders/quote.ts");
 const { createOrder } = await import("../src/server/orders/create.ts");
+const { checkoutPolicyVersion } = await import("../src/server/orders/checkout-policy.ts");
 const { applyObservation } = await import("../src/server/payments/state.ts");
 const { resolveManualPayment } = await import("../src/server/orders/manual-payment.ts");
 const { cancelPaidOrder, recordExternalRefund, externalRefundSchema } = await import("../src/server/orders/paid-cancellation.ts");
@@ -71,7 +72,7 @@ async function fromQuote({ quote, token }) {
     origin: "http://127.0.0.1:3100", "idempotency-key": randomUUID(), "x-request-secret": randomBytes(32).toString("base64url"),
     cookie: `bcs_quote_${quote.id}=${token}`,
   } });
-  return createOrder(request, { quoteId: quote.id, customer: { name: "Tester", email, phone: "" }, locale: "en" }, null);
+  return createOrder(request, { quoteId: quote.id, customer: { name: "Tester", email, phone: "" }, locale: "en", acceptance: { accepted: true, version: checkoutPolicyVersion("en") } }, null);
 }
 async function orderWithPayment(code) {
   const { order } = await fromQuote(await makeQuote(cart(code), null));
@@ -105,7 +106,20 @@ test("paid cancellation keeps receipt and stock until external full-refund is re
 test("external refund requires explicit proof, reason, method and restock choice", () => {
   const valid = refundInput({ id: "payment", updatedAt: new Date() });
   assert.equal(externalRefundSchema.safeParse(valid).success, true);
-  for (const invalid of [{ ...valid, proof: " " }, { ...valid, reason: " " }, { ...valid, method: "AUTO" }, { ...valid, restock: undefined }]) assert.equal(externalRefundSchema.safeParse(invalid).success, false);
+  for (const invalid of [{ ...valid, proof: " " }, { ...valid, reason: " " }, { ...valid, method: "AUTO" }, { ...valid, method: "BANK" }, { ...valid, method: "OTHER" }, { ...valid, restock: undefined }]) assert.equal(externalRefundSchema.safeParse(invalid).success, false);
+});
+test("privacy-redacted order cannot enter paid cancellation", async () => {
+  const { order, payment } = await paidOrder();
+  await prisma.order.update({ where: { id: order.id }, data: { privacyRedactedAt: new Date() } });
+  await assert.rejects(cancel(order, payment), (error) => error.code === "PRIVACY_REDACTED");
+  assert.equal(await countAction(order, "order.paid.cancelled"), 0);
+});
+test("privacy-redacted pending refund cannot be marked complete", async () => {
+  const { order, payment } = await paidOrder();
+  await cancel(order, payment);
+  await prisma.order.update({ where: { id: order.id }, data: { privacyRedactedAt: new Date() } });
+  await assert.rejects(refund(order, await reload(payment)), (error) => error.code === "PRIVACY_REDACTED");
+  assert.equal((await orderRow(order)).refundStatus, "PENDING");
 });
 test("concurrent identical paid cancellations are audited once without restoring stock", async () => {
   const { order, payment } = await paidOrder();

@@ -8,7 +8,7 @@ import { EventBookingLink } from "@/components/site/event-booking-link";
 import { CenterPhoto } from "@/components/site/center-photo";
 import type { Locale } from "@/i18n/routing";
 import type { HomeEvent } from "@/lib/home-events";
-import { eventListLocation } from "@/lib/event-location";
+import { eventListLocation, eventTimeZoneLabel } from "@/lib/event-location";
 import { eventBookingHref } from "@/lib/event-booking";
 import "@/styles/event-booking.css";
 import "@/styles/home-upcoming.css";
@@ -96,7 +96,10 @@ export function UpcomingEvents({ events, locale, today }: Props) {
     >
       <span className="upcoming-curve" aria-hidden="true" />
       <div className="upcoming-heading">
-        <h2 id="home-upcoming-title">{ko ? "다가오는 행사" : "Coming up"}</h2>
+        <div>
+          <h2 id="home-upcoming-title">{ko ? "다가오는 행사" : "Coming up"}</h2>
+          <p className="caption muted">{eventTimeZoneLabel(locale)}</p>
+        </div>
         <a
           href="#home-calendar"
           className="section-link upcoming-calendar-link"

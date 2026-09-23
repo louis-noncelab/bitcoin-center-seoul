@@ -13,6 +13,7 @@ export async function fulfillOrder(id: string, input: z.infer<typeof fulfillment
     await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${id} FOR UPDATE`;
     const order = await tx.order.findUnique({ where: { id } });
     if (!order) throw new HttpError(404, "NOT_FOUND", "Order not found.");
+    if (order.privacyRedactedAt) throw new HttpError(409, "ORDER_REDACTED", "개인정보가 파기된 주문은 변경할 수 없습니다.");
     if (order.status !== "PAID") throw new HttpError(409, "PAYMENT_REQUIRED", "Fulfillment requires confirmed payment.");
     const expected = order.fulfillment === "PICKUP" ? { READY: "UNFULFILLED", COLLECTED: "READY", SHIPPED: null, DELIVERED: null } : { READY: null, COLLECTED: null, SHIPPED: "UNFULFILLED", DELIVERED: "SHIPPED" };
     if (expected[input.status] !== order.fulfillmentStatus) throw new HttpError(409, "INVALID_STATE", "This fulfillment transition is not allowed.");
@@ -38,6 +39,7 @@ export async function correctOrderTracking(id: string, input: z.infer<typeof tra
     await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${id} FOR UPDATE`;
     const order = await tx.order.findUnique({ where: { id } });
     if (!order) throw new HttpError(404, "NOT_FOUND", "Order not found.");
+    if (order.privacyRedactedAt) throw new HttpError(409, "ORDER_REDACTED", "개인정보가 파기된 주문은 변경할 수 없습니다.");
     if (order.status !== "PAID" || order.refundStatus !== "NONE" || order.fulfillment === "PICKUP" || !["SHIPPED", "DELIVERED"].includes(order.fulfillmentStatus)) {
       throw new HttpError(409, "INVALID_STATE", "발송한 결제 완료 주문만 송장을 수정할 수 있습니다.");
     }

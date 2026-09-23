@@ -36,7 +36,6 @@ import {
   setEventRegistration,
   updateHighlight,
 } from "@/server/events";
-import { retireEventTicket, syncEventTicket } from "@/server/events/tickets";
 
 const loginSchema = z.object({ password: z.string().min(1).max(1024) }).strict();
 
@@ -81,7 +80,6 @@ export async function adminEventsPost(request: NextRequest): Promise<Response> {
     requireSameOrigin(request);
     await requireAdmin(request);
     const event = await createEvent(await jsonBody(request, eventInputSchema));
-    await syncEventTicket(event, 0);
     return dataResponse(event, 201);
   });
 }
@@ -100,9 +98,7 @@ export async function adminEventPut(request: NextRequest, context: ItemContext):
     requireSameOrigin(request);
     await requireAdmin(request);
     const id = await itemId(context);
-    const previous = await getEvent(id);
     const event = await updateEvent(id, await jsonBody(request, eventInputSchema), expectedRevision(request));
-    await syncEventTicket(event, previous?.ticketCapacity ?? event.ticketCapacity);
     return dataResponse(event);
   });
 }
@@ -116,7 +112,6 @@ export async function adminEventPatch(request: NextRequest, context: ItemContext
     const { registrationClosed } = await jsonBody(request, registrationSchema);
     const id = await itemId(context);
     const event = await setEventRegistration(id, registrationClosed, expectedRevision(request));
-    await syncEventTicket(event);
     return dataResponse(event);
   });
 }
@@ -127,7 +122,6 @@ export async function adminEventDelete(request: NextRequest, context: ItemContex
     await requireAdmin(request);
     const id = await itemId(context);
     await deleteEvent(id, expectedRevision(request));
-    await retireEventTicket(id);
     return dataResponse({ deleted: true });
   });
 }

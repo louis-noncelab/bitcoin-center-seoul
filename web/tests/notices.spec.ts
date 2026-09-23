@@ -1,15 +1,15 @@
 import { deleteContentFixture } from "./content-cleanup";
 import { test, expect } from "@playwright/test";
-import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { noticeRecordSchema } from "../src/lib/notices-contract";
+import { reviewRuntime } from "./helpers/review-runtime";
 
 test("관리자가 공지를 비공개 저장, 발행, 수정하고 삭제한다", async ({ page, baseURL }) => {
   const title = `[검토] 공지 ${randomUUID()}`;
   const slug = `notice-${randomUUID()}`;
   let id: number | undefined;
-  const { ADMIN_PASSWORD } = z.object({ ADMIN_PASSWORD: z.string() }).parse(JSON.parse(await readFile(new URL("../.local/events-review/runtime.json", import.meta.url), "utf8")));
+  const { ADMIN_PASSWORD } = await reviewRuntime();
   await page.goto("/ko/admin/notices");
   await page.getByLabel("관리자 비밀번호", { exact: true }).fill(ADMIN_PASSWORD);
   await page.getByRole("button", { name: "로그인", exact: true }).click();
@@ -78,7 +78,7 @@ test("공지는 인증과 같은 출처를 요구하고 잘못된 입력을 거�
   const input = { slug: `notice-${randomUUID()}`, title: "검토", description: "검토 공지", is_active: 1 };
   expect((await request.get("/api/admin/notices")).status()).toBe(401);
   expect((await request.post("/api/admin/notices", { headers: { origin: baseURL ?? "" }, data: input })).status()).toBe(401);
-  const { ADMIN_PASSWORD } = z.object({ ADMIN_PASSWORD: z.string() }).parse(JSON.parse(await readFile(new URL("../.local/events-review/runtime.json", import.meta.url), "utf8")));
+  const { ADMIN_PASSWORD } = await reviewRuntime();
   expect((await request.post("/api/admin/login", { headers: { origin: baseURL ?? "" }, data: { password: ADMIN_PASSWORD } })).ok()).toBeTruthy();
   expect((await request.post("/api/admin/notices", { headers: { origin: "https://invalid.example" }, data: input })).status()).toBe(403);
   expect((await request.post("/api/admin/notices", { headers: { origin: baseURL ?? "" }, data: { ...input, slug: "../escape" } })).status()).toBe(400);

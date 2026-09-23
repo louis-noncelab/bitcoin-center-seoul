@@ -7,8 +7,9 @@ import { randomUUID } from "node:crypto";
 
 const root = mkdtempSync(join(tmpdir(), "bcs-manual-api-"));
 const origin = "http://127.0.0.1:3198";
+assert.ok(process.env.TEST_DATABASE_URL, "Set TEST_DATABASE_URL to an isolated, migrated local PostgreSQL database");
 Object.assign(process.env, { APP_MODE: "test", APP_ORIGIN: origin, DATA_DIR: root,
-  DATABASE_URL: "postgresql://unused@127.0.0.1:1/no_database", PAYMENT_PROVIDER: "zaprite", PAYMENT_MODE: "review", EMAIL_MODE: "capture", TRUST_PROXY: "false",
+  DATABASE_URL: process.env.TEST_DATABASE_URL, PAYMENT_PROVIDER: "zaprite", PAYMENT_MODE: "review", EMAIL_MODE: "capture", TRUST_PROXY: "false",
   TOKEN_ENCRYPTION_KEY: Buffer.alloc(32, 6).toString("base64"), BCS_EVENTS_DB: join(root, "events.db"),
 });
 const { createPasswordHash } = await import("../src/server/events/password.ts");
@@ -42,9 +43,9 @@ test("manual decisions require a reason, exact version and allowed decision", as
     assert.equal((await paymentRoute.POST(request({ ...valid, ...patch }), context)).status, 400);
   }
 });
-test("external refund recording requires proof, method and explicit inventory decision", async () => {
+test("external refund recording requires Bitcoin method, proof and explicit inventory decision", async () => {
   const valid = { paymentId: "payment", expectedPaymentUpdatedAt: new Date().toISOString(), reason: "operator proof", method: "LIGHTNING", proof: "reference", restock: false };
-  for (const patch of [{ proof: " " }, { restock: undefined }, { method: "" }]) {
+  for (const patch of [{ proof: " " }, { restock: undefined }, { method: "" }, { method: "BANK" }, { method: "OTHER" }]) {
     assert.equal((await refundRoute.POST(request({ ...valid, ...patch }), context)).status, 400);
   }
 });

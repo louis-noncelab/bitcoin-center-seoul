@@ -30,6 +30,7 @@ const { PaymentError } = await import("../src/server/payments/types.ts");
 const { prisma } = await import("../src/server/db.ts");
 const { makeQuote } = await import("../src/server/orders/quote.ts");
 const { createOrder } = await import("../src/server/orders/create.ts");
+const { checkoutPolicyVersion } = await import("../src/server/orders/checkout-policy.ts");
 const { ensureInvoice, reconcilePayment } = await import("../src/server/payments/index.ts");
 
 const prefix = `t${Date.now().toString(36)}`;
@@ -103,9 +104,9 @@ test("exchange tickers are rejected unless the quote is fresh", () => {
   const bithumb = { status: "0000", data: { closing_price: "150000000.0000", date: String(now) } };
   assert.equal(parseBithumbRate(bithumb, now).krwPerBtc, "150000000");
   assert.throws(() => parseBithumbRate({ status: "5600", data: {} }, now), (error) => error.code === "RATE_UNAVAILABLE");
-  const cached = { krwPerBtc: "149000000", source: "upbit:KRW-BTC", timestamp: new Date(now - 86_400_000) };
+  const cached = { krwPerBtc: "149000000", source: "upbit:KRW-BTC", timestamp: new Date(now - 300_000) };
   assert.equal(rateFromSources({ krwPerBtc: "150000000", source: "bithumb:BTC_KRW", timestamp: new Date(now) }, cached).source, "bithumb:BTC_KRW");
-  const fallback = rateFromSources(null, cached);
+  const fallback = rateFromSources(null, cached, now);
   assert.equal(fallback.krwPerBtc, "149000000");
   assert.equal(fallback.source, "cache:upbit:KRW-BTC");
   assert.equal(fallback.timestamp.toISOString(), cached.timestamp.toISOString());
@@ -240,6 +241,7 @@ test("cart to paid order holds then consumes stock", async () => {
     quoteId: quote.id,
     customer: { name: "Tester", email: `${prefix}@example.invalid`, phone: "010-0000-0000" },
     locale: "ko",
+    acceptance: { accepted: true, version: checkoutPolicyVersion("ko") },
     address: { countryCode: "KR", postalCode: "04000", region: "서울", city: "마포구", line1: "와우산로", line2: "" },
   }, null);
   assert.equal(created.created, true);
@@ -289,6 +291,7 @@ test("a quote is refused once a product runs short", async () => {
       quoteId: quote.id,
       customer: { name: "Tester", email: `${prefix}@example.invalid`, phone: "" },
       locale: "ko",
+      acceptance: { accepted: true, version: checkoutPolicyVersion("ko") },
     }, null),
     (error) => error.code === "OUT_OF_STOCK",
   );

@@ -3,13 +3,14 @@ import { z } from "zod";
 import type { Tx } from "@/server/db";
 import { prisma } from "@/server/db";
 import { HttpError } from "@/server/http";
+import { refundRecordingMethods } from "@/lib/order-payment-contract";
 import { lockPayment } from "@/server/payments/state";
 import { manualPaymentSchema } from "./manual-payment";
 import { orderIncludes, orderView } from "./projection";
 
-export const cancelPaidOrderSchema = manualPaymentSchema.omit({ decision: true });
+export const cancelPaidOrderSchema = manualPaymentSchema.omit({ decision: true, unpaidEvidence: true });
 export const externalRefundSchema = cancelPaidOrderSchema.extend({
-  method: z.enum(["LIGHTNING", "ONCHAIN", "BANK", "OTHER"]),
+  method: z.enum(refundRecordingMethods),
   proof: z.string().trim().min(1).max(500),
   restock: z.boolean(),
 }).strict();
@@ -21,6 +22,7 @@ async function lockedOrder(tx: Tx, orderId: string, paymentId: string) {
   if (payment.orderId !== orderId) throw new HttpError(404, "NOT_FOUND", "주문의 결제를 찾을 수 없습니다.");
   await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${orderId} FOR UPDATE`;
   const order = await tx.order.findUniqueOrThrow({ where: { id: orderId }, include: orderIncludes });
+  if (order.privacyRedactedAt) throw new HttpError(409, "PRIVACY_REDACTED", "개인정보가 삭제된 주문은 환불 처리를 변경할 수 없습니다.");
   if (order.payments.length !== 1) throw new HttpError(409, "PAYMENT_CONFLICT", "여러 결제가 연결된 주문은 수동 처리할 수 없습니다.");
   return { order, payment };
 }

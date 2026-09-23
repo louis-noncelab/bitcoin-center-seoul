@@ -22,3 +22,7 @@ export const prisma = new Proxy({} as PrismaClient, {
     return typeof value === "function" ? value.bind(database) : value;
   },
 });
+
+export async function disconnectDatabase(): Promise<void> {
+  await globalDatabase.centerPrisma?.$disconnect();
+}

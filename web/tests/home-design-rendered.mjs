@@ -6,6 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import { once } from "node:events";
 import { test } from "node:test";
+import { renderedServerEnv, resetRenderedContent } from "./helpers/rendered-pg.mjs";
 
 const projectDirectory = path.resolve(import.meta.dirname, "..");
 const standaloneDirectory = path.join(projectDirectory, ".next-events", "standalone", "web");
@@ -91,18 +92,16 @@ test("rendered home keeps its heading hierarchy and truthful event navigation", 
   assert.ok(fs.existsSync(serverFile), "Build .next-events/standalone/web/server.js before running this test.");
 
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "bcs-home-design-rendered-"));
-  const database = path.join(directory, "events.db");
   const uploads = path.join(directory, "images");
   const password = "home-design-local-fixture-only";
   let child;
 
   try {
-    const [{ openDatabase }, { createPasswordHash }, { seoulDate }] = await Promise.all([
-      import("../src/server/events/db.ts"),
+    const [{ createPasswordHash }, { seoulDate }] = await Promise.all([
       import("../src/server/events/password.ts"),
       import("../src/lib/center-status.ts"),
     ]);
-    openDatabase(database).close();
+    await resetRenderedContent();
     const passwordHash = await createPasswordHash(password);
     const today = seoulDate();
     const port = await unusedPort();
@@ -110,19 +109,7 @@ test("rendered home keeps its heading hierarchy and truthful event navigation", 
     fs.mkdirSync(uploads, { recursive: true });
     child = spawn(process.execPath, [serverFile], {
       cwd: standaloneDirectory,
-      env: {
-        PATH: process.env.PATH || "",
-        NODE_ENV: "production",
-        HOSTNAME: "127.0.0.1",
-        PORT: String(port),
-        APP_ORIGIN: origin,
-        ADMIN_PASSWORD_HASH: passwordHash,
-        BCS_EVENTS_DB: database,
-        BCS_EVENTS_UPLOADS: uploads,
-        BCS_EVENTS_REVIEW: "true",
-        BCS_TRUST_PROXY: "false",
-        __NEXT_PROCESSED_ENV: "true",
-      },
+      env: renderedServerEnv({ origin, port, directory, uploads, passwordHash }),
       stdio: ["ignore", "ignore", "pipe"],
     });
     let serverErrors = "";
@@ -191,5 +178,6 @@ test("rendered home keeps its heading hierarchy and truthful event navigation", 
       }
     }
     fs.rmSync(directory, { recursive: true, force: true });
+    await resetRenderedContent();
   }
 });

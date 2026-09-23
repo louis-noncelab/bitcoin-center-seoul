@@ -1,8 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
-import { readFile } from "node:fs/promises";
-import { z } from "zod";
+import { reviewOrigin, reviewRuntime } from "./helpers/review-runtime";
 
-const origin = process.env.COMMERCE_REVIEW_ORIGIN ?? "http://127.0.0.1:3147";
+const origin = reviewOrigin();
 test.describe.configure({ mode: "serial" });
 const version = "2026-09-21T00:00:00.000Z";
 const order = {
@@ -13,8 +12,8 @@ const order = {
 };
 
 async function openOrder(page: Page) {
-  const { password } = z.object({ password: z.string() }).parse(JSON.parse(await readFile(new URL("../.local/commerce-fixes/runtime.json", import.meta.url), "utf8")));
-  expect((await page.request.post(`${origin}/api/admin/login`, { headers: { origin }, data: { password } })).ok()).toBe(true);
+  const { ADMIN_PASSWORD } = await reviewRuntime();
+  expect((await page.request.post(`${origin}/api/admin/login`, { headers: { origin }, data: { password: ADMIN_PASSWORD } })).ok()).toBe(true);
   await page.route(/\/api\/admin\/orders(?:\?.*)?$/, (route) => route.fulfill({ json: { data: { items: [order], total: 1, page: 1, pageSize: 50 } } }));
   await page.route("**/api/admin/orders/manual-order/payment", (route) => route.request().method() === "GET"
     ? route.fulfill({ json: { data: [] } }) : route.fallback());

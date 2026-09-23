@@ -12,6 +12,7 @@ export function orderView(order: OrderDetails) {
     carrier: order.carrier, trackingNumber: order.trackingNumber, fulfilledAt: order.fulfilledAt,
     holdExpiresAt: order.holdExpiresAt, createdAt: order.createdAt,
     confirmationCode: order.confirmationCode, checkedInAt: order.checkedInAt,
+    privacyRedactedAt: order.privacyRedactedAt,
     items: order.items.map((item) => ({ id: item.id, sku: item.sku, quantity: item.quantity, titleKo: item.titleKo, titleEn: item.titleEn, optionLabelKo: item.optionLabelKo, optionLabelEn: item.optionLabelEn, amountSats: item.amountSats.toString() })),
     payments: order.payments, refundStatus: order.refundStatus, refundedAt: order.refundedAt,
   };

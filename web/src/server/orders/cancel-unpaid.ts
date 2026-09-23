@@ -48,6 +48,7 @@ export async function cancelUnpaidOrder(
     await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${orderId} FOR UPDATE`;
     const order = await tx.order.findUnique({ where: { id: orderId }, include: orderIncludes });
     if (!order) throw new HttpError(404, "NOT_FOUND", "Order not found.");
+    if (order.privacyRedactedAt) throw new HttpError(409, "ORDER_REDACTED", "개인정보가 파기된 주문은 변경할 수 없습니다.");
     const payment = existingPayment ? await tx.payment.findUniqueOrThrow({ where: { id: existingPayment.id } }) : null;
     if (order.status === "CANCELLED") {
         return orderView(order);

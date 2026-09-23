@@ -160,14 +160,17 @@ test("private and deleted images cannot be downloaded or retained through the im
     expect((await anonymous.get(image)).status()).toBe(404);
     expect((await request.delete(`/api/admin/collection/${id}`, { headers: { ...headers, "If-Match": `"${revision}"` } })).status()).toBe(200);
     expect((await anonymous.get(image)).status()).toBe(404);
-    const notice = { slug: `image-check-${randomUUID()}`, title: "검증용 본문 사진", description: `![사진][photo]\n\n[photo]: ${image}`, is_active: 1 };
+    const noticeUpload = await request.post("/api/admin/images", { headers, multipart: { file: { name: "notice.png", mimeType: "image/png", buffer: png } } });
+    expect(noticeUpload.status()).toBe(200);
+    const noticeImage: string = (await noticeUpload.json()).data.images[0];
+    const notice = { slug: `image-check-${randomUUID()}`, title: "검증용 본문 사진", description: `![사진][photo]\n\n[photo]: ${noticeImage}`, is_active: 1 };
     const publishedNotice = await request.post("/api/admin/notices", { headers, data: notice });
     expect(publishedNotice.status()).toBe(201);
     const noticeRecord = (await publishedNotice.json()).data;
     noticeId = noticeRecord.id;
-    expect((await anonymous.get(image)).status()).toBe(200);
+    expect((await anonymous.get(noticeImage)).status()).toBe(200);
     expect((await request.put(`/api/admin/notices/${noticeId}`, { headers: { ...headers, "If-Match": `"${noticeRecord.revision}"` }, data: { ...notice, is_active: 0 } })).status()).toBe(200);
-    expect((await anonymous.get(image)).status()).toBe(404);
+    expect((await anonymous.get(noticeImage)).status()).toBe(404);
   } finally {
     for (const id of ids) await deleteContentFixture(request, `/api/admin/collection/${id}`, baseURL ?? "");
     if (noticeId) await deleteContentFixture(request, `/api/admin/notices/${noticeId}`, baseURL ?? "");

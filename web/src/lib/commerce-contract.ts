@@ -51,6 +51,7 @@ export const adminOrderRecord = z.object({
   id: z.string(),
   refundStatus: z.enum(["NONE", "PENDING", "COMPLETED"]).default("NONE"),
   refundedAt: z.string().nullable().optional(),
+  privacyRedactedAt: z.string().nullable().optional(),
   status: z.enum(["PENDING_PAYMENT", "PAID", "EXPIRED", "CANCELLED", "REVIEW"]),
   customerName: z.string(), customerEmail: z.string(), customerPhone: z.string(),
   customerNotes: z.string().optional(), locale: z.string(),
@@ -106,7 +107,7 @@ export const fulfillmentStatusLabels = {
 
 /** The next fulfillment step the server will accept, or null when nothing is pending. */
 export function nextFulfillment(order: AdminOrderRecord): "READY" | "COLLECTED" | "SHIPPED" | "DELIVERED" | null {
-  if (order.status !== "PAID") return null;
+  if (order.status !== "PAID" || order.privacyRedactedAt) return null;
   if (order.fulfillment === "PICKUP") {
     if (order.fulfillmentStatus === "UNFULFILLED") return "READY";
     if (order.fulfillmentStatus === "READY") return "COLLECTED";

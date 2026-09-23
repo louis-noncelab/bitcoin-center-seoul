@@ -22,19 +22,25 @@ async function selectedLnurl() {
   return { lightningAddress: row.lightningAddress.address, allowedOrigins };
 }
 
-export async function receiverFor(payment: Payment): Promise<Receiver> {
+function assertPaymentMode(payment: Payment) {
   const config = getServerConfig();
   if (payment.mode === "REVIEW") {
     if (!["review", "test"].includes(config.appMode)) throw new PaymentError("REVIEW_DISABLED");
-    return reviewReceiver[payment.provider];
+    return;
   }
   if (payment.mode === "SANDBOX") {
     // A sandbox organization is the only provider environment that is safe off production.
     if (config.paymentMode !== "sandbox") throw new PaymentError("SANDBOX_DISABLED");
     if (payment.provider !== "ZAPRITE") throw new PaymentError("SANDBOX_PROVIDER_UNSUPPORTED");
-    return zapriteReceiver();
+    return;
   }
   if (config.appMode !== "production" || config.paymentMode !== "live") throw new PaymentError("LIVE_DISABLED");
+}
+
+export async function receiverFor(payment: Payment): Promise<Receiver> {
+  assertPaymentMode(payment);
+  if (payment.mode === "REVIEW") return reviewReceiver[payment.provider];
+  const config = getServerConfig();
   switch (payment.provider) {
     case "LNURL": {
       const selected = await selectedLnurl();
@@ -49,8 +55,11 @@ export async function receiverFor(payment: Payment): Promise<Receiver> {
 
 export async function providerContext(payment: Payment): Promise<ProviderContext> {
   const receiver = metadataSchema.parse(payment.metadata).receiverSnapshot;
-  const current = await receiverFor(payment);
-  if (!receiver || JSON.stringify(receiver) !== JSON.stringify(current)) throw new PaymentError("RECEIVER_CONFIGURATION_CHANGED");
+  assertPaymentMode(payment);
+  if (!receiver || receiver.provider !== payment.provider) throw new PaymentError("RECEIVER_CONFIGURATION_CHANGED");
+  // LNURL verification needs no active-account credential: the server-saved invoice, hash and
+  // receiver survive selection changes. Zaprite credentials remain bound to the current account.
+  if (receiver.provider === "ZAPRITE" && JSON.stringify(receiver) !== JSON.stringify(await receiverFor(payment))) throw new PaymentError("RECEIVER_CONFIGURATION_CHANGED");
   if (payment.mode === "REVIEW") return { payment, receiver, transport: reviewTransport(payment) };
   const config = getServerConfig();
   if (receiver.provider === "ZAPRITE") {

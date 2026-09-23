@@ -33,29 +33,30 @@
 .commerce-product-photo { aspect-ratio: 1; }
 .commerce-product-photo img { object-fit: contain; }
 .commerce-gallery { display: grid; gap: var(--space-3); }
-.commerce-gallery-stage { position: relative; aspect-ratio: 1; overflow: hidden; background: var(--surface-sunken, var(--paper-2)); cursor: zoom-in; }
+.commerce-gallery-stage { position: relative; display: block; inline-size: 100%; aspect-ratio: 1; overflow: hidden; padding: 0; border: 0; background: var(--surface); cursor: zoom-in; }
 .commerce-gallery-stage img { object-fit: contain; }
 .commerce-gallery-lens { position: absolute; width: 180px; height: 180px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--ink) 35%, transparent); box-shadow: 0 10px 28px color-mix(in srgb, var(--ink) 28%, transparent); pointer-events: none; background-repeat: no-repeat; display: none; }
-.commerce-gallery-count { position: absolute; right: var(--space-3); bottom: var(--space-3); padding: 0.2rem 0.55rem; border-radius: 999px; background: color-mix(in srgb, var(--ink) 55%, transparent); color: var(--paper); font-size: 0.75rem; }
+.commerce-gallery-count { position: absolute; right: var(--space-3); bottom: var(--space-3); padding: 0.2rem 0.55rem; border-radius: 999px; background: var(--media-control-shadow); color: var(--media-control-ink); font-size: 0.75rem; }
 .commerce-gallery-thumbs { display: flex; gap: var(--space-2); }
 .commerce-gallery-thumbs button { position: relative; width: 4.5rem; aspect-ratio: 1; overflow: hidden; border: 1px solid var(--line); opacity: 0.62; background: transparent; padding: 0; transition: opacity var(--duration-overlay) var(--ease-out), border-color var(--duration-overlay) var(--ease-out); }
 .commerce-gallery-thumbs button.is-selected { opacity: 1; border-color: var(--ink); }
 .commerce-gallery-thumbs img { object-fit: contain; }
-.commerce-gallery-lightbox { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; background: color-mix(in srgb, var(--ink) 88%, transparent); }
-.commerce-gallery-full { position: relative; width: min(90vw, 64rem); height: 85vh; }
+.commerce-gallery-lightbox[open] { position: fixed; inset: 0; display: grid; place-items: center; inline-size: 100vw; max-inline-size: none; block-size: 100dvh; max-block-size: none; margin: 0; padding: 0; border: 0; background: var(--media-control-shadow); color: var(--media-control-ink); }
+.commerce-gallery-lightbox::backdrop { background: color-mix(in srgb, var(--media-control-shadow) 95%, transparent); }
+.commerce-gallery-full { position: relative; width: min(90vw, 64rem); height: 85dvh; }
 .commerce-gallery-full img { object-fit: contain; }
-.commerce-gallery-close, .commerce-gallery-nav { position: absolute; z-index: 1; border: 0; background: color-mix(in srgb, var(--paper) 16%, transparent); color: var(--paper); min-height: 2.75rem; padding: 0 0.9rem; }
-.commerce-gallery-close { top: var(--space-4); right: var(--space-4); }
+.commerce-gallery-close, .commerce-gallery-nav { position: absolute; z-index: 1; border: 1px solid var(--media-control-ink); border-radius: var(--radius-control); background: var(--media-control-shadow); color: var(--media-control-ink); min-height: 2.75rem; padding: 0 0.9rem; cursor: pointer; }
+.commerce-gallery-close { top: max(var(--space-4), env(safe-area-inset-top)); right: max(var(--space-4), env(safe-area-inset-right)); }
 .commerce-gallery-nav { top: 50%; transform: translateY(-50%); }
 .commerce-gallery-nav.is-prev { left: var(--space-3); }
 .commerce-gallery-nav.is-next { right: var(--space-3); }
-.commerce-gallery-empty { aspect-ratio: 1; display: grid; place-items: center; background: var(--surface-sunken, var(--paper-2)); }
+.commerce-gallery-lightbox :is(button):focus-visible { outline: var(--focus-width) solid var(--media-control-ink); outline-offset: 3px; }
 @media (hover: hover) and (min-width: 768px) and (prefers-reduced-motion: no-preference) {
   .commerce-gallery-lens { display: block; animation: commerce-fade var(--duration-overlay) var(--ease-out); }
 }
 @media (prefers-reduced-motion: no-preference) {
   .commerce-gallery-stage img { animation: commerce-fade var(--duration-overlay) var(--ease-out); }
-  .commerce-gallery-lightbox { animation: commerce-fade var(--duration-overlay) var(--ease-out); }
+  .commerce-gallery-lightbox[open] { animation: commerce-fade var(--duration-overlay) var(--ease-out); }
 }
 @keyframes commerce-fade { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
@@ -79,12 +80,15 @@
 .commerce-choice .choice-input { margin-top: var(--space-1); }
 .commerce-choice small { display: block; font-size: var(--text-caption); color: var(--muted); margin-block-start: var(--space-2); }
 .commerce-pickup { color: var(--muted); }
+.commerce-checkout-disclosure { margin: 0; padding-inline-start: var(--space-6); list-style: disc; }
+.commerce-checkout-disclosure li + li { margin-block-start: var(--space-3); }
 .commerce-loading { min-height: 12rem; display: grid; align-content: center; color: var(--muted); font-size: var(--text-small); }
 .commerce-payment-wait { display: flex; align-items: center; gap: var(--space-3); min-height: var(--control-height); color: var(--muted); font-size: var(--text-small); }
 .commerce-payment-wait .button-spinner { width: 1.25rem; height: 1.25rem; flex: 0 0 auto; }
 .commerce-status-heading { display: grid; gap: var(--space-3); }
 .commerce-status-heading h2 { font-size: var(--text-heading); font-weight: var(--weight-medium); letter-spacing: var(--tracking-heading); }
 .commerce-reference { overflow-wrap: anywhere; }
+@media (max-width: 600px) { .commerce-facts > div:has(> .commerce-reference) { grid-template-columns: minmax(0, 1fr); gap: var(--space-2); } }
 .commerce-payment-label { display: inline-flex; align-items: center; gap: var(--space-2); }
 .commerce-resource-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .commerce-resource :is(address, p), .commerce-payment p { overflow-wrap: anywhere; }
@@ -158,7 +162,7 @@
   min-inline-size: 0;
 }
 .commerce-product-buy .commerce-price { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-3); }
-.commerce-product-buy .commerce-price strong { color: var(--orange); }
+.commerce-product-buy .commerce-price strong { color: var(--ink); }
 .commerce-qty { display: grid; gap: var(--space-2); }
 .commerce-qty-controls { display: flex; align-items: center; gap: var(--space-3); }
 .commerce-qty-btn {

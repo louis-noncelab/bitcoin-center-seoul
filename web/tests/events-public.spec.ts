@@ -1,11 +1,10 @@
 import { deleteContentFixture } from "./content-cleanup";
 import { randomUUID } from "node:crypto";
-import { readFile } from "node:fs/promises";
 import { expect, request, test, type APIRequestContext } from "@playwright/test";
 import { z } from "zod";
 import { eventRecordSchema, highlightRecordSchema } from "../src/lib/events-contract";
+import { reviewRuntime } from "./helpers/review-runtime";
 
-const runtimeSchema = z.object({ ADMIN_PASSWORD: z.string().min(1) });
 const responseSchema = <T extends z.ZodType>(schema: T) => z.object({ data: schema });
 const seoulToday = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" }).format(new Date());
 const futureEventDate = (() => {
@@ -26,8 +25,9 @@ test.describe.serial("events-only public pages", () => {
   const highlightTitleEn = `[Review] Public record ${randomUUID()}`;
 
   test.beforeAll(async ({ baseURL }) => {
-    const runtime = runtimeSchema.parse(JSON.parse(await readFile(new URL("../.local/events-review/runtime.json", import.meta.url), "utf8")));
-    const reviewOrigin = baseURL ?? "http://127.0.0.1:3102";
+    const runtime = await reviewRuntime();
+    const reviewOrigin = baseURL ?? runtime.APP_ORIGIN;
+    expect(reviewOrigin).toBe(runtime.APP_ORIGIN);
     admin = await request.newContext({ baseURL: reviewOrigin, extraHTTPHeaders: { origin: reviewOrigin } });
     expect((await admin.post("/api/admin/login", { data: { password: runtime.ADMIN_PASSWORD } })).ok()).toBeTruthy();
 
@@ -50,9 +50,9 @@ test.describe.serial("events-only public pages", () => {
     if (!admin) return;
     try {
       try {
-        if (eventId) await deleteContentFixture(admin, `/api/admin/events/${eventId}`, baseURL ?? "http://127.0.0.1:3102");
+        if (eventId) await deleteContentFixture(admin, `/api/admin/events/${eventId}`, baseURL ?? (await reviewRuntime()).APP_ORIGIN);
       } finally {
-        if (highlightId) await deleteContentFixture(admin, `/api/admin/highlights/${highlightId}`, baseURL ?? "http://127.0.0.1:3102");
+        if (highlightId) await deleteContentFixture(admin, `/api/admin/highlights/${highlightId}`, baseURL ?? (await reviewRuntime()).APP_ORIGIN);
       }
     } finally {
       await admin.dispose();
@@ -162,7 +162,18 @@ test.describe.serial("events-only public pages", () => {
   });
 
   test("paginates the review journal with distinct records, localized links and canonical metadata", async ({ page, request: publicRequest }) => {
-    // Given the isolated review dataset contains more than one page of active highlights
+    // Given more than one page of scoped active highlights in the isolated review dataset
+    const paginationIds: number[] = [];
+    try {
+      for (let index = 0; index < 13; index += 1) {
+        const record = responseSchema(highlightRecordSchema).parse(await (await admin.post("/api/admin/highlights", { data: {
+          slug: `pagination-${randomUUID()}`, title: `[검토] 페이지 ${index}`, titleEn: `[Review] Page ${index}`,
+          meta: "", metaEn: "", category: "행사", categoryEn: "Event", date: "2099.09.09", startDate: "", endDate: "",
+          host: "", hostEn: "", description: "페이지 검토", descriptionEn: "Pagination review", image: "", link: "",
+          icon: "calendar", sort_order: 0, is_active: 1, images: [],
+        } })).json()).data;
+        paginationIds.push(record.id);
+      }
     const records = responseSchema(z.array(highlightRecordSchema)).parse(await (await publicRequest.get("/api/highlights")).json()).data;
     expect(records.length).toBeGreaterThan(12);
     const lastPage = Math.ceil(records.length / 12);
@@ -189,6 +200,9 @@ test.describe.serial("events-only public pages", () => {
     await expect(page.getByRole("navigation", { name: "Highlights pagination" }).getByRole("link", { name: "Next", exact: true })).toHaveCount(0);
     await page.setViewportSize({ width: 375, height: 812 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    } finally {
+      for (const id of paginationIds) await deleteContentFixture(admin, `/api/admin/highlights/${id}`, (await reviewRuntime()).APP_ORIGIN);
+    }
   });
 
   test("normalizes invalid journal pages and clamps large pages before querying records", async ({ request: publicRequest }) => {

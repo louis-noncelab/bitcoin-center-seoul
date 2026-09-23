@@ -29,11 +29,14 @@ export function decryptPayload(encoded: string | null): EmailPayload {
 
 export async function enqueue(
   tx: Tx, eventKey: string, to: string, locale: "ko" | "en", kind: string, payload: EmailPayload,
+  sourceOrderId?: string,
 ): Promise<number> {
+  if (!to.trim()) return 0;
   const config = getServerConfig();
   const status = config.emailMode === "capture" ? "CAPTURED" : "PENDING";
   const created = await tx.emailOutbox.createMany({
-    data: [{ eventKey, to: encryptPayload({ v: to }), locale, kind, payload: {}, encryptedPayload: encryptPayload(payload), status }],
+    data: [{ eventKey, orderId: sourceOrderId ?? /^(?:order|operator):([^:]+):/.exec(eventKey)?.[1] ?? null,
+      to: encryptPayload({ v: to }), locale, kind, payload: {}, encryptedPayload: encryptPayload(payload), status }],
     skipDuplicates: true,
   });
   return created.count;
@@ -65,6 +68,7 @@ export function renderEmail(kind: string, locale: string, payload: EmailPayload)
     "change.requested": ["변경 요청이 접수되었습니다", "Your change request was received"],
     "change.reviewed": ["요청 검토 결과 안내", "Your request review result"],
     INQUIRY: ["센터 문의가 도착했습니다", "A center inquiry was received"],
+    COLLABORATION: ["협업 제안이 도착했습니다", "A collaboration proposal was received"],
     "product.restock": ["상품이 다시 입고되었습니다", "A product is back in stock"],
     "product.question": ["문의에 답변이 등록되었습니다", "Your product question was answered"],
   };

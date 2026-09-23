@@ -10,13 +10,12 @@ import { noticeInputSchema } from "../src/lib/notices-contract.ts";
 import { getDatabase, openDatabase } from "../src/server/events/db.ts";
 import { createPasswordHash } from "../src/server/events/password.ts";
 import { login } from "../src/server/events/auth.ts";
-import { getEvent, getHighlight } from "../src/server/events/index.ts";
-import { getNotice } from "../src/server/notices/index.ts";
 import {
   adminEventsPost, adminEventPut, adminEventDelete, publicEvent,
   adminHighlightsPost, adminHighlightPut, adminHighlightDelete, publicHighlight,
 } from "../src/server/events/handlers.ts";
 import { adminNoticesPost, adminNoticePut, adminNoticeDelete, publicNotice } from "../src/server/notices/handlers.ts";
+import "./helpers/pg-content-env.mjs";
 
 const event = {
   slug: "tag-event", title: "태그 행사", titleEn: "Tag event", date: "2026-09-10", time: "19:00",
@@ -36,6 +35,7 @@ const cases = [
 const directory = mkdtempSync(join(tmpdir(), "bcs-content-tags-"));
 const origin = "http://127.0.0.1:3102";
 let session;
+const { prisma } = await import("../src/server/db.ts");
 
 function request(method, pathname, body, revision) {
   return new NextRequest(`${origin}${pathname}`, {
@@ -72,10 +72,18 @@ before(async () => {
   legacy.prepare("INSERT INTO notices (id,slug,title,titleEn,description,descriptionEn,is_active) VALUES (1,'legacy-notice',@title,@titleEn,@description,@descriptionEn,@is_active)").run(notice);
   legacy.close();
   process.env.ADMIN_PASSWORD_HASH = await createPasswordHash("content-tags-local-fixture-only");
+  await prisma.contentSlug.deleteMany({ where: { slug: { startsWith: "tag-" } } });
+  await prisma.contentSlug.deleteMany({ where: { slug: { startsWith: "old-" } } });
+  await prisma.noticeSlug.deleteMany({ where: { slug: { startsWith: "tag-" } } });
+  await prisma.noticeSlug.deleteMany({ where: { slug: { startsWith: "old-" } } });
+  await prisma.centerEvent.deleteMany({ where: { title: "태그 행사" } });
+  await prisma.centerHighlight.deleteMany({ where: { title: "태그 기록" } });
+  await prisma.notice.deleteMany({ where: { title: "태그 공지" } });
   session = await login("content-tags-local-fixture-only", "tag-tests");
 });
 
-after(() => {
+after(async () => {
+  await prisma.$disconnect();
   getDatabase().close();
   rmSync(directory, { recursive: true, force: true });
 });
@@ -111,7 +119,7 @@ test("additive migration preserves legacy rows and supplies empty stored tags on
     const columns = getDatabase().prepare(`PRAGMA table_info(${table})`).all();
     assert.equal(columns.filter((column) => column.name === "tags").length, 1);
   }
-  assert.deepEqual([getEvent(1).tags, getHighlight(1).tags, getNotice(1).tags], [[], [], []]);
+  assert.deepEqual(["events", "highlights", "notices"].map((table) => JSON.parse(getDatabase().prepare(`SELECT tags FROM ${table} WHERE id = 1`).get().tags)), [[], [], []]);
 });
 
 for (const item of cases) {

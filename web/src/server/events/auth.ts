@@ -27,21 +27,23 @@ function passwordHash(): string {
 }
 
 async function reserveAttempt(key: string, now: number): Promise<void> {
-  await prisma.$transaction(async (tx) => {
-    const row = await tx.adminLoginAttempt.findUnique({ where: { clientHash: key } });
-    if (row && Number(row.blockedUntil) > now) throw new ApiError(429, "RATE_LIMITED", "잠시 후 다시 시도해주세요.");
-    const currentFailures = row && Number(row.windowStarted) > now - loginWindowMs ? row.failures : 0;
-    const failures = currentFailures + 1;
-    const windowStarted = currentFailures === 0 ? now : Number(row?.windowStarted ?? now);
-    const blockedUntil = failures >= loginLimit ? now + loginWindowMs : 0;
-    await tx.adminLoginAttempt.upsert({
-      where: { clientHash: key },
-      create: { clientHash: key, windowStarted: BigInt(windowStarted), failures, blockedUntil: BigInt(blockedUntil) },
-      update: { windowStarted: BigInt(windowStarted), failures, blockedUntil: BigInt(blockedUntil) },
-    });
-    await tx.adminLoginAttempt.deleteMany({
-      where: { windowStarted: { lt: BigInt(now - loginWindowMs) }, blockedUntil: { lt: BigInt(now) } },
-    });
+  const rows = await prisma.$queryRaw<readonly { readonly failures: number }[]>`
+    INSERT INTO "admin_login_attempts" ("client_hash", "window_started", "failures", "blocked_until")
+    VALUES (${key}, ${BigInt(now)}, 1, 0)
+    ON CONFLICT ("client_hash") DO UPDATE SET
+      "failures" = CASE WHEN "admin_login_attempts"."window_started" <= ${BigInt(now - loginWindowMs)}
+        THEN 1 ELSE "admin_login_attempts"."failures" + 1 END,
+      "window_started" = CASE WHEN "admin_login_attempts"."window_started" <= ${BigInt(now - loginWindowMs)}
+        THEN ${BigInt(now)} ELSE "admin_login_attempts"."window_started" END,
+      "blocked_until" = CASE WHEN "admin_login_attempts"."window_started" > ${BigInt(now - loginWindowMs)}
+        AND "admin_login_attempts"."failures" + 1 >= ${loginLimit}
+        THEN ${BigInt(now + loginWindowMs)}::bigint ELSE 0::bigint END
+    WHERE "admin_login_attempts"."blocked_until" <= ${BigInt(now)}
+    RETURNING "failures"
+  `;
+  if (!rows[0]) throw new ApiError(429, "RATE_LIMITED", "잠시 후 다시 시도해주세요.");
+  await prisma.adminLoginAttempt.deleteMany({
+    where: { windowStarted: { lt: BigInt(now - loginWindowMs) }, blockedUntil: { lt: BigInt(now) } },
   });
 }
 
@@ -76,28 +78,28 @@ export async function login(candidate: string, clientKey: string): Promise<strin
   const encoded = passwordHash();
   const now = Date.now();
   if (pendingClients.has(clientKey) || pendingClients.size >= 8) throw new ApiError(429, "RATE_LIMITED", "잠시 후 다시 시도해주세요.");
-  // Reserve the attempt before awaiting the KDF, including across Node processes.
-  await reserveAttempt(clientKey, now);
+  // Synchronous admission bounds queued KDF work before any database await.
   pendingClients.add(clientKey);
-  const verification = verificationTail.then(() => verifyPassword(candidate, encoded));
-  verificationTail = verification.then(() => undefined, () => undefined);
   try {
+    await reserveAttempt(clientKey, now);
+    const verification = verificationTail.then(() => verifyPassword(candidate, encoded));
+    verificationTail = verification.then(() => undefined, () => undefined);
     if (!await verification) throw new ApiError(401, "INVALID_CREDENTIALS", "암호가 올바르지 않습니다.");
+    const token = randomBytes(32).toString("base64url");
+    const credentialVersion = hash(encoded);
+    await prisma.$transaction([
+      prisma.adminSession.deleteMany({
+        where: { OR: [{ expiresAt: { lte: BigInt(now) } }, { lastSeenAt: { lte: BigInt(now - idleMilliseconds) } }, { NOT: { credentialVersion } }] },
+      }),
+      prisma.adminLoginAttempt.deleteMany({ where: { clientHash: clientKey } }),
+      prisma.adminSession.create({
+        data: { tokenHash: hash(token), expiresAt: BigInt(now + sessionSeconds * 1000), lastSeenAt: BigInt(now), credentialVersion },
+      }),
+    ]);
+    return token;
   } finally {
     pendingClients.delete(clientKey);
   }
-  const token = randomBytes(32).toString("base64url");
-  const credentialVersion = hash(encoded);
-  await prisma.$transaction([
-    prisma.adminSession.deleteMany({
-      where: { OR: [{ expiresAt: { lte: BigInt(now) } }, { lastSeenAt: { lte: BigInt(now - idleMilliseconds) } }, { NOT: { credentialVersion } }] },
-    }),
-    prisma.adminLoginAttempt.deleteMany({ where: { clientHash: clientKey } }),
-    prisma.adminSession.create({
-      data: { tokenHash: hash(token), expiresAt: BigInt(now + sessionSeconds * 1000), lastSeenAt: BigInt(now), credentialVersion },
-    }),
-  ]);
-  return token;
 }
 
 export async function isAuthenticated(request: NextRequest): Promise<boolean> {

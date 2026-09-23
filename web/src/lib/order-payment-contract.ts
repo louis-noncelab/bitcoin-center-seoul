@@ -5,6 +5,7 @@ export const paymentStatusLabels = {
   PAID: "결제 완료", EXPIRED: "기한 만료", FAILED: "미결제 종료", REVIEW: "운영자 확인 필요",
 } as const;
 export const refundMethodLabels = { LIGHTNING: "라이트닝", ONCHAIN: "온체인", BANK: "계좌 이체", OTHER: "기타" } as const;
+export const refundRecordingMethods = ["LIGHTNING", "ONCHAIN"] as const;
 export const paymentActionLabels: Readonly<Record<string, string>> = {
   "order.payment.manual": "결제 수동 처리", "order.paid.cancelled": "결제 후 주문 취소",
   "order.refund.recorded": "외부 환불 완료 기록", "order.cancelled": "미결제 주문 취소",
@@ -17,6 +18,7 @@ export const orderPaymentHistory = z.array(z.object({
     fromOrderStatus: z.string().optional(), toOrderStatus: z.enum(["PENDING_PAYMENT", "PAID", "EXPIRED", "CANCELLED", "REVIEW"]).optional(),
     method: z.enum(["LIGHTNING", "ONCHAIN", "BANK", "OTHER"]).optional(),
     proof: z.string().optional(), restock: z.boolean().optional(), inventoryConsumed: z.boolean().optional(),
+    unpaidEvidence: z.object({ providerReference: z.string().min(1).max(500), pendingHtlcsCleared: z.literal(true) }).optional(),
   }),
 }));
 
@@ -34,6 +36,8 @@ export const paymentOperationErrors: Readonly<Record<string, string>> = {
   RESTOCK_NOT_ALLOWED: "판매 재고가 차감되지 않은 주문이므로 재고를 복구할 수 없습니다.",
   RESTOCK_NOT_APPLICABLE: "판매 재고가 차감되지 않은 주문이므로 재고를 복구할 수 없습니다.",
   PAYMENT_UNCONFIRMED: "입금 확인이 끝나지 않았습니다. 결제 상태를 먼저 확인해 주세요.",
+  LNURL_INVOICE_STILL_PAYABLE: "라이트닝 인보이스의 결제 가능 시간이 남았습니다. 기한이 끝난 뒤 제공자에서 입금과 진행 중인 HTLC가 없음을 확인해 주세요.",
+  LNURL_RECONCILIATION_REQUIRED: "라이트닝 결제 상태를 확정할 수 없습니다. 제공자의 결제 내역과 진행 중인 HTLC를 확인하고 조회 참조를 기록해 주세요.",
   CANCELLATION_AUDIT_MISSING: "취소 당시 재고 기록을 찾을 수 없습니다. 환불 완료를 저장하지 않았습니다.",
   REFUND_IN_PROGRESS: "이미 취소 후 환불 처리 중인 주문입니다. 결제 완료로 되돌릴 수 없습니다.",
   INVALID_STATE: "현재 주문 상태에서는 이 작업을 처리할 수 없습니다. 최신 주문을 불러와 주세요.",

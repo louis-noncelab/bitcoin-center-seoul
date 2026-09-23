@@ -1,10 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { readFile } from "node:fs/promises";
 import { expect, request, test, type APIRequestContext } from "@playwright/test";
 import { z } from "zod";
 import { eventRecordSchema } from "../src/lib/events-contract";
+import { reviewRuntime } from "./helpers/review-runtime";
 
-const runtimeSchema = z.object({ ADMIN_PASSWORD: z.string().min(1) });
 const responseSchema = z.object({ data: eventRecordSchema });
 const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" }).format(new Date());
 const nextMonth = new Date(`${today.slice(0, 7)}-25T00:00:00Z`);
@@ -17,8 +16,9 @@ test.describe.serial("event calendar date exploration", () => {
   const eventIds: number[] = [];
 
   test.beforeAll(async ({ baseURL }) => {
-    const runtime = runtimeSchema.parse(JSON.parse(await readFile(new URL("../.local/events-review/runtime.json", import.meta.url), "utf8")));
-    const reviewOrigin = baseURL ?? "http://127.0.0.1:3102";
+    const runtime = await reviewRuntime();
+    const reviewOrigin = baseURL ?? runtime.APP_ORIGIN;
+    expect(reviewOrigin).toBe(runtime.APP_ORIGIN);
     expect(new URL(reviewOrigin).hostname).toBe("127.0.0.1");
     admin = await request.newContext({ baseURL: reviewOrigin, extraHTTPHeaders: { origin: reviewOrigin } });
     expect((await admin.post("/api/admin/login", { data: { password: runtime.ADMIN_PASSWORD } })).ok()).toBeTruthy();

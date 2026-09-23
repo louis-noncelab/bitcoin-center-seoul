@@ -1,3 +1,13 @@
+## Current runtime fact — 2026-09-23 PostgreSQL content
+
+The active `web/` service now reads and writes center events, highlights, notices, collection,
+reviews, opening overrides, and admin sessions/login attempts through Prisma/PostgreSQL. The
+2026-09-21 SQLite-content statements below are historical. SQLite remains a legacy import source;
+`web/scripts/sqlite-to-pg-content.mjs` performs explicit guarded backfill from a verified SQLite
+snapshot and excludes old admin sessions. Active backup is PostgreSQL `pg_dump` plus full shared
+uploads (`events-backup.ts backup-images`); SQLite-only backup is not a current site backup.
+Deployment remains separately approved; no production writes, push, or real payment/mail here.
+
 ## Current owner decision — 2026-09-21 commerce restored
 
 The owner authorized restoring cart, KRW→satoshi conversion, Zaprite checkout, redirect and

@@ -1,21 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
-import { readFile } from "node:fs/promises";
-import { z } from "zod";
-
-function reviewOrigin(baseURL: string | undefined): string {
-  const origin = process.env.COMMERCE_REVIEW_ORIGIN ?? process.env.COMMERCE_BASE_URL ?? baseURL;
-  if (!origin) throw new Error("Playwright baseURL is unset");
-  return origin;
-}
+import { reviewOrigin, reviewRuntime } from "./helpers/review-runtime";
 
 async function adminPassword(): Promise<string> {
-  const credentials = process.env.COMMERCE_REVIEW_CREDENTIALS;
-  if (credentials) {
-    const { password } = z.object({ password: z.string() }).parse(JSON.parse(await readFile(credentials, "utf8")));
-    return password;
-  }
-  const { ADMIN_PASSWORD } = z.object({ ADMIN_PASSWORD: z.string() }).parse(JSON.parse(await readFile(new URL("../.local/events-review/runtime.json", import.meta.url), "utf8")));
-  return ADMIN_PASSWORD;
+  return (await reviewRuntime()).ADMIN_PASSWORD;
 }
 
 async function authenticate(page: Page, origin: string) {
@@ -48,9 +35,8 @@ async function setup(page: Page, baseURL: string | undefined) {
 
 async function chooseFulfillment(page: Page, option: string, value: string) {
   const field = page.locator("label").filter({ hasText: "수령 방식" });
-  await field.getByRole("button").click();
-  await page.getByRole("option", { name: option, exact: true }).click();
-  await expect(field.locator('input[name="fulfillment"]')).toHaveValue(value);
+  await field.getByRole("combobox").selectOption({ label: option });
+  await expect(field.locator('select[name="fulfillment"]')).toHaveValue(value);
 }
 
 test("search, fulfillment, dates, page and CSV keep the same query and support Back", async ({ page, baseURL }) => {

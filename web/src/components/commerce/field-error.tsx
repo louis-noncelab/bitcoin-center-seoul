@@ -11,6 +11,7 @@ export function constraintError(form: HTMLFormElement): ApiError {
     if (!(element instanceof HTMLInputElement || element instanceof HTMLSelectElement || element instanceof HTMLTextAreaElement)
       || !element.willValidate || element.validity.valid) continue;
     const field = element.id === "shipping-country" ? "countryCode"
+      : element.id === "customer-phone" ? "customer.phone"
       : element.id.startsWith("customer-") ? `customer.${element.name}`
       : element.id.startsWith("shipping-") ? `address.${element.name}` : element.name;
     fields[field] = "invalid";

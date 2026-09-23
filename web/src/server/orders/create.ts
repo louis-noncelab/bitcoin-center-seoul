@@ -1,4 +1,5 @@
 import "server-only";
+import { ticketEventId } from "@/server/events/ticket-eligibility";
 import { randomBytes, randomUUID } from "node:crypto";
 import { prisma } from "@/server/db";
 import { activePaymentProvider } from "@/server/commerce/settings";
@@ -13,6 +14,7 @@ import { hashToken, matchesToken, readAccessToken, requestIdentity, resourceToke
 import { quoteCouponDiscount } from "@/server/commerce/coupons";
 import { cartProducts, quoteSnapshot } from "./quote";
 import { orderIncludes, orderView } from "./projection";
+import { checkoutPolicyEvidence } from "./checkout-policy";
 
 export async function createOrder(request: Request, input: CreateOrder, account: CustomerAccount) {
   const identity = requestIdentity(request, account);
@@ -27,12 +29,19 @@ export async function createOrder(request: Request, input: CreateOrder, account:
       if (account?.id !== existing.accountId && !matchesToken(token, existing.accessTokenHash)) throw new HttpError(404, "NOT_FOUND", "Order not found.");
       return { order: orderView(existing), token, created: false };
     }
+    if (input.acceptance?.accepted !== true) throw new HttpError(400, "ACCEPTANCE_REQUIRED", "Accept the terms and refund policy before ordering.");
+    const contractAcceptance = checkoutPolicyEvidence(input.locale, input.acceptance.version);
     await tx.$queryRaw`SELECT id FROM "Quote" WHERE id = ${input.quoteId} FOR UPDATE`;
     const quote = await tx.quote.findUnique({ where: { id: input.quoteId }, include: { order: { select: { id: true } } } });
     if (!quote || (account?.id !== quote.accountId && !matchesToken(readAccessToken(request, "quote", input.quoteId), quote.ownerHash))) throw new HttpError(404, "NOT_FOUND", "Quote not found.");
     if (quote.expiresAt <= new Date() || quote.order) throw new HttpError(409, "QUOTE_EXPIRED", "Request a fresh quote before continuing.");
     const cart = cartSchema.parse(quote.input);
     const snapshot = quoteSnapshot.parse(quote.snapshot);
+    const eventIds = snapshot.items.flatMap((item) => {
+      const id = ticketEventId(item.sku);
+      return id === null ? [] : [id];
+    });
+    for (const id of [...new Set(eventIds)].sort((a, b) => a - b)) await tx.$queryRaw`SELECT id FROM center_events WHERE id = ${id} FOR UPDATE`;
     for (const id of [...new Set(snapshot.items.map((item) => item.productId))].sort()) await tx.$queryRaw`SELECT id FROM "Product" WHERE id = ${id} FOR UPDATE`;
     for (const item of [...snapshot.items].sort((a, b) => a.sku.localeCompare(b.sku))) await tx.$queryRaw`SELECT id FROM "ProductVariant" WHERE id = ${item.variantId} FOR UPDATE`;
     const variants = await cartProducts(tx, cart, account);
@@ -73,7 +82,7 @@ export async function createOrder(request: Request, input: CreateOrder, account:
       customerNotes: sealString(input.notes ?? ""),
       amountSats: quote.amountSats, amountKrw: quote.amountKrw, fulfillment: snapshot.fulfillment, ...(input.address ? { address: sealString(JSON.stringify(input.address)) } : {}),
       shippingSnapshot: snapshot.shipping, shippingAmountKrw: BigInt(snapshot.shipping.amountKrw), shippingAmountSats: BigInt(snapshot.shippingAmountSats), billableWeightG: snapshot.shipping.weightG,
-      holdExpiresAt, idempotencyScope: identity.scope, idempotencyKey: identity.key, requestHash, confirmationCode: randomBytes(12).toString("hex"), accessTokenHash: hashToken(token),
+      holdExpiresAt, idempotencyScope: identity.scope, idempotencyKey: identity.key, requestHash, contractAcceptance, confirmationCode: randomBytes(12).toString("hex"), accessTokenHash: hashToken(token),
       items: { create: snapshot.items.map((item) => ({ variantId: item.variantId, quantity: item.quantity, sku: item.sku, titleKo: item.titleKo, titleEn: item.titleEn, optionLabelKo: item.optionLabelKo, optionLabelEn: item.optionLabelEn, priceKind: item.priceKind, unitPriceAmount: BigInt(item.unitPriceAmount), amountSats: BigInt(item.amountSats), snapshot: item })) },
       payments: { create: { provider: await activePaymentProvider(tx), mode: paymentModeOf(config), creationKey: randomUUID(), amountSats: quote.amountSats, metadata: { orderId: id }, expiresAt: holdExpiresAt } },
     }, include: orderIncludes });

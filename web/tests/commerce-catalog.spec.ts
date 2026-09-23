@@ -43,14 +43,12 @@ function categoryToFilter(products: readonly CatalogProduct[], locale: "ko" | "e
 
 function categoryControl(page: Page, locale: "ko" | "en") {
   const name = locale === "ko" ? "종류" : "Category";
-  return page.getByRole("button", { name, exact: true }).or(page.getByRole("combobox", { name, exact: true }));
+  return page.getByRole("combobox", { name, exact: true });
 }
 
 async function chooseCategory(page: Page, locale: "ko" | "en", category: NonNullable<CatalogProduct["category"]>) {
-  const label = (locale === "ko" ? category.nameKo : category.nameEn).trim();
-  await categoryControl(page, locale).click();
-  await page.getByRole("listbox").getByRole("option", { name: label, exact: true }).click();
-  await expect(page.locator("input.menu-select-value")).toHaveValue(category.slug);
+  await categoryControl(page, locale).selectOption(category.slug);
+  await expect(categoryControl(page, locale)).toHaveValue(category.slug);
 }
 
 function expectedHrefs(products: readonly CatalogProduct[], locale: "ko" | "en") {
@@ -95,7 +93,7 @@ for (const locale of ["ko", "en"] as const) {
     await page.getByRole("button", { name: locale === "ko" ? "필터 초기화" : "Reset filters", exact: true }).click();
     await expect(cards).toHaveCount(products.length);
     await expect(search).toHaveValue("");
-    await expect(page.locator("input.menu-select-value")).toHaveValue("");
+    await expect(categoryControl(page, locale)).toHaveValue("");
 
     const stock = page.getByRole("checkbox", { name: locale === "ko" ? "재고 있는 상품만" : "In-stock products only" });
     await stock.check();

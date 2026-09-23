@@ -6,18 +6,19 @@ import { manualPaymentSchema, resolveManualPayment } from "@/server/orders/manua
 import { identifier } from "@/server/orders/validation";
 import { orderIncludes, orderView } from "@/server/orders/projection";
 import { reconcilePayment } from "@/server/payments";
-import { paymentActionLabels } from "@/lib/order-payment-contract";
+import { orderPaymentHistory, paymentActionLabels } from "@/lib/order-payment-contract";
 
 type Context = { params: Promise<{ id: string }> };
 export const GET = (request: Request, context: Context) => handleApi(async () => {
   await requireAccount(request);
   const id = identifier.parse((await context.params).id);
   if (!await prisma.order.findUnique({ where: { id }, select: { id: true } })) throw new HttpError(404, "NOT_FOUND", "Order not found.");
-  return json(await prisma.auditLog.findMany({
+  const rows = await prisma.auditLog.findMany({
     where: { targetType: "Order", targetId: id, action: { in: Object.keys(paymentActionLabels) } },
     select: { id: true, action: true, actorId: true, summary: true, createdAt: true },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 50,
-  }));
+  });
+  return json(orderPaymentHistory.parse(rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() }))));
 });
 export const POST = (request: Request, context: Context) => handleApi(async () => {
   assertSameOrigin(request);

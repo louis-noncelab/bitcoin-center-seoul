@@ -43,6 +43,14 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      ...["/brand/:path*", "/images/space-tour/:path*"].map((source) => ({
+        source,
+        headers: [{ key: "Cache-Control", value: "public, max-age=86400" }],
+      })),
+      {
+        source: "/fonts/pretendard-v1.3.9/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
     ];
   },
 };

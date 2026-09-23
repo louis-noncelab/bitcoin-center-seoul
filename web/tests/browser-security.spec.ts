@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { reviewOrigin } from "./helpers/review-runtime";
 
 function scriptPolicy(policy: string) {
   const directive = policy.split(";").find((value) => value.trim().startsWith("script-src "));
@@ -139,7 +140,7 @@ test("unknown dotted paths retain the HTML security policy", async ({ request })
 test("themes and locale navigation hydrate under the production policy", async ({ page, context, baseURL }) => {
   // Given a returning visitor with a saved dark theme
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await context.addCookies([{ name: "bcs-theme", value: "dark", url: baseURL ?? "http://127.0.0.1:3102" }]);
+  await context.addCookies([{ name: "bcs-theme", value: "dark", url: reviewOrigin(baseURL) }]);
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {

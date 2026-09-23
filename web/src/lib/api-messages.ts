@@ -31,6 +31,8 @@ export const apiMessages: Readonly<Record<string, readonly [string, string]>> = 
   SKU_IMMUTABLE: ["상품 코드를 바꾸려면 새 옵션을 추가해 주세요.", "Add a new option to use a different SKU."],
   QUOTE_EXPIRED: ["금액 확인 시간이 지났습니다. 최신 금액을 확인한 뒤 주문해 주세요.", "The quote has expired. Review a new total before ordering."],
   QUOTE_STALE: ["상품 또는 배송 정보가 바뀌었습니다. 변경된 금액을 확인해 주세요.", "Product or shipping details changed. Review the updated total."],
+  POLICY_STALE: ["이용약관 또는 환불정책이 변경되었습니다. 다시 불러와 확인한 뒤 동의해 주세요.", "The terms or refund policy changed. Reload, review, and agree again."],
+  ACCEPTANCE_REQUIRED: ["주문하려면 이용약관과 환불정책에 동의해 주세요.", "Agree to the terms and refund policy before ordering."],
   RATE_UNAVAILABLE: ["환율을 확인하지 못했습니다. 잠시 후 금액을 다시 확인해 주세요.", "The exchange rate is unavailable. Request a new quote shortly."],
   REVIEW_RATE_REQUIRED: ["검토용 환율 설정이 필요합니다.", "Configure an exchange rate for the local review."],
   INVALID_MONEY: ["금액 또는 환율을 확인해 주세요.", "Check the amount or exchange rate."],

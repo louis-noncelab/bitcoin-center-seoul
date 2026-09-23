@@ -1,4 +1,5 @@
 import "server-only";
+import { eventAcceptsTickets, ticketEventId } from "@/server/events/ticket-eligibility";
 import { z } from "zod";
 import type { Tx } from "@/server/db";
 import { prisma } from "@/server/db";
@@ -33,7 +34,17 @@ export async function cartProducts(tx: Tx, cart: Cart, account: CustomerAccount)
   requirePurchasePolicy(account, settings?.guestPurchaseAllowed === false);
   const variants = await tx.productVariant.findMany({ where: { id: { in: cart.items.map((item) => item.variantId) } }, include: { product: true } });
   if (variants.length !== cart.items.length) throw new HttpError(409, "PRODUCT_UNAVAILABLE", "A selected product is unavailable.");
+  const eventIds = variants.flatMap((variant) => {
+    const id = ticketEventId(variant.sku);
+    return id === null ? [] : [id];
+  });
+  const events = eventIds.length ? await tx.centerEvent.findMany({ where: { id: { in: eventIds } } }) : [];
   for (const variant of variants) {
+    const eventId = ticketEventId(variant.sku);
+    if (eventId !== null) {
+      const event = events.find((value) => value.id === eventId);
+      if (!event || !eventAcceptsTickets(event)) throw new HttpError(409, "PRODUCT_UNAVAILABLE", "Event registration is unavailable.");
+    }
     if (!variant.active || !variant.product.published || !variant.product.allowedFulfillments.includes(cart.fulfillment)) throw new HttpError(409, "PRODUCT_UNAVAILABLE", "A product does not support this fulfillment.");
     requirePurchasePolicy(account, variant.product.memberOnly);
   }

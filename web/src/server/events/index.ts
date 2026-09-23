@@ -17,6 +17,8 @@ import { collectImagePaths, deleteUnusedImages, placeImagesInSlugFolder, require
 import { reserveRevision } from "@/server/events/revision";
 import { storedTagsSchema } from "@/server/events/tags";
 
+import { syncEventTicketInTransaction, retireEventTicketInTransaction } from "./tickets";
+
 type ContentKind = "event" | "highlight";
 type Visibility = { readonly includeInactive?: boolean };
 type Db = Prisma.TransactionClient;
@@ -44,8 +46,8 @@ async function imageMap(kind: ContentKind, ids: readonly number[]): Promise<Map<
   return grouped;
 }
 
-async function slugMap(kind: ContentKind): Promise<Map<number, string>> {
-  const rows = await prisma.contentSlug.findMany({ where: { kind, isCurrent: true } });
+async function slugMap(kind: ContentKind, ids?: readonly number[]): Promise<Map<number, string>> {
+  const rows = await prisma.contentSlug.findMany({ where: { kind, isCurrent: true, ...(ids ? { contentId: { in: [...ids] } } : {}) } });
   return new Map(rows.map((row) => [row.contentId, row.slug]));
 }
 
@@ -154,7 +156,20 @@ export async function listHighlightsPage(requestedPage: number) {
   const total = await prisma.centerHighlight.count({ where: { isActive: 1 } });
   const totalPages = Math.max(1, Math.ceil(total / 12));
   const page = Math.min(totalPages, Math.max(1, requestedPage));
-  const highlights = (await listHighlights()).slice((page - 1) * 12, page * 12);
+  const pageRows = await prisma.$queryRaw<{ readonly id: number }[]>`
+    SELECT id FROM center_highlights WHERE is_active = 1
+    ORDER BY COALESCE(NULLIF("endDate", ''), NULLIF("startDate", ''), REPLACE(date, '.', '-')) DESC, id DESC
+    LIMIT 12 OFFSET ${(page - 1) * 12}`;
+  const ids = pageRows.map((row) => row.id);
+  const [rows, images, slugs] = await Promise.all([
+    prisma.centerHighlight.findMany({ where: { id: { in: ids }, isActive: 1 } }),
+    imageMap("highlight", ids), slugMap("highlight", ids),
+  ]);
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  const highlights = ids.flatMap((id) => {
+    const row = byId.get(id);
+    return row ? [highlightFrom(row, images.get(id) ?? [], slugs.get(id) ?? "")] : [];
+  });
   return { highlights, page, totalPages };
 }
 
@@ -188,6 +203,7 @@ export async function createEvent(input: EventInput): Promise<EventRecord> {
     });
     await replaceImages(tx, "event", created.id, placed.images);
     await setSlug(tx, "event", created.id, input.slug);
+    await syncEventTicketInTransaction(tx, created, 0);
     return created.id;
   });
   const event = await getEvent(id);
@@ -202,7 +218,8 @@ export async function createEvent(input: EventInput): Promise<EventRecord> {
 export async function setEventRegistration(id: number, registrationClosed: boolean, revision: number): Promise<EventRecord> {
   await prisma.$transaction(async (tx) => {
     await reserveRevision(tx, "events", id, revision);
-    await tx.centerEvent.update({ where: { id }, data: { registrationClosed } });
+    const event = await tx.centerEvent.update({ where: { id }, data: { registrationClosed } });
+    await syncEventTicketInTransaction(tx, event);
   });
   const event = await getEvent(id);
   if (!event) throw new ApiError(404, "NOT_FOUND", "행사를 찾을 수 없습니다.");
@@ -220,10 +237,10 @@ export async function updateEvent(id: number, input: EventInput, revision: numbe
     await reserveRevision(tx, "events", id, revision);
     const current = await tx.centerEvent.findUnique({ where: { id } });
     if (!current) throw new ApiError(404, "NOT_FOUND", "행사를 찾을 수 없습니다.");
-    await tx.centerEvent.update({
+    const updated = await tx.centerEvent.update({
       where: { id },
       data: {
-        registrationClosed: input.registrationClosed ?? false, title: input.title, titleEn: input.titleEn, date: input.date, time: input.time,
+        registrationClosed: input.registrationClosed ?? current.registrationClosed, title: input.title, titleEn: input.titleEn, date: input.date, time: input.time,
         venueType: input.venueType, location: input.location, locationEn: input.locationEn, description,
         descriptionEn, image: placed.images[0] ?? "", link: input.link, ticketPriceKrw: input.ticketPriceKrw,
         ticketCapacity: input.ticketCapacity, externalPayment: input.externalPayment, isOnline: input.isOnline, onlineUrl: input.onlineUrl,
@@ -231,6 +248,7 @@ export async function updateEvent(id: number, input: EventInput, revision: numbe
         ...(input.venueType === "center" && !input.isOnline ? centerEventLocation : {}),
       },
     });
+    await syncEventTicketInTransaction(tx, updated, current.ticketCapacity);
     await replaceImages(tx, "event", id, placed.images);
     await setSlug(tx, "event", id, input.slug);
   });
@@ -259,6 +277,7 @@ export async function deleteEvent(id: number, revision: number): Promise<void> {
   const previous = await getEvent(id);
   await prisma.$transaction(async (tx) => {
     await reserveRevision(tx, "events", id, revision);
+    await retireEventTicketInTransaction(tx, id);
     await tx.centerEvent.delete({ where: { id } });
     await tx.contentImage.deleteMany({ where: { kind: "event", contentId: id } });
     await tx.contentSlug.deleteMany({ where: { kind: "event", contentId: id } });

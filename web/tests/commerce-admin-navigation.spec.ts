@@ -1,24 +1,11 @@
 import { test, expect, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
-import { readFile } from "node:fs/promises";
-import { z } from "zod";
+import { reviewOrigin, reviewRuntime } from "./helpers/review-runtime";
 
 test.describe.configure({ mode: "serial" });
 
-function reviewOrigin(baseURL: string | undefined): string {
-  const origin = process.env.COMMERCE_REVIEW_ORIGIN ?? process.env.COMMERCE_BASE_URL ?? baseURL;
-  if (!origin) throw new Error("Playwright baseURL is unset");
-  return origin;
-}
-
 async function adminPassword(): Promise<string> {
-  const credentials = process.env.COMMERCE_REVIEW_CREDENTIALS;
-  if (credentials) {
-    const { password } = z.object({ password: z.string() }).parse(JSON.parse(await readFile(credentials, "utf8")));
-    return password;
-  }
-  const { ADMIN_PASSWORD } = z.object({ ADMIN_PASSWORD: z.string() }).parse(JSON.parse(await readFile(new URL("../.local/events-review/runtime.json", import.meta.url), "utf8")));
-  return ADMIN_PASSWORD;
+  return (await reviewRuntime()).ADMIN_PASSWORD;
 }
 
 async function login(page: Page, path: string, baseURL: string | undefined) {

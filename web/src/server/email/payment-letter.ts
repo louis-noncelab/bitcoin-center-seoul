@@ -4,6 +4,7 @@ import { getServerConfig } from "@/server/config";
 import { paidOnlineSessions } from "@/server/events";
 import { getCommerceSettings } from "@/server/commerce/settings";
 import { enqueue } from "@/server/email";
+import { acceptedContractCopy } from "./contract-copy";
 
 type Locale = "ko" | "en";
 type Unit = "KRW" | "SATS" | "BTC";
@@ -11,12 +12,13 @@ type Kind = "order.created" | "order.paid" | "order.expired" | "order.cancelled"
 
 type Item = { readonly titleKo: string; readonly titleEn: string; readonly quantity: number; readonly sku?: string };
 type OrderMail = {
+  readonly contractAcceptance?: unknown;
   readonly id: string;
   readonly status: string;
   readonly amountSats: bigint;
   readonly amountKrw: bigint | null;
   readonly confirmationCode: string | null;
-  readonly fulfillment: string;
+  readonly fulfillment: "PICKUP" | "DOMESTIC" | "INTERNATIONAL";
   readonly items: readonly Item[];
 };
 
@@ -28,7 +30,7 @@ const copy = {
   },
   "order.paid": {
     subject: ["결제가 확인되었습니다", "Your payment is confirmed"],
-    lead: ["결제한 금액과 내역입니다. 센터에서 아래 확인 페이지를 보여 주세요.", "This is the amount and the items. Show the confirmation page at the center."],
+    lead: ["결제한 금액과 내역입니다.", "Here are your payment and order details."],
     action: ["결제 확인 열기", "Open confirmation"],
   },
   "order.expired": {
@@ -51,6 +53,14 @@ const copy = {
 const fulfillment = {
   ko: { PICKUP: "센터 수령", DOMESTIC: "국내 배송", INTERNATIONAL: "해외 배송" },
   en: { PICKUP: "Pickup at the center", DOMESTIC: "Delivery in Korea", INTERNATIONAL: "International shipping" },
+} as const;
+
+const paidLead = {
+  PICKUP: ["결제가 확인되었습니다. 수령 준비가 끝나면 안내해 드립니다. 아래 페이지에서 주문 상태를 확인해 주세요.", "Payment is confirmed. We will let you know when your order is ready for pickup. Check its status on the page below."],
+  DOMESTIC: ["결제가 확인되었습니다. 국내 배송을 준비합니다. 아래 페이지에서 주문 상태를 확인해 주세요.", "Payment is confirmed. We will prepare delivery in Korea. Check your order status on the page below."],
+  INTERNATIONAL: ["결제가 확인되었습니다. 해외 배송을 준비합니다. 아래 페이지에서 주문 상태를 확인해 주세요.", "Payment is confirmed. We will prepare international shipping. Check your order status on the page below."],
+  MEETUP: ["예약 결제가 확인되어 자리가 확정되었습니다. 아래 페이지에서 행사 정보를 확인해 주세요.", "Your reservation payment is confirmed and your seat is secured. Check the event details on the page below."],
+  ONLINE_MEETUP: ["예약 결제가 확인되어 자리가 확정되었습니다. 아래 온라인 참여 링크와 안내를 확인해 주세요.", "Your reservation payment is confirmed and your seat is secured. Use the online join link and instructions below."],
 } as const;
 
 function escapeHtml(value: string): string {
@@ -78,31 +88,38 @@ export function buildPaymentLetter(locale: Locale, kind: Kind, order: OrderMail,
   const ko = locale === "ko";
   const index = ko ? 0 : 1;
   const meetup = order.items.some((item) => item.sku?.startsWith("MEETUP-"));
-  const text = meetup ? {
+  const meetupOnly = meetup && order.items.every((item) => item.sku?.startsWith("MEETUP-"));
+  const text = meetupOnly ? {
     "order.created": { subject: ["예약이 접수되었습니다", "Your reservation was received"], lead: ["결제를 마치면 자리가 확정됩니다.", "The seat is confirmed once payment arrives."], action: ["예약 확인", "View your reservation"] },
-    "order.paid": { subject: ["예약 결제가 확인되었습니다", "Your reservation payment is confirmed"], lead: ["결제한 금액과 자리입니다. 센터에서 아래 확인 페이지를 보여 주세요.", "This is the amount and the seat. Show the confirmation page at the center."], action: ["예약 확인 열기", "Open confirmation"] },
+    "order.paid": { subject: ["예약 결제가 확인되었습니다", "Your reservation payment is confirmed"], lead: paidLead.MEETUP, action: ["예약 확인 열기", "Open confirmation"] },
     "order.expired": { subject: ["예약 결제 기한이 지났습니다", "The reservation payment window has closed"], lead: ["기한 안에 결제가 확인되지 않아 예약이 만료되었습니다.", "The reservation expired because payment was not confirmed in time."], action: ["예약 상태 보기", "View reservation status"] },
     "order.cancelled": { subject: ["예약이 취소되었습니다", "Your reservation was cancelled"], lead: ["이 예약은 취소되었습니다. 이미 결제한 금액이 있다면 센터에 문의해 주세요.", "This reservation was cancelled. Contact the center if a payment was already sent."], action: ["예약 상태 보기", "View reservation status"] },
     "order.review": { subject: ["예약 결제를 확인 중입니다", "Your reservation payment is being checked"], lead: ["운영자가 예약과 결제를 확인하고 있습니다. 확인이 끝날 때까지 자리는 보류됩니다.", "Staff are checking the reservation and payment. The seat stays on hold until that check is finished."], action: ["예약 상태 보기", "View reservation status"] },
   }[kind] : copy[kind];
   const subject = text.subject[index];
+  const lead = kind === "order.paid"
+    ? meetupOnly ? paidLead[joins.length ? "ONLINE_MEETUP" : "MEETUP"][index]
+      : [paidLead[order.fulfillment][index], ...(meetup ? [paidLead[joins.length ? "ONLINE_MEETUP" : "MEETUP"][index]] : [])].join(" ")
+    : text.lead[index];
   const amount = formatAmount(unit, order.amountSats, order.amountKrw, locale);
-  const place = fulfillment[locale][order.fulfillment as keyof typeof fulfillment.ko] ?? order.fulfillment;
+  const place = meetupOnly ? (joins.length ? (ko ? "온라인 밋업" : "Online meetup") : (ko ? "밋업 참여" : "Meetup attendance")) : fulfillment[locale][order.fulfillment];
   const rows = order.items.map((item) => {
     const title = ko ? item.titleKo || item.titleEn : item.titleEn || item.titleKo;
-    const quantity = ko ? `${item.quantity}${meetup ? "명" : "개"}` : item.quantity === 1 ? "1" : String(item.quantity);
+    const quantity = ko ? `${item.quantity}${item.sku?.startsWith("MEETUP-") ? "명" : "개"}` : item.quantity === 1 ? "1" : String(item.quantity);
     return { title, quantity };
   });
+  const contractCopy = kind === "order.created" ? acceptedContractCopy(order.contractAcceptance) : "";
   const plain = [
     ko ? "비트코인 센터 서울" : "Bitcoin Center Seoul",
     subject,
-    text.lead[index],
+    lead,
     `${ko ? "금액" : "Amount"}: ${amount}`,
-    `${ko ? "수령" : "Fulfillment"}: ${place}`,
+    `${meetupOnly ? (ko ? "참여" : "Attendance") : (ko ? "수령·배송" : "Fulfillment")}: ${place}`,
     ...rows.map((row) => `${row.title} · ${row.quantity}`),
     `${ko ? "주문 번호" : "Order"}: ${order.id}`,
     url,
     ...joins.flatMap((join) => [`${ko ? "온라인 참여" : "Join online"}: ${join.url}`, ko ? join.note : join.noteEn || join.note].filter(Boolean)),
+    ...(contractCopy ? [contractCopy] : []),
   ].join("\n\n");
   const font = "'Pretendard Variable','Apple SD Gothic Neo','Malgun Gothic',sans-serif";
   const itemRows = rows.map((row) => `<tr><td style="padding:14px 0;border-top:1px solid #d8dcd3;font-size:16px;line-height:1.5;color:#20211f;">${escapeHtml(row.title)}</td><td style="padding:14px 0;border-top:1px solid #d8dcd3;font-size:16px;line-height:1.5;color:#62675f;text-align:right;white-space:nowrap;">${escapeHtml(row.quantity)}</td></tr>`).join("");
@@ -115,7 +132,7 @@ export function buildPaymentLetter(locale: Locale, kind: Kind, order: OrderMail,
 <tr><td style="font-family:${font};">
 <p style="margin:0;font-size:15px;line-height:1.5;color:#62675f;">${ko ? "결제 안내" : "Payment"}</p>
 <h1 style="margin:8px 0 0;font-size:32px;line-height:1.25;font-weight:600;letter-spacing:-0.035em;">${escapeHtml(subject)}</h1>
-<p style="margin:16px 0 0;max-width:38em;font-size:17px;line-height:1.75;color:#20211f;">${escapeHtml(text.lead[index])}</p>
+<p style="margin:16px 0 0;max-width:38em;font-size:17px;line-height:1.75;color:#20211f;">${escapeHtml(lead)}</p>
 </td></tr>
 <tr><td style="padding:28px 0 0;font-family:${font};">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f0f1ec;border-radius:12px;"><tr><td style="padding:22px 24px;">
@@ -133,6 +150,7 @@ ${joins.map((join) => `<p style="margin:16px 0 0;"><a href="${escapeHtml(join.ur
 <p style="margin:20px 0 0;font-size:14px;line-height:1.6;color:#62675f;">${ko ? "주문 번호" : "Order"} ${escapeHtml(order.id)}<br><a href="${escapeHtml(url)}" style="color:#32699f;text-decoration:underline;">${escapeHtml(url)}</a></p>
 <p style="margin:16px 0 0;font-size:14px;line-height:1.6;color:#62675f;">${ko ? "비트코인 센터 서울 · 서울 마포구" : "Bitcoin Center Seoul · Mapo, Seoul"}</p>
 </td></tr>
+${contractCopy ? `<tr><td style="padding:24px 0;font-family:${font};"><pre style="margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit;font-size:14px;line-height:1.7;color:#20211f;">${escapeHtml(contractCopy)}</pre></td></tr>` : ""}
 </table></td></tr></table></body></html>`;
   return { subject, text: plain, html };
 }

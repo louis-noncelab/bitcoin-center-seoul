@@ -20,17 +20,12 @@ export default function proxy(request: NextRequest) {
     || /^\/(?:robots\.txt|sitemap\.xml|favicon\.ico|icon\.png|apple-icon\.png)$/.test(pathname)
   ) {
     response = NextResponse.next();
-  } else if (
-    segment &&
-    /^[a-z]{2}(?:-[a-z]{2})?$/i.test(segment) &&
-    !hasLocale(routing.locales, segment)
-  ) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/ko/404";
-    response = NextResponse.rewrite(url, { status: 404 });
   } else {
     const nonce = randomBytes(16).toString("base64");
     const development = process.env.NODE_ENV === "development";
+    const postcodeFrames = /^\/(?:ko|en)\/checkout\/?$/.test(pathname)
+      ? ` https://postcode.map.kakao.com${secure ? "" : " http://postcode.map.kakao.com"}`
+      : "";
     const policy = [
       "default-src 'self'",
       `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${development ? " 'unsafe-eval'" : ""}`,
@@ -40,7 +35,7 @@ export default function proxy(request: NextRequest) {
       "object-src 'none'",
       "base-uri 'none'",
       "form-action 'self'",
-      "frame-src https://www.google.com/maps/embed https://www.youtube-nocookie.com/embed/",
+      `frame-src https://www.google.com/maps/embed https://www.youtube-nocookie.com/embed/${postcodeFrames}`,
       "frame-ancestors 'none'",
       ...(secure ? ["upgrade-insecure-requests"] : []),
     ].join("; ");
@@ -48,7 +43,14 @@ export default function proxy(request: NextRequest) {
     headers.set("x-bcs-pathname", pathname);
     headers.set("x-nonce", nonce);
     headers.set("Content-Security-Policy", policy);
-    response = intlProxy(new NextRequest(request, { headers }));
+    if (segment && /^[a-z]{2}(?:-[a-z]{2})?$/i.test(segment) && !hasLocale(routing.locales, segment)) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/ko/404";
+      response = NextResponse.rewrite(url, { request: { headers } });
+      response.headers.set("X-Robots-Tag", "noindex, nofollow");
+    } else {
+      response = intlProxy(new NextRequest(request, { headers }));
+    }
     response.headers.set("Content-Security-Policy", policy);
   }
 

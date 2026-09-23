@@ -1,0 +1,24 @@
+.footer-collaboration {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+.collaboration-dialog { inline-size: min(calc(100vw - var(--space-8)), 40rem); overflow: clip; }
+.collaboration-dialog .dialog-surface { display: flex; flex-direction: column; box-sizing: border-box; max-block-size: calc(100dvh - var(--space-8)); overflow: clip; }
+.collaboration-form { display: flex; flex-direction: column; flex: 1 1 auto; min-block-size: 0; gap: var(--space-5); overflow: clip; }
+.collaboration-fields-scroll { flex: 1 1 auto; min-block-size: 0; overflow-y: auto; overscroll-behavior: contain; scroll-padding-block: var(--space-4); }
+.collaboration-fields { display: grid; gap: var(--space-5); min-inline-size: 0; margin: 0; padding: 0 0 var(--space-4); border: 0; }
+.collaboration-consent { display: grid; gap: var(--space-1); font-size: var(--text-small); line-height: var(--leading-small); }
+.collaboration-consent .choice-label { align-items: flex-start; }
+.collaboration-consent .choice-input { margin-block-start: .2em; }
+.collaboration-consent a { color: var(--blue-ink); text-underline-offset: .2em; }
+.collaboration-dialog .dialog-actions { flex: none; margin-block-start: var(--space-2); }
+.collaboration-dialog .dialog-actions .icon { inline-size: 1em; block-size: 1em; }
+.collaboration-dialog .dialog-actions > .button:first-child { white-space: nowrap; }
+@media (max-width: 600px) {
+  .collaboration-dialog .dialog-surface { padding: var(--space-5); }
+  .collaboration-dialog .dialog-actions { padding-block-end: env(safe-area-inset-bottom); }
+  .collaboration-dialog .dialog-actions > * { flex: 1; }
+}

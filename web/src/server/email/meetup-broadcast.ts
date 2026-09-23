@@ -31,7 +31,7 @@ function eventIdFrom(sku: string): number | null {
 
 export async function meetupAudiences(): Promise<readonly MeetupAudience[]> {
   const orders = await prisma.order.findMany({
-    where: { status: "PAID", items: { some: { sku: { startsWith: "MEETUP-" } } } },
+    where: { status: "PAID", privacyRedactedAt: null, items: { some: { sku: { startsWith: "MEETUP-" } } } },
     select: { customerEmail: true, items: { where: { sku: { startsWith: "MEETUP-" } }, select: { sku: true, titleKo: true } } },
   });
   const groups = new Map<number, { title: string; emails: Set<string> }>();
@@ -97,30 +97,42 @@ ${input.confirmUrl ? `<tr><td style="padding:28px 0 0;font-family:${font};"><a h
 
 export async function sendMeetupBroadcast(input: { readonly eventId: number; readonly subject: string; readonly message: string }, actorId: string): Promise<{ recipients: number; queued: number; skipped: number }> {
   const event = await getEvent(input.eventId);
-  const orders = await prisma.order.findMany({
-    where: { status: "PAID", items: { some: { sku: `MEETUP-${input.eventId}` } } },
-    select: { customerEmail: true, locale: true, confirmationCode: true, items: { where: { sku: `MEETUP-${input.eventId}` }, select: { titleKo: true, titleEn: true } } },
-  });
-  const join = (await paidOnlineSessions([`MEETUP-${input.eventId}`]))[0] ?? null;
-  const people = new Map<string, { email: string; locale: "ko" | "en"; code: string | null; title: string }>();
-  for (const order of orders) {
-    const email = openString(order.customerEmail).trim();
-    const key = email.toLowerCase();
-    if (!email.includes("@") || people.has(key)) continue;
-    const item = order.items[0];
-    const locale = order.locale === "en" ? "en" : "ko";
-    people.set(key, {
-      email,
-      locale,
-      code: order.confirmationCode,
-      title: locale === "en" ? (event?.titleEn || item?.titleEn || event?.title || item?.titleKo || "Meetup") : (event?.title || item?.titleKo || "밋업"),
-    });
-  }
-  if (people.size === 0) throw new HttpError(404, "NO_RECIPIENTS", "결제 완료된 예약이 없습니다.");
+  const sku = `MEETUP-${input.eventId}`;
+  const join = (await paidOnlineSessions([sku]))[0] ?? null;
   const origin = getServerConfig().appOrigin;
   const contentHash = digest(`${input.subject}\n${input.message}\n${join?.url ?? ""}`);
-  let queued = 0;
-  await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
+    // Lock in a stable order before reading PII so retention cannot erase and then
+    // have a queued meetup letter recreate the address or confirmation URL.
+    const locked = await tx.$queryRaw<{ id: string }[]>`
+      SELECT o.id FROM "Order" o
+      WHERE o.status = 'PAID' AND o."privacyRedactedAt" IS NULL
+        AND EXISTS (SELECT 1 FROM "OrderItem" i WHERE i."orderId" = o.id AND i.sku = ${sku})
+      ORDER BY o.id FOR UPDATE OF o
+    `;
+    const orders = await tx.order.findMany({
+      where: { id: { in: locked.map((order) => order.id) }, status: "PAID", privacyRedactedAt: null },
+      orderBy: { id: "asc" },
+      select: { id: true, customerEmail: true, locale: true, confirmationCode: true,
+        items: { where: { sku }, select: { titleKo: true, titleEn: true } } },
+    });
+    const people = new Map<string, { email: string; locale: "ko" | "en"; code: string | null; title: string; orderId: string }>();
+    for (const order of orders) {
+      const email = openString(order.customerEmail).trim();
+      const key = email.toLowerCase();
+      if (!email.includes("@") || people.has(key)) continue;
+      const item = order.items[0];
+      const locale = order.locale === "en" ? "en" : "ko";
+      people.set(key, {
+        email,
+        locale,
+        code: order.confirmationCode,
+        title: locale === "en" ? (event?.titleEn || item?.titleEn || event?.title || item?.titleKo || "Meetup") : (event?.title || item?.titleKo || "밋업"),
+        orderId: order.id,
+      });
+    }
+    if (people.size === 0) throw new HttpError(404, "NO_RECIPIENTS", "결제 완료된 예약이 없습니다.");
+    let queued = 0;
     for (const person of people.values()) {
       const locale = person.locale;
       const note = locale === "en" ? (join?.noteEn || join?.note || "") : (join?.note || "");
@@ -133,12 +145,13 @@ export async function sendMeetupBroadcast(input: { readonly eventId: number; rea
         joinUrl: join?.url || null,
         joinNote: note,
       });
-      queued += await enqueue(tx, `meetup:${input.eventId}:broadcast:${contentHash}:${digest(person.email.toLowerCase())}`, person.email, locale, "meetup.notice", built);
+      queued += await enqueue(tx, `meetup:${input.eventId}:broadcast:${contentHash}:${digest(person.email.toLowerCase())}`, person.email, locale, "meetup.notice", built, person.orderId);
     }
     await tx.auditLog.create({
       data: { actorId, action: "meetup.broadcast", targetType: "Event", targetId: String(input.eventId), summary: { recipients: people.size, queued } },
     });
+    return { recipients: people.size, queued, skipped: people.size - queued };
   });
   scheduleEmailDelivery();
-  return { recipients: people.size, queued, skipped: people.size - queued };
+  return result;
 }

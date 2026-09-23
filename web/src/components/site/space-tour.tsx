@@ -8,7 +8,7 @@ import "@/styles/space-tour.css";
 const scenes = [
   {
     id: "lounge", href: "/programs",
-    ko: { label: "라운지", title: "함께 배우고 만나는 곳", description: "비트코인 강의와 밋업이 열리는 공간입니다. 테이블에 둘러앉아 배우고, 서로의 생각을 나눕니다.", action: "강의와 밋업 살펴보기" },
+    ko: { label: "라운지", title: "함께 배우고 만나는 곳", description: "비트코인 강의와 밋업이 열리는 공간입니다. 함께 배우고 생각을 나누세요.", action: "강의와 밋업 살펴보기" },
     en: { label: "Lounge", title: "A place to learn and meet", description: "The lounge hosts Bitcoin classes and meetups. Gather around the tables to learn and exchange ideas.", action: "Explore classes & meetups" },
   },
   {

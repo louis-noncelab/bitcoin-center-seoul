@@ -1,13 +1,13 @@
 import { test, expect, type Page } from "@playwright/test";
-import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { noticeRecordSchema } from "../src/lib/notices-contract";
+import { reviewRuntime } from "./helpers/review-runtime";
 
 test.use({ viewport: { width: 375, height: 812 } });
 
 async function authenticate(page: Page, origin: string) {
-  const { ADMIN_PASSWORD } = z.object({ ADMIN_PASSWORD: z.string() }).parse(JSON.parse(await readFile(new URL("../.local/events-review/runtime.json", import.meta.url), "utf8")));
+  const { ADMIN_PASSWORD } = await reviewRuntime();
   const response = await page.request.post("/api/admin/login", { headers: { origin }, data: { password: ADMIN_PASSWORD } });
   expect(response.ok()).toBe(true);
 }
