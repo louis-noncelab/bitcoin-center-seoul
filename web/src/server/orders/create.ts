@@ -47,7 +47,7 @@ export async function createOrder(request: Request, input: CreateOrder, account:
     const variants = await cartProducts(tx, cart, account);
     for (const item of snapshot.items) {
       const variant = variants.find((value) => value.id === item.variantId);
-      if (!variant || variant.product.updatedAt.toISOString() !== item.productVersion || variant.product.priceAmount.toString() !== item.unitPriceAmount || variant.sku !== item.sku || variant.optionLabelKo !== item.optionLabelKo || variant.optionLabelEn !== item.optionLabelEn || variant.billableWeightG !== item.billableWeightG) throw new HttpError(409, "QUOTE_STALE", "Product details changed. Please review a new quote.");
+      if (!variant || variant.product.updatedAt.toISOString() !== item.productVersion || variant.product.priceKind !== item.priceKind || variant.product.priceAmount.toString() !== item.unitPriceAmount || variant.sku !== item.sku || variant.optionLabelKo !== item.optionLabelKo || variant.optionLabelEn !== item.optionLabelEn || variant.billableWeightG !== item.billableWeightG) throw new HttpError(409, "QUOTE_STALE", "Product details changed. Please review a new quote.");
       if (variant.stockOnHand - variant.reservedStock < item.quantity) throw new HttpError(409, "OUT_OF_STOCK", "The selected quantity is no longer available.");
     }
     const shipping = await quoteShipping(tx, { fulfillment: cart.fulfillment, ...(cart.countryCode ? { countryCode: cart.countryCode } : {}), weightG: snapshot.shipping.weightG });
@@ -71,20 +71,27 @@ export async function createOrder(request: Request, input: CreateOrder, account:
       if ((shipping.requiresPostalCode || cart.fulfillment === "DOMESTIC") && !input.address.postalCode) throw new HttpError(400, "POSTAL_CODE_REQUIRED", "Postal code is required for this country.");
       if (cart.fulfillment === "DOMESTIC" && !/^\d{5}$/.test(input.address.postalCode)) throw new HttpError(400, "INVALID_POSTAL_CODE", "Enter a five-digit Korean postal code.");
     }
+    const freeRegistration = quote.amountSats === 0n && snapshot.amountSats === "0" && snapshot.fulfillment === "PICKUP"
+      && snapshot.shippingAmountSats === "0" && !snapshot.coupon
+      && snapshot.items.every((item) => ticketEventId(item.sku) !== null && item.priceKind === "FREE" && item.unitPriceAmount === "0" && item.amountSats === "0");
+    if (quote.amountSats === 0n && !freeRegistration) throw new HttpError(400, "INVALID_AMOUNT", "Free checkout is only available for event registrations.");
     const id = randomUUID();
     const token = resourceToken(identity, "order", id);
     const config = getServerConfig();
     const holdExpiresAt = new Date(Date.now() + config.paymentPendingTtlMinutes * 60000);
-    for (const item of snapshot.items) await tx.productVariant.update({ where: { id: item.variantId }, data: { reservedStock: { increment: item.quantity } } });
+    for (const item of snapshot.items) await tx.productVariant.update({ where: { id: item.variantId }, data: freeRegistration
+      ? { stockOnHand: { decrement: item.quantity } }
+      : { reservedStock: { increment: item.quantity } } });
     const order = await tx.order.create({ data: {
       id, accountId: account?.id ?? null, quoteId: quote.id,
       customerName: sealString(input.customer.name), customerEmail: sealString(input.customer.email), customerEmailHash: customerEmailHash(input.customer.email), customerPhone: sealString(input.customer.phone), locale: input.locale,
       customerNotes: sealString(input.notes ?? ""),
       amountSats: quote.amountSats, amountKrw: quote.amountKrw, fulfillment: snapshot.fulfillment, ...(input.address ? { address: sealString(JSON.stringify(input.address)) } : {}),
       shippingSnapshot: snapshot.shipping, shippingAmountKrw: BigInt(snapshot.shipping.amountKrw), shippingAmountSats: BigInt(snapshot.shippingAmountSats), billableWeightG: snapshot.shipping.weightG,
-      holdExpiresAt, idempotencyScope: identity.scope, idempotencyKey: identity.key, requestHash, contractAcceptance, confirmationCode: randomBytes(12).toString("hex"), accessTokenHash: hashToken(token),
+      status: freeRegistration ? "PAID" : "PENDING_PAYMENT", holdExpiresAt: freeRegistration ? null : holdExpiresAt,
+      idempotencyScope: identity.scope, idempotencyKey: identity.key, requestHash, contractAcceptance, confirmationCode: randomBytes(12).toString("hex"), accessTokenHash: hashToken(token),
       items: { create: snapshot.items.map((item) => ({ variantId: item.variantId, quantity: item.quantity, sku: item.sku, titleKo: item.titleKo, titleEn: item.titleEn, optionLabelKo: item.optionLabelKo, optionLabelEn: item.optionLabelEn, priceKind: item.priceKind, unitPriceAmount: BigInt(item.unitPriceAmount), amountSats: BigInt(item.amountSats), snapshot: item })) },
-      payments: { create: { provider: await activePaymentProvider(tx), mode: paymentModeOf(config), creationKey: randomUUID(), amountSats: quote.amountSats, metadata: { orderId: id }, expiresAt: holdExpiresAt } },
+      ...(freeRegistration ? {} : { payments: { create: { provider: await activePaymentProvider(tx), mode: paymentModeOf(config), creationKey: randomUUID(), amountSats: quote.amountSats, metadata: { orderId: id }, expiresAt: holdExpiresAt } } }),
     }, include: orderIncludes });
     if (snapshot.coupon) {
       await tx.couponUsage.create({
@@ -97,17 +104,17 @@ export async function createOrder(request: Request, input: CreateOrder, account:
       });
     }
     await enqueuePaymentLetter(tx, {
-      eventKey: `order:${id}:created`,
+      eventKey: `order:${id}:${freeRegistration ? "PAID" : "created"}`,
       to: input.customer.email,
       locale: input.locale,
-      kind: "order.created",
+      kind: freeRegistration ? "order.paid" : "order.created",
       order,
       url: `${config.appOrigin}/${input.locale}/orders/confirm/${order.confirmationCode}`,
     });
     const address = input.address;
     await enqueueOperatorLetter(tx, {
-      eventKey: `operator:${id}:created`,
-      kind: "operator.created",
+      eventKey: `operator:${id}:${freeRegistration ? "PAID" : "created"}`,
+      kind: freeRegistration ? "operator.paid" : "operator.created",
       order,
       contact: {
         name: input.customer.name,

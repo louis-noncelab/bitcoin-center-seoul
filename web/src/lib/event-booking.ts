@@ -1,5 +1,7 @@
 import { isCalendarDate } from "@/lib/events-contract";
 
+export const soldOutBookingHref = "#sold-out";
+
 function bookingUrl(link: string): URL | undefined {
   try {
     const url = new URL(link.trim());

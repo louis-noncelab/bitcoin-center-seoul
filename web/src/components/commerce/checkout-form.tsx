@@ -65,6 +65,7 @@ export function CheckoutForm({ locale, policyVersion, items, countries, fromCart
   });
   const notesError = fieldError(error, "notes", locale);
   const reservation = items.every((item) => item.product.slug.startsWith("meetup-"));
+  const freeRegistration = reservation && quote?.amountSats === "0";
   const [couponQuery, setCouponQuery] = useState("");
   useEffect(() => {
     const timer = window.setTimeout(() => setCouponQuery(couponCode.trim()), 400);
@@ -126,7 +127,7 @@ export function CheckoutForm({ locale, policyVersion, items, countries, fromCart
             <span>{fulfillmentLabels[locale][value]}{!allowed.includes(value) && <small>{ko ? "이 주문은 이용 불가" : "Unavailable for this order"}</small>}</span>
           </label>)}</div>
         </fieldset>}
-        {reservation ? <p className="muted">{ko ? "참가비는 인원 수에 따라 바로 계산됩니다. 장소가 센터인 밋업은 현장에서 확인 페이지를 보여 주세요." : "The ticket total updates with the number of seats. Show the confirmation page at the center."}</p> : fulfillment === "PICKUP" && <p className="commerce-pickup">{centerContent[locale].visit.address.value}</p>}
+        {reservation ? <p className="muted">{freeRegistration ? (ko ? "무료 신청은 결제 없이 바로 확정됩니다. 현장에서 확인 페이지를 보여 주세요." : "Free registration is confirmed immediately without payment. Show the confirmation page at the center.") : (ko ? "참가비는 인원 수에 따라 바로 계산됩니다. 장소가 센터인 밋업은 현장에서 확인 페이지를 보여 주세요." : "The ticket total updates with the number of seats. Show the confirmation page at the center.")}</p> : fulfillment === "PICKUP" && <p className="commerce-pickup">{centerContent[locale].visit.address.value}</p>}
         <SlideRegion open={!reservation && fulfillment !== "PICKUP"}>
           <ShippingFields key={fulfillment} error={error} locale={locale} fulfillment={fulfillment} country={country} countries={countries} onCountry={(value) => { setInternationalCountry(value); invalidateQuote(); }} />
         </SlideRegion>
@@ -140,7 +141,7 @@ export function CheckoutForm({ locale, policyVersion, items, countries, fromCart
       </fieldset>
       <RequestError error={error} locale={locale} returnTo={returnTo} />
       <section className="form-stack" aria-labelledby="checkout-policy-heading">
-        <h2 id="checkout-policy-heading">{ko ? "결제 전 확인할 조건" : "Terms to review before payment"}</h2>
+        <h2 id="checkout-policy-heading">{freeRegistration ? (ko ? "신청 전 확인할 조건" : "Terms to review before registration") : (ko ? "결제 전 확인할 조건" : "Terms to review before payment")}</h2>
         <ul className="commerce-checkout-disclosure">{checkoutDisclosure[locale].map((item) => <li key={item}>{item}</li>)}</ul>
       </section>
       <nav className="commerce-checkout-policies" aria-label={ko ? "주문 관련 정책" : "Order policies"}>
@@ -155,7 +156,7 @@ export function CheckoutForm({ locale, policyVersion, items, countries, fromCart
       {error instanceof ApiError && error.fields.acceptance && <p id="checkout-acceptance-error" className="commerce-field-error">{ko ? "약관과 환불정책에 동의해 주세요." : "Agree to the terms and refund policy."}</p>}
       {error instanceof ApiError && error.code === "POLICY_STALE" && <Button onClick={() => window.location.reload()}>{ko ? "변경된 정책 다시 확인" : "Review updated policies"}</Button>}
       <div className="form-actions">
-        <Button type="submit" className="commerce-pay" disabled={pending || quoting || !quote || !allowed.length || !shippingAvailable}>{pending ? (ko ? "결제 화면으로 이동 중…" : "Opening payment…") : (ko ? "결제하기" : "Pay")}</Button>
+        <Button type="submit" className="commerce-pay" disabled={pending || quoting || !quote || !allowed.length || !shippingAvailable}>{freeRegistration ? pending ? (ko ? "신청 확정 중…" : "Confirming registration…") : (ko ? "무료 신청 확정" : "Confirm free registration") : pending ? (ko ? "결제 화면으로 이동 중…" : "Opening payment…") : (ko ? "결제하기" : "Pay")}</Button>
       </div>
     </form>
     <CheckoutSummary locale={locale} items={summaryItems} quote={quote} quoting={quoting} reservation={reservation} fulfillment={fulfillment} />

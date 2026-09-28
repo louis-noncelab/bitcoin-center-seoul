@@ -64,7 +64,7 @@ export function DashboardAdmin() {
     {data && <>
       <ul className="events-admin-list">
         <li><Link className="admin-stat-link" href="/admin/products" locale="ko"><h3>상품</h3><p className="muted">공개 {data.listedProducts}개 · 전체 {data.products}개 · 분류 {data.categories}개</p></Link></li>
-        <li><Link className="admin-stat-link" href="/admin/orders" locale="ko"><h3>주문</h3><p className="muted">결제 대기 {data.orders.pending} · 결제 완료 {data.orders.paid} · 검토 {data.orders.review}</p></Link></li>
+        <li><Link className="admin-stat-link" href="/admin/orders" locale="ko"><h3>주문</h3><p className="muted">결제 대기 {data.orders.pending} · 확정 {data.orders.paid} · 검토 {data.orders.review}</p></Link></li>
         <li><Link className="admin-stat-link" href="/admin" locale="ko"><h3>행사</h3><p className="muted">등록 {data.events}개</p></Link></li>
         <li><div><h3>세션</h3><p className="muted">유효한 관리자 세션 {data.sessions}개</p></div></li>
         <li><Link className="admin-stat-link" href="/admin/mail" locale="ko"><h3>메일 발송</h3><p className="muted">서버 접수 {sent} · 실패 {failed} · 대기 {waiting} · 기록 {captured}. {data.emailMode === "smtp" ? "메일 서버가 접수한 건을 발송으로 셉니다." : "지금은 기록 모드라 고객에게 나가지 않습니다."}</p></Link></li>

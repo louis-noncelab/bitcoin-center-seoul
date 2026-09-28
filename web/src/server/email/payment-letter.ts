@@ -89,6 +89,7 @@ export function buildPaymentLetter(locale: Locale, kind: Kind, order: OrderMail,
   const index = ko ? 0 : 1;
   const meetup = order.items.some((item) => item.sku?.startsWith("MEETUP-"));
   const meetupOnly = meetup && order.items.every((item) => item.sku?.startsWith("MEETUP-"));
+  const freeRegistration = meetupOnly && order.amountSats === 0n;
   const text = meetupOnly ? {
     "order.created": { subject: ["예약이 접수되었습니다", "Your reservation was received"], lead: ["결제를 마치면 자리가 확정됩니다.", "The seat is confirmed once payment arrives."], action: ["예약 확인", "View your reservation"] },
     "order.paid": { subject: ["예약 결제가 확인되었습니다", "Your reservation payment is confirmed"], lead: paidLead.MEETUP, action: ["예약 확인 열기", "Open confirmation"] },
@@ -96,12 +97,17 @@ export function buildPaymentLetter(locale: Locale, kind: Kind, order: OrderMail,
     "order.cancelled": { subject: ["예약이 취소되었습니다", "Your reservation was cancelled"], lead: ["이 예약은 취소되었습니다. 이미 결제한 금액이 있다면 센터에 문의해 주세요.", "This reservation was cancelled. Contact the center if a payment was already sent."], action: ["예약 상태 보기", "View reservation status"] },
     "order.review": { subject: ["예약 결제를 확인 중입니다", "Your reservation payment is being checked"], lead: ["운영자가 예약과 결제를 확인하고 있습니다. 확인이 끝날 때까지 자리는 보류됩니다.", "Staff are checking the reservation and payment. The seat stays on hold until that check is finished."], action: ["예약 상태 보기", "View reservation status"] },
   }[kind] : copy[kind];
-  const subject = text.subject[index];
-  const lead = kind === "order.paid"
+  const freeText = freeRegistration && kind === "order.paid" ? {
+    subject: ["무료 행사 신청이 확정되었습니다", "Your free event registration is confirmed"],
+    lead: ["결제 없이 자리가 확정되었습니다. 아래 페이지에서 행사 정보를 확인해 주세요.", "Your seat is confirmed without payment. Check the event details on the page below."],
+    action: ["신청 확인 열기", "Open registration confirmation"],
+  } as const : null;
+  const subject = (freeText ?? text).subject[index];
+  const lead = freeText ? freeText.lead[index] : kind === "order.paid"
     ? meetupOnly ? paidLead[joins.length ? "ONLINE_MEETUP" : "MEETUP"][index]
       : [paidLead[order.fulfillment][index], ...(meetup ? [paidLead[joins.length ? "ONLINE_MEETUP" : "MEETUP"][index]] : [])].join(" ")
     : text.lead[index];
-  const amount = formatAmount(unit, order.amountSats, order.amountKrw, locale);
+  const amount = freeRegistration ? (ko ? "무료" : "Free") : formatAmount(unit, order.amountSats, order.amountKrw, locale);
   const place = meetupOnly ? (joins.length ? (ko ? "온라인 밋업" : "Online meetup") : (ko ? "밋업 참여" : "Meetup attendance")) : fulfillment[locale][order.fulfillment];
   const rows = order.items.map((item) => {
     const title = ko ? item.titleKo || item.titleEn : item.titleEn || item.titleKo;
@@ -130,20 +136,20 @@ export function buildPaymentLetter(locale: Locale, kind: Kind, order: OrderMail,
 <img src="${escapeHtml(origin)}/brand/bcs-horizontal-color.png" width="168" height="48" alt="${ko ? "비트코인 센터 서울" : "Bitcoin Center Seoul"}" style="display:block;width:168px;height:auto;border:0;">
 </td></tr>
 <tr><td style="font-family:${font};">
-<p style="margin:0;font-size:15px;line-height:1.5;color:#62675f;">${ko ? "결제 안내" : "Payment"}</p>
+<p style="margin:0;font-size:15px;line-height:1.5;color:#62675f;">${freeRegistration ? (ko ? "신청 확인" : "Registration") : (ko ? "결제 안내" : "Payment")}</p>
 <h1 style="margin:8px 0 0;font-size:32px;line-height:1.25;font-weight:600;letter-spacing:-0.035em;">${escapeHtml(subject)}</h1>
 <p style="margin:16px 0 0;max-width:38em;font-size:17px;line-height:1.75;color:#20211f;">${escapeHtml(lead)}</p>
 </td></tr>
 <tr><td style="padding:28px 0 0;font-family:${font};">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f0f1ec;border-radius:12px;"><tr><td style="padding:22px 24px;">
-<p style="margin:0;font-size:15px;line-height:1.5;color:#62675f;">${ko ? "결제 금액" : "Amount"}</p>
+<p style="margin:0;font-size:15px;line-height:1.5;color:#62675f;">${freeRegistration ? (ko ? "참가비" : "Registration") : (ko ? "결제 금액" : "Amount")}</p>
 <p style="margin:4px 0 0;font-size:36px;line-height:1.15;font-weight:600;letter-spacing:-0.035em;">${escapeHtml(amount)}</p>
 <p style="margin:10px 0 0;font-size:16px;line-height:1.5;color:#20211f;">${escapeHtml(place)}</p>
 </td></tr></table>
 </td></tr>
 <tr><td style="padding:8px 0 0;font-family:${font};"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${itemRows}</table></td></tr>
 <tr><td style="padding:28px 0 0;font-family:${font};">
-<a href="${escapeHtml(url)}" style="display:inline-block;background:#e2e6dc;color:#20211f;text-decoration:none;border-radius:8px;padding:14px 22px;font-size:16px;line-height:1.5;font-weight:500;">${escapeHtml(text.action[index])}</a>
+<a href="${escapeHtml(url)}" style="display:inline-block;background:#e2e6dc;color:#20211f;text-decoration:none;border-radius:8px;padding:14px 22px;font-size:16px;line-height:1.5;font-weight:500;">${escapeHtml((freeText ?? text).action[index])}</a>
 ${joins.map((join) => `<p style="margin:16px 0 0;"><a href="${escapeHtml(join.url)}" style="display:inline-block;background:#20211f;color:#fafaf8;text-decoration:none;border-radius:8px;padding:14px 22px;font-size:16px;line-height:1.5;font-weight:500;">${ko ? "온라인 참여" : "Join online"}</a></p>${(ko ? join.note : join.noteEn || join.note) ? `<p style="margin:8px 0 0;font-size:15px;line-height:1.6;color:#62675f;">${escapeHtml(ko ? join.note : join.noteEn || join.note)}</p>` : ""}`).join("")}
 </td></tr>
 <tr><td style="padding:28px 0 0;border-top:1px solid #d8dcd3;font-family:${font};">
@@ -173,13 +179,16 @@ const operatorCopy = {
 
 export function buildOperatorLetter(order: OrderMail, contact: OperatorContact, url: string, unit: Unit, origin: string, kind: OperatorKind) {
   const meetup = order.items.some((item) => item.sku?.startsWith("MEETUP-"));
+  const freeRegistration = meetup && order.amountSats === 0n;
   const base = operatorCopy[kind];
-  const text = meetup && kind === "operator.created"
+  const text = freeRegistration && kind === "operator.paid"
+    ? { ...base, subject: "무료 밋업 신청이 확정되었습니다", lead: "결제 없이 자리가 확정되었습니다. 참석 인원을 확인하면 됩니다." }
+    : meetup && kind === "operator.created"
     ? { ...base, subject: "새 밋업 예약이 들어왔습니다" }
     : meetup && kind === "operator.paid"
       ? { ...base, subject: "밋업 예약 결제가 확인되었습니다", lead: "입금이 확인되었습니다. 참석 인원을 확인하면 됩니다." }
       : base;
-  const amount = formatAmount(unit, order.amountSats, order.amountKrw, "ko");
+  const amount = freeRegistration ? "무료" : formatAmount(unit, order.amountSats, order.amountKrw, "ko");
   const place = fulfillment.ko[order.fulfillment as keyof typeof fulfillment.ko] ?? order.fulfillment;
   const rows = order.items.map((item) => ({ title: item.titleKo || item.titleEn, quantity: `${item.quantity}${meetup ? "명" : "개"}` }));
   const contacts = [
@@ -215,7 +224,7 @@ export function buildOperatorLetter(order: OrderMail, contact: OperatorContact, 
 </td></tr>
 <tr><td style="padding:28px 0 0;font-family:${font};">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f0f1ec;border-radius:12px;"><tr><td style="padding:22px 24px;">
-<p style="margin:0;font-size:15px;line-height:1.5;color:#62675f;">결제 금액</p>
+<p style="margin:0;font-size:15px;line-height:1.5;color:#62675f;">${freeRegistration ? "참가비" : "결제 금액"}</p>
 <p style="margin:4px 0 0;font-size:36px;line-height:1.15;font-weight:600;letter-spacing:-0.035em;">${escapeHtml(amount)}</p>
 <p style="margin:10px 0 0;font-size:16px;line-height:1.5;">${escapeHtml(place)}</p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:14px;">${contactRows}</table>

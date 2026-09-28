@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { eventInputSchema } from "../src/lib/events-contract.ts";
 import { nextTicketStock } from "../src/server/events/ticket-stock.ts";
+import { eventAcceptsTickets } from "../src/server/events/ticket-eligibility.ts";
 
 const event = {
   venueType: "center", slug: "", tags: [], title: "밋업", titleEn: "Meetup", date: "2026-10-01", time: "19:00",
@@ -15,6 +16,16 @@ test("center payment is chosen with the external-link toggle off", () => {
   assert.equal(eventInputSchema.safeParse({ ...event, externalPayment: false }).success, false);
   assert.equal(eventInputSchema.safeParse({ ...event, externalPayment: false, ticketPriceKrw: "5000", ticketCapacity: 10 }).success, true);
   assert.equal(eventInputSchema.safeParse({ ...event, externalPayment: true, link: "https://pay.example.com/meetup" }).success, true);
+});
+
+test("free center event accepts registration without an external link", () => {
+  // Given: a future event with ten seats and a zero price.
+  const free = { ...event, date: "2099-10-01", externalPayment: false, ticketPriceKrw: "0", ticketCapacity: 10 };
+  // When: the event is saved and checked for available tickets.
+  const parsed = eventInputSchema.safeParse(free);
+  // Then: zero is a valid ticket price and the event is bookable.
+  assert.equal(parsed.success, true);
+  assert.equal(eventAcceptsTickets({ ...free, registrationClosed: false }), true);
 });
 
 test("ticket stock follows capacity changes without releasing a held seat", () => {

@@ -60,33 +60,35 @@ export async function makeQuote(cart: Cart, account: CustomerAccount) {
     return variant.billableWeightG * item.quantity;
   });
   const shipping = await prisma.$transaction((tx) => quoteShipping(tx, { fulfillment: cart.fulfillment, ...(cart.countryCode ? { countryCode: cart.countryCode } : {}), weightG: weights.reduce((sum, weight) => sum + weight, 0) }));
-  const rate = await getExchangeRate();
+  const freeRegistration = cart.fulfillment === "PICKUP" && !cart.couponCode && variants.every((variant) =>
+    ticketEventId(variant.sku) !== null && variant.product.priceKind === "FREE" && variant.product.priceAmount === 0n);
+  const rate = freeRegistration ? null : await getExchangeRate();
   let krwTotal = 0n;
   const items = cart.items.map((item) => {
     const variant = variants.find((value) => value.id === item.variantId);
     if (!variant) throw new HttpError(409, "PRODUCT_UNAVAILABLE", "Product unavailable.");
     const lineAmount = variant.product.priceAmount * BigInt(item.quantity);
-    const priorKrwSats = krwTotal === 0n ? 0n : krwToSats(krwTotal, rate.krwPerBtc);
+    const priorKrwSats = krwTotal === 0n ? 0n : krwToSats(krwTotal, rate?.krwPerBtc ?? "");
     if (variant.product.priceKind === "KRW_FIXED") krwTotal += lineAmount;
-    const lineSats = variant.product.priceKind === "KRW_FIXED" ? krwToSats(krwTotal, rate.krwPerBtc) - priorKrwSats : priceToSats(variant.product.priceKind, lineAmount, null);
+    const lineSats = variant.product.priceKind === "KRW_FIXED" ? krwToSats(krwTotal, rate?.krwPerBtc ?? "") - priorKrwSats : priceToSats(variant.product.priceKind, lineAmount, null);
     return { variantId: variant.id, productId: variant.productId, sku: variant.sku, quantity: item.quantity, titleKo: variant.product.titleKo, titleEn: variant.product.titleEn, optionLabelKo: variant.optionLabelKo, optionLabelEn: variant.optionLabelEn, priceKind: variant.product.priceKind, unitPriceAmount: variant.product.priceAmount.toString(), amountSats: lineSats.toString(), productVersion: variant.product.updatedAt.toISOString(), variantVersion: variant.updatedAt.toISOString(), billableWeightG: variant.billableWeightG };
   });
   // Allocate cumulative rounded KRW differences so the complete KRW total is rounded once.
-  const shippingSats = BigInt(shipping.amountKrw) === 0n ? 0n : krwToSats(krwTotal + BigInt(shipping.amountKrw), rate.krwPerBtc) - (krwTotal === 0n ? 0n : krwToSats(krwTotal, rate.krwPerBtc));
+  const shippingSats = BigInt(shipping.amountKrw) === 0n ? 0n : krwToSats(krwTotal + BigInt(shipping.amountKrw), rate?.krwPerBtc ?? "") - (krwTotal === 0n ? 0n : krwToSats(krwTotal, rate?.krwPerBtc ?? ""));
   const goodsSats = items.reduce((sum, item) => sum + BigInt(item.amountSats), 0n);
   const coupon = cart.couponCode
     ? await prisma.$transaction((tx) => quoteCouponDiscount(tx, {
       code: cart.couponCode ?? "",
       goodsSats,
       accountId: account?.id ?? null,
-      rateKrwPerBtc: rate.krwPerBtc,
+      rateKrwPerBtc: rate?.krwPerBtc ?? null,
     }))
     : null;
   const amountSats = goodsSats + shippingSats - (coupon ? BigInt(coupon.discountSats) : 0n);
-  if (amountSats <= 0n || amountSats > 2100000000000000n) throw new HttpError(400, "INVALID_AMOUNT", "Order amount is outside the supported range.");
-  const amountKrw = satsToKrw(amountSats, rate.krwPerBtc);
-  const snapshot = { items, fulfillment: cart.fulfillment, shipping, shippingAmountSats: shippingSats.toString(), amountSats: amountSats.toString(), coupon, rate: { ...rate, timestamp: rate.timestamp.toISOString() }, amountKrw: amountKrw.toString(), rounding: "CEILING_TO_SAT" as const };
+  if ((amountSats <= 0n && !freeRegistration) || amountSats > 2100000000000000n) throw new HttpError(400, "INVALID_AMOUNT", "Order amount is outside the supported range.");
+  const amountKrw = freeRegistration ? 0n : satsToKrw(amountSats, rate?.krwPerBtc ?? "");
+  const snapshot = { items, fulfillment: cart.fulfillment, shipping, shippingAmountSats: shippingSats.toString(), amountSats: amountSats.toString(), coupon, rate: rate ? { ...rate, timestamp: rate.timestamp.toISOString() } : null, amountKrw: amountKrw.toString(), rounding: "CEILING_TO_SAT" as const };
   const token = newAccessToken();
-  const quote = await prisma.quote.create({ data: { accountId: account?.id ?? null, ownerHash: account ? null : hashToken(token), input: cart, snapshot, amountSats, amountKrw, rateKrwPerBtc: rate.krwPerBtc, rateSource: rate.source, rateTimestamp: rate.timestamp, expiresAt: new Date(Date.now() + getServerConfig().quoteTtlMinutes * 60000) } });
+  const quote = await prisma.quote.create({ data: { accountId: account?.id ?? null, ownerHash: account ? null : hashToken(token), input: cart, snapshot, amountSats, amountKrw, rateKrwPerBtc: rate?.krwPerBtc ?? null, rateSource: rate?.source ?? null, rateTimestamp: rate?.timestamp ?? null, expiresAt: new Date(Date.now() + getServerConfig().quoteTtlMinutes * 60000) } });
   return { quote: { id: quote.id, snapshot, amountSats: quote.amountSats.toString(), amountKrw: amountKrw.toString(), expiresAt: quote.expiresAt }, token: account ? null : token };
 }

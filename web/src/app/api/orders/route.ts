@@ -10,7 +10,7 @@ export const POST = (request: Request) => handleApi(async () => {
   await boundedRequestRateLimit(request, "order-create", 40, 400, 900);
   const result = await createOrder(request, await readBody(request, createOrderSchema), await optionalAccount());
   if (result.created) {
-    void notifyOrder(result.order.id, "접수");
+    void notifyOrder(result.order.id, result.order.status === "PAID" ? "확정" : "접수");
   }
   const response = json({ ...result.order, ...(result.created && result.token ? { accessToken: result.token } : {}) }, result.created ? 201 : 200);
   if (result.token) response.headers.append("set-cookie", resourceAccessCookie("order", result.order.id, result.token));

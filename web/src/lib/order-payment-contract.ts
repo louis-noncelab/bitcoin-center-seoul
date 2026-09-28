@@ -8,6 +8,7 @@ export const refundMethodLabels = { LIGHTNING: "라이트닝", ONCHAIN: "온체�
 export const refundRecordingMethods = ["LIGHTNING", "ONCHAIN"] as const;
 export const paymentActionLabels: Readonly<Record<string, string>> = {
   "order.payment.manual": "결제 수동 처리", "order.paid.cancelled": "결제 후 주문 취소",
+  "order.free.cancelled": "무료 행사 신청 취소",
   "order.refund.recorded": "외부 환불 완료 기록", "order.cancelled": "미결제 주문 취소",
   "order.fulfillment": "수령·배송 처리", "order.tracking": "송장 수정",
 };
