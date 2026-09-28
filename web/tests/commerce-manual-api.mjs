@@ -17,6 +17,7 @@ const { openDatabase, getDatabase } = await import("../src/server/events/db.ts")
 const { login } = await import("../src/server/events/auth.ts");
 const paymentRoute = await import("../src/app/api/admin/orders/[id]/payment/route.ts");
 const cancelRoute = await import("../src/app/api/admin/orders/[id]/cancel-paid/route.ts");
+const freeCancelRoute = await import("../src/app/api/admin/orders/[id]/cancel-free/route.ts");
 const refundRoute = await import("../src/app/api/admin/orders/[id]/refund/route.ts");
 const context = { params: Promise.resolve({ id: "test-order" }) };
 let cookie;
@@ -30,13 +31,18 @@ after(() => { getDatabase().close(); rmSync(root, { recursive: true, force: true
 const request = (body, extra = {}, method = "POST") => new Request(`${origin}/api/admin/orders/test-order/payment`, {
   method, headers: { origin, cookie, "content-type": "application/json", ...extra }, ...(method === "GET" ? {} : { body: JSON.stringify(body) }),
 });
-for (const [name, handler] of [["manual", paymentRoute.POST], ["cancel-paid", cancelRoute.POST], ["refund", refundRoute.POST], ["refresh", paymentRoute.PATCH]]) {
+for (const [name, handler] of [["manual", paymentRoute.POST], ["cancel-paid", cancelRoute.POST], ["cancel-free", freeCancelRoute.POST], ["refund", refundRoute.POST], ["refresh", paymentRoute.PATCH]]) {
   test(`${name}: unauthenticated or cross-origin requests stop before database access`, async () => {
     assert.equal((await handler(request({}, { cookie: "" }), context)).status, 401);
     assert.equal((await handler(request({}, { origin: "https://untrusted.invalid" }), context)).status, 403);
     assert.equal((await handler(request({}, { "sec-fetch-site": "cross-site" }), context)).status, 403);
   });
 }
+test("free cancellation requires an operator reason", async () => {
+  for (const invalid of [{}, { reason: " " }, { reason: "요청", paymentId: "fake" }]) {
+    assert.equal((await freeCancelRoute.POST(request(invalid), context)).status, 400);
+  }
+});
 test("manual decisions require a reason, exact version and allowed decision", async () => {
   const valid = { paymentId: "payment", expectedPaymentUpdatedAt: new Date().toISOString(), reason: "operator proof", decision: "PAID" };
   for (const patch of [{ reason: " " }, { expectedPaymentUpdatedAt: "" }, { decision: "REFUNDED" }, { unknown: true }]) {

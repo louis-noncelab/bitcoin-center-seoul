@@ -20,7 +20,7 @@ import { adminRequest, AdminRequestError, errorText, jsonBody } from "./request"
 const filters = [
   { value: "all", label: "전체" },
   { value: "PENDING_PAYMENT", label: "결제 대기" },
-  { value: "PAID", label: "결제 완료" },
+  { value: "PAID", label: "확정" },
   { value: "REVIEW", label: "확인 중" },
   { value: "EXPIRED", label: "기한 만료" },
   { value: "CANCELLED", label: "취소됨" },
@@ -163,21 +163,22 @@ export function OrdersAdmin() {
     {loading && <p role="status">주문을 불러오는 중…</p>}
     <ul key={`orders:${query}`} className="events-admin-list" aria-busy={loading}>
       {orders.map((order) => {
+        const freeRegistration = order.amountSats === "0" && order.payments.length === 0 && order.items.length > 0 && order.items.every((item) => item.sku.startsWith("MEETUP-"));
         const step = order.privacyRedactedAt ? null : nextFulfillment(order);
         const open = openId === order.id;
         const trackingEditable = !order.privacyRedactedAt && order.status === "PAID" && order.refundStatus === "NONE" && order.fulfillment !== "PICKUP" && ["SHIPPED", "DELIVERED"].includes(order.fulfillmentStatus);
         return <li key={order.id}>
           <div>
-            <h3>{order.privacyRedactedAt ? "개인정보 파기 완료" : order.customerName}<span className="muted"> · {sats(order.amountSats)}</span></h3>
+            <h3>{order.privacyRedactedAt ? "개인정보 파기 완료" : order.customerName}<span className="muted"> · {freeRegistration ? "무료" : sats(order.amountSats)}</span></h3>
             <p className="muted">
-              {orderStatusLabels[order.status]} · {fulfillmentLabels[order.fulfillment]} · {fulfillmentStatusLabels[order.fulfillmentStatus]} · {stamp(order.createdAt)}
+              {freeRegistration && ["PAID", "CANCELLED"].includes(order.status) ? order.status === "PAID" ? "신청 확정" : "신청 취소" : orderStatusLabels[order.status]} · {freeRegistration ? "센터 참석" : fulfillmentLabels[order.fulfillment]} · {freeRegistration && order.status === "CANCELLED" ? "좌석 복구" : fulfillmentStatusLabels[order.fulfillmentStatus]} · {stamp(order.createdAt)}
             </p>
             <SlideRegion open={open}><div className="events-editor-fields">
               <p className="muted">주문 번호 {order.id}</p>
               {order.privacyRedactedAt ? <p className="muted">{stamp(order.privacyRedactedAt)} 연락처와 배송지 등 일반 개인정보를 파기했습니다. 법정 보존 기록은 별도로 관리합니다.</p> : <p>{order.customerEmail}{order.customerPhone && ` · ${order.customerPhone}`}</p>}
               {!order.privacyRedactedAt && order.address && <p className="muted">{addressText(order.address)}</p>}
-              <ul>{order.items.map((item) => <li key={item.id}>{item.titleKo} · {item.optionLabelKo || item.sku} × {item.quantity} · {sats(item.amountSats)}</li>)}</ul>
-              <p className="muted">배송비 {sats(order.shippingAmountSats)}{order.amountKrw ? ` · 주문 시점 ₩${new Intl.NumberFormat("ko").format(BigInt(order.amountKrw))}` : ""}</p>
+              <ul>{order.items.map((item) => <li key={item.id}>{item.titleKo} · {item.optionLabelKo || item.sku} × {item.quantity} · {freeRegistration ? "무료" : sats(item.amountSats)}</li>)}</ul>
+              {!freeRegistration && <p className="muted">배송비 {sats(order.shippingAmountSats)}{order.amountKrw ? ` · 주문 시점 ₩${new Intl.NumberFormat("ko").format(BigInt(order.amountKrw))}` : ""}</p>}
               {!order.privacyRedactedAt && order.trackingNumber && <p className="muted">{order.carrier} · {order.trackingNumber}</p>}
               {!order.privacyRedactedAt && order.customerNotes && <p>요청 사항: {order.customerNotes}</p>}
               <p className="muted">결제 {order.payments.map((payment) => `${payment.mode}/${payment.status}`).join(", ") || "없음"}</p>

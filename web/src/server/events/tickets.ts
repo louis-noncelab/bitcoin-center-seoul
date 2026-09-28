@@ -2,6 +2,7 @@ import "server-only";
 import type { CenterEvent } from "@/generated/prisma/client";
 import type { Tx } from "@/server/db";
 import { eventAcceptsTickets } from "./ticket-eligibility";
+import { soldOutBookingHref } from "@/lib/event-booking";
 import { prisma } from "@/server/db";
 import type { EventRecord } from "@/lib/events-contract";
 import { nextTicketStock } from "./ticket-stock";
@@ -16,7 +17,7 @@ export async function syncEventTicketInTransaction(tx: Tx, event: CenterEvent, p
   const selling = eventAcceptsTickets(event);
   const details = {
     titleKo: event.title, titleEn: event.titleEn, descriptionKo: event.title, descriptionEn: event.titleEn, imageUrl: event.image,
-    published: selling, listed: false, priceKind: "KRW_FIXED" as const, priceAmount: BigInt(event.ticketPriceKrw || "0"),
+    published: selling, listed: false, priceKind: event.ticketPriceKrw === "0" ? "FREE" as const : "KRW_FIXED" as const, priceAmount: BigInt(event.ticketPriceKrw || "0"),
     allowedFulfillments: ["PICKUP" as const],
   };
   if (!existing) {
@@ -66,7 +67,7 @@ export async function meetupPaymentHrefs(eventIds: readonly number[]): Promise<R
     return Object.fromEntries(products.flatMap((product) => {
       const eventId = Number(product.slug.slice("meetup-".length));
       const variant = product.variants[0];
-      return variant && eventIds.includes(eventId) ? [[eventId, `/checkout?variant=${variant.id}&quantity=1&kind=meetup`] as const] : [];
+      return variant && eventIds.includes(eventId) ? [[eventId, variant.stockOnHand > 0 ? `/checkout?variant=${variant.id}&quantity=1&kind=meetup` : soldOutBookingHref] as const] : [];
     }));
   } catch {
     // Event pages keep rendering when the shop database is not configured.

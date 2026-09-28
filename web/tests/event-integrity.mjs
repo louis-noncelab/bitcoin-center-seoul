@@ -2,6 +2,117 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { prisma, updateEvent, setEventRegistration, deleteEvent, getEvent, syncEventTicket, fixture, quoteFor, fromQuote, pay, ensureInvoice, reconcilePayment } from "./event-integrity-fixture.mjs";
 
+test("free event registration immediately confirms a seat without a payment", async () => {
+  // Given: a free center event with ten available seats.
+  const { product, variant } = await fixture({ ticketPriceKrw: "0" });
+  // When: a guest registers through the normal quote and order flow.
+  const quoted = await quoteFor(variant);
+  const { order } = await fromQuote(quoted);
+  // Then: the reservation is confirmed without creating a payment or holding stock.
+  assert.equal(product.priceKind, "FREE");
+  assert.equal(quoted.quote.amountSats, "0");
+  assert.equal(quoted.quote.snapshot.rate, null);
+  assert.equal(order.status, "PAID");
+  assert.equal(order.payments.length, 0);
+  assert.equal(order.holdExpiresAt, null);
+  const { confirmationByCode } = await import("../src/server/orders/confirmation.ts");
+  assert.equal((await confirmationByCode(order.confirmationCode)).status, "PAID");
+  assert.deepEqual(await prisma.productVariant.findUniqueOrThrow({ where: { id: variant.id } }).then(({ stockOnHand, reservedStock }) => ({ stockOnHand, reservedStock })), { stockOnHand: 9, reservedStock: 0 });
+});
+
+test("concurrent free registrations cannot take the same last seat", async () => {
+  // Given: a free event with one seat and two guests holding valid quotes.
+  const { variant } = await fixture({ ticketPriceKrw: "0", ticketCapacity: 1 });
+  const quotes = await Promise.all([quoteFor(variant), quoteFor(variant)]);
+  // When: both guests submit their registrations concurrently.
+  const results = await Promise.allSettled(quotes.map(fromQuote));
+  // Then: exactly one is confirmed, without reserved stock or a payment.
+  assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
+  assert.equal(results.find((result) => result.status === "rejected").reason.code, "OUT_OF_STOCK");
+  const stock = await prisma.productVariant.findUniqueOrThrow({ where: { id: variant.id } });
+  assert.equal(stock.stockOnHand, 0);
+  assert.equal(stock.reservedStock, 0);
+});
+
+test("free reservation cancellation restores a seat without creating a refund", async () => {
+  // Given: a confirmed free reservation occupying the event's last seat.
+  const { variant } = await fixture({ ticketPriceKrw: "0", ticketCapacity: 1 });
+  const { order } = await fromQuote(await quoteFor(variant));
+  const { cancelFreeOrder } = await import("../src/server/orders/free-cancellation.ts");
+  // When: an operator cancels it, including an identical retry.
+  const cancelled = await cancelFreeOrder(order.id, { reason: "참가자 요청" }, "review-admin");
+  await cancelFreeOrder(order.id, { reason: "참가자 요청" }, "review-admin");
+  // Then: the seat is open once; no payment or refund is recorded.
+  assert.equal(cancelled.status, "CANCELLED");
+  assert.equal(cancelled.refundStatus, "NONE");
+  assert.equal(cancelled.payments.length, 0);
+  const stock = await prisma.productVariant.findUniqueOrThrow({ where: { id: variant.id } });
+  assert.deepEqual({ available: stock.stockOnHand, reserved: stock.reservedStock }, { available: 1, reserved: 0 });
+  const audits = await prisma.auditLog.findMany({ where: { targetType: "Order", targetId: order.id, action: "order.free.cancelled" } });
+  assert.equal(audits.length, 1);
+  assert.equal(audits[0].summary.restock, true);
+  assert.equal(audits[0].summary.toOrderStatus, "CANCELLED");
+  const { confirmationByCode } = await import("../src/server/orders/confirmation.ts");
+  assert.equal((await confirmationByCode(order.confirmationCode)).status, "CANCELLED");
+});
+
+test("sold-out meetup disables registration until cancellation restores a seat", async () => {
+  // Given: an event with one available free seat.
+  const { event, variant } = await fixture({ ticketPriceKrw: "0", ticketCapacity: 1 });
+  const { meetupPaymentHrefs } = await import("../src/server/events/tickets.ts");
+  const { soldOutBookingHref } = await import("../src/lib/event-booking.ts");
+  const available = (await meetupPaymentHrefs([event.id]))[event.id];
+  assert.match(available, new RegExp(`variant=${variant.id}`));
+  // When: the last seat is confirmed, then the operator cancels that registration.
+  const { order } = await fromQuote(await quoteFor(variant));
+  assert.equal((await meetupPaymentHrefs([event.id]))[event.id], soldOutBookingHref);
+  const { cancelFreeOrder } = await import("../src/server/orders/free-cancellation.ts");
+  await cancelFreeOrder(order.id, { reason: "참가자 요청" }, "review-admin");
+  // Then: the public registration link becomes available again.
+  assert.equal((await meetupPaymentHrefs([event.id]))[event.id], available);
+});
+
+test("paid meetup also closes its registration link when sold out", async () => {
+  // Given: the last seat of a paid event has settled.
+  const { event, variant } = await fixture({ ticketPriceKrw: "1000", ticketCapacity: 1 });
+  await pay(variant, 1);
+  // Then: its public link shows the same sold-out state as a free event.
+  const { meetupPaymentHrefs } = await import("../src/server/events/tickets.ts");
+  const { soldOutBookingHref } = await import("../src/lib/event-booking.ts");
+  assert.equal((await meetupPaymentHrefs([event.id]))[event.id], soldOutBookingHref);
+});
+
+test("paid registration cannot use the free cancellation path", async () => {
+  // Given: a settled paid reservation.
+  const { variant } = await fixture();
+  const { order } = await pay(variant, 1);
+  const { cancelFreeOrder } = await import("../src/server/orders/free-cancellation.ts");
+  // When: an operator submits the free cancellation action for that order.
+  await assert.rejects(cancelFreeOrder(order.id, { reason: "참가자 요청" }, "review-admin"), { code: "INVALID_STATE" });
+  // Then: its paid status and inventory stay unchanged.
+  assert.equal((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status, "PAID");
+  assert.equal((await prisma.productVariant.findUniqueOrThrow({ where: { id: variant.id } })).stockOnHand, 9);
+});
+
+test("check-in and free cancellation serialize on the order row", async () => {
+  // Given: a confirmed free registration.
+  const { variant } = await fixture({ ticketPriceKrw: "0", ticketCapacity: 1 });
+  const { order } = await fromQuote(await quoteFor(variant));
+  const { cancelFreeOrder } = await import("../src/server/orders/free-cancellation.ts");
+  const { setMeetupCheckin } = await import("../src/server/orders/checkin.ts");
+  // When: an operator checks in while another operator cancels the same registration.
+  const results = await Promise.allSettled([
+    cancelFreeOrder(order.id, { reason: "참가자 요청" }, "review-admin"),
+    setMeetupCheckin({ orderId: order.id }, "checkin-admin"),
+  ]);
+  // Then: only one outcome commits; attended seats are never reopened.
+  assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
+  const current = await prisma.order.findUniqueOrThrow({ where: { id: order.id } });
+  const stock = await prisma.productVariant.findUniqueOrThrow({ where: { id: variant.id } });
+  assert.equal(stock.stockOnHand, current.status === "CANCELLED" ? 1 : 0);
+  assert.equal(Boolean(current.checkedInAt), current.status === "PAID");
+});
+
 test("capacity reduction below paid seats rejects atomically without manufacturing stock", async () => {
   // Given: eight of ten seats are actually paid through the review provider.
   const { event, data, variant } = await fixture();

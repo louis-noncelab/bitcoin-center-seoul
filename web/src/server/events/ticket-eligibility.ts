@@ -11,6 +11,6 @@ export function ticketEventId(sku: string): number | null {
 export function eventAcceptsTickets(event: {
   readonly date: string; readonly registrationClosed: boolean; readonly externalPayment: boolean; readonly ticketPriceKrw: string;
 }, now = new Date()): boolean {
-  return !event.registrationClosed && !event.externalPayment && /^[1-9]\d*$/.test(event.ticketPriceKrw)
+  return !event.registrationClosed && !event.externalPayment && /^(?:0|[1-9]\d*)$/.test(event.ticketPriceKrw)
     && isCalendarDate(event.date) && event.date.trim().replaceAll(".", "-") >= seoulDate(now);
 }

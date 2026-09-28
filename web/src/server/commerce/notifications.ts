@@ -43,7 +43,7 @@ export async function postOrderNotification(text: string): Promise<void> {
   }
 }
 
-export async function notifyOrder(orderId: string, event: "접수" | "결제 완료"): Promise<void> {
+export async function notifyOrder(orderId: string, event: "접수" | "결제 완료" | "확정"): Promise<void> {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     select: { customerName: true, amountSats: true, amountKrw: true, items: { select: { sku: true, titleKo: true, quantity: true } } },
