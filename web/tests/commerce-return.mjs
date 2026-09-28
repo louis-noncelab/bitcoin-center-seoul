@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import './helpers/pg-content-env.mjs';
 
-Object.assign(process.env, { APP_MODE: 'test', APP_ORIGIN: 'http://127.0.0.1:3100', DATABASE_URL: 'postgresql://max@127.0.0.1:5432/center_test', DATA_DIR: '/tmp', TOKEN_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'), PAYMENT_PROVIDER: 'zaprite', PAYMENT_MODE: 'review', EMAIL_MODE: 'capture', TRUST_PROXY: 'false' });
 const { createZapriteInvoice } = await import('../src/server/payments/zaprite.ts');
 const { publicPayment } = await import('../src/server/payments/access.ts');
 const payment = { id: 'payment-one', orderId: 'order-one', bookingId: null, provider: 'ZAPRITE', mode: 'SANDBOX', amountSats: 100n, currency: 'BTC', creationKey: 'creation-one', expiresAt: new Date('2030-01-01T00:00:00Z'), metadata: { locale: 'en' }, externalId: null };
