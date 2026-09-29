@@ -30,7 +30,7 @@ export function reviewStructuredData(record: ReviewRecord, locale: Locale) {
         "@type": "Article", "@id": `${url}#article`, mainEntityOfPage: url,
         headline: review.title[locale], description: markdownExcerpt(review.summary[locale]),
         inLanguage: locale === "en" && record.descriptionEn ? "en" : "ko",
-        author: { "@type": "Organization", name: "Bitcoin Center Seoul", url: siteOrigin },
+        author: { "@type": "Person", name: review.author },
         publisher: { "@type": "Organization", name: "Bitcoin Center Seoul", url: siteOrigin },
         citation: record.url,
         image: [`${siteOrigin}${record.image ? shareCardPath("reviews", record.slug) : defaultShareImage}`],

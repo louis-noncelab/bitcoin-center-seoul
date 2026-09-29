@@ -4,7 +4,9 @@ import sharp from "sharp";
 import { articleStructuredData } from "../src/components/seo/article-json-ld.tsx";
 import { eventStructuredData } from "../src/components/seo/event-json-ld.tsx";
 import { defaultShareImage, shareCardPath, shareCardSize } from "../src/content/share.ts";
+import { reviewStructuredData } from "../src/content/review-metadata.ts";
 import { pageMetadata, recordMetadata } from "../src/content/site.ts";
+import { reviewRecordSchema } from "../src/lib/reviews-contract.ts";
 import { composeShareCard } from "../src/server/share-card.ts";
 
 test("a share card is a 1200 by 630 jpeg", async () => {
@@ -87,4 +89,18 @@ test("journal articles publish a headline and a share image", () => {
   assert.equal(article.description.includes("**"), false);
   assert.equal(article.datePublished, "2026-03-22");
   assert.match(article.image[0], /\/og\/journal\/after-the-class$/);
+});
+
+test("visitor article authorship matches the published visitor name in both languages", () => {
+  const review = reviewRecordSchema.parse({
+    id: 1, revision: 1, created_at: "2026-09-29", updated_at: "2026-09-29",
+    kind: "blog", url: "https://example.com/visit", author: "도란이",
+    title: "방문 후기", titleEn: "Visitor story", summary: "방문 소감", summaryEn: "A visit",
+    slug: "visitor-story", description: "방문 소감",
+  });
+  for (const locale of ["ko", "en"]) {
+    const article = reviewStructuredData(review, locale)["@graph"].find((entry) => entry["@type"] === "Article");
+    assert.deepEqual(article.author, { "@type": "Person", name: review.author });
+    assert.equal(article.publisher.name, "Bitcoin Center Seoul");
+  }
 });
