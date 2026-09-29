@@ -40,22 +40,26 @@ export function rewriteImagePaths(value: string, sources: readonly string[], tar
   }, value);
 }
 
-async function undoMoves(moved: readonly { readonly from: string; readonly to: string }[]): Promise<void> {
+async function undoMoves(moved: readonly { readonly from: string; readonly to: string; readonly copied: boolean }[]): Promise<void> {
   for (const step of [...moved].reverse()) {
-    await fs.promises.mkdir(path.dirname(step.from), { recursive: true });
-    await fs.promises.rename(step.to, step.from).catch(() => undefined);
+    if (step.copied) await fs.promises.unlink(step.to).catch(() => undefined);
+    else {
+      await fs.promises.mkdir(path.dirname(step.from), { recursive: true });
+      await fs.promises.rename(step.to, step.from).catch(() => undefined);
+    }
   }
 }
 
-export async function placeImagesInSlugFolder(folder: ImageFolder, slug: string, images: readonly string[]): Promise<{ readonly images: readonly string[]; restore: () => Promise<void> }> {
+export async function placeImagesInSlugFolder(folder: ImageFolder, slug: string, images: readonly string[], used?: ReadonlySet<string>): Promise<{ readonly images: readonly string[]; restore: () => Promise<void> }> {
   if (slug === "") return { images, restore: async () => {} };
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || !/[a-z]/.test(slug)) {
     throw new ApiError(400, "INVALID_IMAGE_PATH", "이미지 경로가 올바르지 않습니다.");
   }
   const root = imageRoot();
-  const moved: { from: string; to: string }[] = [];
+  const moved: { from: string; to: string; copied: boolean }[] = [];
   const placed: string[] = [];
   const seen = new Map<string, string>();
+  let referenced = used;
   try {
     for (const image of images) {
       const previous = seen.get(image);
@@ -83,18 +87,25 @@ export async function placeImagesInSlugFolder(folder: ImageFolder, slug: string,
       if (!source.startsWith(`${root}${path.sep}`) || !fs.statSync(source).isFile()) {
         throw new ApiError(400, "INVALID_IMAGE_PATH", "이미지 경로가 올바르지 않습니다.");
       }
-      const filename = path.basename(source);
+      let filename = path.basename(source);
       if (!/^[A-Za-z0-9_-]+\.(?:avif|gif|jpe?g|png|webp)$/i.test(filename)) {
         throw new ApiError(400, "INVALID_IMAGE_PATH", "이미지 경로가 올바르지 않습니다.");
       }
       const directory = path.join(root, "uploads", folder, slug);
       fs.mkdirSync(directory, { recursive: true });
-      const target = path.join(directory, filename);
+      let target = path.join(directory, filename);
+      if (source !== target && fs.lstatSync(target, { throwIfNoEntry: false })) {
+        filename = `${randomUUID()}${path.extname(filename)}`;
+        target = path.join(directory, filename);
+      }
       const publicPath = `/images/uploads/${folder}/${slug}/${filename}`;
       if (source !== target) {
-        await fs.promises.rename(source, target);
-        moved.push({ from: source, to: target });
-        await fs.promises.rmdir(path.dirname(source)).catch(() => undefined);
+        referenced ??= new Set(await (await import("@/server/events/content-images")).referencedImagePaths(false));
+        const copied = referenced.has(parsed.data);
+        if (copied) await fs.promises.copyFile(source, target, fs.constants.COPYFILE_EXCL);
+        else await fs.promises.rename(source, target);
+        moved.push({ from: source, to: target, copied });
+        if (!copied) await fs.promises.rmdir(path.dirname(source)).catch(() => undefined);
       }
       placed.push(publicPath);
       seen.set(image, publicPath);

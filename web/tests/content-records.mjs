@@ -7,6 +7,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test, { after } from "node:test";
+import { NextRequest } from "next/server";
 import sharp from "sharp";
 
 process.env.APP_MODE = "test";
@@ -27,8 +28,10 @@ const uploads = fs.mkdtempSync(path.join(os.tmpdir(), "bcs-content-records-"));
 process.env.BCS_EVENTS_UPLOADS = uploads;
 
 const { prisma } = await import("../src/server/db.ts");
-const { createEvent, deleteEvent, listEvents } = await import("../src/server/events/index.ts");
+const { createEvent, deleteEvent, listEvents, updateEvent } = await import("../src/server/events/index.ts");
+const { deleteNotice, saveNotice } = await import("../src/server/notices/index.ts");
 const { referencedImagePaths } = await import("../src/server/events/content-images.ts");
+const { publicImage } = await import("../src/server/events/handlers.ts");
 const { GET } = await import("../src/app/og/[kind]/[id]/route.ts");
 
 const prefix = `img${randomBytes(4).toString("hex")}`;
@@ -56,6 +59,8 @@ after(async () => {
     await prisma.centerEvent.deleteMany({ where: { id } });
   }
   await prisma.product.deleteMany({ where: { slug: { startsWith: prefix } } });
+  await prisma.noticeSlug.deleteMany({ where: { slug: { startsWith: prefix } } });
+  await prisma.notice.deleteMany({ where: { slug: { startsWith: prefix } } });
   await prisma.$disconnect();
   fs.rmSync(uploads, { recursive: true, force: true });
 });
@@ -83,6 +88,77 @@ test("saving an event stores the picture under its slug and deleting it removes 
   await deleteEvent(saved.id, saved.revision);
   created.pop();
   assert.equal(fs.existsSync(path.join(uploads, stored.slice("/images/".length))), false);
+});
+
+test("saving a second event with an existing picture preserves both published images", async () => {
+  const source = await writeImage(`${prefix}-reused.webp`);
+  const first = await createEvent(eventInput(`${prefix}-first`, source));
+  created.push(first.id);
+  const second = await createEvent(eventInput(`${prefix}-second`, first.images[0]));
+  created.push(second.id);
+  const firstFile = path.join(uploads, first.images[0].slice("/images/".length));
+  const secondFile = path.join(uploads, second.images[0].slice("/images/".length));
+  assert.notEqual(first.images[0], second.images[0]);
+  assert.equal(fs.existsSync(firstFile), true);
+  assert.equal(fs.existsSync(secondFile), true);
+  const imageResponse = (url) => publicImage(new NextRequest(`http://127.0.0.1:3100${url}`), {
+    params: Promise.resolve({ path: url.slice("/images/".length).split("/") }),
+  });
+  assert.equal((await imageResponse(first.images[0])).status, 200);
+  assert.equal((await imageResponse(second.images[0])).status, 200);
+
+  await deleteEvent(first.id, first.revision);
+  created.splice(created.indexOf(first.id), 1);
+  assert.equal(fs.existsSync(secondFile), true);
+  assert.equal((await imageResponse(first.images[0])).status, 404);
+  assert.equal((await imageResponse(second.images[0])).status, 200);
+  await deleteEvent(second.id, second.revision);
+  created.splice(created.indexOf(second.id), 1);
+  assert.equal(fs.existsSync(secondFile), false);
+});
+
+test("renaming an event removes its unused old URL but keeps its new picture", async () => {
+  const source = await writeImage(`${prefix}-rename.webp`);
+  const saved = await createEvent(eventInput(`${prefix}-old`, source));
+  created.push(saved.id);
+  const renamed = await updateEvent(saved.id, eventInput(`${prefix}-new`, saved.images[0]), saved.revision);
+  assert.equal(fs.existsSync(path.join(uploads, saved.images[0].slice("/images/".length))), false);
+  assert.equal(fs.existsSync(path.join(uploads, renamed.images[0].slice("/images/".length))), true);
+  await deleteEvent(renamed.id, renamed.revision);
+  created.pop();
+});
+
+test("a failed slug edit removes its new copy without deleting the published picture", async () => {
+  const source = await writeImage(`${prefix}-rollback.webp`);
+  const saved = await createEvent(eventInput(`${prefix}-before`, source));
+  created.push(saved.id);
+  await assert.rejects(
+    updateEvent(saved.id, eventInput(`${prefix}-after`, saved.images[0]), saved.revision + 1),
+    { code: "EDIT_CONFLICT" },
+  );
+  assert.equal(fs.existsSync(path.join(uploads, saved.images[0].slice("/images/".length))), true);
+  assert.equal(fs.existsSync(path.join(uploads, `uploads/events/${prefix}-after/${prefix}-rollback.webp`)), false);
+  await deleteEvent(saved.id, saved.revision);
+  created.pop();
+});
+
+test("reusing a notice picture keeps the notice URL until the notice is deleted", async () => {
+  const source = await writeImage(`${prefix}-notice.webp`);
+  const notice = await saveNotice({
+    slug: `${prefix}-notice`, title: "공지", titleEn: "Notice",
+    description: `![사진](${source})`, descriptionEn: "", is_active: 1, tags: [],
+  });
+  const event = await createEvent(eventInput(`${prefix}-notice-event`, source));
+  created.push(event.id);
+  const noticeFile = path.join(uploads, source.slice("/images/".length));
+  const eventFile = path.join(uploads, event.images[0].slice("/images/".length));
+  assert.equal(fs.existsSync(noticeFile), true);
+  assert.equal(fs.existsSync(eventFile), true);
+  await deleteNotice(notice.id, notice.revision);
+  assert.equal(fs.existsSync(noticeFile), false);
+  assert.equal(fs.existsSync(eventFile), true);
+  await deleteEvent(event.id, event.revision);
+  created.pop();
 });
 
 test("a product that still uses a picture keeps the file when the event is deleted", async () => {
