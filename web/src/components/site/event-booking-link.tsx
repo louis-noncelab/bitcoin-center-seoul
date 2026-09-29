@@ -5,7 +5,7 @@ import type { EventRecord } from "@/lib/events-contract";
 import { eventBookingHref, isSaturdayBlockUrl, soldOutBookingHref } from "@/lib/event-booking";
 
 type Props = {
-  readonly event: Pick<EventRecord, "link" | "date" | "title" | "titleEn" | "registrationClosed" | "ticketPriceKrw">;
+  readonly event: Pick<EventRecord, "link" | "date" | "title" | "titleEn" | "registrationClosed" | "ticketPriceKrw" | "ticketPriceSats">;
   readonly locale: Locale;
   readonly today: string;
   readonly className?: string;
@@ -18,10 +18,11 @@ export function EventBookingLink({ event, locale, today, className = "", payment
   if (paymentHref) {
     const ko = locale === "ko";
     const title = ko ? event.title : event.titleEn || event.title;
-    const price = new Intl.NumberFormat(ko ? "ko-KR" : "en-GB").format(Number(event.ticketPriceKrw));
+    const amount = event.ticketPriceSats || event.ticketPriceKrw;
+    const price = new Intl.NumberFormat(ko ? "ko-KR" : "en-GB").format(BigInt(amount));
     return <Link className={`button event-booking-link ${className}`.trim()} href={paymentHref} locale={locale}>
       <span><span className="sr-only">{title} </span>{ko ? "참여하기" : "Join event"}</span>
-      <span className="event-booking-provider">{event.ticketPriceKrw === "0" ? (ko ? "무료" : "Free") : ko ? `${price}원` : `₩${price}`}</span>
+      <span className="event-booking-provider">{amount === "0" ? (ko ? "무료" : "Free") : event.ticketPriceSats ? `${price} sats` : ko ? `${price}원` : `₩${price}`}</span>
     </Link>;
   }
   const href = eventBookingHref(event.link, event.date, today, event.registrationClosed);

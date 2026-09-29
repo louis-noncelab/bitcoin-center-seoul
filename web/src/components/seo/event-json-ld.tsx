@@ -4,6 +4,7 @@ import { siteOrigin } from "@/content/site";
 import type { Locale } from "@/i18n/routing";
 import type { EventRecord } from "@/lib/events-contract";
 import { markdownExcerpt } from "@/lib/markdown";
+import { btcPrice } from "./product-json-ld";
 
 function absolute(path: string): string {
   return path.startsWith("http://") || path.startsWith("https://") ? path : `${siteOrigin}${path.startsWith("/") ? "" : "/"}${path}`;
@@ -44,11 +45,11 @@ export function eventStructuredData(event: EventRecord, locale: Locale) {
           ? { "@type": "VirtualLocation", name: locale === "ko" ? "온라인" : "Online" }
           : { "@type": "Place", name: placeName, address },
         organizer: { "@type": "Organization", name: centerContent[locale].hero.title, url: siteOrigin },
-        ...(event.ticketPriceKrw && !event.externalPayment ? {
+        ...((event.ticketPriceKrw || event.ticketPriceSats) && !event.externalPayment ? {
           offers: {
             "@type": "Offer",
-            price: event.ticketPriceKrw,
-            priceCurrency: "KRW",
+            price: event.ticketPriceSats ? btcPrice(event.ticketPriceSats) : event.ticketPriceKrw,
+            priceCurrency: event.ticketPriceSats ? "BTC" : "KRW",
             availability: `https://schema.org/${event.registrationClosed ? "SoldOut" : "InStock"}`,
             url,
           },

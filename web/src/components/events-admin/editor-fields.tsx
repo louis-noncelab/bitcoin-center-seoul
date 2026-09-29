@@ -5,6 +5,7 @@ import type { Locale } from "@/i18n/routing";
 import type { EventRecord, HighlightRecord } from "@/lib/events-contract";
 import { ChoiceControl, FormControl } from "@/components/ui/primitives";
 import { DateField } from "@/components/ui/date-field";
+import { MenuSelect } from "@/components/ui/menu-select";
 import { MarkdownHelp } from "./markdown-help";
 import { MarkdownEditor } from "./markdown-editor";
 import { TagsField } from "./tags-field";
@@ -20,6 +21,7 @@ export function EditorFields({ locale, kind, record, onPending, onDirty, onExpir
   const ko = locale === "ko";
   const event = record && "time" in record ? record : null;
   const [externalPayment, setExternalPayment] = useState(event?.externalPayment ?? true);
+  const [priceUnit, setPriceUnit] = useState<"KRW" | "SATS">(event?.ticketPriceSats ? "SATS" : "KRW");
   const [online, setOnline] = useState(event?.isOnline ?? false);
   const highlight = record && "meta" in record ? record : null;
   function input(name: string, label: string, value = "", type = "text", required = false) {
@@ -71,18 +73,25 @@ export function EditorFields({ locale, kind, record, onPending, onDirty, onExpir
       {kind === "events" && <label className="events-checkbox"><ChoiceControl role="switch" name="registrationClosed" type="checkbox" defaultChecked={event?.registrationClosed ?? false} />참여 마감<span className="muted">켜면 참여 링크 대신 ‘참여 마감’이 표시됩니다. 저장하면 반영됩니다.</span></label>}
       {kind === "events" ? (
         <>
-          <label className="events-checkbox"><ChoiceControl role="switch" name="externalPayment" type="checkbox" checked={externalPayment} onChange={(change) => { setExternalPayment(change.currentTarget.checked); onDirty(); }} />외부 결제 링크<span className="muted">켜면 참여하기가 아래 주소를 새 창으로 엽니다. 끄면 참가비와 정원으로 센터에서 신청을 받습니다. 0원은 결제 없이 바로 확정됩니다.</span></label>
+          <label className="events-checkbox"><ChoiceControl role="switch" name="externalPayment" type="checkbox" checked={externalPayment} onChange={(change) => { setExternalPayment(change.currentTarget.checked); onDirty(); }} />외부 결제 링크<span className="muted">켜면 참여하기가 아래 주소를 새 창으로 엽니다. 끄면 참가비와 정원으로 센터에서 신청을 받습니다. 무료 행사는 결제 없이 바로 확정됩니다.</span></label>
           <label hidden={!externalPayment}>
             참여하기 버튼 링크 (선택)
             <FormControl><input name="link" aria-label="참여하기 버튼 링크 (선택)" type="url" maxLength={2048} defaultValue={record?.link ? (/^www\./.test(record.link) ? `https://${record.link}` : record.link) : ""} placeholder="https://" aria-describedby="event-link-help" /></FormControl>
             <span id="event-link-help" className="muted">Zaprite Payment Link 또는 이벤트 티켓 링크가 새 창으로 열립니다. 비워 두면 버튼이 표시되지 않습니다.</span>
           </label>
           <div hidden={externalPayment}>
+            <label>참가비 단위
+              <FormControl><MenuSelect aria-label="참가비 단위" value={priceUnit} onChange={(change) => setPriceUnit(change.target.value === "SATS" ? "SATS" : "KRW")}>
+                <option value="KRW">원화로 지정</option>
+                <option value="SATS">사토시로 지정</option>
+              </MenuSelect></FormControl>
+            </label>
             <div className="events-field-grid">
-              <label>참가비 (원)<FormControl><input name="ticketPriceKrw" inputMode="numeric" pattern="0|[1-9][0-9]*" maxLength={9} defaultValue={event?.ticketPriceKrw ?? ""} placeholder="0 또는 28000" required={!externalPayment} aria-describedby="event-ticket-help" /></FormControl></label>
+              <div hidden={priceUnit !== "KRW"}><label>참가비 (원)<FormControl><input name="ticketPriceKrw" disabled={priceUnit !== "KRW"} inputMode="numeric" pattern="0|[1-9][0-9]*" maxLength={9} defaultValue={event?.ticketPriceKrw ?? ""} placeholder="0 또는 28000" required={!externalPayment && priceUnit === "KRW"} aria-describedby="event-ticket-help" /></FormControl></label></div>
+              <div hidden={priceUnit !== "SATS"}><label>참가비 (sats)<FormControl><input name="ticketPriceSats" disabled={priceUnit !== "SATS"} inputMode="numeric" pattern="0|[1-9][0-9]*" maxLength={15} defaultValue={event?.ticketPriceSats ?? ""} placeholder="0 또는 21000" required={!externalPayment && priceUnit === "SATS"} aria-describedby="event-ticket-help" /></FormControl></label></div>
               <label>정원 (명)<FormControl><input name="ticketCapacity" inputMode="numeric" pattern="[1-9][0-9]*" maxLength={6} defaultValue={event?.ticketCapacity ? String(event.ticketCapacity) : ""} placeholder="20" required={!externalPayment} aria-describedby="event-ticket-help" /></FormControl></label>
             </div>
-            <p id="event-ticket-help" className="muted">참여하기가 센터 신청 화면으로 열립니다. 무료 행사는 결제 없이 확정되고 유료 행사는 상점 설정의 결제 수단을 사용합니다.</p>
+            <p id="event-ticket-help" className="muted">참여하기가 센터 신청 화면으로 열립니다. 원화는 주문 시점 시세로 사토시가 정해지고, 사토시는 시세와 상관없이 입력한 금액을 받습니다.</p>
           </div>
           <label className="events-checkbox"><ChoiceControl role="switch" name="isOnline" type="checkbox" checked={online} onChange={(change) => { setOnline(change.currentTarget.checked); onDirty(); }} />온라인 밋업<span className="muted">켜면 장소 대신 온라인으로 안내합니다. 참여 링크는 결제 후 확인 페이지와 메일에만 버튼으로 나갑니다.</span></label>
           <div hidden={!online} className="events-field-grid">

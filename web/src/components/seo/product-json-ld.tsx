@@ -20,7 +20,7 @@ function absoluteUrl(value: string) {
   return `${siteOrigin}${value.startsWith("/") ? "" : "/"}${value}`;
 }
 
-function btcPrice(sats: string) {
+export function btcPrice(sats: string) {
   const value = BigInt(sats);
   const whole = value / 100_000_000n;
   const fraction = (value % 100_000_000n).toString().padStart(8, "0").replace(/0+$/, "");

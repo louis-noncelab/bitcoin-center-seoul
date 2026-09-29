@@ -15,13 +15,14 @@ export async function syncEventTicketInTransaction(tx: Tx, event: CenterEvent, p
   const slug = slugFor(event.id);
   const existing = await tx.product.findUnique({ where: { slug }, include: { variants: { orderBy: { sku: "asc" } } } });
   const selling = eventAcceptsTickets(event);
+  const amount = event.ticketPriceSats || event.ticketPriceKrw;
   const details = {
     titleKo: event.title, titleEn: event.titleEn, descriptionKo: event.title, descriptionEn: event.titleEn, imageUrl: event.image,
-    published: selling, listed: false, priceKind: event.ticketPriceKrw === "0" ? "FREE" as const : "KRW_FIXED" as const, priceAmount: BigInt(event.ticketPriceKrw || "0"),
+    published: selling, listed: false, priceKind: amount === "0" ? "FREE" as const : event.ticketPriceSats ? "BTC_FIXED" as const : "KRW_FIXED" as const, priceAmount: BigInt(amount || "0"),
     allowedFulfillments: ["PICKUP" as const],
   };
   if (!existing) {
-    if (event.externalPayment || !event.ticketPriceKrw) return;
+    if (event.externalPayment || !amount) return;
     await tx.product.create({ data: {
       slug, ...details, memberOnly: false,
       variants: { create: { sku: skuFor(event.id), stockOnHand: event.ticketCapacity, billableWeightG: 0, active: selling } },

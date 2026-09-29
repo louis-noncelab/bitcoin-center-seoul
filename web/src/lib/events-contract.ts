@@ -72,6 +72,7 @@ const eventFields = {
   image: imagePathSchema,
   link: externalLink,
   ticketPriceKrw: z.string().trim().regex(/^$|^(?:0|[1-9]\d{0,8})$/, "참가비는 0원 이상의 정수로 입력해 주세요.").default(""),
+  ticketPriceSats: z.string().trim().regex(/^$|^(?:0|[1-9]\d{0,14})$/, "참가비는 0 sats 이상의 정수로 입력해 주세요.").default(""),
   ticketCapacity: z.number().int().min(0).max(100_000).default(0),
   externalPayment: z.boolean().default(true),
   isOnline: z.boolean().default(false),
@@ -81,9 +82,10 @@ const eventFields = {
   images: contentImagesSchema,
 } as const;
 
-const ticketFieldsConsistent = (event: { readonly externalPayment: boolean; readonly ticketPriceKrw: string; readonly ticketCapacity: number }, context: z.RefinementCtx) => {
+const ticketFieldsConsistent = (event: { readonly externalPayment: boolean; readonly ticketPriceKrw: string; readonly ticketPriceSats: string; readonly ticketCapacity: number }, context: z.RefinementCtx) => {
+  if (event.ticketPriceKrw && event.ticketPriceSats) context.addIssue({ code: "custom", path: ["ticketPriceSats"], message: "참가비는 원화 또는 사토시 중 한 단위로 입력해 주세요." });
   if (event.externalPayment) return;
-  if (!event.ticketPriceKrw) context.addIssue({ code: "custom", path: ["ticketPriceKrw"], message: "센터 신청을 쓰려면 참가비를 입력해 주세요." });
+  if (!event.ticketPriceKrw && !event.ticketPriceSats) context.addIssue({ code: "custom", path: ["ticketPriceKrw"], message: "센터 신청을 쓰려면 참가비를 입력해 주세요." });
   if (event.ticketCapacity < 1) context.addIssue({ code: "custom", path: ["ticketCapacity"], message: "센터 신청을 쓰려면 정원을 1명 이상 입력해 주세요." });
 };
 
