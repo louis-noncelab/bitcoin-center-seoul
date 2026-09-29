@@ -14,6 +14,11 @@
 - A single cart trigger stays visible beside the header menu at every width. One native dialog sits outside the header and hidden disclosure. Native modality handles focus, Escape and restoration; backdrop dismissal and route cleanup release scroll locking. Right-edge translation and backdrop opacity reuse the site’s 240ms control/ease-out tokens and discrete dialog transitions; interrupted changes retarget immediately and reduced motion settles without animation. Mechanism reference: https://beui.dev/r/drawer/raw, adapted to existing site-dialog CSS without dependencies.
 - Verify Korean/English shoppers at 375/768/1440px in both themes, keyboard and reduced motion, including close/reopen, backdrop, Escape, route changes, empty/unavailable carts and long fulfillment values. Runtime fixtures remain review-only.
 
+## 행사 내부 신청 가격 단위 — 2026-09-29
+
+- 관리자는 기존 원화와 사토시 중 하나의 참가비 단위를 선택한다. 전환해도 저장 전 입력 초안은 유지하며 선택한 단위의 금액만 저장한다.
+- 원화 행사와 무료 행사 동작은 유지한다. 사토시 행사는 고정 sats 금액으로 신청하고, 공개 참여 버튼은 sats를 표시한다.
+
 
 ## 공통 공개 페이지 프레임, 2026-09-21
 

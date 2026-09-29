@@ -40,8 +40,7 @@ test("public pages point link previews at a sized share image", () => {
   assert.match(String(meetup.description), /meetup at the center/);
 });
 
-test("meetup structured data uses the share card and omits the join link", () => {
-  const data = eventStructuredData({
+const paidMeetup = {
     id: 7,
     revision: 1,
     registrationClosed: false,
@@ -59,6 +58,7 @@ test("meetup structured data uses the share card and omits the join link", () =>
     image: "/images/uploads/2026-10/cover.webp",
     link: "",
     ticketPriceKrw: "10000",
+    ticketPriceSats: "",
     ticketCapacity: 20,
     externalPayment: false,
     isOnline: true,
@@ -66,13 +66,23 @@ test("meetup structured data uses the share card and omits the join link", () =>
     onlineInstructions: "secret instructions",
     onlineInstructionsEn: "secret instructions",
     images: ["/images/uploads/2026-10/cover.webp"],
-  }, "ko");
+};
+
+test("meetup structured data uses the share card and omits the join link", () => {
+  const data = eventStructuredData(paidMeetup, "ko");
   const serialized = JSON.stringify(data);
   assert.equal(serialized.includes("secret"), false);
   assert.match(serialized, /\/og\/programs\/online-night/);
   assert.match(serialized, /2026-10-03T19:00:00\+09:00/);
   assert.match(serialized, /OnlineEventAttendanceMode/);
   assert.match(serialized, /"price":"10000"/);
+});
+
+test("satoshi meetup structured offer declares BTC using the exact satoshi fraction", () => {
+  const data = eventStructuredData({ ...paidMeetup, ticketPriceKrw: "", ticketPriceSats: "21000" }, "en");
+  const offer = data["@graph"][0].offers;
+  assert.equal(offer?.price, "0.00021");
+  assert.equal(offer?.priceCurrency, "BTC");
 });
 
 test("journal articles publish a headline and a share image", () => {

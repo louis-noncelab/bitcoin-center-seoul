@@ -471,6 +471,7 @@ model CenterEvent {
   image                String   @default("")
   link                 String   @default("")
   ticketPriceKrw       String   @default("")
+  ticketPriceSats      String   @default("")
   ticketCapacity       Int      @default(0)
   externalPayment      Boolean  @default(true)
   isOnline             Boolean  @default(false)

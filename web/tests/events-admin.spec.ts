@@ -179,6 +179,59 @@ test("행사 등록, 사진 두 장 업로드, 수정, 세션 만료 후 초안 
   }
 });
 
+test("센터 행사 참가비를 사토시 고정가로 저장하고 원화 고정가로 변경한다", async ({ page, baseURL }) => {
+  const title = `[검토] 사토시 행사 ${randomUUID()}`;
+  const slug = `sats-event-${randomUUID()}`;
+  let id: number | undefined;
+  await page.goto("/ko/admin");
+  await login(page);
+  try {
+    await page.getByRole("button", { name: "새 항목 등록", exact: true }).click();
+    await page.getByLabel("제목 · 한국어", { exact: true }).fill(title);
+    await page.getByLabel("제목 · 영어", { exact: true }).fill("Fixed satoshi meetup");
+    await page.getByLabel("URL 슬러그", { exact: true }).fill(slug);
+    await page.getByLabel("설명 · 한국어", { exact: true }).fill("격리 환경의 사토시 행사입니다.");
+    await page.getByLabel("설명 · 영어", { exact: true }).fill("A fixed satoshi meetup in review.");
+    await page.getByLabel("행사 날짜", { exact: true }).fill("2099-10-01");
+    await page.getByRole("textbox", { name: /^시간 한국 시간/ }).fill("19:00");
+    await page.getByRole("switch", { name: /외부 결제 링크/ }).uncheck();
+    await page.getByRole("combobox", { name: "참가비 단위" }).selectOption("SATS");
+    await page.getByLabel("참가비 (sats)").fill("21000");
+    await page.getByLabel("정원 (명)").fill("2");
+    await page.getByRole("combobox", { name: "참가비 단위" }).selectOption("KRW");
+    await page.getByLabel("참가비 (원)").fill("1500");
+    await page.getByRole("combobox", { name: "참가비 단위" }).selectOption("SATS");
+    await expect(page.getByLabel("참가비 (sats)")).toHaveValue("21000");
+    await page.getByRole("button", { name: "저장", exact: true }).click();
+    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    const created = z.object({ data: z.array(eventRecordSchema) }).parse(await (await page.request.get("/api/events")).json()).data.find((record) => record.slug === slug);
+    expect(created).toBeDefined();
+    if (!created) throw new Error("Satoshi review event missing");
+    id = created.id;
+    expect(created.ticketPriceSats).toBe("21000");
+    expect(created.ticketPriceKrw).toBe("");
+    await page.goto(`/ko/programs/${slug}`);
+    await expect(page.locator(".event-detail .event-booking-link")).toContainText("21,000 sats");
+    await page.goto(`/en/programs/${slug}`);
+    await expect(page.locator(".event-detail .event-booking-link")).toContainText("21,000 sats");
+
+    await page.goto("/ko/admin");
+    await page.locator(".events-admin-list > li").filter({ hasText: title }).getByRole("button", { name: "수정", exact: true }).click();
+    await expect(page.getByRole("combobox", { name: "참가비 단위" })).toHaveValue("SATS");
+    await page.getByRole("combobox", { name: "참가비 단위" }).selectOption("KRW");
+    await page.getByLabel("참가비 (원)").fill("1500");
+    await page.getByRole("button", { name: "저장", exact: true }).click();
+    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    const updated = z.object({ data: eventRecordSchema }).parse(await (await page.request.get(`/api/events/${id}`)).json()).data;
+    expect(updated.ticketPriceKrw).toBe("1500");
+    expect(updated.ticketPriceSats).toBe("");
+    await page.goto(`/ko/programs/${slug}`);
+    await expect(page.locator(".event-detail .event-booking-link")).toContainText("1,500원");
+  } finally {
+    if (id !== undefined) await deleteContentFixture(page.request, `/api/admin/events/${id}`, baseURL ?? "");
+  }
+});
+
 test("하이라이트 기간과 비공개 상태를 저장하며 관리자 화면은 영어 경로에서도 한국어", async ({ page, baseURL }) => {
   const title = `[검토] 하이라이트 ${randomUUID()}`;
   const slug = `highlight-${randomUUID()}`;

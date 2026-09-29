@@ -54,7 +54,7 @@ async function slugMap(kind: ContentKind, ids?: readonly number[]): Promise<Map<
 function eventFrom(row: {
   readonly id: number; readonly revision: number; readonly registrationClosed: boolean; readonly title: string; readonly titleEn: string;
   readonly date: string; readonly time: string; readonly venueType: string; readonly location: string; readonly locationEn: string;
-  readonly description: string; readonly descriptionEn: string; readonly image: string; readonly link: string; readonly ticketPriceKrw: string;
+  readonly description: string; readonly descriptionEn: string; readonly image: string; readonly link: string; readonly ticketPriceKrw: string; readonly ticketPriceSats: string;
   readonly ticketCapacity: number; readonly externalPayment: boolean; readonly isOnline: boolean; readonly onlineUrl: string;
   readonly onlineInstructions: string; readonly onlineInstructionsEn: string; readonly tags: string;
 }, images: readonly string[], slug: string): EventRecord {
@@ -63,7 +63,7 @@ function eventFrom(row: {
     id: row.id, revision: row.revision, registrationClosed: row.registrationClosed, slug, tags: storedTagsSchema.parse(row.tags),
     title: row.title, titleEn: row.titleEn, date: row.date, time: row.time, venueType: row.venueType,
     location: row.location, locationEn: row.locationEn, description: row.description, descriptionEn: row.descriptionEn,
-    image: gallery[0] ?? "", link: normalizedLink(row.link), ticketPriceKrw: row.ticketPriceKrw, ticketCapacity: row.ticketCapacity,
+    image: gallery[0] ?? "", link: normalizedLink(row.link), ticketPriceKrw: row.ticketPriceKrw, ticketPriceSats: row.ticketPriceSats, ticketCapacity: row.ticketCapacity,
     externalPayment: row.externalPayment, isOnline: row.isOnline, onlineUrl: normalizedLink(row.onlineUrl),
     onlineInstructions: row.onlineInstructions, onlineInstructionsEn: row.onlineInstructionsEn, images: gallery,
   });
@@ -195,7 +195,7 @@ export async function createEvent(input: EventInput): Promise<EventRecord> {
       data: {
         registrationClosed: input.registrationClosed ?? false, title: input.title, titleEn: input.titleEn, date: input.date, time: input.time,
         venueType: input.venueType, location: input.location, locationEn: input.locationEn, description,
-        descriptionEn, image, link: input.link, ticketPriceKrw: input.ticketPriceKrw, ticketCapacity: input.ticketCapacity,
+        descriptionEn, image, link: input.link, ticketPriceKrw: input.ticketPriceKrw, ticketPriceSats: input.ticketPriceSats, ticketCapacity: input.ticketCapacity,
         externalPayment: input.externalPayment, isOnline: input.isOnline, onlineUrl: input.onlineUrl, onlineInstructions: input.onlineInstructions,
         onlineInstructionsEn: input.onlineInstructionsEn, tags: JSON.stringify(input.tags),
         ...(input.venueType === "center" && !input.isOnline ? centerEventLocation : {}),
@@ -242,7 +242,7 @@ export async function updateEvent(id: number, input: EventInput, revision: numbe
       data: {
         registrationClosed: input.registrationClosed ?? current.registrationClosed, title: input.title, titleEn: input.titleEn, date: input.date, time: input.time,
         venueType: input.venueType, location: input.location, locationEn: input.locationEn, description,
-        descriptionEn, image: placed.images[0] ?? "", link: input.link, ticketPriceKrw: input.ticketPriceKrw,
+        descriptionEn, image: placed.images[0] ?? "", link: input.link, ticketPriceKrw: input.ticketPriceKrw, ticketPriceSats: input.ticketPriceSats,
         ticketCapacity: input.ticketCapacity, externalPayment: input.externalPayment, isOnline: input.isOnline, onlineUrl: input.onlineUrl,
         onlineInstructions: input.onlineInstructions, onlineInstructionsEn: input.onlineInstructionsEn, tags: JSON.stringify(input.tags),
         ...(input.venueType === "center" && !input.isOnline ? centerEventLocation : {}),

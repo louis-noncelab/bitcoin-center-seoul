@@ -28,6 +28,26 @@ test("free center event accepts registration without an external link", () => {
   assert.equal(eventAcceptsTickets({ ...free, registrationClosed: false }), true);
 });
 
+test("satoshi-priced center event accepts registration without a KRW price", () => {
+  // Given: a future event priced directly in satoshis.
+  const priced = { ...event, date: "2099-10-01", externalPayment: false, ticketPriceKrw: "", ticketPriceSats: "21000", ticketCapacity: 10 };
+  // When: the administrator saves it and ticket eligibility is checked.
+  const parsed = eventInputSchema.safeParse(priced);
+  // Then: the satoshi amount alone makes it a bookable event.
+  assert.equal(parsed.success, true);
+  assert.equal(eventAcceptsTickets({ ...priced, registrationClosed: false }), true);
+});
+
+test("one event cannot store KRW and satoshi prices together", () => {
+  // Given: an event with both amounts filled.
+  const mixed = { ...event, ticketPriceKrw: "1500", ticketPriceSats: "21000" };
+  // When: the input crosses the API boundary.
+  const result = eventInputSchema.safeParse(mixed);
+  // Then: the conflicting satoshi field is rejected, even with an external link.
+  assert.equal(result.success, false);
+  if (!result.success) assert.deepEqual(result.error.issues[0]?.path, ["ticketPriceSats"]);
+});
+
 test("ticket stock follows capacity changes without releasing a held seat", () => {
   assert.equal(nextTicketStock(null, 0, 20), 20);
   assert.equal(nextTicketStock({ stockOnHand: 18, reservedStock: 2 }, 20, 25), 23);

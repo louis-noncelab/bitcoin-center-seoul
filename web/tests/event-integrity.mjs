@@ -20,6 +20,64 @@ test("free event registration immediately confirms a seat without a payment", as
   assert.deepEqual(await prisma.productVariant.findUniqueOrThrow({ where: { id: variant.id } }).then(({ stockOnHand, reservedStock }) => ({ stockOnHand, reservedStock })), { stockOnHand: 9, reservedStock: 0 });
 });
 
+test("zero-satoshi meetup uses the free registration path", async () => {
+  // Given: an internal event with a zero-satoshi price.
+  const { product, variant } = await fixture({ ticketPriceKrw: "", ticketPriceSats: "0" });
+  // When: a guest completes its normal registration.
+  const quoted = await quoteFor(variant);
+  const { order } = await fromQuote(quoted);
+  // Then: it creates neither a conversion rate nor a payment.
+  assert.equal(product.priceKind, "FREE");
+  assert.equal(quoted.quote.amountSats, "0");
+  assert.equal(quoted.quote.snapshot.rate, null);
+  assert.equal(order.status, "PAID");
+  assert.equal(order.payments.length, 0);
+});
+
+test("satoshi-priced meetup keeps its fixed amount through quote and REVIEW order", async () => {
+  // Given: an internal meetup with a fixed satoshi price.
+  const { event, product, variant } = await fixture({ ticketPriceKrw: "", ticketPriceSats: "21000" });
+  assert.equal(event.ticketPriceSats, "21000");
+  assert.equal(product.priceKind, "BTC_FIXED");
+  assert.equal(product.priceAmount, 21000n);
+  // When: a guest requests two seats and places an order.
+  const quoted = await quoteFor(variant, 2);
+  const { order } = await fromQuote(quoted);
+  // Then: the fixed amount is copied unchanged into the quote and order.
+  assert.equal(quoted.quote.snapshot.items[0].priceKind, "BTC_FIXED");
+  assert.equal(quoted.quote.snapshot.items[0].unitPriceAmount, "21000");
+  assert.equal(quoted.quote.amountSats, "42000");
+  assert.equal(order.amountSats, "42000");
+  assert.equal((await getEvent(event.id))?.ticketPriceSats, "21000");
+});
+
+test("satoshi-priced meetup settles the fixed amount in REVIEW mode", async () => {
+  // Given: an internal ticket with a fixed 21,000-sat price.
+  const { variant } = await fixture({ ticketPriceKrw: "", ticketPriceSats: "21000" });
+  // When: its REVIEW payment is completed without any network charge.
+  const { order } = await pay(variant, 1);
+  // Then: the confirmed order retains the satoshi amount.
+  assert.equal(order.amountSats, "21000");
+  assert.equal((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status, "PAID");
+});
+
+test("editing a KRW meetup to satoshis updates the existing ticket product", async () => {
+  // Given: a previously published meetup priced in KRW.
+  const { event, data, product, variant } = await fixture();
+  assert.equal(product.priceKind, "KRW_FIXED");
+  // When: its administrator switches the fixed price unit to satoshis.
+  const updated = await updateEvent(event.id, { ...data, ticketPriceKrw: "", ticketPriceSats: "21000" }, event.revision);
+  // Then: the same ticket variant now quotes fixed sats without converting KRW.
+  const ticket = await prisma.product.findUniqueOrThrow({ where: { slug: `meetup-${event.id}` } });
+  const quoted = await quoteFor(variant);
+  assert.equal(updated.ticketPriceKrw, "");
+  assert.equal(updated.ticketPriceSats, "21000");
+  assert.equal(ticket.id, product.id);
+  assert.equal(ticket.priceKind, "BTC_FIXED");
+  assert.equal(ticket.priceAmount, 21000n);
+  assert.equal(quoted.quote.amountSats, "21000");
+});
+
 test("concurrent free registrations cannot take the same last seat", async () => {
   // Given: a free event with one seat and two guests holding valid quotes.
   const { variant } = await fixture({ ticketPriceKrw: "0", ticketCapacity: 1 });

@@ -11,7 +11,8 @@ Object.assign(process.env, {
   APP_MODE: "test", APP_ORIGIN: "http://127.0.0.1:3100", DATABASE_URL: process.env.TEST_DATABASE_URL,
   DATA_DIR: root, BCS_EVENTS_UPLOADS: path.join(root, "uploads"),
   TOKEN_ENCRYPTION_KEY: randomBytes(32).toString("base64"), PAYMENT_PROVIDER: "zaprite",
-  PAYMENT_MODE: "review", EMAIL_MODE: "capture", TRUST_PROXY: "false", REVIEW_KRW_PER_BTC: "150000000",
+  PAYMENT_MODE: "review", EMAIL_MODE: "capture", TRUST_PROXY: "false",
+  ...(process.env.TEST_NO_REVIEW_RATE ? {} : { REVIEW_KRW_PER_BTC: "150000000" }),
 });
 const { prisma } = await import("../src/server/db.ts");
 const { createEvent, updateEvent, setEventRegistration, deleteEvent, getEvent } = await import("../src/server/events/index.ts");
