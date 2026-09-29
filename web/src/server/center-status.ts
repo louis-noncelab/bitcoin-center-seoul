@@ -11,6 +11,7 @@ export async function getCenterStatus(now = new Date()) {
   const events = await prisma.$queryRaw<ScheduledEvent[]>`
     SELECT date, time FROM center_events
     WHERE "venueType" = 'center'
+      AND "isOnline" = false
       AND BTRIM(REPLACE(date, '.', '-')) IN (${yesterday}, ${date})
   `;
   const exceptions = await prisma.centerOpeningOverride.findMany({ where: { date: { in: [yesterday, date] } } }) as OpeningException[];
