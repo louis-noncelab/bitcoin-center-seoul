@@ -28,6 +28,25 @@ async function selectDate(calendar: Locator, date: string, locale: "ko" | "en") 
   await calendar.locator(`button[data-calendar-date="${date}"]`).click();
 }
 
+async function expectMeetupPoster(frame: Locator) {
+  const image = frame.locator("img");
+  await expect(image).toBeVisible();
+  const geometry = await frame.evaluate((element) => {
+    const photo = element.querySelector("img");
+    if (!photo) throw new Error("Meetup poster is missing");
+    const box = element.getBoundingClientRect();
+    const imageBox = photo.getBoundingClientRect();
+    return {
+      frame: box.width / box.height,
+      image: imageBox.width / imageBox.height,
+      fit: getComputedStyle(photo).objectFit,
+    };
+  });
+  expect(geometry.frame).toBeCloseTo(3 / 4, 2);
+  expect(geometry.image).toBeCloseTo(3 / 4, 2);
+  expect(geometry.fit).toBe("cover");
+}
+
 test.describe.serial("mobile home event discovery", () => {
   test.use({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
   let admin: APIRequestContext;
@@ -94,6 +113,7 @@ test.describe.serial("mobile home event discovery", () => {
         await context.addCookies([{ name: "bcs-theme", value: theme, url: (await reviewRuntime()).APP_ORIGIN }]);
         await page.goto(`/${locale}`);
         await expect(page.locator(".upcoming-heading")).toContainText(zone);
+        await expectMeetupPoster(page.locator(`.upcoming-card[href$="${prefix}-2"] .upcoming-image`));
         await expect(page.locator(`.upcoming-card[href$="${prefix}-2"] .upcoming-meta`)).toHaveCount(0);
         await expect(page.locator(`.upcoming-card[href$="${prefix}-1"] .upcoming-meta`)).toHaveText(external);
         const calendar = page.locator(".home-event-calendar");
@@ -106,6 +126,7 @@ test.describe.serial("mobile home event discovery", () => {
         await expect(calendar.locator(".home-calendar-event-location")).toHaveText(external);
         await page.goto(`/${locale}/programs`);
         await expect(page.locator(".events-timeline")).toContainText(zone);
+        await expectMeetupPoster(page.locator(`.event-card[href$="${prefix}-2"] .event-card-photo`));
         await expect(page.locator(`.event-card[href$="${prefix}-2"] .event-card-location`)).toHaveCount(0);
         await expect(page.locator(`.event-card[href$="${prefix}-3"] .event-card-location`)).toHaveCount(0);
         await expect(page.locator(`.event-card[href$="${prefix}-1"] .event-card-location`)).toHaveText(external);
@@ -113,6 +134,7 @@ test.describe.serial("mobile home event discovery", () => {
         await page.locator(`.event-card[href$="${prefix}-2"]`).click();
         await expect(page.locator(".event-meta")).toContainText(center);
         await expect(page.locator(".event-meta")).toContainText(zone);
+        await expectMeetupPoster(page.locator(".photo-gallery-portrait .gallery-photo").first());
         await page.locator(".event-meta").screenshot({ path: testInfo.outputPath(`${locale}-${width}-${theme}-detail.png`) });
         expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
       }

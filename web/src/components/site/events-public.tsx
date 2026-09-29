@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { ArrowRight, ArrowUpRight, CalendarDays, Clock3, MapPin } from "lucide-react";
 import { OriginalPhoto } from "./original-photo";
 import type { EventRecord, HighlightRecord } from "@/lib/events-contract";
@@ -116,7 +117,7 @@ function EventGroup({ id, days, locale, today, title, empty, paymentHrefs }: { r
                       <strong>{titleText}</strong>
                       {location && <span className="event-card-location muted"><MapPin className="icon" aria-hidden="true" />{location}</span>}
                     </span>
-                    {images[0] && <span className="event-card-photo"><OriginalPhoto src={images[0]} alt="" crop /></span>}
+                    {images[0] && <span className="event-card-photo"><Image src={images[0]} alt="" fill sizes="96px" unoptimized /></span>}
                   </ContentLink>
                   <EventBookingLink event={event} locale={locale} today={today} paymentHref={paymentHrefs[event.id]} />
                 </li>
@@ -162,7 +163,7 @@ export function EventDetail({ event, locale, today = seoulDate(), paymentHref }:
     <article className="event-detail">
       <EventMeta event={event} locale={locale} />
       <EventBookingLink event={event} locale={locale} today={today} paymentHref={paymentHref} />
-      <PhotoGallery images={galleryImages(event)} title={title} locale={locale} />
+      <PhotoGallery images={galleryImages(event)} title={title} locale={locale} portrait />
       <ContentTags tags={event.tags} locale={locale} />
       <MarkdownContent lang={locale === "en" && !event.descriptionEn ? "ko" : locale}>{text(locale, event.description, event.descriptionEn)}</MarkdownContent>
       {link && !event.registrationClosed && !eventBookingHref(link, event.date, today) && <a href={link} target="_blank" rel="noopener noreferrer" className="source-link">{locale === "ko" ? "행사 링크 보기" : "View event link"}<ArrowUpRight className="icon" aria-hidden="true" /><span className="sr-only">{locale === "ko" ? " (새 창)" : " (new window)"}</span></a>}
@@ -184,14 +185,14 @@ export function HighlightDetail({ highlight, locale }: { readonly highlight: Hig
   );
 }
 
-export function PhotoGallery({ images, title, locale }: { readonly images: readonly string[]; readonly title: string; readonly locale: Locale }) {
+export function PhotoGallery({ images, title, locale, portrait = false }: { readonly images: readonly string[]; readonly title: string; readonly locale: Locale; readonly portrait?: boolean }) {
   if (images.length === 0) return null;
   return (
-    <div className="photo-gallery">
+    <div className={`photo-gallery${portrait ? " photo-gallery-portrait" : ""}`}>
       <div className="photo-gallery-grid">
         {images.map((image, index) => (
           <figure className="gallery-photo" key={`${image}-${index}`}>
-            <OriginalPhoto src={image} alt={`${title} ${locale === "ko" ? "사진" : "photo"} ${index + 1}`} />
+            <OriginalPhoto src={image} alt={`${title} ${locale === "ko" ? "사진" : "photo"} ${index + 1}`} poster={portrait} />
           </figure>
         ))}
       </div>

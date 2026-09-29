@@ -15,7 +15,7 @@ const staticPhotos = [
   { path: "/ko", selector: ".home-space-collage img:first-child" },
 ];
 const publicRowsSchema = z.object({
-  data: z.array(z.object({ id: z.number().int().positive(), images: z.array(z.string()) })),
+  data: z.array(z.object({ id: z.number().int().positive(), slug: z.string(), images: z.array(z.string()) })),
 });
 const createdSchema = z.object({ data: z.object({ id: z.number().int().positive() }) });
 const uploadedSchema = z.object({ data: z.object({ images: z.array(z.string()).length(1) }) });
@@ -82,13 +82,13 @@ for (const dpr of [1, 2, 3]) {
       ]);
       expect(eventResponse.status()).toBe(200);
       expect(highlightResponse.status()).toBe(200);
-      const event = publicRowsSchema.parse(await eventResponse.json()).data.sort((left, right) => left.id - right.id).find(({ images }) => images.length > 0);
-      const highlight = publicRowsSchema.parse(await highlightResponse.json()).data.sort((left, right) => left.id - right.id).find(({ images }) => images.length > 0);
+      const event = publicRowsSchema.parse(await eventResponse.json()).data.find(({ id }) => id === eventId);
+      const highlight = publicRowsSchema.parse(await highlightResponse.json()).data.find(({ id }) => id === highlightId);
       expect(event).toBeDefined();
       expect(highlight).toBeDefined();
       const photos = [
         ...staticPhotos,
-        { path: "/ko/programs", selector: ".event-card-photo img" },
+        { path: "/ko/programs", selector: `.event-card[href="/ko/programs/${event?.slug || event?.id}"] .event-card-photo img` },
         { path: "/ko/journal", selector: ".highlight-card-photo img" },
         { path: `/ko/programs/${event?.id}`, selector: ".gallery-photo img" },
         { path: `/ko/journal/${highlight?.id}`, selector: ".gallery-photo img" },
