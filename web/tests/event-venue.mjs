@@ -76,3 +76,26 @@ test("saved venue choice fills center addresses and excludes external events fro
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test("an online-only center listing does not claim a physical meetup", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "bcs-online-venue-"));
+  process.env.BCS_EVENTS_UPLOADS = join(directory, "images");
+  mkdirSync(process.env.BCS_EVENTS_UPLOADS);
+  const input = eventInputSchema.parse({
+    venueType: "center", title: "온라인 행사", titleEn: "Online event",
+    date: "2026-09-10", time: "14:00 ~ 16:00",
+    location: "", locationEn: "", description: "온라인", descriptionEn: "Online",
+    images: [], image: "", link: "", isOnline: true,
+    onlineUrl: "https://meet.example.invalid/online-only",
+  });
+  let createdId;
+  try {
+    const created = await createEvent(input);
+    createdId = created.id;
+    assert.equal((await getCenterStatus(new Date("2026-09-10T14:30:00+09:00"))).status, "open");
+  } finally {
+    if (createdId !== undefined) await prisma.centerEvent.delete({ where: { id: createdId } });
+    await prisma.$disconnect();
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
