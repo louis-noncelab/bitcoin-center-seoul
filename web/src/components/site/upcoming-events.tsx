@@ -166,13 +166,6 @@ export function UpcomingEvents({ events, locale, today }: Props) {
                       unoptimized
                       sizes="(max-width: 767px) 90vw, (max-width: 1199px) 48vw, (max-width: 1799px) 34vw, 560px"
                       loading={index === 0 ? "eager" : "lazy"}
-                      onLoad={(loaded) => {
-                        const image = loaded.currentTarget;
-                        image.style.objectFit =
-                          image.naturalWidth / image.naturalHeight > 1.3
-                            ? "cover"
-                            : "contain";
-                      }}
                     />
                   ) : (
                     <>

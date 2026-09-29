@@ -35,7 +35,7 @@
 .event-card-copy > strong { font-size: var(--text-title); font-weight: var(--weight-semibold); line-height: var(--leading-small); }
 .event-card-location { display: flex; align-items: start; gap: var(--space-2); font-size: var(--text-caption); line-height: var(--leading-small); }
 .event-card-location > .icon { margin-block-start: var(--border-width); }
-.event-card-photo { position: relative; display: block; overflow: hidden; inline-size: var(--space-24); aspect-ratio: var(--ratio-square); border-radius: var(--radius); background: var(--surface); }
+.event-card-photo { position: relative; display: block; overflow: hidden; inline-size: var(--space-24); aspect-ratio: var(--ratio-meetup); border-radius: var(--radius); background: var(--surface); }
 .event-card-photo img { object-fit: cover; }
 .events-calendar { grid-column: 2; grid-row: 1; position: sticky; inset-block-start: var(--space-8); display: grid; gap: var(--space-3); min-inline-size: 0; }
 .events-calendar h2 { font-size: var(--text-title); line-height: var(--leading-small); }

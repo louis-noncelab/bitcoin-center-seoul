@@ -87,13 +87,13 @@
 }
 .upcoming-image {
   position: relative;
-  aspect-ratio: 1.43;
+  aspect-ratio: var(--ratio-meetup);
   border-radius: 20px;
   overflow: hidden;
   background: var(--canvas);
 }
 .upcoming-image img {
-  object-fit: contain;
+  object-fit: cover;
 }
 .upcoming-image > .center-photo {
   position: absolute;
@@ -272,6 +272,9 @@
 @media (min-width: 768px) {
   .upcoming-slide {
     flex-basis: calc((100% - 14px) / 2);
+  }
+  .upcoming-track[data-single="true"] {
+    justify-content: center;
   }
   .upcoming-track[data-single="true"] .upcoming-slide {
     max-inline-size: 420px;

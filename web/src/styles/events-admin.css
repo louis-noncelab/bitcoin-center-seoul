@@ -25,6 +25,7 @@
 .events-gallery-field legend { padding-inline: var(--space-2); }
 .events-gallery-editor { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); margin: 0; padding: 0; list-style: none; }
 .events-gallery-editor img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: contain; background: var(--surface); border-radius: var(--radius-control); }
+.events-gallery-field-portrait .events-gallery-editor img { aspect-ratio: var(--ratio-meetup); object-fit: cover; }
 .events-image-actions { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-2); }
 .events-reauth { border: 1px solid var(--focus); padding: var(--space-6); border-radius: var(--radius-panel); }
 .events-reauth > p { margin-bottom: var(--space-4); }

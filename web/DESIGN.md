@@ -1,5 +1,12 @@
 # Bitcoin Center Seoul: public design revision
 
+## 밋업 포스터 프레임 — 2026-09-29
+
+- 밋업 대표·갤러리 이미지는 1080×1440(3:4)을 권장하며 홈 행사 카드, 프로그램 목록과 상세, 관리자 행사 미리보기에 같은 3:4 프레임을 적용한다. 업로드 파일은 EXIF 회전, 최대 1600px 리사이즈, WebP 인코딩을 거친다.
+- 프레임을 사진으로 채워 가로형·정사각형 배경 여백을 남기지 않는다. 기존 비율이 다른 사진은 중앙 기준으로 잘릴 수 있으므로 새 밋업 포스터는 1080×1440으로 준비한다.
+- 상세 사진은 화면 높이 70svh 이내에서 3:4 폭으로 가운데 배치하되 사진의 디코딩 해상도와 화면 픽셀 밀도를 넘겨 확대하지 않는다. 데스크톱 홈에 밋업 카드가 한 장이면 카드도 가운데 배치한다. 사진이 없는 홈 카드의 기존 센터 공간 대체 이미지 역시 같은 3:4 프레임을 사용하며, 다른 콘텐츠(현장 스케치·후기·컬렉션·굿즈)의 프레임은 유지한다.
+- 아래 2026-09-20 모바일 홈의 “실제 사진 contain” 기준은 **밋업 포스터에 한해** 이 결정으로 대체한다. OG 공유 카드는 플랫폼용 가로 형식으로 유지한다.
+
 ## Commerce repair contract — 2026-09-21
 
 - Guest shoppers reuse the collection’s three/two/one-column grid, shared fields, feedback and bilingual shell. The shell owns one product heading; image-less purchases retain the existing 32rem measure. English summary keys stay intact while values wrap.

@@ -84,6 +84,7 @@ for (const theme of ["light", "dark"]) {
 }
 
 test("행사 등록, 사진 두 장 업로드, 수정, 세션 만료 후 초안 보존, 삭제", async ({ page, baseURL }) => {
+  test.setTimeout(90_000);
   const title = `[검토] 행사 ${randomUUID()}`;
   const slug = `event-${randomUUID()}`;
   let id: number | undefined;
@@ -104,6 +105,14 @@ test("행사 등록, 사진 두 장 업로드, 수정, 세션 만료 후 초안 
     const buffers = await Promise.all(["#ff6b0a", "#32699f"].map((background) => sharp({ create: { width: 80, height: 60, channels: 3, background } }).png().toBuffer()));
     await page.getByLabel("사진 여러 장 선택").setInputFiles(buffers.map((buffer, index) => ({ name: `review-${index}.png`, mimeType: "image/png", buffer })));
     await expect(page.getByText("2장 선택됨", { exact: true })).toBeVisible();
+    const poster = page.locator(".events-gallery-field-portrait .events-gallery-editor img").first();
+    await expect(poster).toBeVisible();
+    const preview = await poster.evaluate((image) => ({
+      ratio: image.getBoundingClientRect().width / image.getBoundingClientRect().height,
+      fit: getComputedStyle(image).objectFit,
+    }));
+    expect(preview.ratio).toBeCloseTo(3 / 4, 2);
+    expect(preview.fit).toBe("cover");
     await page.getByRole("button", { name: "저장", exact: true }).click();
     await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
     const initial = z.object({ data: z.array(eventRecordSchema) }).parse(await (await page.request.get("/api/events")).json()).data.find((record) => record.title === title);
@@ -113,6 +122,17 @@ test("행사 등록, 사진 두 장 업로드, 수정, 세션 만료 후 초안 
     expect(initial.images).toHaveLength(2);
     expect(initial.slug).toBe(slug);
     expect(initial.link).toBe("https://pay.zaprite.com/test-payment?ticket=early&source=center#checkout");
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("/en/programs");
+    const thumbnail = page.locator(`.event-card[href$="${slug}"] .event-card-photo`);
+    await expect(thumbnail.locator("img")).toBeVisible();
+    const thumbnailSize = await thumbnail.evaluate((frame) => {
+      const image = frame.querySelector("img");
+      if (!image) throw new Error("Event thumbnail is missing");
+      return { frame: frame.getBoundingClientRect().width, image: image.getBoundingClientRect().width, natural: image.naturalWidth };
+    });
+    expect(thumbnailSize.frame).toBeGreaterThan(thumbnailSize.natural);
+    expect(thumbnailSize.image).toBeCloseTo(thumbnailSize.frame, 0);
     await page.goto(`/en/programs/${id}`);
     await expect(page).toHaveURL(`/en/programs/${slug}`);
     await expect(page.getByRole("heading", { name: "[Review] Event gallery", exact: true })).toBeVisible();
