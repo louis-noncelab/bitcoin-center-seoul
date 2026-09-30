@@ -76,5 +76,6 @@ async function contentFile(publicPath: string): Promise<string | null> {
 export async function renderShareCard(publicPath: string): Promise<Buffer> {
   const file = await contentFile(publicPath);
   if (!file) return fs.promises.readFile(defaultShareCardPath());
-  return composeShareCard(await fs.promises.readFile(file));
+  // Uploads are provided by BCS_EVENTS_UPLOADS at runtime, not by the release bundle.
+  return composeShareCard(await fs.promises.readFile(/* turbopackIgnore: true */ file));
 }
