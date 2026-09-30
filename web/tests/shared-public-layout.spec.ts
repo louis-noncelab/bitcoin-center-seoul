@@ -21,6 +21,7 @@ for (const locale of ["ko", "en"] as const) for (const theme of ["light", "dark"
           const rect = container.getBoundingClientRect();
           const contentLeft = rect.left + parseFloat(getComputedStyle(container).paddingLeft);
           const banner = main.querySelector<HTMLElement>(".home-upcoming");
+          const space = main.querySelector<HTMLElement>(".home-space")?.getBoundingClientRect();
           return {
             viewport: innerWidth, scrollWidth: document.documentElement.scrollWidth,
             background: getComputedStyle(document.body).backgroundColor,
@@ -29,6 +30,7 @@ for (const locale of ["ko", "en"] as const) for (const theme of ["light", "dark"
             theme: document.documentElement.dataset.theme,
             contentLeft, contentWidth: rect.width - 2 * parseFloat(getComputedStyle(container).paddingLeft),
             bannerLeft: banner?.getBoundingClientRect().left,
+            space: space ? { left: space.left, right: space.right } : null,
             header: { height: header.getBoundingClientRect().height, logoLeft: logo.getBoundingClientRect().left, logoWidth: logo.getBoundingClientRect().width, logoHeight: logo.getBoundingClientRect().height, border: getComputedStyle(header).borderBottomWidth, color: getComputedStyle(header).color },
           };
         });
@@ -41,8 +43,11 @@ for (const locale of ["ko", "en"] as const) for (const theme of ["light", "dark"
         expect(measured.header.border).toBe("0px");
         expect(Math.abs(measured.header.logoLeft - measured.contentLeft)).toBeLessThan(1);
         if (measured.bannerLeft !== undefined) expect(Math.abs(measured.bannerLeft - measured.contentLeft)).toBeLessThan(1);
-        if (route === "") homeHeader = measured.header;
-        else expect(measured.header).toEqual(homeHeader);
+        if (route === "") {
+          expect(measured.space?.left).toBeCloseTo(measured.contentLeft, 0);
+          expect(measured.space?.right).toBeCloseTo(measured.contentLeft + measured.contentWidth, 0);
+          homeHeader = measured.header;
+        } else expect(measured.header).toEqual(homeHeader);
         if (width >= 1920) expect(measured.contentWidth).toBe(1664);
         measurements.push({ locale, route, width, ...measured });
         await page.waitForFunction(() => [...document.images].every(image => {

@@ -1,5 +1,6 @@
 .home-expanded .home-space {
-  width: calc(100% - 16px);
+  inline-size: calc(100% - 2 * var(--gutter));
+  max-inline-size: calc(var(--content-max) - 2 * var(--gutter));
   padding: 30px 20px 32px;
   margin: 42px auto 0;
   background: var(--surface);
