@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 import sharp from "sharp";
 import { articleStructuredData } from "../src/components/seo/article-json-ld.tsx";
@@ -7,7 +10,7 @@ import { defaultShareImage, shareCardPath, shareCardSize } from "../src/content/
 import { reviewStructuredData } from "../src/content/review-metadata.ts";
 import { pageMetadata, recordMetadata } from "../src/content/site.ts";
 import { reviewRecordSchema } from "../src/lib/reviews-contract.ts";
-import { composeShareCard } from "../src/server/share-card.ts";
+import { composeShareCard, renderShareCard } from "../src/server/share-card.ts";
 
 test("a share card is a 1200 by 630 jpeg", async () => {
   const source = await sharp({ create: { width: 640, height: 960, channels: 3, background: "#2458a8" } }).jpeg().toBuffer();
@@ -19,6 +22,41 @@ test("a share card is a 1200 by 630 jpeg", async () => {
   assert.equal(meta.width, shareCardSize.width);
   assert.equal(meta.height, shareCardSize.height);
   assert.ok(card.length > 8_000 && card.length < 400_000);
+});
+
+test("a share card reads a photograph from the external upload root", async (context) => {
+  const uploads = await mkdtemp(join(tmpdir(), "bcs-share-card-"));
+  const previous = process.env.BCS_EVENTS_UPLOADS;
+  process.env.BCS_EVENTS_UPLOADS = uploads;
+  context.after(async () => {
+    if (previous === undefined) delete process.env.BCS_EVENTS_UPLOADS;
+    else process.env.BCS_EVENTS_UPLOADS = previous;
+    await rm(uploads, { recursive: true, force: true });
+  });
+  await mkdir(join(uploads, "uploads"));
+  const source = await sharp({ create: { width: 640, height: 960, channels: 3, background: "#2458a8" } }).webp().toBuffer();
+  await writeFile(join(uploads, "uploads/cover.webp"), source);
+
+  const card = await renderShareCard("/images/uploads/cover.webp");
+
+  assert.deepEqual(card, await composeShareCard(source));
+});
+
+test("unavailable or invalid photographs use the shipped default share image", async (context) => {
+  const uploads = await mkdtemp(join(tmpdir(), "bcs-share-fallback-"));
+  const previous = process.env.BCS_EVENTS_UPLOADS;
+  process.env.BCS_EVENTS_UPLOADS = uploads;
+  context.after(async () => {
+    if (previous === undefined) delete process.env.BCS_EVENTS_UPLOADS;
+    else process.env.BCS_EVENTS_UPLOADS = previous;
+    await rm(uploads, { recursive: true, force: true });
+  });
+  await mkdir(join(uploads, "uploads/directory.webp"), { recursive: true });
+  const fallback = await readFile(new URL("../public/brand/share-default.jpg", import.meta.url));
+
+  for (const image of ["", "/images/uploads/missing.webp", "/images/uploads/directory.webp", "../outside.webp", "https://example.com/photo.jpg"]) {
+    assert.deepEqual(await renderShareCard(image), fallback);
+  }
 });
 
 test("public pages point link previews at a sized share image", () => {
