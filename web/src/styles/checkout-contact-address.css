@@ -13,7 +13,7 @@
   font: inherit;
   cursor: pointer;
 }
-.commerce-phone-trigger { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); width: 100%; white-space: nowrap; }
+.commerce-phone-trigger { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); width: 100%; height: var(--control-height); padding-block: 0; white-space: nowrap; }
 .commerce-phone-trigger strong { font-weight: var(--weight-medium); }
 .commerce-phone-trigger .icon { flex: 0 0 auto; }
 .commerce-phone-menu { position: absolute; z-index: 30; top: calc(100% + var(--space-2)); left: 0; width: min(20rem, calc(100vw - 3rem)); padding: var(--space-2); border: var(--border-width) solid var(--line); border-radius: var(--radius-control); background: var(--surface); box-shadow: var(--shadow-disclosure); }
