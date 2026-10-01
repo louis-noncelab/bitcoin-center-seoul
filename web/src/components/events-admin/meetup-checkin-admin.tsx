@@ -60,8 +60,8 @@ export function MeetupCheckinAdmin() {
     <ul className="events-admin-list">
       {items.map((item) => <li key={item.id}>
         <div>
-          <h3>{item.customerName}<span className="muted"> · {item.quantity}명</span></h3>
-          <p className="muted">{item.title}{item.checkedInAt ? ` · 체크인 ${new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit" }).format(new Date(item.checkedInAt))}` : " · 미체크인"}</p>
+          <h3>{item.customerName}<span className="muted">, {item.quantity}명</span></h3>
+          <p className="muted">{item.title}{item.checkedInAt ? `, 체크인 ${new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit" }).format(new Date(item.checkedInAt))}` : ", 미체크인"}</p>
           {item.confirmationCode && <p><a href={`/ko/orders/confirm/${item.confirmationCode}`} target="_blank" rel="noopener noreferrer">예약 확인 페이지</a></p>}
         </div>
         <div className="button-row">

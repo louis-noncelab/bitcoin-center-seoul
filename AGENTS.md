@@ -1,4 +1,4 @@
-## Current runtime fact — 2026-09-23 PostgreSQL content
+## Current runtime fact: 2026-09-23 PostgreSQL content
 
 The active `web/` service now reads and writes center events, highlights, notices, collection,
 reviews, opening overrides, and admin sessions/login attempts through Prisma/PostgreSQL. The
@@ -8,7 +8,7 @@ snapshot and excludes old admin sessions. Active backup is PostgreSQL `pg_dump` 
 uploads (`events-backup.ts backup-images`); SQLite-only backup is not a current site backup.
 Deployment remains separately approved; no production writes, push, or real payment/mail here.
 
-## Current owner decision — 2026-09-21 commerce restored
+## Current owner decision: 2026-09-21 commerce restored
 
 The owner authorized restoring cart, KRW→satoshi conversion, Zaprite checkout, redirect and
 webhook, plus lightning-address payment, on `feat/commerce-payments-port`. **This supersedes the
@@ -26,11 +26,11 @@ exist on purpose: `collection_items.purchaseUrl` still points at external shops,
 `Product`/`ProductVariant` back the in-house cart. Linking them is a separate decision.
 
 `PAYMENT_MODE` is `review` (in-process fixtures, no network), `sandbox` (real Zaprite sandbox
-organization from a local origin, Zaprite only — a lightning address is mainnet money with no
-test network) or `live` (production only). `Payment.mode` mirrors it, and the provider unique
+organization from a local origin, Zaprite only because a lightning address uses mainnet money
+and has no test network) or `live` (production only). `Payment.mode` mirrors it, and the provider unique
 constraints are per mode so the three can never collide.
 
-Zaprite publishes no webhook signature — verified against the published OpenAPI document, which
+Zaprite publishes no webhook signature. The published OpenAPI document
 declares no header parameters and returns no signing secret from `POST /v1/webhooks`. The
 delivery path therefore carries an unguessable secret compared in constant time, the body is
 never trusted, and the order is always re-read from Zaprite. The sandbox organization is shared
@@ -39,10 +39,10 @@ rather than retried; this app's orders carry `tags: ["bcs"]` and `metadata.sourc
 
 Surfaces: public `/shop`, `/shop/[slug]`, `/cart`, `/checkout`, `/orders/[id]`, `/payments/[id]`;
 admin `/admin/products` (+ categories), `/admin/orders`, `/admin/shipping`, `/admin/settings`,
-`/admin/review`. The admin panels use this branch's own vocabulary — `events-admin-workspace`,
+`/admin/review`. The admin panels use this branch's own vocabulary: `events-admin-workspace`,
 `events-form`, `events-field-grid`, `events-checkbox`, `events-error`, `AdminTabs`, `LoginForm`,
-`useConfirmation`, `adminRequest` — and authenticate with the existing SQLite admin session, not
-the backup's account system. The shop listing reuses the `review-card`/`collection-card` markup.
+`useConfirmation`, `adminRequest`. They authenticate with the existing SQLite admin session,
+not the backup's account system. The shop listing reuses the `review-card`/`collection-card` markup.
 `commerce.css` is namespaced `.commerce-*` and defines nothing main already defines; it still
 carries dead rules for dropped features (wishlist, product gallery, reviews, change requests).
 
@@ -51,8 +51,8 @@ both shell sourcing and dotenv expansion mangle. It needs single quotes **and** 
 `npm run dev` must not be run with `.env.local` sourced into the shell, or the shell's mangled
 value wins over the file.
 
-Still missing, deliberately: email delivery (the outbox is written, never drained — operational
-mail is out of scope), customer accounts, bookings, BTCPay, wishlists, product reviews and
+Still missing, deliberately: email delivery (the outbox is written but never drained because
+operational mail is out of scope), customer accounts, bookings, BTCPay, wishlists, product reviews and
 questions, change requests. Not yet proven: a completed sandbox payment, and the lightning path,
 which is live-only because a lightning address has no test network.
 
@@ -61,10 +61,10 @@ database, REVIEW mode, no network), `npm run db:seed`, and `PAYMENT_MODE=sandbox
 check:zaprite-sandbox` for one real sandbox order. Contract evidence and open questions:
 `.local/docs-archive/2026-09-21-zaprite-lnurl-verified-contract.md`.
 
-## Latest owner additions — 2026-09-09
+## Latest owner additions: 2026-09-09
 The owner also authorizes notices draft/publish/edit/delete, editable URL slugs, journal pagination and the local wallet learning guide. Public pages stay bilingual; administration stays Korean-only. SQLite/password compatibility and the no-deployment boundaries still apply.
 
-## Current owner decision — 2026-09-09 events-only reset
+## Current owner decision: 2026-09-09 events-only reset
 
 The owner explicitly selected base commit `63a08b95cb54e06d9a00c89ae14d8d9eb1851284` and authorized restoring current public design changes while limiting functionality to event/highlight display and admin create/edit/delete with multiple image uploads. Keep Next.js/React/TypeScript and the existing SQLite schema/ADMIN_PASSWORD compatibility. No shop, checkout, cart, payments, booking, customer accounts, PostgreSQL migration, or unrelated administration in this increment. This supersedes older scope instructions below. Existing root legacy application and runtime/production data stay untouched. No push, deployment, GitHub Actions, real payments, refunds or operational email. Never inspect existing .env/.env.local; never output secret values. Only coordinator stages/commits.
 
@@ -76,7 +76,7 @@ Recovery point: `backup/center-web-before-events-only-20260909-175952`, commit `
 **Commit:** 0a19953
 **Branch:** main
 
-## REDESIGN EXECUTION — 2026-09-08
+## REDESIGN EXECUTION: 2026-09-08
 
 - Work on `redesign/center-web`. The approved target stack is Next.js, React, TypeScript, Tailwind CSS, PostgreSQL, and Prisma.
 - Build the new public frontend in `web/` first, isolated from the existing Vite/Express application. Design approval precedes backend implementation and SQLite migration.

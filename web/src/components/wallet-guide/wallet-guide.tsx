@@ -38,14 +38,14 @@ export function WalletGuide({ locale }: { readonly locale: Locale }) {
   }
 
   const title = phase
-    ? `${step - 3} / 5 · ${copy.phases[phase].replace(/^Phase \d+\. /, "")}`
+    ? `${step - 3} / 5, ${copy.phases[phase].replace(/^Phase \d+\. /, "")}`
     : [copy.welcome.title, copy.phoneSelection.title, copy.download.title, copy.walletSelection.title][step]
       ?? (step === 9 ? copy.final.question : step === 10 ? copy.final.retryMessage : copy.final.congratulations);
 
   return (
     <section className="wallet-guide" aria-labelledby="wallet-step-title">
       <div className="wallet-toolbar">
-        <p className="caption muted">{locale === "ko" ? "센터 현장 체험 · 테스트 비트코인 전용" : "In-center guide · Test Bitcoin only"}</p>
+        <p className="caption muted">{locale === "ko" ? "센터 현장 체험, 테스트 비트코인 전용" : "In-center guide, Test Bitcoin only"}</p>
         {step > 0 && <Button variant="quiet" onClick={restart}>{copy.restart}</Button>}
       </div>
       <div className="wallet-panel" key={step}>

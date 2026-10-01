@@ -48,7 +48,7 @@ export function CenterStatusAdmin({ disabled, onBusy, onExpired }: {
   }
   return <section className="center-status-admin" aria-labelledby="center-status-title">
     <h2 id="center-status-title">오늘의 운영 상태</h2>
-    <p>{snapshot ? `${snapshot.date} · ${centerStatusLabels.ko[snapshot.status ?? "unknown"]}${snapshot.holiday ? ` · ${snapshot.holiday}` : ""}` : "운영 상태를 확인하는 중…"}</p>
+    <p>{snapshot ? `${snapshot.date}, ${centerStatusLabels.ko[snapshot.status ?? "unknown"]}${snapshot.holiday ? `, ${snapshot.holiday}` : ""}` : "운영 상태를 확인하는 중…"}</p>
     <p className="muted">매일 한국 시간 12:00~20:00 운영합니다. 법정공휴일은 쉬며, 등록된 밋업은 운영시간 이후에도 종료 시각까지 반영합니다.</p>
     <div className="button-row" role="group" aria-label="오늘의 운영 예외">
       {([{ value: null, label: "자동" }, { value: "open", label: "정상 운영" }, { value: "closed", label: "임시 휴무" }] as const).map(({ value, label }) => <Button key={label} variant="secondary" aria-pressed={snapshot?.override === value} disabled={loading || pending || disabled} onClick={() => void save(value)}>{label}</Button>)}

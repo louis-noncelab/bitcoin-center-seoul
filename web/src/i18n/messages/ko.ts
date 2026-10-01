@@ -6,7 +6,7 @@ const messages = {
     eyebrow: "디자인 시스템",
     introduction: "글자 크기, 색상, 버튼과 사진 비율을 확인하는 화면입니다.",
     skip: "본문으로 건너뛰기",
-    language: "EN · 영어로 보기",
+    language: "EN, 영어로 보기",
     darkMode: "다크 모드",
     openMenu: "목차",
     closeMenu: "닫기",
@@ -14,7 +14,7 @@ const messages = {
     typography: {
       title: "글자와 색상",
       description: "한글과 영문에 Pretendard를 사용합니다. 색상은 페이지 상단의 다크 모드 버튼으로 비교할\u00a0수\u00a0있습니다.",
-      body: "비트코인 강의와 밋업이 열리는 공간입니다. 도서·작품을 전시하고 하드웨어 지갑 체험존을 운영합니다.",
+      body: "비트코인 강의와 밋업이 열리는 공간입니다. 도서와 작품을 전시하고 하드웨어 지갑 체험존을 운영합니다.",
       detail: "하드월렛 체험",
       caption: "본문은 16-18px, 작은 설명은 14px 이상으로 표시합니다.",
       palette: "색상 토큰",
@@ -47,7 +47,7 @@ const messages = {
     },
     media: {
       title: "미디어 프레임",
-      description: "실제 라운지와 비트코인 서재 사진으로 가로·세로 프레임을 비교합니다.",
+      description: "실제 라운지와 비트코인 서재 사진으로 가로와 세로 프레임을 비교합니다.",
       landscape: "16:9 가로 프레임",
       portrait: "4:5 세로 프레임",
       pending: "기존 센터 사진. 최종 구도와 공개 권한은 출시 전에 확인합니다.",

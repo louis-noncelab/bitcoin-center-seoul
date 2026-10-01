@@ -10,7 +10,7 @@ export const paymentActionLabels: Readonly<Record<string, string>> = {
   "order.payment.manual": "결제 수동 처리", "order.paid.cancelled": "결제 후 주문 취소",
   "order.free.cancelled": "무료 행사 신청 취소",
   "order.refund.recorded": "외부 환불 완료 기록", "order.cancelled": "미결제 주문 취소",
-  "order.fulfillment": "수령·배송 처리", "order.tracking": "송장 수정",
+  "order.fulfillment": "수령 및 배송 처리", "order.tracking": "송장 수정",
 };
 export const orderPaymentHistory = z.array(z.object({
   id: z.string(), action: z.string(), actorId: z.string().nullable(), createdAt: z.string(),
@@ -27,7 +27,7 @@ export const paymentOperationErrors: Readonly<Record<string, string>> = {
   PAYMENT_STALE: "결제 상태가 변경되었습니다. 최신 주문을 불러온 뒤 다시 확인해 주세요.",
   PAYMENT_IN_FLIGHT: "결제 생성 결과를 확인 중입니다. 제공자에서 상태를 확인한 뒤 결제 상태 다시 확인을 눌러 주세요.",
   PAYMENT_RECEIVED: "입금되었거나 입금 확인 중입니다. 미입금 취소 대신 결제 후 취소를 이용해 주세요.",
-  FULFILLMENT_STARTED: "수령·배송 처리가 시작되었습니다. 최신 주문 상태를 확인해 주세요.",
+  FULFILLMENT_STARTED: "수령 및 배송 처리가 시작되었습니다. 최신 주문 상태를 확인해 주세요.",
   INVENTORY_CONFLICT: "예약 재고가 주문과 맞지 않습니다. 상품 재고를 확인해 주세요.",
   OUT_OF_STOCK: "다른 주문에 예약된 수량을 제외한 재고가 부족합니다. 재고를 확인해 주세요.",
   COUPON_CAPACITY: "쿠폰 한도가 다른 주문에 배정되었습니다. 쿠폰 한도를 확인해 주세요.",

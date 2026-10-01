@@ -72,17 +72,17 @@ export function PaymentReviewAdmin() {
         <div className="events-admin-toolbar"><h2>검토 결제</h2></div>
         <p className="muted">
           돈을 쓰지 않고 결제 제공자의 응답을 골라 주문 흐름 전체를 확인합니다. 응답만 고정값으로 바꾸고,
-          실제 파서·상태 전이·재고 처리는 운영과 같은 경로를 그대로 탑니다. 검토 결제는 테스트넷 전용이며
+          실제 파서, 상태 전이와 재고 처리는 운영과 같은 경로를 그대로 탑니다. 검토 결제는 테스트넷 전용이며
           외부 네트워크로 나가지 않습니다.
         </p>
         <ul className="events-admin-list">
           {payments.map((payment) => <li key={payment.id}>
             <div>
-              <h3>{sats(payment.amountSats)}<span className="muted"> · {payment.provider}</span></h3>
+              <h3>{sats(payment.amountSats)}<span className="muted">, {payment.provider}</span></h3>
               <p className="muted">
-                {payment.status}{payment.reviewReason ? ` · ${payment.reviewReason}` : ""}
-                {payment.creationUnknown ? " · 발행 확인 필요" : ""}
-                {payment.orderId ? ` · 주문 ${payment.orderId}` : ""}
+                {payment.status}{payment.reviewReason ? `, ${payment.reviewReason}` : ""}
+                {payment.creationUnknown ? ", 발행 확인 필요" : ""}
+                {payment.orderId ? `, 주문 ${payment.orderId}` : ""}
               </p>
             </div>
             <div className="button-row">

@@ -17,6 +17,6 @@ export function shareImages(url: string, alt: string): NonNullable<Metadata["ope
 
 export function defaultShareAlt(locale: Locale): string {
   return locale === "ko"
-    ? "비트코인 도서·작품, 갈색 소파, 창가 좌석이 있는 센터 라운지"
+    ? "비트코인 도서와 작품, 갈색 소파, 창가 좌석이 있는 센터 라운지"
     : "Center lounge with Bitcoin books and art, a brown sofa and window seating";
 }

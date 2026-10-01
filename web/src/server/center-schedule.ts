@@ -11,7 +11,7 @@ export type OpeningException = { readonly date: string; readonly status: Opening
 export function eventWindow(event: ScheduledEvent): { start: number; end: number } | null {
   const date = event.date.trim().replaceAll(".", "-");
   if (!isCalendarDate(date)) return null;
-  const match = /^(\d{1,2}):?(\d{2})\s*[-~–—〜～]\s*(\d{1,2}):?(\d{2})$/.exec(event.time.trim());
+  const match = /^(\d{1,2}):?(\d{2})\s*[-~–\u2014〜～]\s*(\d{1,2}):?(\d{2})$/.exec(event.time.trim());
   if (!match) return null;
   const [, sh, sm, eh, em] = match.map(Number);
   if (sh === undefined || sm === undefined || eh === undefined || em === undefined || sh > 23 || sm > 59 || eh > 24 || em > 59 || (eh === 24 && em !== 0)) return null;
@@ -30,7 +30,7 @@ export async function resolveCenterStatus(now: Date, events: readonly ScheduledE
     let holidays: readonly string[] | null = null, known = true;
     try { holidays = await getHolidayNames(day); }
     catch (error) { if (!(error instanceof RangeError)) throw error; known = false; }
-    return { date: day, override, holiday: holidays?.join(" · ") ?? null, allowed: override ? override === "open" : known ? !holidays : null };
+    return { date: day, override, holiday: holidays?.join(", ") ?? null, allowed: override ? override === "open" : known ? !holidays : null };
   }));
   const today = days[1]!;
   const windows = events.flatMap((event) => {

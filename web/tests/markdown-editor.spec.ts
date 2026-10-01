@@ -34,7 +34,7 @@ async function dropPhoto(page: Page, field: Locator, photo: Photo) {
   } finally { await transfer.dispose(); }
 }
 
-test("본문 사진 버튼과 드래그 업로드가 입력 위치·작성 중인 글·동시 업로드를 보존한다", async ({ page, baseURL }) => {
+test("본문 사진 버튼과 드래그 업로드가 입력 위치 및 작성 중인 글 및 동시 업로드를 보존한다", async ({ page, baseURL }) => {
   test.setTimeout(60_000);
   const slug = `inline-${randomUUID()}`;
   const release: (() => void)[] = [];
@@ -48,12 +48,12 @@ test("본문 사진 버튼과 드래그 업로드가 입력 위치·작성 중�
   });
   try {
     await page.getByRole("button", { name: "새 항목 등록", exact: true }).click();
-    await page.getByLabel("제목 · 한국어", { exact: true }).fill(`[검토] 본문 사진 ${slug}`);
+    await page.getByLabel("한국어 제목", { exact: true }).fill(`[검토] 본문 사진 ${slug}`);
     await page.getByLabel("URL 슬러그", { exact: true }).fill(slug);
-    await page.getByLabel("제목 · 영어", { exact: true }).fill("[Review] Inline photos");
+    await page.getByLabel("영어 제목", { exact: true }).fill("[Review] Inline photos");
     await page.getByLabel("행사 날짜", { exact: true }).fill("2026-10-10");
-    const korean = page.getByLabel("설명 · 한국어", { exact: true });
-    const english = page.getByLabel("설명 · 영어", { exact: true });
+    const korean = page.getByLabel("한국어 설명", { exact: true });
+    const english = page.getByLabel("영어 설명", { exact: true });
     await korean.fill("앞 문단\n\n뒤 문단");
     await english.fill("Before\n\nAfter");
     const buffer = await sharp({ create: { width: 80, height: 60, channels: 3, background: "#ff6b0a" } }).png().toBuffer();
@@ -63,11 +63,11 @@ test("본문 사진 버튼과 드래그 업로드가 입력 위치·작성 중�
       { name: "inside-two.png", mimeType: "image/png", buffer: portrait },
     ];
     await korean.evaluate((field: HTMLTextAreaElement) => field.setSelectionRange(4, 4));
-    await choosePhotos(page, "설명 · 한국어", photos);
+    await choosePhotos(page, "한국어 설명", photos);
     await expect.poll(() => release.length).toBe(1);
     await korean.focus();
     await korean.evaluate((field: HTMLTextAreaElement) => field.setSelectionRange(0, 0));
-    await korean.pressSequentially("작성 중 · ");
+    await korean.pressSequentially("작성 중, ");
     await english.evaluate((field: HTMLTextAreaElement) => field.setSelectionRange(6, 6));
     await dropPhoto(page, english, { name: "dropped.png", mimeType: "image/png", buffer });
     await expect.poll(() => release.length).toBe(2);
@@ -86,7 +86,7 @@ test("본문 사진 버튼과 드래그 업로드가 입력 위치·작성 중�
     await expect(page.getByText("1장 선택됨", { exact: true })).toBeVisible();
     await expect(save).toBeEnabled();
     const body = await korean.inputValue();
-    expect(body.startsWith("작성 중 · 앞 문단\n\n![")).toBe(true);
+    expect(body.startsWith("작성 중, 앞 문단\n\n![")).toBe(true);
     expect(body.endsWith("뒤 문단")).toBe(true);
     expect((body.match(/!\[/g) ?? [])).toHaveLength(2);
     await save.click();
@@ -182,7 +182,7 @@ test("업로드 중 페이지를 떠나면 경고하고 늦은 응답이 새 초
   try {
     await page.getByRole("button", { name: "새 항목 등록", exact: true }).click();
     const buffer = await sharp({ create: { width: 60, height: 40, channels: 3, background: "#ff6b0a" } }).png().toBuffer();
-    await choosePhotos(page, "설명 · 한국어", [{ name: "abandoned.png", mimeType: "image/png", buffer }]);
+    await choosePhotos(page, "한국어 설명", [{ name: "abandoned.png", mimeType: "image/png", buffer }]);
     await expect.poll(() => waiting).toBe(true);
     page.once("dialog", async (dialog) => { warned = dialog.type() === "beforeunload"; await dialog.accept(); });
     const aborted = page.waitForEvent("requestfailed", { predicate: (request) => new URL(request.url()).pathname === "/api/admin/images" });
@@ -194,7 +194,7 @@ test("업로드 중 페이지를 떠나면 경고하고 늦은 응답이 새 초
     await page.unrouteAll({ behavior: "wait" });
     await page.goto("/ko/admin");
     await page.getByRole("button", { name: "새 항목 등록", exact: true }).click();
-    await expect(page.getByLabel("설명 · 한국어", { exact: true })).toHaveValue("");
+    await expect(page.getByLabel("한국어 설명", { exact: true })).toHaveValue("");
     await expect(page.getByRole("button", { name: "저장", exact: true })).toBeEnabled();
   } finally {
     resume();

@@ -462,7 +462,7 @@ const AdminEvents = () => {
                             <h4 className="font-semibold text-foreground">{event.title}</h4>
                             <p className="text-xs text-bitcoin">{event.titleEn}</p>
                             <p className="text-xs text-muted-foreground mt-1">
-                              {event.date} · {event.time} · {event.location}
+                              {event.date}, {event.time}, {event.location}
                             </p>
                             <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{event.description}</p>
                             {event.link && (

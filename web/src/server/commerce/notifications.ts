@@ -60,5 +60,5 @@ export async function notifyOrder(orderId: string, event: "접수" | "결제 완
       : `${new Intl.NumberFormat("ko-KR").format(order.amountSats)} sats`;
   const meetup = order.items.some((item) => item.sku.startsWith("MEETUP-"));
   const titles = order.items.map((item) => `${item.titleKo} ${item.quantity}개`).join("\n");
-  await postOrderNotification([`**${meetup ? "밋업 예약" : "상품 주문"} · ${event}**`, titles, `${openString(order.customerName)} · ${amount}`, orderId].join("\n"));
+  await postOrderNotification([`**${meetup ? "밋업 예약" : "상품 주문"}, ${event}**`, titles, `${openString(order.customerName)}, ${amount}`, orderId].join("\n"));
 }

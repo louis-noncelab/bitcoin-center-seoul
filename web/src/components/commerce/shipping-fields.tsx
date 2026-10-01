@@ -47,11 +47,11 @@ export function ShippingFields({ locale, fulfillment, country, countries, onCoun
       <FieldError id="shipping-line2" error={line2Error} />
     </FormField>
     <div className="form-row">
-      <FormField id="shipping-city" label={ko ? "시·군·구" : "City"}>
+      <FormField id="shipping-city" label={ko ? "시, 군, 구" : "City"}>
         <input aria-invalid={Boolean(cityError)} aria-describedby={cityError ? "shipping-city-error" : undefined} id="shipping-city" name="city" autoComplete="shipping address-level2" maxLength={100} required value={city} onChange={(event) => setCity(event.target.value)} />
         <FieldError id="shipping-city" error={cityError} />
       </FormField>
-      <FormField id="shipping-region" label={ko ? "시·도 / 주 (선택)" : "State / province (optional)"}>
+      <FormField id="shipping-region" label={ko ? "시 또는 도 / 주 (선택)" : "State / province (optional)"}>
         <input aria-invalid={Boolean(regionError)} aria-describedby={regionError ? "shipping-region-error" : undefined} id="shipping-region" name="region" autoComplete="shipping address-level1" maxLength={100} value={region} onChange={(event) => setRegion(event.target.value)} />
         <FieldError id="shipping-region" error={regionError} />
       </FormField>

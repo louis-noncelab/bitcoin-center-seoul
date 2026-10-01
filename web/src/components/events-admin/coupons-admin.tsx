@@ -107,13 +107,13 @@ export function CouponsAdmin() {
     <ul className="events-admin-list">
       {coupons.map((coupon) => <li key={coupon.id}>
         <div>
-          <h3>{coupon.code}<span className="muted"> · {coupon.nameKo}</span></h3>
+          <h3>{coupon.code}<span className="muted">, {coupon.nameKo}</span></h3>
           <p className="muted">
             {couponKindLabels[coupon.discountKind]} {new Intl.NumberFormat("ko").format(BigInt(coupon.discountValue))}
             {coupon.discountKind === "PERCENT" ? "%" : ""}
-            {` · ${day(coupon.validFrom)} ~ ${day(coupon.validUntil)}`}
-            {` · 사용 ${coupon.usageCount}${coupon.usageLimit ? `/${coupon.usageLimit}` : ""}`}
-            {coupon.active ? "" : " · 중지됨"}
+            {`, ${day(coupon.validFrom)} ~ ${day(coupon.validUntil)}`}
+            {`, 사용 ${coupon.usageCount}${coupon.usageLimit ? `/${coupon.usageLimit}` : ""}`}
+            {coupon.active ? "" : ", 중지됨"}
           </p>
         </div>
         <div className="button-row">

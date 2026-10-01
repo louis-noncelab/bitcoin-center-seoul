@@ -1,4 +1,4 @@
-# Public content and media handoff — 2026-09-08
+# Public content and media handoff: 2026-09-08
 
 Status: draft public copy and verified local media selection. The owner should
 review operating facts and approve photo rights before this material is
@@ -41,13 +41,13 @@ to be the Next app's public directory.
 
 | Media key and source | Dimensions | Visible subject | Crop and focal advice |
 | --- | ---: | --- | --- |
-| `lounge` — `public/images/what-we-do/lounge.jpeg` | 5712×3213 | Reception counter, coffee equipment, brown sofa, book rack, artworks and window seating | Use as the main still. A 21:9 desktop crop can keep the sofa and window; shift a 4:5 mobile crop toward the sofa and rack. Keep important text outside the image. |
-| `community` — `public/images/what-we-do/community.jpg` | 2880×2160 | Full classroom, seated audience and presenter at right | Keep 4:3 when possible. A tighter crop must retain both presenter and audience. Do not place beside `education`; the images show the same session and room arrangement. |
-| `education` — `public/images/highlights/events/bitcoin-protocol-course-3-2026-05-17.jpg` | 2880×2160 | Closer view of the protocol class, presenter, audience and numbered book display | Use as the education alternative, anchored slightly right. Prefer 4:3; a portrait crop should retain the presenter and front rows. |
-| `experience` — `public/images/what-we-do/experience.jpeg` | 1488×1488 | Hardware wallets and a phone on white stands, with test-use instructions | Keep square. A wider crop can lose devices at either edge, so check all breakpoints. |
-| `exhibition` — `public/images/what-we-do/exhibition.jpeg` | 5652×3179 | Numbered Bitcoin book display and a whitepaper poster | This is a book display, not a hardware-wallet image. A centered 4:5 crop around the wooden shelves removes the suitcase at right. |
-| `gallery` — `public/images/what-we-do/gallery.jpeg` | 3989×2244 | Three Bitcoin-related illustrations and prints with shelf objects | Keep the full 16:9 or a restrained 3:2 crop so all three works remain visible. Reflections and wall marks become prominent under a tight crop. |
-| `retail` — `public/images/what-we-do/retail.jpeg` | 4032×2268 | White shelving with Bitcoin-related objects, tools and visible labels | Use 16:9 for the full assortment or a centered 4:3 card. Do not reproduce visible price labels as current prices. |
+| `lounge`: `public/images/what-we-do/lounge.jpeg` | 5712×3213 | Reception counter, coffee equipment, brown sofa, book rack, artworks and window seating | Use as the main still. A 21:9 desktop crop can keep the sofa and window; shift a 4:5 mobile crop toward the sofa and rack. Keep important text outside the image. |
+| `community`: `public/images/what-we-do/community.jpg` | 2880×2160 | Full classroom, seated audience and presenter at right | Keep 4:3 when possible. A tighter crop must retain both presenter and audience. Do not place beside `education`; the images show the same session and room arrangement. |
+| `education`: `public/images/highlights/events/bitcoin-protocol-course-3-2026-05-17.jpg` | 2880×2160 | Closer view of the protocol class, presenter, audience and numbered book display | Use as the education alternative, anchored slightly right. Prefer 4:3; a portrait crop should retain the presenter and front rows. |
+| `experience`: `public/images/what-we-do/experience.jpeg` | 1488×1488 | Hardware wallets and a phone on white stands, with test-use instructions | Keep square. A wider crop can lose devices at either edge, so check all breakpoints. |
+| `exhibition`: `public/images/what-we-do/exhibition.jpeg` | 5652×3179 | Numbered Bitcoin book display and a whitepaper poster | This is a book display, not a hardware-wallet image. A centered 4:5 crop around the wooden shelves removes the suitcase at right. |
+| `gallery`: `public/images/what-we-do/gallery.jpeg` | 3989×2244 | Three Bitcoin-related illustrations and prints with shelf objects | Keep the full 16:9 or a restrained 3:2 crop so all three works remain visible. Reflections and wall marks become prominent under a tight crop. |
+| `retail`: `public/images/what-we-do/retail.jpeg` | 4032×2268 | White shelving with Bitcoin-related objects, tools and visible labels | Use 16:9 for the full assortment or a centered 4:3 card. Do not reproduce visible price labels as current prices. |
 
 The photographs strongly match the center interior and existing production
 usage. Photographer ownership, participant releases and permission to publish

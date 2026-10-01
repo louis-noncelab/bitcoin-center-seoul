@@ -116,7 +116,7 @@ for (const [table, listPath] of tables) {
       const file = await fetchImage(row);
       if (!file) {
         failed++;
-        console.log(`FAIL ${label} — 다운로드 실패: ${row.image}`);
+        console.log(`FAIL ${label}: 다운로드 실패: ${row.image}`);
         continue;
       }
       const kb = Math.round(file.buffer.length / 1024);
@@ -133,7 +133,7 @@ for (const [table, listPath] of tables) {
       console.log(`OK   ${label} → ${uploaded.path} (${uploaded.width}x${uploaded.height}, 원본 ${kb}KB)`);
     } catch (error) {
       failed++;
-      console.log(`FAIL ${label} — ${error.message}`);
+      console.log(`FAIL ${label}: ${error.message}`);
     }
   }
 }
@@ -144,4 +144,4 @@ if (!DRY && backup.length) {
   fs.writeFileSync(out, JSON.stringify(backup, null, 2));
   console.log(`백업 파일: ${out}`);
 }
-console.log(`완료 ${done} · 건너뜀(이미 로컬 경로) ${skipped} · 실패 ${failed}${DRY ? ' (dry-run, 아무것도 바꾸지 않음)' : ''}`);
+console.log(`완료 ${done}, 건너뜀(이미 로컬 경로) ${skipped}, 실패 ${failed}${DRY ? ' (dry-run, 아무것도 바꾸지 않음)' : ''}`);

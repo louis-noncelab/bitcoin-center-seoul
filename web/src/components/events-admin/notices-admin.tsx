@@ -98,7 +98,7 @@ export function NoticesAdmin() {
       <fieldset className="events-editor-fields" disabled={pending}>
         <label>제목<FormControl><input name="title" defaultValue={selected?.title ?? ""} required maxLength={200} /></FormControl></label>
         <label>URL 슬러그<FormControl><input name="slug" defaultValue={selected?.slug ?? ""} required maxLength={100} pattern="(?=.*[a-z])[a-z0-9]+(-[a-z0-9]+)*" autoCapitalize="none" spellCheck={false} aria-describedby="notice-slug-help" /></FormControl></label>
-        <p id="notice-slug-help" className="muted">/ko/notices/ 뒤에 붙는 주소입니다. 영문 소문자·숫자·하이픈을 사용하세요. 이전 주소도 새 주소로 연결됩니다.</p>
+        <p id="notice-slug-help" className="muted">/ko/notices/ 뒤에 붙는 주소입니다. 영문 소문자, 숫자, 하이픈을 사용하세요. 이전 주소도 새 주소로 연결됩니다.</p>
         <TagsField tags={selected?.tags ?? []} />
         <MarkdownEditor name="description" label="본문" defaultValue={selected?.description ?? ""} required rows={10} helpId="notice-markdown-help" onPending={uploadPending} onDirty={() => setDirty(true)} onExpired={() => setExpired(true)} />
         <div className="events-field-grid"><label>영어 제목 (선택)<FormControl><input name="titleEn" defaultValue={selected?.titleEn ?? ""} maxLength={200} /></FormControl></label><MarkdownEditor name="descriptionEn" label="영어 본문 (선택)" defaultValue={selected?.descriptionEn ?? ""} rows={5} helpId="notice-markdown-help" onPending={uploadPending} onDirty={() => setDirty(true)} onExpired={() => setExpired(true)} /></div>
@@ -109,7 +109,7 @@ export function NoticesAdmin() {
       <div className="button-row"><Button type="submit" disabled={pending || expired || uploading}>{pending ? "저장 중…" : "저장"}</Button><Button variant="secondary" disabled={pending || uploading} onClick={() => { void leave().then((accepted) => { if (accepted) { setEditing(false); setDirty(false); setRevision((value) => value + 1); } }); }}>취소</Button></div>
     </form> : <>
       <div className="events-admin-toolbar"><h2>공지 목록</h2><Button disabled={pending || expired} onClick={() => { setSelected(null); setEditing(true); setMessage(""); setError(""); }}>공지 등록</Button></div>
-      <ul className="events-admin-list">{records.map((record) => <li key={record.id}><div><h3>{record.title}</h3><p className="muted">{record.created_at.slice(0, 10)} · {record.is_active ? "공개" : "비공개"}</p></div><div className="button-row">{Boolean(record.is_active) && <Link href={`/notices/${record.slug}`} locale="ko" className="button" data-variant="quiet">보기</Link>}<Button variant="secondary" disabled={pending || expired} onClick={() => { setSelected(record); setEditing(true); setMessage(""); setError(""); }}>수정</Button><Button variant="quiet" disabled={pending || expired} onClick={() => void remove(record)}>삭제</Button></div></li>)}{!records.length && <li>등록된 공지가 없습니다.</li>}</ul>
+      <ul className="events-admin-list">{records.map((record) => <li key={record.id}><div><h3>{record.title}</h3><p className="muted">{record.created_at.slice(0, 10)}, {record.is_active ? "공개" : "비공개"}</p></div><div className="button-row">{Boolean(record.is_active) && <Link href={`/notices/${record.slug}`} locale="ko" className="button" data-variant="quiet">보기</Link>}<Button variant="secondary" disabled={pending || expired} onClick={() => { setSelected(record); setEditing(true); setMessage(""); setError(""); }}>수정</Button><Button variant="quiet" disabled={pending || expired} onClick={() => void remove(record)}>삭제</Button></div></li>)}{!records.length && <li>등록된 공지가 없습니다.</li>}</ul>
     </>}
   </div>;
 }

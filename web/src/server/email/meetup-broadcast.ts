@@ -90,7 +90,7 @@ ${paragraphs.map((paragraph) => `<p style="margin:16px 0 0;max-width:38em;font-s
 </td></tr>
 ${input.joinUrl ? `<tr><td style="padding:28px 0 0;font-family:${font};"><a href="${escapeHtml(input.joinUrl)}" style="display:inline-block;background:#20211f;color:#fafaf8;text-decoration:none;border-radius:8px;padding:14px 22px;font-size:16px;line-height:1.5;font-weight:500;">${ko ? "온라인 참여" : "Join online"}</a>${input.joinNote ? `<p style="margin:8px 0 0;font-size:15px;line-height:1.6;color:#62675f;">${escapeHtml(input.joinNote)}</p>` : ""}</td></tr>` : ""}
 ${input.confirmUrl ? `<tr><td style="padding:28px 0 0;font-family:${font};"><a href="${escapeHtml(input.confirmUrl)}" style="color:#32699f;text-decoration:underline;font-size:15px;line-height:1.6;">${ko ? "예약 확인" : "View reservation"}</a></td></tr>` : ""}
-<tr><td style="padding:28px 0 0;font-family:${font};"><p style="margin:0;font-size:14px;line-height:1.6;color:#62675f;">${ko ? "비트코인 센터 서울 · 서울 마포구" : "Bitcoin Center Seoul · Mapo, Seoul"}</p></td></tr>
+<tr><td style="padding:28px 0 0;font-family:${font};"><p style="margin:0;font-size:14px;line-height:1.6;color:#62675f;">${ko ? "비트코인 센터 서울, 서울 마포구" : "Bitcoin Center Seoul, Mapo, Seoul"}</p></td></tr>
 </table></td></tr></table></body></html>`;
   return { subject: input.subject, text, html };
 }

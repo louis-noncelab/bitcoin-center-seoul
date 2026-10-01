@@ -35,7 +35,7 @@ export function CheckoutSummary({ locale, items, quote, quoting, reservation, fu
     <h2 id="summary-title">{reservation ? (ko ? "예약 내용" : "Reservation") : (ko ? "주문 내용" : "Order summary")}</h2>
     {items.map((item, index) => {
       const quoted = quote?.snapshot.items[index];
-      return <div className="commerce-summary-item" key={`${item.option}-${index}`}><strong>{ko ? item.product.titleKo : item.product.titleEn}</strong><span className="muted">{reservation ? (ko ? `${item.quantity}명` : `${item.quantity} attendee${item.quantity === 1 ? "" : "s"}`) : `${item.option} · ${quantityLabel(item.quantity, locale)}`}</span><span>{quoted?.amountSats === "0" && reservation ? (ko ? "무료" : "Free") : quoted ? bitcoin(quoted.amountSats, locale, unit, rate) : `${price(item.product, locale, unit, rate)} / ${ko ? "1개" : "item"}`}</span></div>;
+      return <div className="commerce-summary-item" key={`${item.option}-${index}`}><strong>{ko ? item.product.titleKo : item.product.titleEn}</strong><span className="muted">{reservation ? (ko ? `${item.quantity}명` : `${item.quantity} attendee${item.quantity === 1 ? "" : "s"}`) : `${item.option}, ${quantityLabel(item.quantity, locale)}`}</span><span>{quoted?.amountSats === "0" && reservation ? (ko ? "무료" : "Free") : quoted ? bitcoin(quoted.amountSats, locale, unit, rate) : `${price(item.product, locale, unit, rate)} / ${ko ? "1개" : "item"}`}</span></div>;
     })}
     <dl className="commerce-facts">
       <div><dt>{reservation ? (ko ? "참가비" : "Ticket") : (ko ? "상품 금액" : "Items")}</dt><dd>{goods}</dd></div>

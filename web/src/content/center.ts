@@ -82,14 +82,14 @@ export const centerContent = {
       { id: "about", label: "센터 소개", href: "#about" },
       { id: "programs", label: "프로그램", href: "#programs" },
       { id: "journal", label: "현장 스케치", href: "#journal" },
-      { id: "experience", label: "전시·체험", href: "#experience" },
+      { id: "experience", label: "전시 및 체험", href: "#experience" },
       { id: "visit", label: "방문 안내", href: "#visit" },
     ],
     hero: {
       eyebrow: "BITCOIN CENTER SEOUL",
       title: "비트코인 센터 서울",
       introduction:
-        "비트코인 강의와 밋업이 열리는 공간입니다. 도서·작품을 전시하고 하드웨어 지갑 체험존을 운영합니다.",
+        "비트코인 강의와 밋업이 열리는 공간입니다. 도서와 작품을 전시하고 하드웨어 지갑 체험존을 운영합니다.",
       secondaryLink: { label: "프로그램 보기", href: "#programs" },
     },
     about: {
@@ -119,11 +119,11 @@ export const centerContent = {
       eyebrow: "EXPERIENCE",
       title: "전시와 체험",
       introduction:
-        "비트코인 도서·작품을 전시합니다. 체험존에서 하드웨어 지갑을 써 보고, 보드게임도 즐길\u00a0수\u00a0있습니다.",
+        "비트코인 도서와 작품을 전시합니다. 체험존에서 하드웨어 지갑을 써 보고, 보드게임도 즐길\u00a0수\u00a0있습니다.",
       areas: [
         {
           id: "exhibition",
-          title: "도서·작품",
+          title: "도서와 작품",
           description:
             "비트코인 백서와 관련 도서, 비트코인을 주제로 한 작품을 전시합니다.",
         },
@@ -161,7 +161,7 @@ export const centerContent = {
       introduction:
         "홍대입구역 6번 출구에서 걸어서 3분 거리입니다. 대관 중에는 공간을 이용할\u00a0수\u00a0없습니다.",
       firstVisit: [
-        { question: "예약이 필요한가요?", answer: "일반 방문은 예약 없이 오시면 됩니다. 강의·밋업 참여는 행사별 안내를 확인해주세요." },
+        { question: "예약이 필요한가요?", answer: "일반 방문은 예약 없이 오시면 됩니다. 강의 및 밋업 참여는 행사별 안내를 확인해주세요." },
         { question: "입장료가 있나요?", answer: "입장료는 3,000 sats입니다." },
         { question: "지갑 체험은 언제 할 수 있나요?", answer: "입장 후 언제든 하드웨어 지갑 체험존을 이용할 수 있습니다." },
       ],

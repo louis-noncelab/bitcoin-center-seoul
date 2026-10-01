@@ -62,7 +62,7 @@ export function ProductPurchase({ product, locale, title, children }: {
       <p className="caption">{ko ? "주문 요약" : "Order summary"}</p>
       <p className="commerce-product-summary-row"><span>{title}</span><span>{unitPrice}</span></p>
       <p className="commerce-product-summary-row muted"><span>{ko ? "수량" : "Qty"}</span><span>{quantity}</span></p>
-      <p className="commerce-product-summary-row muted"><span>{ko ? "수령" : "Fulfillment"}</span><span>{product.allowedFulfillments.map((value) => fulfillmentLabels[locale][value]).join(" · ")}</span></p>
+      <p className="commerce-product-summary-row muted"><span>{ko ? "수령" : "Fulfillment"}</span><span>{product.allowedFulfillments.map((value) => fulfillmentLabels[locale][value]).join(", ")}</span></p>
     </div>
     {product.memberOnly && <FormNotice kind="info">{ko ? "회원 전용 상품이라 현재 주문할 수 없습니다." : "This item is members-only and cannot be ordered here."}</FormNotice>}
     {cartMessage === "added" && <FormNotice kind="success">{ko ? "장바구니에 담았습니다." : "Added to cart."}</FormNotice>}

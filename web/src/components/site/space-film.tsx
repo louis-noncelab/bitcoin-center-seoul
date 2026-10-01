@@ -102,7 +102,7 @@ export function SpaceFilm({ name, label, locale }: {
         <Image src={poster} alt={label} sizes="(max-width: 767px) calc(100vw - 40px), (max-width: 1023px) 60vw, 640px" className="space-film-poster" aria-hidden={ready || undefined} />
         <video
           ref={video} width={640} height={360} muted playsInline loop preload="none"
-          aria-label={`${label} · ${ko ? "소리 없는 공간 영상" : "Silent film of the space"}`}
+          aria-label={`${label}, ${ko ? "소리 없는 공간 영상" : "Silent film of the space"}`}
           aria-hidden={!ready}
           onLoadedData={() => setHasFrame(true)}
           onEmptied={() => setHasFrame(false)}
@@ -111,7 +111,7 @@ export function SpaceFilm({ name, label, locale }: {
           onError={() => { intent.current = "pause"; setHasFrame(false); setPlaying(false); setError(true); }}
         >{ko ? "이 브라우저는 영상 재생을 지원하지 않습니다." : "This browser does not support video playback."}</video>
         {error && <span className="space-film-error" role="status">{ko ? "영상을 불러오지 못했습니다. 화면을 눌러 다시 재생하세요." : "Video could not load. Select the film to try again."}</span>}
-        <button type="button" className="space-film-toggle" disabled={!ready} aria-label={`${label} · ${action}`} onClick={() => {
+        <button type="button" className="space-film-toggle" disabled={!ready} aria-label={`${label}, ${action}`} onClick={() => {
           const film = video.current;
           if (!film) return;
           if (!film.paused) { intent.current = "pause"; film.pause(); }

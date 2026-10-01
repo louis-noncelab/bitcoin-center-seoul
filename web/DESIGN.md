@@ -1,20 +1,20 @@
 # Bitcoin Center Seoul: public design revision
 
-## 밋업 포스터 프레임 — 2026-09-29
+## 밋업 포스터 프레임: 2026-09-29
 
-- 밋업 대표·갤러리 이미지는 1080×1440(3:4)을 권장하며 홈 행사 카드, 프로그램 목록과 상세, 관리자 행사 미리보기에 같은 3:4 프레임을 적용한다. 업로드 파일은 EXIF 회전, 최대 1600px 리사이즈, WebP 인코딩을 거친다.
-- 프레임을 사진으로 채워 가로형·정사각형 배경 여백을 남기지 않는다. 기존 비율이 다른 사진은 중앙 기준으로 잘릴 수 있으므로 새 밋업 포스터는 1080×1440으로 준비한다.
-- 상세 사진은 화면 높이 70svh 이내에서 3:4 폭으로 가운데 배치하되 사진의 디코딩 해상도와 화면 픽셀 밀도를 넘겨 확대하지 않는다. 데스크톱 홈에 밋업 카드가 한 장이면 카드도 가운데 배치한다. 사진이 없는 홈 카드의 기존 센터 공간 대체 이미지 역시 같은 3:4 프레임을 사용하며, 다른 콘텐츠(현장 스케치·후기·컬렉션·굿즈)의 프레임은 유지한다.
+- 밋업 대표, 갤러리 이미지는 1080×1440(3:4)을 권장하며 홈 행사 카드, 프로그램 목록과 상세, 관리자 행사 미리보기에 같은 3:4 프레임을 적용한다. 업로드 파일은 EXIF 회전, 최대 1600px 리사이즈, WebP 인코딩을 거친다.
+- 프레임을 사진으로 채워 가로형, 정사각형 배경 여백을 남기지 않는다. 기존 비율이 다른 사진은 중앙 기준으로 잘릴 수 있으므로 새 밋업 포스터는 1080×1440으로 준비한다.
+- 상세 사진은 화면 높이 70svh 이내에서 3:4 폭으로 가운데 배치하되 사진의 디코딩 해상도와 화면 픽셀 밀도를 넘겨 확대하지 않는다. 데스크톱 홈에 밋업 카드가 한 장이면 카드도 가운데 배치한다. 사진이 없는 홈 카드의 기존 센터 공간 대체 이미지 역시 같은 3:4 프레임을 사용하며, 다른 콘텐츠(현장 스케치, 후기, 컬렉션, 굿즈)의 프레임은 유지한다.
 - 아래 2026-09-20 모바일 홈의 “실제 사진 contain” 기준은 **밋업 포스터에 한해** 이 결정으로 대체한다. OG 공유 카드는 플랫폼용 가로 형식으로 유지한다.
 
-## Commerce repair contract — 2026-09-21
+## Commerce repair contract: 2026-09-21
 
 - Guest shoppers reuse the collection’s three/two/one-column grid, shared fields, feedback and bilingual shell. The shell owns one product heading; image-less purchases retain the existing 32rem measure. English summary keys stay intact while values wrap.
 - Forms and feedback load once with global primitives. Variants use native select labels, disabled options, validation and keyboard behavior. Admin controls retain their own namespace.
 - A single cart trigger stays visible beside the header menu at every width. One native dialog sits outside the header and hidden disclosure. Native modality handles focus, Escape and restoration; backdrop dismissal and route cleanup release scroll locking. Right-edge translation and backdrop opacity reuse the site’s 240ms control/ease-out tokens and discrete dialog transitions; interrupted changes retarget immediately and reduced motion settles without animation. Mechanism reference: https://beui.dev/r/drawer/raw, adapted to existing site-dialog CSS without dependencies.
 - Verify Korean/English shoppers at 375/768/1440px in both themes, keyboard and reduced motion, including close/reopen, backdrop, Escape, route changes, empty/unavailable carts and long fulfillment values. Runtime fixtures remain review-only.
 
-## 행사 내부 신청 가격 단위 — 2026-09-29
+## 행사 내부 신청 가격 단위: 2026-09-29
 
 - 관리자는 기존 원화와 사토시 중 하나의 참가비 단위를 선택한다. 전환해도 저장 전 입력 초안은 유지하며 선택한 단위의 금액만 저장한다.
 - 원화 행사와 무료 행사 동작은 유지한다. 사토시 행사는 고정 sats 금액으로 신청하고, 공개 참여 버튼은 sats를 표시한다.
@@ -22,18 +22,18 @@
 
 ## 공통 공개 페이지 프레임, 2026-09-21
 
-- 홈 하단 공간 둘러보기 패널도 행사 패널과 같은 `--content-max`·`--gutter` 기준으로 좌우 바깥 경계를 정렬. 사진·텍스트 구성과 패널 내부 여백은 유지
+- 홈 하단 공간 둘러보기 패널도 행사 패널과 같은 `--content-max`, `--gutter` 기준으로 좌우 바깥 경계를 정렬. 사진, 텍스트 구성과 패널 내부 여백은 유지
 - 홈의 1280px 고정 폭을 제거하고 기존 공통 `--content-max`(기본 80rem, 1440px부터 90rem, 1800px부터 110rem)와 반응형 `--gutter` 사용. 초광폭 화면에서도 중앙 정렬과 최대 폭 유지
 - 홈 행사 패널의 바깥 경계와 다른 페이지 본문, 헤더 로고의 시작선을 정렬. 패널 내부 여백은 유지
-- 모든 공개 페이지의 배경·표면·텍스트·구분선은 기존 홈의 라이트/다크 팔레트 공유. 관리자 팔레트는 분리
-- 공통 헤더는 홈 기준 74px 높이, 148×43px 로고, 하단 선 없는 스타일과 원형 모바일 메뉴 버튼. 현재 메뉴 표시, 한영·테마 전환과 접근성 유지
+- 모든 공개 페이지의 배경, 표면, 텍스트, 구분선은 기존 홈의 라이트/다크 팔레트 공유. 관리자 팔레트는 분리
+- 공통 헤더는 홈 기준 74px 높이, 148×43px 로고, 하단 선 없는 스타일과 원형 모바일 메뉴 버튼. 현재 메뉴 표시, 한영, 테마 전환과 접근성 유지
 - 넓어진 홈 사진은 표시 크기에 맞는 반응형 이미지 선택. 본문 가독성 제한과 기존 콘텐츠 구성 유지
 
 ## 행사 목록 장소 표시, 2026-09-21
 
 - 관리자는 센터 / 외부 장소를 선택. 새 행사의 기본값은 센터이며 센터 이름과 한영 주소를 서버에서 자동 적용
 - 외부 장소 선택 시에만 장소 입력란 표시. 한국어 필수, 영어 선택(없으면 한국어 표시); 전환 중 외부 입력 초안 유지
-- 홈 행사 카드·달력·목록 보기·전체 일정에서는 저장된 구분값이 센터일 때 장소 생략. 행사 상세에는 전체 장소 표시
+- 홈 행사 카드, 달력, 목록 보기, 전체 일정에서는 저장된 구분값이 센터일 때 장소 생략. 행사 상세에는 전체 장소 표시
 - 기존 데이터는 컬럼 추가 시 한 번만 분류하고 원본 장소는 보존. 확인되지 않은 장소는 외부로 유지
 - 센터의 밋업 중 상태는 센터 행사만 반영
 
@@ -100,7 +100,7 @@
 - 한영, 라이트/다크, 키보드, 동작 줄이기 지원
 - 참고: 국립중앙박물관의 상단 이미지 강조와 세종문화회관의 날짜별 일정 탐색
 
-## Visitor review articles — 2026-09-11
+## Visitor review articles: 2026-09-11
 
 Reviews with editorial body content open a readable article before the original source.
 Reuse the highlight detail's centered measure, Markdown rendering, site header/footer,
@@ -112,7 +112,7 @@ Editable short English slugs keep historical redirects; hidden/body-less pages r
 404 and stay out of the sitemap. Canonical, hreflang, share metadata and factual
 Article/BreadcrumbList data follow the article's current slug and publication state.
 
-## Home hero slideshow — 2026-09-11
+## Home hero slideshow: 2026-09-11
 
 Keep the existing hero frame and responsive crop. Cycle the existing lounge,
 community, library and gallery photographs every 6 seconds, with a 1400ms crossfade
@@ -130,7 +130,7 @@ and canvas outer edge stays visible across light/dark photographs and follows th
 cursor across the site, using one fixed overlay, a damped spring and no per-frame React state.
 Keep the native cursor; hide the decoration on exit, touch and reduced motion.
 
-## Visitor reviews — local candidate, 2026-09-11
+## Visitor reviews: local candidate, 2026-09-11
 
 A dedicated `/reviews` archive brings together the report's actual Hongdae visitor
 blogs, community posts, videos and short posts. Home shows three selections with original-source 16:9 thumbnails after videos;
@@ -164,7 +164,7 @@ home cards. Existing form controls, image upload, confirmation and feedback styl
 apply; no new visual tokens. Hidden or deleted selections never render publicly.
 Record and selection revisions protect concurrent edits, keeping unsaved input on conflict.
 
-## Home video selection — 2026-09-11
+## Home video selection: 2026-09-11
 
 The decorative reading-progress line mixes 35% `--ink` with `--canvas` for a quiet neutral gray;
 keyboard focus retains its stronger `--focus` contrast.
@@ -192,7 +192,7 @@ Reduced motion disables both effects. Mechanism reference: beui.dev action-swap,
 adapting keyed opacity state changes only. No new dependency or page-load playback;
 reuse existing reduced-motion-safe section entrances.
 
-## Current contract — navigation, status icons and space film, 2026-09-10
+## Current contract: navigation, status icons and space film, 2026-09-10
 
 The owner authorizes a cinematic use of the existing center footage and asks for
 animated navigation underlines and an icon instead of the operating-status dot.
@@ -291,7 +291,7 @@ Reuse the existing neutral surfaces, Pretendard, controls and selection primitiv
   Reuse the existing once-per-viewport entrance with reduced-motion and no-JS
   visibility. These are static photographs, with no new carousel or media files.
 
-## Current owner contract — events-only public surface, 2026-09-09
+## Current owner contract: events-only public surface, 2026-09-09
 
 The owner selected `63a08b95cb54e06d9a00c89ae14d8d9eb1851284`
 as the reset base and asked to retain the later public visual craft while reducing
@@ -326,7 +326,7 @@ notes remain only as a record of earlier design work.
   metadata and immediate reduced-motion behavior. Accepted debt is limited to
   owner visual approval and final real-browser verification after integration.
 
-## Current motion contract — title assembly and viewport entrances, 2026-09-08
+## Current motion contract: title assembly and viewport entrances, 2026-09-08
 
 The owner requests the large home name to form on entry and content to settle
 into position while scrolling. Reveal real Korean syllables and English letters
@@ -347,7 +347,7 @@ Preserve native scrolling, working controls during entry and existing navigation
 tab and footer interactions. This replaces the old whole-H1/whole-section motion
 constraint only; it adds no library or scrolling controller.
 
-## Current contract — compact hero, contact icons and reading progress, 2026-09-08
+## Current contract: compact hero, contact icons and reading progress, 2026-09-08
 
 The owner found the full-width hero photo too long and the introduction/actions
 awkwardly separated from the name. A focused UI/UX review of nine actual frames
@@ -381,7 +381,7 @@ indicator or scroll interception. No-JavaScript leaves it empty. Reduced motion
 still shows position immediately, without additional animated motion. Preserve
 the existing skip-link/focus layer above it.
 
-## Previous contract — photographic composition upgrade, 2026-09-08
+## Previous contract: photographic composition upgrade, 2026-09-08
 
 Owner authorized upgrading overall visual impression after explicitly excluding
 new shop and meetup-registration pages. Preserve the established typeface, neutral
@@ -413,7 +413,7 @@ raises the hierarchy and photographic presence inside that existing system.
   real-place presence, Coconut's clear hierarchy. No new reference research,
   copied assets, typography swaps, decoration layers, backend or launch controls.
 
-## Previous contract — craft and identity revision, 2026-09-08
+## Previous contract: craft and identity revision, 2026-09-08
 
 Identity follow-up: the owner found the craft candidate much improved, then
 requested less blue in the name, emphasis on Seoul and a final copy/SEO pass.
@@ -790,7 +790,7 @@ backend mutation is part of the first candidate.
 ## Final polish from rendered review
 The English journal category uses88px to keep Education whole; mobile heading rows may wrap the related action to preserve meaningful title lines. The goods caption uses the same1/2 division and40px gutter as the journal. User's horizontal photograph album idea remains review-only and is not implemented.
 
-## Owner review overrides — events-only, 2026-09-09
+## Owner review overrides: events-only, 2026-09-09
 The supplied center branding and latest spacing/type tokens are implemented. Public content comes from the copied real SQLite event/highlight records. Home shows the three latest highlights as photo cards; detail photos appear below the title before the date and body, with no separate photo section label or trailing generic highlight label. The footer has no marquee and uses email, phone, X and Instagram icon links plus an icon-only back-to-top action. Navigation and contact links emphasize text color without underlines or filled active backgrounds; keyboard focus remains visible. Public pages stay bilingual, admin stays Korean-only. Earlier commerce and pending-branding notes above are historical.
 
 Owner refinement: primary action fills are muted warm gray-green, with dark text in both themes. Footer contact has a visible 문의하기/Contact heading and four circular outlined icons. Detail galleries use one reading-width column with uncropped images, superseding the older two-column note. Administrators can choose a URL slug; numeric and old slug links redirect to the current canonical path.
@@ -799,7 +799,7 @@ Latest owner refinements: the footer uses a centered compact three-column grid, 
 
 Navigation correction, 2026-09-09: content links start native Next.js navigation immediately, keeping the outgoing page at its reading position while the destination loads. Next.js positions the new page on arrival; there is no pre-navigation scroll animation or timer. Retain the existing opacity fade, reduced-motion fallback, locale/SEO behavior, ordinary new-tab links and native back/forward scroll restoration. The floating back-to-top remains a separate explicit action.
 
-## Owner refinement — fields and spacing, 2026-09-10
+## Owner refinement: fields and spacing, 2026-09-10
 
 - Text, password, URL and textarea controls share a `FormControl` wrapper. Keep semantic inputs, labels, validation, autocomplete and textarea resizing; their visible appearance is owned by the site. The later custom-control contract below supersedes earlier native picker and checkbox appearance decisions.
 - Focus draws a 2px `--focus` underline from the lower center toward both sides with `scaleX(0 → 1)`, using the existing 240ms control duration and ease-out curve. Blur retracts it. The neutral border stays stationary; there is no whole-field outline flash or layout movement. Pointer and keyboard focus receive the same visible indicator. Reduced motion displays the final line immediately. Forced colors uses the native full focus outline instead.
@@ -809,7 +809,7 @@ Navigation correction, 2026-09-09: content links start native Next.js navigation
 
 Standalone administrator sign-in refinement: center the login form horizontally within the page and center its page heading. Keep the existing form width, compact top spacing and left-aligned field labels; authenticated workspaces and inline session reauthentication keep their existing layout.
 
-## Owner refinements — publishing and wayfinding, 2026-09-10
+## Owner refinements: publishing and wayfinding, 2026-09-10
 
 - Scale the supplied header wordmark proportionally to 32px on mobile and 40px from 768px, using the existing spacing tokens. Preserve its intrinsic aspect ratio, light/dark assets and accessible home link.
 - Remove repeated visit CTA buttons from the home hero and all section bodies. Public Korean copy calls the reading space `서재`.
@@ -834,9 +834,9 @@ Standalone administrator sign-in refinement: center the login form horizontally 
 
 - Activity-record cards now share the program cards' surface, border, radius and shadow tokens. Keep the large-photo vertical anatomy on home and journal: the photo fills the card's top edge, copy has 20px desktop / 16px mobile padding, and reading actions align at the bottom of each row. Apply the existing hover lift and shadow to the complete card, preserving neutral text, keyboard focus and reduced motion.
 
-## Owner refinement — collection and layout, 2026-09-10
+## Owner refinement: collection and layout, 2026-09-10
 
-- Public copy uses `도서` instead of `책`; the collection is `도서·작품` (`Books & art`). It has a bilingual `/collection` index and centered individual detail pages. Link from the existing exhibition plate and footer; the main navigation stays compact under 전시·체험.
+- Public copy uses `도서` instead of `책`; the collection is `도서, 작품` (`Books & art`). It has a bilingual `/collection` index and centered individual detail pages. Link from the existing exhibition plate and footer; the main navigation stays compact under 전시, 체험.
 - The collection is an image-first gallery: three columns on desktop, two on tablet, one on narrow screens. Shared surface, panel radius, line, shadow and spacing tokens frame every item. A consistent portrait display area contains the entire cover/artwork with neutral padding; no cropping or tinting. Below it, show category, title and author/artist. Each card opens its detail page with complete images and Markdown description. Reuse content-link navigation, hover/focus lift, and reduced-motion handling.
 - Reuse SelectionTabs for 전체/도서/작품 filtering, with site-owned 48px targets and visible selected/focus states. Empty collections show a factual empty message, without invented holdings or placeholder artwork. Korean fallback is explicit when English content is missing.
 - Collection filter labels are centered within their 80px-minimum, 48px-high controls. Selected labels retain action-ink on hover for readable contrast in both themes. The empty-state message spans the collection width, is centered between the filter divider and a matching full-width bottom divider, and does not inherit the short paragraph measure or add another top border. The existing 24px panel gap provides its upper spacing; match it below the message.
@@ -855,7 +855,7 @@ Standalone administrator sign-in refinement: center the login form horizontally 
 - The existing authenticated admin offers today's `자동 / 정상 운영 / 임시 휴무` exception. Normal operation enables ordinary hours and meetups on a holiday; it does not mean open for 24 hours. Temporary closure also suppresses meetups. Exceptions are stored by Seoul date so an overnight holiday exception survives midnight, while the following day's ordinary hours revert to automatic policy. No weekly Sunday closure or manual forced meetup state exists.
 - Motion reference: https://beui.dev/r/animated-badge/raw (read 2026-09-10), adapting keyed label changes and reduced-motion gating only. State text fades in over duration-control; an open/event dot emits one scale/opacity ring over duration-reveal when the state changes. No continuous pulse or spatial label jump; reduced motion is static. Reuse CSS and existing primitives, with no new dependency.
 
-## First-visit flow — 2026-09-11
+## First-visit flow: 2026-09-11
 
 Home order: hero, programs, visitor stories, highlights, videos, exhibition.
 The hero links to visit details with station access and regular hours. Programs
@@ -885,7 +885,7 @@ Site-controlled disclosures keep their content mounted through both opening and 
 
 Review “more” uses native details/summary with a progressively enhanced, interruptible height animation; the no-JavaScript disclosure remains usable. Date dialogs retain their calendar during the existing exit transition and reset it on the next opening. Reduced motion settles all disclosures immediately. OS-managed select popups retain native keyboard, touch and form behavior.
 
-## Collection purchasing — 2026-09-21
+## Collection purchasing: 2026-09-21
 
 The collection admin also registers goods using the existing image, Markdown, order and publication controls. Optional HTTP(S) purchase links show a shared primary `구매하기` / `Buy` button opening a new window; no link means no button. Books stay in the collection and goods have their own `/goods` gallery and details, using the same responsive gallery and detail primitives. Keep the existing SatB purchasing introduction. Korean labels use `도서`, including navigation and filters. Drafts remain private; purchase links do not create local checkout or payment state.
 

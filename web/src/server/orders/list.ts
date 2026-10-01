@@ -46,7 +46,7 @@ function addressLine(address: unknown): string {
   return ["countryCode", "postalCode", "region", "city", "line1", "line2"]
     .map((key) => typeof value[key] === "string" ? value[key] : "")
     .filter(Boolean)
-    .join(" · ");
+    .join(", ");
 }
 
 export async function listAdminOrders(url: URL) {

@@ -26,7 +26,7 @@ const labels = {
     open: "메뉴",
     close: "메뉴 닫기",
     theme: "다크 모드",
-    language: "EN · Switch to English",
+    language: "EN, Switch to English",
   },
   en: {
     skip: "Skip to content",
@@ -34,7 +34,7 @@ const labels = {
     open: "Menu",
     close: "Close menu",
     theme: "Dark mode",
-    language: "KO · 한국어로 전환",
+    language: "KO, 한국어로 전환",
   },
 } as const;
 

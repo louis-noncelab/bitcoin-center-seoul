@@ -40,7 +40,7 @@ export function OperatingStatus({ locale, initialStatus }: { readonly locale: Lo
   const key = status ?? "unknown";
   const label = centerStatusLabels[locale][key];
   const StatusIcon = statusIcons[key];
-  return <Link href="/visit" locale={locale} className="operating-status" data-status={key} aria-label={`${label} · ${locale === "ko" ? "방문 안내" : "Visit information"}`}>
+  return <Link href="/visit" locale={locale} className="operating-status" data-status={key} aria-label={`${label}, ${locale === "ko" ? "방문 안내" : "Visit information"}`}>
     <span key={key} className="operating-status-content"><StatusIcon className="icon operating-status-icon" aria-hidden="true" /><span>{label}</span></span>
   </Link>;
 }

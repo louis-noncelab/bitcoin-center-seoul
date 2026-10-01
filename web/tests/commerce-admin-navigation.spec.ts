@@ -51,7 +51,7 @@ test("keeps product edits when leaving is cancelled and discards only after conf
   await answerDiscard(page, "버리기");
   await expect(page.getByRole("heading", { name: "상품 목록", exact: true })).toBeVisible();
   await expect(page.getByLabel("상품명")).toHaveCount(0);
-  await sidebar(page).getByRole("link", { name: "주문", exact: true }).click();
+  await sidebar(page).getByRole("link", { name: "주문 관리", exact: true }).click();
   await expect(page).toHaveURL(`${origin}/ko/admin/orders`);
   await expect(page.getByRole("heading", { name: "주문 목록" })).toBeVisible();
 });
@@ -60,7 +60,7 @@ test("admin menu opens the product workspace", async ({ page, baseURL }) => {
   // Given the admin shell.
   const origin = await login(page, "/admin", baseURL);
   // When the product entry is selected.
-  await sidebar(page).getByRole("link", { name: "상품·분류", exact: true }).click();
+  await sidebar(page).getByRole("link", { name: "상품과 분류", exact: true }).click();
   // Then the product workspace opens.
   await expect(page).toHaveURL(`${origin}/ko/admin/products`);
   await expect(page.getByRole("heading", { name: "상품 목록", exact: true })).toBeVisible();
@@ -88,7 +88,7 @@ for (const path of ["products", "orders", "shipping", "coupons", "settings", "re
   test(`logout revokes the session from ${path}`, async ({ page, baseURL }) => {
     // Given an authenticated commerce workspace.
     const origin = await login(page, `/admin/${path}`, baseURL);
-    await expect(sidebar(page).getByRole("link", { name: "주문", exact: true })).toBeVisible();
+    await expect(sidebar(page).getByRole("link", { name: "주문 관리", exact: true })).toBeVisible();
     // When signing out.
     await page.getByRole("button", { name: "로그아웃", exact: true }).click();
     // Then the login form returns and the server rejects the revoked session.
@@ -102,6 +102,7 @@ for (const path of ["products", "orders", "shipping", "coupons", "settings", "re
 test("protects an unsaved product category when registration is cancelled", async ({ page, baseURL }) => {
   // Given an unsaved category name.
   const origin = await login(page, "/admin/products", baseURL);
+  await page.getByText("상품 분류 관리").click();
   await page.getByLabel("분류 이름", { exact: true }).fill("임시 분류");
   // When opening registration is cancelled.
   await page.getByRole("button", { name: "상품 등록", exact: true }).click();
@@ -129,8 +130,13 @@ for (const draft of [
     await expect(page.getByLabel(draft.label, { exact: true })).toHaveValue(draft.value);
     expect(await beforeUnloadBlocked(page)).toBe(true);
     expect((await page.request.get(`${origin}/api/admin/products`)).ok()).toBe(true);
-    // Then logout from the sidebar ends the session without a confirmation dialog.
+    // Then a confirmed logout discards the draft and ends the session.
     await page.getByRole("button", { name: "로그아웃", exact: true }).click();
+    await expect(discardDialog(page)).toBeVisible();
+    await answerDiscard(page, "취소");
+    await expect(page.getByLabel(draft.label, { exact: true })).toHaveValue(draft.value);
+    await page.getByRole("button", { name: "로그아웃", exact: true }).click();
+    await answerDiscard(page, "버리기");
     await expect(page.getByLabel("관리자 비밀번호", { exact: true })).toBeVisible();
     expect((await page.request.get(`${origin}/api/admin/products`)).status()).toBe(401);
   });
@@ -143,7 +149,7 @@ test("protects unsaved payment settings until the administrator leaves the page"
   const initial = await field.isChecked();
   await field.setChecked(!initial);
   // When the content link is still the sidebar entry and the page has not been left.
-  await expect(sidebar(page).getByRole("link", { name: "행사·하이라이트 관리", exact: true })).toHaveAttribute("href", "/ko/admin");
+  await expect(sidebar(page).getByRole("link", { name: "행사와 하이라이트", exact: true })).toHaveAttribute("href", "/ko/admin");
   expect(await beforeUnloadBlocked(page)).toBe(true);
   // Then the unsaved setting remains on the settings screen.
   await expect(field).toBeChecked({ checked: !initial });

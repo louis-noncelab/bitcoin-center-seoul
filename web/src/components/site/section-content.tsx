@@ -28,7 +28,7 @@ export function ProgramsContent({ locale, highlights, nextEvent }: { readonly lo
         <p>{content.description}</p>
         {nextEvent && <Link href={`/programs/${nextEvent.slug || nextEvent.id}`} locale={locale} className="program-next">
           <span className="caption muted">{locale === "ko" ? "다가오는 행사" : "Coming up"}</span>
-          <time dateTime={nextEvent.date.trim().replaceAll(".", "-")}>{nextEvent.date.trim().replaceAll("-", ".")}{nextEvent.time ? ` · ${nextEvent.time}` : ""}</time>
+          <time dateTime={nextEvent.date.trim().replaceAll(".", "-")}>{nextEvent.date.trim().replaceAll("-", ".")}{nextEvent.time ? `, ${nextEvent.time}` : ""}</time>
           <h3>{locale === "en" ? nextEvent.titleEn || nextEvent.title : nextEvent.title}</h3>
           <span className="section-link">{locale === "ko" ? "행사 자세히 보기" : "Event details"}<ArrowRight className="icon" aria-hidden="true" /></span>
         </Link>}
@@ -44,7 +44,7 @@ export function ProgramsContent({ locale, highlights, nextEvent }: { readonly lo
 export function ExperienceContent({ locale }: { readonly locale: Locale }) {
   const content = centerContent[locale].experience;
   const cards = {
-    exhibition: { link: { label: locale === "ko" ? "도서·작품 둘러보기" : "Explore books & art", href: "/collection" }, photo: "exhibition" as const },
+    exhibition: { link: { label: locale === "ko" ? "도서와 작품 둘러보기" : "Explore books & art", href: "/collection" }, photo: "exhibition" as const },
     boardgame: { link: content.boardGameLink, photo: "boardgame" as const },
     wallet: { link: content.walletExperienceLink, photo: "experience" as const },
   };
