@@ -1,6 +1,13 @@
 import { z } from "zod";
 import { identifier } from "@/server/orders/validation";
 
+const stockQuantity = z.number().int().min(0).max(1000000);
+const variantSchema = z.object({
+  sku: z.string().min(1).max(100).regex(/^[A-Za-z0-9_-]+$/),
+  optionLabelKo: z.string().trim().max(200), optionLabelEn: z.string().trim().max(200),
+  billableWeightG: z.number().int().min(0).max(1000000), active: z.boolean(),
+}).strict();
+
 export const productSchema = z.object({
   slug: z.string().min(1).max(100).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   titleKo: z.string().trim().min(1).max(200), titleEn: z.string().trim().min(1).max(200),
@@ -13,11 +20,17 @@ export const productSchema = z.object({
   priceKind: z.enum(["KRW_FIXED", "BTC_FIXED"]), priceAmount: z.string().regex(/^[1-9]\d{0,14}$/),
   listPriceAmount: z.union([z.literal(""), z.string().regex(/^[1-9]\d{0,14}$/)]).optional(),
   allowedFulfillments: z.array(z.enum(["PICKUP", "DOMESTIC", "INTERNATIONAL"])).min(1).max(3),
-  variants: z.array(z.object({
-    id: identifier.optional(), sku: z.string().min(1).max(100).regex(/^[A-Za-z0-9_-]+$/),
-    optionLabelKo: z.string().trim().max(200), optionLabelEn: z.string().trim().max(200),
-    stockOnHand: z.number().int().min(0).max(1000000), billableWeightG: z.number().int().min(0).max(1000000), active: z.boolean(),
-  }).strict()).min(1).max(100),
+  variants: z.array(z.union([
+    variantSchema.extend({
+      id: z.undefined().optional(), stockOnHand: stockQuantity, expectedStockOnHand: z.undefined().optional(),
+    }),
+    variantSchema.extend({
+      id: identifier, stockOnHand: z.undefined().optional(), expectedStockOnHand: z.undefined().optional(),
+    }),
+    variantSchema.extend({
+      id: identifier, stockOnHand: stockQuantity, expectedStockOnHand: stockQuantity,
+    }),
+  ])).min(1).max(100),
 }).strict().superRefine((value, ctx) => {
   if (new Set(value.allowedFulfillments).size !== value.allowedFulfillments.length) ctx.addIssue({ code: "custom", message: "Duplicate fulfillment modes.", path: ["allowedFulfillments"] });
   if (new Set(value.variants.map((item) => item.sku)).size !== value.variants.length) ctx.addIssue({ code: "custom", message: "Duplicate SKU.", path: ["variants"] });
