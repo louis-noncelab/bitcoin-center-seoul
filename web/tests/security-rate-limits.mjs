@@ -1,11 +1,10 @@
 import assert from "node:assert/strict";
 import { after, beforeEach, test } from "node:test";
+import "./helpers/pg-content-env.mjs";
 import { randomBytes } from "node:crypto";
-assert.ok(process.env.TEST_DATABASE_URL, "Set TEST_DATABASE_URL to a disposable migrated local PostgreSQL database");
 Object.assign(process.env, {
-  APP_MODE: "test", APP_ORIGIN: "http://127.0.0.1:3197", DATABASE_URL: process.env.TEST_DATABASE_URL,
-  DATA_DIR: "/tmp", TOKEN_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString("base64"),
-  PAYMENT_PROVIDER: "zaprite", PAYMENT_MODE: "review", EMAIL_MODE: "capture", TRUST_PROXY: "true",
+  APP_ORIGIN: "http://127.0.0.1:3197",
+  TRUST_PROXY: "true",
 });
 const { prisma } = await import("../src/server/db.ts");
 const { GET } = await import("../src/app/api/orders/confirm/[code]/route.ts");

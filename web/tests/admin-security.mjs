@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { after, before, beforeEach, test } from "node:test";
+import "./helpers/pg-content-env.mjs";
 import { mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -13,11 +14,9 @@ import { isAuthenticated, login, loginClientKey, logout, requireSameOrigin, setS
 
 const directory = mkdtempSync(join(tmpdir(), "bcs-admin-security-"));
 const password = "기존 비밀번호 compatibility 2026!";
-assert.ok(process.env.TEST_DATABASE_URL, "Set TEST_DATABASE_URL to a disposable migrated local PostgreSQL database");
 Object.assign(process.env, {
-  APP_MODE: "test", APP_ORIGIN: "http://127.0.0.1:3197", DATABASE_URL: process.env.TEST_DATABASE_URL,
-  DATA_DIR: directory, TOKEN_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString("base64"),
-  PAYMENT_PROVIDER: "zaprite", PAYMENT_MODE: "review", EMAIL_MODE: "capture", TRUST_PROXY: "false",
+  APP_ORIGIN: "http://127.0.0.1:3197",
+  DATA_DIR: directory,
 });
 let encoded;
 const cookieRequest = (token) => new NextRequest("https://center.example/api/admin/session", {
