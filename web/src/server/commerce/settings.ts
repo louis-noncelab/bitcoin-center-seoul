@@ -64,6 +64,7 @@ export async function activePaymentProvider(tx?: Tx): Promise<PaymentProvider> {
 }
 
 export const commerceSettingsSchema = z.object({
+  expectedUpdatedAt: z.string().datetime().nullable(),
   paymentProvider: z.enum(["LNURL", "ZAPRITE"]),
   btcPriceSource: z.enum(["UPBIT", "BITHUMB", "FIXED"]),
   // Only meaningful with FIXED; stored as a decimal string so BigInt maths stays exact.
@@ -92,6 +93,7 @@ export async function adminSettings() {
   const configured = { ...configuredPaymentProviders(config) };
   if (config.paymentMode === "live" && lightningAddresses.length > 0) configured.LNURL = true;
   return {
+    updatedAt: row?.updatedAt?.toISOString() ?? null,
     paymentProvider: row?.paymentProvider ?? "ZAPRITE",
     btcPriceSource: row?.btcPriceSource ?? "UPBIT",
     fixedKrwPerBtc: row?.fixedKrwPerBtc?.toString() ?? "",
@@ -126,9 +128,14 @@ export async function updateCommerceSettings(input: CommerceSettingsInput, actor
     ...(input.notificationWebhook ? { notificationWebhook: encryptWebhookUrl(input.notificationWebhook) } : {}),
   };
   await prisma.$transaction(async (tx) => {
-    await tx.siteSetting.createMany({ data: [{ id: "site" }], skipDuplicates: true });
-    const settings = await tx.$queryRaw<Array<{ lightningAddressId: string | null }>>`SELECT "lightningAddressId" FROM "SiteSetting" WHERE id = 'site' FOR UPDATE`;
-    const selectedAddressId = input.lightningAddressId === undefined ? settings[0]?.lightningAddressId : input.lightningAddressId;
+    const created = await tx.siteSetting.createMany({ data: [{ id: "site" }], skipDuplicates: true });
+    const settings = await tx.$queryRaw<Array<{ lightningAddressId: string | null; updatedAt: Date }>>`SELECT "lightningAddressId", "updatedAt" FROM "SiteSetting" WHERE id = 'site' FOR UPDATE`;
+    const current = settings[0];
+    if (!current) throw new Error("Site settings missing after createMany");
+    if (input.expectedUpdatedAt !== (created.count ? null : current.updatedAt.toISOString())) {
+      throw new HttpError(409, "SETTINGS_CHANGED", "다른 관리자가 설정을 먼저 저장했습니다. 현재 입력 내용을 확인한 뒤 화면을 새로고침해 주세요.");
+    }
+    const selectedAddressId = input.lightningAddressId === undefined ? current.lightningAddressId : input.lightningAddressId;
     if (input.paymentProvider === "LNURL" && config.paymentMode === "live" && !config.lnurl && !selectedAddressId) {
       throw new HttpError(400, "LIGHTNING_ADDRESS_REQUIRED", "라이트닝 주소를 등록하고 결제 수신 주소로 선택해 주세요.");
     }
@@ -136,7 +143,7 @@ export async function updateCommerceSettings(input: CommerceSettingsInput, actor
       const found = await tx.lightningAddress.findUnique({ where: { id: input.lightningAddressId }, select: { id: true } });
       if (!found) throw new HttpError(400, "LIGHTNING_ADDRESS_NOT_FOUND", "선택한 라이트닝 주소를 찾을 수 없습니다.");
     }
-    await tx.siteSetting.update({ where: { id: "site" }, data });
+    await tx.siteSetting.update({ where: { id: "site" }, data: { ...data, updatedAt: new Date(Math.max(Date.now(), current.updatedAt.getTime() + 1)) } });
     await tx.auditLog.create({ data: {
       actorId, action: "settings.updated", targetType: "SiteSetting", targetId: "site",
       summary: { paymentProvider: data.paymentProvider, btcPriceSource: data.btcPriceSource },

@@ -3,6 +3,7 @@ import { z } from "zod";
 const amount = z.string().regex(/^\d+$/);
 
 export const commerceSettingsRecord = z.object({
+  updatedAt: z.string().nullable(),
   paymentProvider: z.enum(["LNURL", "ZAPRITE"]),
   btcPriceSource: z.enum(["UPBIT", "BITHUMB", "FIXED"]),
   fixedKrwPerBtc: z.string(),

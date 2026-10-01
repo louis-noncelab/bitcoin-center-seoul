@@ -62,6 +62,7 @@ export function CommerceSettingsAdmin() {
     if (busy.current || expired) return;
     const form = new FormData(event.currentTarget);
     const input = {
+      expectedUpdatedAt: settings?.updatedAt ?? null,
       paymentProvider: String(form.get("paymentProvider")),
       btcPriceSource: String(form.get("btcPriceSource")),
       fixedKrwPerBtc: String(form.get("fixedKrwPerBtc") ?? "").trim(),
@@ -100,7 +101,12 @@ export function CommerceSettingsAdmin() {
         address: String(data.get("address") ?? "").trim(),
       }, "POST"));
       const latest = await adminRequest("/api/admin/settings", commerceSettingsRecord);
-      setSettings(latest);
+      setSettings((current) => current && ({
+        ...current,
+        lightningAddresses: latest.lightningAddresses,
+        configured: latest.configured,
+        defaultLightningAddressConfigured: latest.defaultLightningAddressConfigured,
+      }));
       setReceiver(created.id);
       setDirty(true);
       form.reset();
