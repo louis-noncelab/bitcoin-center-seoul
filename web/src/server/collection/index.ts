@@ -3,7 +3,7 @@ import { collectionRecordSchema, type CollectionInput, type CollectionKind, type
 import { contentSlugSchema } from "@/lib/events-contract";
 import { prisma } from "@/server/db";
 import { ApiError } from "@/server/events/errors";
-import { collectImagePaths, deleteUnusedImages, placeImagesInSlugFolder, requireExistingImages, rewriteImagePaths } from "@/server/events/images";
+import { collectImagePaths, deleteUnusedImages, placeImagesInSlugFolder, requireExistingImages, restoreMovedImagesOnConfirmedRollback, rewriteImagePaths } from "@/server/events/images";
 import { reserveRevision } from "@/server/events/revision";
 
 function storedTime(value: Date): string {
@@ -69,8 +69,7 @@ export async function saveCollectionItem(input: CollectionInput, id?: number, re
   const placed = await placeImagesInSlugFolder("collection", input.slug, input.images);
   const description = rewriteImagePaths(input.description, input.images, placed.images);
   const descriptionEn = rewriteImagePaths(input.descriptionEn, input.images, placed.images);
-  try {
-  const savedId = await prisma.$transaction(async (tx) => {
+  const savedId = await restoreMovedImagesOnConfirmedRollback(placed, (markTransactionBodyComplete) => prisma.$transaction(async (tx) => {
     if (id !== undefined) await reserveRevision(tx, "collection_items", id, revision);
     await assertSlugAvailable(input.slug, id);
     const data = {
@@ -79,17 +78,14 @@ export async function saveCollectionItem(input: CollectionInput, id?: number, re
       images: JSON.stringify(placed.images), sortOrder: input.sort_order, isActive: input.is_active,
     };
     const saved = id === undefined ? await tx.collectionItem.create({ data }) : await tx.collectionItem.update({ where: { id }, data });
+    markTransactionBodyComplete();
     return saved.id;
-  });
+  }));
   const saved = await getCollectionItem(savedId, true);
   if (!saved) throw new ApiError(500, "SAVE_FAILED", "항목을 저장하지 못했습니다.");
   const kept = new Set(collectImagePaths(placed.images, description, descriptionEn));
   await deleteUnusedImages(collectImagePaths(previous?.images, previous?.description, previous?.descriptionEn).filter((image) => !kept.has(image)));
   return saved;
-  } catch (error) {
-    await placed.restore();
-    throw error;
-  }
 }
 
 export async function deleteCollectionItem(id: number, revision: number): Promise<void> {

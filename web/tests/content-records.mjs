@@ -52,6 +52,12 @@ function eventInput(slug, image) {
   };
 }
 
+function imageResponse(url) {
+  return publicImage(new NextRequest(`http://127.0.0.1:3100${url}`), {
+    params: Promise.resolve({ path: url.slice("/images/".length).split("/") }),
+  });
+}
+
 after(async () => {
   for (const id of created) {
     await prisma.contentImage.deleteMany({ where: { contentId: id } });
@@ -101,9 +107,6 @@ test("saving a second event with an existing picture preserves both published im
   assert.notEqual(first.images[0], second.images[0]);
   assert.equal(fs.existsSync(firstFile), true);
   assert.equal(fs.existsSync(secondFile), true);
-  const imageResponse = (url) => publicImage(new NextRequest(`http://127.0.0.1:3100${url}`), {
-    params: Promise.resolve({ path: url.slice("/images/".length).split("/") }),
-  });
   assert.equal((await imageResponse(first.images[0])).status, 200);
   assert.equal((await imageResponse(second.images[0])).status, 200);
 
@@ -138,6 +141,73 @@ test("a failed slug edit removes its new copy without deleting the published pic
   );
   assert.equal(fs.existsSync(path.join(uploads, saved.images[0].slice("/images/".length))), true);
   assert.equal(fs.existsSync(path.join(uploads, `uploads/events/${prefix}-after/${prefix}-rollback.webp`)), false);
+  await deleteEvent(saved.id, saved.revision);
+  created.pop();
+});
+
+test("a post-commit reread failure keeps the committed event image readable", async () => {
+  const source = await writeImage(`${prefix}-postcommit.webp`);
+  const events = prisma.centerEvent;
+  const originalFindUnique = events.findUnique.bind(events);
+  let injected = false;
+  events.findUnique = async (...args) => {
+    if (!injected) {
+      injected = true;
+      throw new Error("issue40 injected reread failure");
+    }
+    return originalFindUnique(...args);
+  };
+  try {
+    await assert.rejects(createEvent(eventInput(`${prefix}-postcommit`, source)), /issue40 injected reread failure/);
+  } finally {
+    events.findUnique = originalFindUnique;
+  }
+
+  const alias = await prisma.contentSlug.findUnique({ where: { kind_slug: { kind: "event", slug: `${prefix}-postcommit` } } });
+  assert.ok(alias);
+  created.push(alias.contentId);
+  const row = await prisma.centerEvent.findUnique({ where: { id: alias.contentId } });
+  const stored = `/images/uploads/events/${prefix}-postcommit/${prefix}-postcommit.webp`;
+  assert.equal(row.image, stored);
+  assert.equal(fs.existsSync(path.join(uploads, stored.slice("/images/".length))), true);
+  const response = await imageResponse(stored);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("content-type"), "image/webp");
+  assert.equal((await response.arrayBuffer()).byteLength > 0, true);
+});
+
+test("an uncertain transaction outcome keeps already committed event images", async () => {
+  const source = await writeImage(`${prefix}-uncertain.webp`);
+  const client = globalThis.centerPrisma;
+  assert.ok(client);
+  const originalTransaction = client.$transaction.bind(client);
+  client.$transaction = async (...args) => {
+    await originalTransaction(...args);
+    throw new Error("issue40 injected uncertain commit outcome");
+  };
+  try {
+    await assert.rejects(createEvent(eventInput(`${prefix}-uncertain`, source)), /issue40 injected uncertain commit outcome/);
+  } finally {
+    client.$transaction = originalTransaction;
+  }
+
+  const alias = await prisma.contentSlug.findUnique({ where: { kind_slug: { kind: "event", slug: `${prefix}-uncertain` } } });
+  assert.ok(alias);
+  created.push(alias.contentId);
+  const row = await prisma.centerEvent.findUnique({ where: { id: alias.contentId } });
+  const stored = `/images/uploads/events/${prefix}-uncertain/${prefix}-uncertain.webp`;
+  assert.equal(row.image, stored);
+  assert.equal(fs.existsSync(path.join(uploads, stored.slice("/images/".length))), true);
+});
+
+test("a confirmed database failure restores a newly moved event image", async () => {
+  const original = await writeImage(`${prefix}-conflict-original.webp`);
+  const saved = await createEvent(eventInput(`${prefix}-conflict`, original));
+  created.push(saved.id);
+  const source = await writeImage(`${prefix}-conflict-new.webp`);
+  await assert.rejects(createEvent(eventInput(`${prefix}-conflict`, source)), { code: "SLUG_CONFLICT" });
+  assert.equal(fs.existsSync(path.join(uploads, source.slice("/images/".length))), true);
+  assert.equal(fs.existsSync(path.join(uploads, `uploads/events/${prefix}-conflict/${prefix}-conflict-new.webp`)), false);
   await deleteEvent(saved.id, saved.revision);
   created.pop();
 });
