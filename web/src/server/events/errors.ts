@@ -1,4 +1,7 @@
+import { safeHttpErrorSymbol } from "@/server/http-error-contract";
+
 export class ApiError extends Error {
+  readonly [safeHttpErrorSymbol] = true;
   readonly code: string;
   readonly status: number;
 
@@ -11,5 +14,6 @@ export class ApiError extends Error {
 }
 
 export function configurationError(name: string): ApiError {
-  return new ApiError(503, "CONFIGURATION_ERROR", `${name} 설정이 필요합니다.`);
+  void name;
+  return new ApiError(503, "CONFIGURATION_ERROR", "서버 설정을 확인해 주세요.");
 }

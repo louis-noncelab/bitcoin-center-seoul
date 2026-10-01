@@ -3,6 +3,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { ApiError } from "@/server/events/errors";
+import { isSafeHttpError, safeHttpPayload } from "@/server/http-error-contract";
 
 export type ItemContext = { readonly params: Promise<{ readonly id: string }> };
 export type ImageContext = { readonly params: Promise<{ readonly path: string[] }> };
@@ -15,9 +16,9 @@ export async function route(action: () => Response | Promise<Response>): Promise
   try {
     return await action();
   } catch (error) {
-    if (error instanceof ApiError) {
+    if (isSafeHttpError(error)) {
       return NextResponse.json(
-        { error: { code: error.code, message: error.message } },
+        safeHttpPayload(error),
         { status: error.status, headers: { "cache-control": "no-store" } },
       );
     }
