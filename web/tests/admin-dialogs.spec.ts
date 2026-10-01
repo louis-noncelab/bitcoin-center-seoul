@@ -62,6 +62,7 @@ for (const theme of ["light", "dark"]) {
     }
     expect(nativeDialogs).toBe(0);
     expect(await page.evaluate(() => !window.dispatchEvent(new Event("beforeunload", { cancelable: true })))).toBe(true);
+    await page.getByRole("button", { name: "메뉴 닫기" }).click();
     await page.getByRole("button", { name: "취소", exact: true }).click();
     await dialog.getByRole("button", { name: "버리기", exact: true }).click();
     await expect(page.getByRole("heading", { name: "행사 목록", exact: true })).toBeVisible();
@@ -95,6 +96,7 @@ test("공지 초안과 삭제는 취소 및 Escape 및 바깥 클릭으로 유�
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).not.toBeVisible();
     await expect(title).toHaveValue(`${input.title} 초안`);
+    await page.getByRole("button", { name: "메뉴 닫기" }).click();
     await page.getByRole("button", { name: "취소", exact: true }).click();
     await page.getByRole("dialog").getByRole("button", { name: "버리기", exact: true }).click();
     const trigger = row.getByRole("button", { name: "삭제", exact: true });

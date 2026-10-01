@@ -3,6 +3,8 @@ import { test, expect, type Page } from "@playwright/test";
 import { Client } from "pg";
 import { reviewOrigin, reviewRuntime } from "./helpers/review-runtime";
 
+test.describe.configure({ mode: "serial" });
+
 async function login(page: Page, baseURL: string | undefined) {
   const origin = reviewOrigin(baseURL);
   const { ADMIN_PASSWORD } = await reviewRuntime();
@@ -146,19 +148,20 @@ test("deleting an address while another admin selects it returns a clear conflic
     data: { label: "경합 검토", address: "race-" + randomUUID().slice(0, 12) + "@example.com" },
   });
   expect(created.status()).toBe(201);
-  const id = (await created.json()).data.id as string;
+  const id = (await created.json()).data?.id;
+  if (typeof id !== "string") throw new Error("Created Lightning address has no ID");
   const blocker = new Client({ connectionString: databaseUrl });
   const observer = new Client({ connectionString: databaseUrl });
   await blocker.connect();
   await observer.connect();
   async function waitForBlockedQuery(table: string) {
-    for (let attempt = 0; attempt < 100; attempt += 1) {
+    const deadline = AbortSignal.timeout(10_000);
+    while (!deadline.aborted) {
       const result = await observer.query(
-        "SELECT 1 FROM pg_stat_activity WHERE pid <> pg_backend_pid() AND wait_event_type = 'Lock' AND query LIKE $1 LIMIT 1",
+        "SELECT 1 FROM pg_stat_activity WHERE datname = current_database() AND pid <> pg_backend_pid() AND wait_event_type = 'Lock' AND query LIKE $1 LIMIT 1",
         ["%" + table + "%"],
       );
       if (result.rowCount) return;
-      await new Promise((resolve) => setTimeout(resolve, 20));
     }
     throw new Error("Expected concurrent write to wait on " + table);
   }
@@ -179,15 +182,16 @@ test("deleting an address while another admin selects it returns a clear conflic
     await blocker.query("COMMIT");
     const [deleted, saved] = await Promise.all([deleting, saving]);
     expect(deleted.status()).toBe(200);
-    expect(saved.status()).toBe(400);
+    expect(saved.status()).toBe(409);
+    expect((await saved.json()).error.code).toBe("LIGHTNING_ADDRESS_NOT_FOUND");
     const current = (await (await page.request.get(origin + "/api/admin/settings")).json()).data;
     expect(current.lightningAddressId).not.toBe(id);
   } finally {
-    await blocker.query("ROLLBACK").catch(() => {});
+    await blocker.query("ROLLBACK");
     await blocker.end();
     await observer.end();
     const current = (await (await page.request.get(origin + "/api/admin/settings")).json()).data;
-    await page.request.patch(origin + "/api/admin/settings", { headers: { origin }, data: {
+    const restored = await page.request.patch(origin + "/api/admin/settings", { headers: { origin }, data: {
       expectedUpdatedAt: current.updatedAt,
       paymentProvider: initial.paymentProvider, btcPriceSource: initial.btcPriceSource,
       fixedKrwPerBtc: initial.fixedKrwPerBtc, productDisplayUnit: initial.productDisplayUnit,
@@ -195,7 +199,9 @@ test("deleting an address while another admin selects it returns a clear conflic
       lightningAddressId: initial.lightningAddressId, notificationChannel: initial.notificationChannel,
       notificationWebhook: "", notificationEmail: initial.notificationEmail,
     } });
-    await page.request.delete(origin + "/api/admin/lightning-addresses/" + id, { headers: { origin }, data: {} });
+    expect(restored.status()).toBe(200);
+    const cleanup = await page.request.delete(origin + "/api/admin/lightning-addresses/" + id, { headers: { origin }, data: {} });
+    expect([200, 404]).toContain(cleanup.status());
   }
 });
 
