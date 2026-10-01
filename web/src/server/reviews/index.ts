@@ -4,8 +4,9 @@ import { reviewRecordSchema, reviewSelectionSchema, type ReviewInput, type Revie
 import { prisma } from "@/server/db";
 import { ApiError } from "@/server/events/errors";
 import { markdownImageReferences } from "@/server/events/image-references";
-import { collectImagePaths, deleteUnusedImages, placeImagesInSlugFolder, requireExistingImages, rewriteImagePaths } from "@/server/events/images";
+import { collectImagePaths, deleteUnusedImages, placeImagesInSlugFolder, requireExistingImages, rewriteImagePaths, withImageReferenceLock } from "@/server/events/images";
 import { reserveRevision } from "@/server/events/revision";
+import { referencedImagePaths } from "@/server/events/content-images";
 
 function storedTime(value: Date): string {
   return value.toISOString().slice(0, 19).replace("T", " ");
@@ -61,18 +62,24 @@ export const publicReviews = cache(async () => {
 export async function saveReview(input: ReviewInput, id?: number, revision?: number): Promise<ReviewRecord> {
   const previous = id === undefined ? null : await getReview(id);
   const sources = [...new Set([...(input.image ? [input.image] : []), ...markdownImageReferences(input.description), ...markdownImageReferences(input.descriptionEn)])];
-  requireExistingImages(sources);
-  const placed = await placeImagesInSlugFolder("reviews", input.slug, sources);
-  const image = input.image ? placed.images[sources.indexOf(input.image)] ?? "" : "";
-  const description = rewriteImagePaths(input.description, sources, placed.images);
-  const descriptionEn = rewriteImagePaths(input.descriptionEn, sources, placed.images);
+  let placed: { readonly images: readonly string[]; restore: () => Promise<void> } = { images: sources, restore: async () => {} };
+  let image = input.image;
+  let description = input.description;
+  let descriptionEn = input.descriptionEn;
   try {
-  const savedId = await prisma.$transaction(async (tx) => {
+  const savedId = await withImageReferenceLock(async (tx) => {
     if (id !== undefined) await reserveRevision(tx, "visit_reviews", id, revision);
     if (input.slug) {
       const owner = await tx.reviewSlug.findUnique({ where: { slug: input.slug } });
       if (owner && owner.reviewId !== id) throw new ApiError(409, "SLUG_CONFLICT", "이미 사용 중인 URL 슬러그입니다.");
     }
+    requireExistingImages(sources);
+    const referenced = new Set(await referencedImagePaths(false, tx));
+    placed = await placeImagesInSlugFolder("reviews", input.slug, sources, referenced);
+    image = input.image ? placed.images[sources.indexOf(input.image)] ?? "" : "";
+    description = rewriteImagePaths(input.description, sources, placed.images);
+    descriptionEn = rewriteImagePaths(input.descriptionEn, sources, placed.images);
+    requireExistingImages(collectImagePaths(image, description, descriptionEn));
     const data = {
       kind: input.kind, url: input.url, author: input.author, date: input.date, title: input.title, titleEn: input.titleEn,
       summary: input.summary, summaryEn: input.summaryEn, slug: input.slug, description, descriptionEn,
