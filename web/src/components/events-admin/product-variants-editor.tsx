@@ -1,39 +1,11 @@
 import { Button, ChoiceControl, FormControl } from "@/components/ui/primitives";
-import type { AdminVariantRecord } from "@/lib/commerce-contract";
-
-export type VariantDraft = {
-  readonly key: string;
-  readonly id?: string;
-  readonly sku: string;
-  readonly optionLabelKo: string;
-  readonly optionLabelEn: string;
-  readonly stockOnHand: number;
-  readonly billableWeightG: number;
-  readonly active: boolean;
-  readonly reservedStock: number;
-};
-
-export const newVariant = (): VariantDraft => ({
-  key: crypto.randomUUID(), sku: "", optionLabelKo: "", optionLabelEn: "",
-  stockOnHand: 0, billableWeightG: 0, active: true, reservedStock: 0,
-});
-export const toDraft = (variant: AdminVariantRecord): VariantDraft => ({ key: variant.id, ...variant });
-
-export const toVariantInput = (variant: VariantDraft) => ({
-  ...(variant.id ? { id: variant.id } : {}),
-  sku: variant.sku.trim(),
-  optionLabelKo: variant.optionLabelKo.trim(),
-  optionLabelEn: variant.optionLabelEn.trim(),
-  stockOnHand: variant.stockOnHand,
-  billableWeightG: variant.billableWeightG,
-  active: variant.active,
-});
+import { newVariant, type VariantDraft } from "@/lib/product-variants";
 
 export function ProductVariantsEditor({ variants, onChange }: {
   readonly variants: readonly VariantDraft[];
   readonly onChange: (variants: VariantDraft[]) => void;
 }) {
-  function patchVariant(key: string, patch: Partial<VariantDraft>) {
+  function patchVariant(key: string, patch: Partial<Pick<VariantDraft, "sku" | "optionLabelKo" | "optionLabelEn" | "stockOnHand" | "billableWeightG" | "active">>) {
     onChange(variants.map((variant) => variant.key === key ? { ...variant, ...patch } : variant));
   }
   return <>

@@ -11,7 +11,8 @@ import {
   type AdminCategoryRecord, type AdminProductRecord,
 } from "@/lib/commerce-contract";
 import { CommerceAdminNav } from "./commerce-admin-nav";
-import { ProductVariantsEditor, newVariant, toDraft, toVariantInput, type VariantDraft } from "./product-variants-editor";
+import { ProductVariantsEditor } from "./product-variants-editor";
+import { newVariant, toDraft, toVariantInput, type VariantDraft } from "@/lib/product-variants";
 import { GalleryField } from "./gallery-field";
 import { LoginForm } from "./login-form";
 import { adminRequest, AdminRequestError, errorText, jsonBody } from "./request";
@@ -109,7 +110,10 @@ export function ProductsAdmin() {
       await adminRequest(`/api/admin/products${selected ? `/${selected.id}` : ""}`, z.unknown(),
         jsonBody(input, selected ? "PATCH" : "POST"));
       setEditing(false); setDirty(false); setMessage("저장했습니다."); setRevision((value) => value + 1);
-    } catch (caught) { handleError(caught); }
+    } catch (caught) {
+      handleError(caught);
+      if (caught instanceof AdminRequestError && (caught.code === "STOCK_CONFLICT" || caught.code === "STOCK_RESERVED")) setRevision((value) => value + 1);
+    }
     finally { busy.current = false; setPending(false); }
   }
 
