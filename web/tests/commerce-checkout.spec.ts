@@ -1,14 +1,18 @@
-import { expect, test, type Page } from "@playwright/test";
+import assert from "node:assert/strict";
+import { expect, test, type Page, type Route } from "@playwright/test";
 
 const configuredBase = process.env.COMMERCE_BASE_URL ?? process.env.COMMERCE_REVIEW_ORIGIN;
 if (configuredBase) test.use({ baseURL: configuredBase });
 const product = { id: "book", slug: "book", titleKo: "책", titleEn: "Book", descriptionKo: "", descriptionEn: "", imageUrl: "", contentFormat: "PLAIN", priceKind: "BTC_FIXED", priceAmount: "100", memberOnly: false, allowedFulfillments: ["PICKUP", "DOMESTIC"], variants: [{ id: "book-option", sku: "book", optionLabelKo: "단권", optionLabelEn: "Single", availableStock: 10 }] };
-const quote = { id: "q", amountSats: "100", expiresAt: "2030-01-01T00:00:00Z", snapshot: { items: [{ titleKo: "책", titleEn: "Book", optionLabelKo: "단권", optionLabelEn: "Single", quantity: 1, amountSats: "100" }], shippingAmountSats: "0", amountSats: "100", shipping: { countryCode: null, requiresPostalCode: false } } };
-async function checkout(page: Page, items = [{ variantId: "book-option", quantity: 1 }], international = false) {
+function checkoutQuote(id = "q", amountSats = "100", shippingAmountSats = "0", couponCode = "") {
+  return { id, amountSats, expiresAt: "2030-01-01T00:00:00Z", snapshot: { items: [{ titleKo: "책", titleEn: "Book", optionLabelKo: "단권", optionLabelEn: "Single", quantity: 1, amountSats: "100" }], shippingAmountSats, amountSats, shipping: { countryCode: shippingAmountSats === "0" ? null : "KR", requiresPostalCode: shippingAmountSats !== "0" }, ...(couponCode ? { coupon: { code: couponCode, nameKo: "할인", nameEn: "Discount", discountSats: "20" } } : {}) } };
+}
+const quote = checkoutQuote();
+async function checkout(page: Page, items = [{ variantId: "book-option", quantity: 1 }], international = false, quoteHandler?: (route: Route) => unknown) {
   await page.addInitScript((selection) => { localStorage.setItem("center-cart", JSON.stringify({ v: 1, items: selection })); }, items);
   await page.route("**/api/products", (route) => route.fulfill({ json: { data: [{ ...product, allowedFulfillments: international ? [...product.allowedFulfillments, "INTERNATIONAL"] : product.allowedFulfillments }] } }));
   await page.route("**/api/shipping/countries", (route) => route.fulfill({ json: { data: [{ code: "KR", requiresPostalCode: true, zone: { nameKo: "국내", nameEn: "Domestic" } }, ...(international ? [{ code: "US", requiresPostalCode: true, zone: { nameKo: "미국", nameEn: "United States" } }] : [])] } }));
-  await page.route("**/api/orders/quote", (route) => route.fulfill({ json: { data: quote } }));
+  await page.route("**/api/orders/quote", quoteHandler ?? ((route) => route.fulfill({ json: { data: quote } })));
   await page.goto("/en/checkout");
 }
 async function contact(page: Page) {
@@ -106,6 +110,66 @@ test("changed policies require a reload and fresh acceptance", async ({ page }) 
   await page.getByRole("button", { name: "Review updated policies" }).click();
   await expect(page.locator("#checkout-acceptance")).not.toBeChecked();
 });
+
+for (const code of ["QUOTE_EXPIRED", "QUOTE_STALE"] as const) {
+  test(`checkout refreshes ${code} quotes and retries once with a new request key`, async ({ page }) => {
+    const quoteBodies: unknown[] = [];
+    const orderRequests: { body: { quoteId?: string }, key: string | undefined }[] = [];
+    let recoveryStarted = false;
+    await checkout(page, undefined, false, (route) => {
+      const body = route.request().postDataJSON();
+      quoteBodies.push(body);
+      const refreshed = recoveryStarted;
+      return route.fulfill({ json: { data: checkoutQuote(refreshed ? `fresh-${code}` : `stale-${code}`, refreshed ? "160" : "130", "30", body.couponCode ?? "") } });
+    });
+    await contact(page);
+    const domesticQuote = page.waitForResponse((response) => response.url().includes("/api/orders/quote") && (response.request().postData() ?? "").includes("DOMESTIC"));
+    await page.locator('input[value="DOMESTIC"]').check();
+    await domesticQuote;
+    const couponQuote = page.waitForResponse((response) => response.url().includes("/api/orders/quote") && (response.request().postData() ?? "").includes("SAVE10"));
+    await page.locator("#coupon-code").fill("SAVE10");
+    await couponQuote;
+    await page.locator('input[name="postalCode"]').fill("03930");
+    await page.locator('input[name="region"]').fill("Seoul");
+    await page.locator('input[name="city"]').fill("Mapo");
+    await page.locator('input[name="line1"]').fill("World Cup buk-ro 123");
+    await page.locator("#checkout-acceptance").check();
+    await page.route("**/api/orders", (route) => {
+      const headers = route.request().headers();
+      orderRequests.push({ body: route.request().postDataJSON(), key: headers["idempotency-key"] });
+      if (orderRequests.length === 1) {
+        recoveryStarted = true;
+        return route.fulfill({ status: 409, json: { error: { code, message: "fixture" } } });
+      }
+      return route.fulfill({ status: 201, json: { data: { id: `created-${code.toLowerCase()}` } } });
+    });
+    await page.route(`**/api/orders/created-${code.toLowerCase()}`, (route) => route.fulfill({ status: 404, json: { error: { code: "NOT_FOUND", message: "Local test only" } } }));
+    const failedOrder = page.waitForResponse((response) => response.url().endsWith("/api/orders") && response.request().method() === "POST");
+    const originalQuoteBody = quoteBodies.at(-1);
+    const refreshedQuote = page.waitForResponse(async (response) => response.url().includes("/api/orders/quote") && (await response.json()).data.id === `fresh-${code}`);
+    await page.getByRole("button", { name: "Pay", exact: true }).click();
+    await failedOrder;
+    await refreshedQuote;
+    expect(quoteBodies.at(-1)).toEqual(originalQuoteBody);
+    await expect(page.locator(`[data-quote-recovery="${code === "QUOTE_EXPIRED" ? "expired" : "stale"}"]`)).toBeVisible();
+    await expect(page.getByText("160 sats")).toBeVisible();
+    await expect(page.locator("#checkout-acceptance")).toBeChecked({ checked: code === "QUOTE_EXPIRED" });
+    if (code === "QUOTE_STALE") await page.locator("#checkout-acceptance").check();
+    await expect(page.getByRole("button", { name: "Pay", exact: true })).toBeEnabled();
+    const completedOrder = page.waitForResponse((response) => response.url().endsWith("/api/orders") && response.request().method() === "POST" && response.status() === 201);
+    await page.getByRole("button", { name: "Pay", exact: true }).click();
+    await completedOrder;
+    await expect(page).toHaveURL(new RegExp(`/en/orders/created-${code.toLowerCase()}`));
+    expect(orderRequests).toHaveLength(2);
+    const [firstOrder, secondOrder] = orderRequests;
+    assert.ok(firstOrder && secondOrder);
+    expect(firstOrder.body.quoteId).toBe(`stale-${code}`);
+    expect(secondOrder.body.quoteId).toBe(`fresh-${code}`);
+    expect(secondOrder.key).toBeTruthy();
+    expect(secondOrder.key).not.toBe(firstOrder.key);
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem("center-cart") ?? "{}").items)).toEqual([]);
+  });
+}
 
 test("shipping fields reset after changing to pickup and back", async ({ page }) => {
   // Given typed domestic shipping fields.
