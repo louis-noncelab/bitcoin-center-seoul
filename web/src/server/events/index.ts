@@ -13,11 +13,12 @@ import {
 import { centerEventLocation } from "@/lib/event-location";
 import { prisma } from "@/server/db";
 import { ApiError } from "@/server/events/errors";
-import { collectImagePaths, deleteUnusedImages, placeImagesInSlugFolder, requireExistingImages, rewriteImagePaths } from "@/server/events/images";
+import { collectImagePaths, deleteUnusedImages, placeImagesInSlugFolder, requireExistingImages, rewriteImagePaths, withImageReferenceLock } from "@/server/events/images";
 import { reserveRevision } from "@/server/events/revision";
 import { storedTagsSchema } from "@/server/events/tags";
 
 import { syncEventTicketInTransaction, retireEventTicketInTransaction } from "./tickets";
+import { referencedImagePaths } from "./content-images";
 
 type ContentKind = "event" | "highlight";
 type Visibility = { readonly includeInactive?: boolean };
@@ -184,12 +185,15 @@ export async function getHighlight(id: number, options: Visibility = {}): Promis
 }
 
 export async function createEvent(input: EventInput): Promise<EventRecord> {
-  requireExistingImages(input.images);
-  const placed = await placeImagesInSlugFolder("events", input.slug, input.images);
-  const description = rewriteImagePaths(input.description, input.images, placed.images);
-  const descriptionEn = rewriteImagePaths(input.descriptionEn, input.images, placed.images);
+  let placed: { readonly images: readonly string[]; restore: () => Promise<void> } = { images: input.images, restore: async () => {} };
   try {
-  const id = await prisma.$transaction(async (tx) => {
+  const id = await withImageReferenceLock(async (tx) => {
+    requireExistingImages(collectImagePaths(input.images, input.description, input.descriptionEn));
+    const referenced = new Set(await referencedImagePaths(false, tx));
+    placed = await placeImagesInSlugFolder("events", input.slug, input.images, referenced);
+    const description = rewriteImagePaths(input.description, input.images, placed.images);
+    const descriptionEn = rewriteImagePaths(input.descriptionEn, input.images, placed.images);
+    requireExistingImages(collectImagePaths(placed.images, description, descriptionEn));
     const image = placed.images[0] ?? "";
     const created = await tx.centerEvent.create({
       data: {
@@ -227,16 +231,21 @@ export async function setEventRegistration(id: number, registrationClosed: boole
 }
 
 export async function updateEvent(id: number, input: EventInput, revision: number): Promise<EventRecord> {
-  requireExistingImages(input.images);
   const previous = await getEvent(id);
-  const placed = await placeImagesInSlugFolder("events", input.slug, input.images);
-  const description = rewriteImagePaths(input.description, input.images, placed.images);
-  const descriptionEn = rewriteImagePaths(input.descriptionEn, input.images, placed.images);
+  let placed: { readonly images: readonly string[]; restore: () => Promise<void> } = { images: input.images, restore: async () => {} };
+  let description = input.description;
+  let descriptionEn = input.descriptionEn;
   try {
-  await prisma.$transaction(async (tx) => {
+  await withImageReferenceLock(async (tx) => {
     await reserveRevision(tx, "events", id, revision);
     const current = await tx.centerEvent.findUnique({ where: { id } });
     if (!current) throw new ApiError(404, "NOT_FOUND", "행사를 찾을 수 없습니다.");
+    requireExistingImages(collectImagePaths(input.images, input.description, input.descriptionEn));
+    const referenced = new Set(await referencedImagePaths(false, tx));
+    placed = await placeImagesInSlugFolder("events", input.slug, input.images, referenced);
+    description = rewriteImagePaths(input.description, input.images, placed.images);
+    descriptionEn = rewriteImagePaths(input.descriptionEn, input.images, placed.images);
+    requireExistingImages(collectImagePaths(placed.images, description, descriptionEn));
     const updated = await tx.centerEvent.update({
       where: { id },
       data: {
@@ -286,12 +295,15 @@ export async function deleteEvent(id: number, revision: number): Promise<void> {
 }
 
 export async function createHighlight(input: HighlightInput): Promise<HighlightRecord> {
-  requireExistingImages(input.images);
-  const placed = await placeImagesInSlugFolder("highlights", input.slug, input.images);
-  const description = rewriteImagePaths(input.description, input.images, placed.images);
-  const descriptionEn = rewriteImagePaths(input.descriptionEn, input.images, placed.images);
+  let placed: { readonly images: readonly string[]; restore: () => Promise<void> } = { images: input.images, restore: async () => {} };
   try {
-  const id = await prisma.$transaction(async (tx) => {
+  const id = await withImageReferenceLock(async (tx) => {
+    requireExistingImages(collectImagePaths(input.images, input.description, input.descriptionEn));
+    const referenced = new Set(await referencedImagePaths(false, tx));
+    placed = await placeImagesInSlugFolder("highlights", input.slug, input.images, referenced);
+    const description = rewriteImagePaths(input.description, input.images, placed.images);
+    const descriptionEn = rewriteImagePaths(input.descriptionEn, input.images, placed.images);
+    requireExistingImages(collectImagePaths(placed.images, description, descriptionEn));
     const created = await tx.centerHighlight.create({
       data: {
         title: input.title, titleEn: input.titleEn, meta: input.meta, metaEn: input.metaEn, category: input.category, categoryEn: input.categoryEn,
@@ -314,14 +326,19 @@ export async function createHighlight(input: HighlightInput): Promise<HighlightR
 }
 
 export async function updateHighlight(id: number, input: HighlightInput, revision: number): Promise<HighlightRecord> {
-  requireExistingImages(input.images);
   const previous = await getHighlight(id, { includeInactive: true });
-  const placed = await placeImagesInSlugFolder("highlights", input.slug, input.images);
-  const description = rewriteImagePaths(input.description, input.images, placed.images);
-  const descriptionEn = rewriteImagePaths(input.descriptionEn, input.images, placed.images);
+  let placed: { readonly images: readonly string[]; restore: () => Promise<void> } = { images: input.images, restore: async () => {} };
+  let description = input.description;
+  let descriptionEn = input.descriptionEn;
   try {
-  await prisma.$transaction(async (tx) => {
+  await withImageReferenceLock(async (tx) => {
     await reserveRevision(tx, "highlights", id, revision);
+    requireExistingImages(collectImagePaths(input.images, input.description, input.descriptionEn));
+    const referenced = new Set(await referencedImagePaths(false, tx));
+    placed = await placeImagesInSlugFolder("highlights", input.slug, input.images, referenced);
+    description = rewriteImagePaths(input.description, input.images, placed.images);
+    descriptionEn = rewriteImagePaths(input.descriptionEn, input.images, placed.images);
+    requireExistingImages(collectImagePaths(placed.images, description, descriptionEn));
     await tx.centerHighlight.update({
       where: { id },
       data: {

@@ -1,19 +1,20 @@
 import "server-only";
+import type { Prisma } from "@/generated/prisma/client";
 import { contentImagesSchema, imagePathSchema } from "@/lib/events-contract";
 import { prisma } from "@/server/db";
 import { markdownImageReferences } from "@/server/events/image-references";
 
-export async function referencedImagePaths(publicOnly = false): Promise<readonly string[]> {
+export async function referencedImagePaths(publicOnly = false, db: Prisma.TransactionClient = prisma): Promise<readonly string[]> {
   const paths = new Set<string>();
-  const events = await prisma.centerEvent.findMany({ select: { id: true, image: true, description: true, descriptionEn: true } });
-  const highlights = await prisma.centerHighlight.findMany({
+  const events = await db.centerEvent.findMany({ select: { id: true, image: true, description: true, descriptionEn: true } });
+  const highlights = await db.centerHighlight.findMany({
     where: publicOnly ? { isActive: 1 } : {},
     select: { id: true, image: true, description: true, descriptionEn: true },
   });
-  const notices = await prisma.notice.findMany({ where: publicOnly ? { isActive: 1 } : {}, select: { description: true, descriptionEn: true } });
-  const collection = await prisma.collectionItem.findMany({ where: publicOnly ? { isActive: 1 } : {}, select: { images: true, description: true, descriptionEn: true } });
-  const reviews = await prisma.visitReview.findMany({ where: publicOnly ? { isActive: 1 } : {}, select: { image: true, description: true, descriptionEn: true } });
-  const products = await prisma.product.findMany({ select: { imageUrl: true, images: true, descriptionKo: true, descriptionEn: true, contentFormat: true, published: true } });
+  const notices = await db.notice.findMany({ where: publicOnly ? { isActive: 1 } : {}, select: { description: true, descriptionEn: true } });
+  const collection = await db.collectionItem.findMany({ where: publicOnly ? { isActive: 1 } : {}, select: { images: true, description: true, descriptionEn: true } });
+  const reviews = await db.visitReview.findMany({ where: publicOnly ? { isActive: 1 } : {}, select: { image: true, description: true, descriptionEn: true } });
+  const products = await db.product.findMany({ select: { imageUrl: true, images: true, descriptionKo: true, descriptionEn: true, contentFormat: true, published: true } });
   for (const row of [...events, ...highlights, ...reviews]) if (row.image) paths.add(row.image);
   for (const product of products) {
     if (publicOnly && !product.published) continue;
@@ -35,7 +36,7 @@ export async function referencedImagePaths(publicOnly = false): Promise<readonly
   }
   const eventIds = new Set(events.map((row) => row.id));
   const highlightIds = new Set(highlights.map((row) => row.id));
-  const images = await prisma.contentImage.findMany();
+  const images = await db.contentImage.findMany();
   for (const image of images) {
     if (!publicOnly || (image.kind === "event" && eventIds.has(image.contentId)) || (image.kind === "highlight" && highlightIds.has(image.contentId))) {
       if (imagePathSchema.safeParse(image.path).success) paths.add(image.path);

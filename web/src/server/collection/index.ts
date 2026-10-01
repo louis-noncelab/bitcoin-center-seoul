@@ -3,8 +3,9 @@ import { collectionRecordSchema, type CollectionInput, type CollectionKind, type
 import { contentSlugSchema } from "@/lib/events-contract";
 import { prisma } from "@/server/db";
 import { ApiError } from "@/server/events/errors";
-import { collectImagePaths, deleteUnusedImages, placeImagesInSlugFolder, requireExistingImages, rewriteImagePaths } from "@/server/events/images";
+import { collectImagePaths, deleteUnusedImages, placeImagesInSlugFolder, requireExistingImages, rewriteImagePaths, withImageReferenceLock } from "@/server/events/images";
 import { reserveRevision } from "@/server/events/revision";
+import { referencedImagePaths } from "@/server/events/content-images";
 
 function storedTime(value: Date): string {
   return value.toISOString().slice(0, 19).replace("T", " ");
@@ -64,15 +65,20 @@ async function assertSlugAvailable(slug: string, id?: number): Promise<void> {
 }
 
 export async function saveCollectionItem(input: CollectionInput, id?: number, revision?: number): Promise<CollectionRecord> {
-  requireExistingImages(input.images);
   const previous = id === undefined ? null : await getCollectionItem(id, true);
-  const placed = await placeImagesInSlugFolder("collection", input.slug, input.images);
-  const description = rewriteImagePaths(input.description, input.images, placed.images);
-  const descriptionEn = rewriteImagePaths(input.descriptionEn, input.images, placed.images);
+  let placed: { readonly images: readonly string[]; restore: () => Promise<void> } = { images: input.images, restore: async () => {} };
+  let description = input.description;
+  let descriptionEn = input.descriptionEn;
   try {
-  const savedId = await prisma.$transaction(async (tx) => {
+  const savedId = await withImageReferenceLock(async (tx) => {
     if (id !== undefined) await reserveRevision(tx, "collection_items", id, revision);
     await assertSlugAvailable(input.slug, id);
+    requireExistingImages(collectImagePaths(input.images, input.description, input.descriptionEn));
+    const referenced = new Set(await referencedImagePaths(false, tx));
+    placed = await placeImagesInSlugFolder("collection", input.slug, input.images, referenced);
+    description = rewriteImagePaths(input.description, input.images, placed.images);
+    descriptionEn = rewriteImagePaths(input.descriptionEn, input.images, placed.images);
+    requireExistingImages(collectImagePaths(placed.images, description, descriptionEn));
     const data = {
       kind: input.kind, slug: input.slug, purchaseUrl: "", soldOut: false, title: input.title, titleEn: input.titleEn,
       creator: input.creator, creatorEn: input.creatorEn, description, descriptionEn,
