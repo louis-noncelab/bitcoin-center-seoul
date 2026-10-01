@@ -1,4 +1,4 @@
-# Dependency security review — 2026-09-23
+# Dependency security review: 2026-09-23
 
 The web mail transport uses Nodemailer 10.0.10, pinned with its lockfile. This
 replaces the vulnerable 7.0.13 line. Node 24 satisfies its Node >=20 requirement.
