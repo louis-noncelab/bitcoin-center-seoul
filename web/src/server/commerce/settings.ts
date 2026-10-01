@@ -88,8 +88,9 @@ export async function adminSettings() {
     prisma.siteSetting.findUnique({ where: { id: "site" }, include: { lightningAddress: true } }),
     prisma.lightningAddress.findMany({ orderBy: { createdAt: "asc" }, select: { id: true, label: true, address: true, allowedOrigins: true } }),
   ]);
-  const configured = { ...configuredPaymentProviders() };
-  if (getServerConfig().paymentMode === "live" && lightningAddresses.length > 0) configured.LNURL = true;
+  const config = getServerConfig();
+  const configured = { ...configuredPaymentProviders(config) };
+  if (config.paymentMode === "live" && lightningAddresses.length > 0) configured.LNURL = true;
   return {
     paymentProvider: row?.paymentProvider ?? "ZAPRITE",
     btcPriceSource: row?.btcPriceSource ?? "UPBIT",
@@ -99,6 +100,7 @@ export async function adminSettings() {
     maintenanceMode: row?.maintenanceMode ?? false,
     lightningAddressId: row?.lightningAddressId ?? null,
     lightningAddresses,
+    defaultLightningAddressConfigured: config.paymentMode === "review" || Boolean(config.lnurl),
     notificationChannel: row?.notificationChannel ?? "GENERIC",
     notificationWebhookRegistered: Boolean(row?.notificationWebhook),
     notificationEmail: row?.notificationEmail ?? "hello@noncelab.com",
@@ -108,11 +110,8 @@ export async function adminSettings() {
 
 export async function updateCommerceSettings(input: CommerceSettingsInput, actorId: string) {
   // Refuse to select a provider the running configuration cannot actually reach.
-  await assertProviderConfigured(input.paymentProvider);
-  if (input.lightningAddressId) {
-    const found = await prisma.lightningAddress.findUnique({ where: { id: input.lightningAddressId }, select: { id: true } });
-    if (!found) throw new HttpError(400, "LIGHTNING_ADDRESS_NOT_FOUND", "선택한 라이트닝 주소를 찾을 수 없습니다.");
-  }
+  const config = getServerConfig();
+  await assertProviderConfigured(input.paymentProvider, config);
   const data = {
     paymentProvider: input.paymentProvider,
     btcPriceSource: input.btcPriceSource,
@@ -127,7 +126,17 @@ export async function updateCommerceSettings(input: CommerceSettingsInput, actor
     ...(input.notificationWebhook ? { notificationWebhook: encryptWebhookUrl(input.notificationWebhook) } : {}),
   };
   await prisma.$transaction(async (tx) => {
-    await tx.siteSetting.upsert({ where: { id: "site" }, update: data, create: { id: "site", ...data } });
+    await tx.siteSetting.createMany({ data: [{ id: "site" }], skipDuplicates: true });
+    const settings = await tx.$queryRaw<Array<{ lightningAddressId: string | null }>>`SELECT "lightningAddressId" FROM "SiteSetting" WHERE id = 'site' FOR UPDATE`;
+    const selectedAddressId = input.lightningAddressId === undefined ? settings[0]?.lightningAddressId : input.lightningAddressId;
+    if (input.paymentProvider === "LNURL" && config.paymentMode === "live" && !config.lnurl && !selectedAddressId) {
+      throw new HttpError(400, "LIGHTNING_ADDRESS_REQUIRED", "라이트닝 주소를 등록하고 결제 수신 주소로 선택해 주세요.");
+    }
+    if (input.lightningAddressId) {
+      const found = await tx.lightningAddress.findUnique({ where: { id: input.lightningAddressId }, select: { id: true } });
+      if (!found) throw new HttpError(400, "LIGHTNING_ADDRESS_NOT_FOUND", "선택한 라이트닝 주소를 찾을 수 없습니다.");
+    }
+    await tx.siteSetting.update({ where: { id: "site" }, data });
     await tx.auditLog.create({ data: {
       actorId, action: "settings.updated", targetType: "SiteSetting", targetId: "site",
       summary: { paymentProvider: data.paymentProvider, btcPriceSource: data.btcPriceSource },

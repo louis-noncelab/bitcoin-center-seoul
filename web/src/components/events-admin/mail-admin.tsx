@@ -59,10 +59,10 @@ const kindLabel: Readonly<Record<string, string>> = {
   "order.expired": "결제 기한 만료",
   "order.cancelled": "주문 취소",
   "order.review": "결제 검토",
-  "order.fulfillment": "수령·배송",
+  "order.fulfillment": "수령 및 배송",
   "meetup.notice": "밋업 안내",
-  "operator.created": "관리자 알림 · 접수",
-  "operator.paid": "관리자 알림 · 결제",
+  "operator.created": "관리자 알림, 접수",
+  "operator.paid": "관리자 알림, 결제",
 };
 
 const statusLabel: Readonly<Record<Letter["status"], string>> = {
@@ -190,13 +190,13 @@ export function MailAdmin() {
   return <div className="events-admin-workspace">
     {dialog}
     <CommerceAdminNav current="/admin/mail" disabled={pending} />
-    <p className="muted">주문·밋업 메일과 관리자 알림이 메일 서버에 접수됐는지 확인합니다. 서버 접수는 우리 메일 서버가 메시지를 받았다는 뜻입니다. 상대 받은편지함까지의 전달은 그 서버가 이어서 처리합니다.</p>
+    <p className="muted">주문 및 밋업 메일과 관리자 알림이 메일 서버에 접수됐는지 확인합니다. 서버 접수는 우리 메일 서버가 메시지를 받았다는 뜻입니다. 상대 받은편지함까지의 전달은 그 서버가 이어서 처리합니다.</p>
     <form className="events-form" onSubmit={(event) => void broadcast(event)}>
       <h2>밋업 안내 메일</h2>
       <p className="muted">결제를 마친 예약만 받습니다. 같은 주소가 여러 장이면 한 통만 갑니다. 온라인 밋업이면 참여 링크가 본문 아래에 붙습니다.</p>
       <label>밋업<FormControl><MenuSelect aria-label="밋업" value={eventId} onChange={(event) => setEventId(event.target.value)} required disabled={pending || meetups.length === 0}>
         <option value="">밋업 선택</option>
-        {meetups.map((meetup) => <option key={meetup.id} value={String(meetup.id)}>{[meetup.date, meetup.title].filter(Boolean).join(" ")} · {meetup.recipients}명{meetup.online ? " · 온라인" : ""}</option>)}
+        {meetups.map((meetup) => <option key={meetup.id} value={String(meetup.id)}>{[meetup.date, meetup.title].filter(Boolean).join(" ")}, {meetup.recipients}명{meetup.online ? ", 온라인" : ""}</option>)}
       </MenuSelect></FormControl></label>
       <label>제목<FormControl><input value={subject} onChange={(event) => setSubject(event.target.value)} required maxLength={120} disabled={pending} /></FormControl></label>
       <label>내용<FormControl><textarea value={message} onChange={(event) => setMessage(event.target.value)} required rows={6} maxLength={4000} disabled={pending} /></FormControl></label>
@@ -208,7 +208,7 @@ export function MailAdmin() {
     {!report && !error && <p role="status">불러오는 중…</p>}
     {report && <>
       <p role="status">{report.summary}</p>
-      <p className="muted">전체 {report.counts.SENT + report.counts.FAILED + report.counts.PENDING + report.counts.PROCESSING + report.counts.CAPTURED}통 · 서버 접수 {report.counts.SENT} · 실패 {report.counts.FAILED} · 대기 {report.counts.PENDING} · 보내는 중 {report.counts.PROCESSING} · 기록 {report.counts.CAPTURED}{report.overduePending > 0 ? ` · 지금 보낼 차례 ${report.overduePending}` : ""}</p>
+      <p className="muted">전체 {report.counts.SENT + report.counts.FAILED + report.counts.PENDING + report.counts.PROCESSING + report.counts.CAPTURED}통, 서버 접수 {report.counts.SENT}, 실패 {report.counts.FAILED}, 대기 {report.counts.PENDING}, 보내는 중 {report.counts.PROCESSING}, 기록 {report.counts.CAPTURED}{report.overduePending > 0 ? `, 지금 보낼 차례 ${report.overduePending}` : ""}</p>
       <div className="button-row">
         <Button variant="secondary" disabled={pending} onClick={() => void load()}>상태 다시 확인</Button>
         <Button disabled={pending || !smtp || (report.overduePending === 0 && report.staleProcessing === 0)} onClick={() => void act({ action: "drain" })}>대기 메일 지금 보내기</Button>
@@ -218,7 +218,7 @@ export function MailAdmin() {
         {rows.map((row) => <li key={row.id}>
           <div>
             <h3>{row.subject ?? kindLabel[row.kind] ?? row.kind}</h3>
-            <p className="muted">{kindLabel[row.kind] ?? row.kind} · {statusLabel[row.status]}{row.stale ? " · 멈춤" : ""} · {row.recipient ?? "받는 사람을 열 수 없음"} · {row.sentAt ? `접수 ${when(row.sentAt)}` : when(row.createdAt)}{row.attempts > 0 ? ` · 시도 ${row.attempts}회` : ""}{row.orderId ? ` · 주문 ${row.orderId}` : ""}</p>
+            <p className="muted">{kindLabel[row.kind] ?? row.kind}, {statusLabel[row.status]}{row.stale ? ", 멈춤" : ""}, {row.recipient ?? "받는 사람을 열 수 없음"}, {row.sentAt ? `접수 ${when(row.sentAt)}` : when(row.createdAt)}{row.attempts > 0 ? `, 시도 ${row.attempts}회` : ""}{row.orderId ? `, 주문 ${row.orderId}` : ""}</p>
             {row.lastError && <p className="muted">{row.lastError}</p>}
             {!row.readable && <p className="muted">이 메일의 내용이나 받는 사람을 열 수 없습니다.</p>}
           </div>

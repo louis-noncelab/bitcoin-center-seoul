@@ -75,7 +75,7 @@ export function ShopCatalog({ products, locale }: {
           const title = ko ? product.titleKo : product.titleEn;
           const summary = ko ? product.descriptionKo : product.descriptionEn;
           const soldOut = product.variants.every((variant) => variant.availableStock <= 0);
-          const meta = [product.category ? (ko ? product.category.nameKo : product.category.nameEn) : "", price(product, locale, unit, rate)].filter(Boolean).join(" · ");
+          const meta = [product.category ? (ko ? product.category.nameKo : product.category.nameEn) : "", price(product, locale, unit, rate)].filter(Boolean).join(", ");
           return <article className="review-card highlight-card collection-card" key={product.id}>
             <ContentLink href={`/shop/${product.slug}`} locale={locale} className="review-card-link highlight-card-link">
               {product.imageUrl && <span className="review-card-image highlight-card-photo collection-card-photo">

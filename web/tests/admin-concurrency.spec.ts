@@ -25,7 +25,7 @@ for (const kind of ["events", "highlights", "notices", "book", "artwork", "board
       expect(created.status()).toBe(201);
       id = (await created.json()).data.id;
       const pages = await Promise.all([a.newPage(), b.newPage()]);
-      const titleLabel = kind === "events" || kind === "highlights" ? "제목 · 한국어" : "제목";
+      const titleLabel = kind === "events" || kind === "highlights" ? "한국어 제목" : "제목";
       for (const page of pages) {
         page.on("pageerror", error => errors.push(error.message));
         await page.goto(endpoint === "events" || endpoint === "highlights" ? "/ko/admin" : `/ko/admin/${endpoint}`);

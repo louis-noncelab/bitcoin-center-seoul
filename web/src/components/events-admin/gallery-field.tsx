@@ -38,7 +38,7 @@ export function GalleryField({ locale, images, portrait = false, onChange, onPen
   return (
     <fieldset className={`events-gallery-field${portrait ? " events-gallery-field-portrait" : ""}`} disabled={pending}>
       <legend>{ko ? "사진" : "Images"}</legend>
-      <p className="muted">{ko ? "첫 번째 사진이 대표 이미지입니다. 최대 12장 · 각 10MB · 한 번에 30MB" : "The first image is the cover. Up to 12 images · 10MB each · 30MB per upload"}</p>
+      <p className="muted">{ko ? "첫 번째 사진이 대표 이미지입니다. 최대 12장, 각 10MB, 한 번에 30MB" : "The first image is the cover. Up to 12 images, 10MB each, 30MB per upload"}</p>
       {portrait && <p className="muted">{ko ? "밋업 포스터 권장 크기: 1080×1440px (세로형)" : "Recommended meetup poster: 1080×1440px (portrait)"}</p>}
       <div className="events-upload">
         <Button variant="secondary" disabled={pending || images.length >= 12} onClick={() => picker.current?.click()}><ImagePlus className="icon" aria-hidden="true" />{ko ? "사진 여러 장 선택" : "Choose images"}</Button>

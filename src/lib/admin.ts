@@ -47,7 +47,7 @@ export interface UploadedImage {
   bytes: number;
 }
 
-// 파일을 서버에 올리고 저장된 경로를 받는다. 리사이즈·webp 변환은 서버가 한다.
+// 파일을 서버에 올리고 저장된 경로를 받는다. 리사이즈와 webp 변환은 서버가 한다.
 export async function uploadImage(file: File): Promise<UploadedImage> {
   const form = new FormData();
   form.append('file', file);

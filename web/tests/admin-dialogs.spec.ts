@@ -13,7 +13,7 @@ async function authenticate(page: Page, origin: string) {
 }
 
 for (const theme of ["light", "dark"]) {
-  test(`작성 취소·분류 변경·로그아웃·관리 이동을 취소하면 초안과 포커스를 보존한다 · ${theme}`, async ({ page, baseURL }) => {
+  test(`작성 취소 및 분류 변경 및 로그아웃 및 관리 이동을 취소하면 초안과 포커스를 보존한다, ${theme}`, async ({ page, baseURL }) => {
     // Given an authenticated administrator with an unsaved draft.
     await authenticate(page, baseURL ?? "");
     await page.addInitScript((value) => localStorage.setItem("bcs-theme", value), theme);
@@ -22,17 +22,20 @@ for (const theme of ["light", "dark"]) {
     page.on("dialog", (dialog) => { nativeDialogs += 1; void dialog.dismiss(); });
     await page.goto("/ko/admin");
     await page.getByRole("button", { name: "새 항목 등록", exact: true }).click();
-    const title = page.getByLabel("제목 · 한국어", { exact: true });
+    const title = page.getByLabel("한국어 제목", { exact: true });
     await title.fill("보존해야 할 초안");
     const dialog = page.getByRole("dialog", { name: "변경사항을 버릴까요?", exact: true });
     const actions = [
       { trigger: page.getByRole("button", { name: "취소", exact: true }), dismissal: "button" },
       { trigger: page.getByRole("button", { name: "하이라이트", exact: true }), dismissal: "escape" },
-      { trigger: page.getByRole("button", { name: "로그아웃", exact: true }), dismissal: "outside" },
-      { trigger: page.getByRole("link", { name: "공지사항", exact: true }), dismissal: "button" },
+      { trigger: page.getByRole("button", { name: "로그아웃", exact: true }), dismissal: "outside", navigation: true },
+      { trigger: page.getByRole("link", { name: "공지사항", exact: true }), dismissal: "button", navigation: true },
     ];
     // When each potentially destructive action is dismissed instead of confirmed.
     for (const action of actions) {
+      if (action.navigation && await page.getByRole("button", { name: "메뉴 열기" }).isVisible()) {
+        await page.getByRole("button", { name: "메뉴 열기" }).click();
+      }
       await action.trigger.click();
       await expect(dialog).toBeVisible();
       const cancel = dialog.getByRole("button", { name: "취소", exact: true });
@@ -66,7 +69,7 @@ for (const theme of ["light", "dark"]) {
   });
 }
 
-test("공지 초안과 삭제는 취소·Escape·바깥 클릭으로 유지되고 명시적 삭제만 한 번 전송한다", async ({ page, baseURL }) => {
+test("공지 초안과 삭제는 취소 및 Escape 및 바깥 클릭으로 유지되고 명시적 삭제만 한 번 전송한다", async ({ page, baseURL }) => {
   // Given one private review notice and its authenticated administrator.
   const origin = baseURL ?? "";
   await authenticate(page, origin);
@@ -84,7 +87,8 @@ test("공지 초안과 삭제는 취소·Escape·바깥 클릭으로 유지되�
     const title = page.getByLabel("제목", { exact: true });
     await title.fill(`${input.title} 초안`);
     // When leaving a notice draft is dismissed, its text is retained.
-    await page.getByRole("link", { name: "행사·하이라이트 관리", exact: true }).click();
+    await page.getByRole("button", { name: "메뉴 열기" }).click();
+    await page.getByRole("link", { name: "행사와 하이라이트", exact: true }).click();
     await page.getByRole("dialog").getByRole("button", { name: "취소", exact: true }).click();
     await expect(title).toHaveValue(`${input.title} 초안`);
     await page.getByRole("button", { name: "로그아웃", exact: true }).click();

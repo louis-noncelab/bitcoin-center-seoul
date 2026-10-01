@@ -8,7 +8,7 @@ import { reconcilePayment } from "./index";
 import { metadataSchema } from "./types";
 
 // Verified against https://api.zaprite.com/openapi.json (webhooks.order.change) on 2026-09-21:
-// the delivery carries nothing but identifiers, and Zaprite publishes no signature scheme —
+// the delivery carries nothing but identifiers, and Zaprite publishes no signature scheme -
 // no signing secret is returned by POST /v1/webhooks and no operation declares a header
 // parameter. Authenticity therefore rests on an unguessable secret in the delivery path, and the
 // order state is always re-read from Zaprite rather than trusted from the body.

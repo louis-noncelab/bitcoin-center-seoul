@@ -32,22 +32,27 @@ export function EditorFields({ locale, kind, record, onPending, onDirty, onExpir
   const date = (value: string | undefined) => (value ?? "").replaceAll(".", "-");
   return (
     <>
+      <section className="admin-editor-section">
+        <h3>기본 정보</h3>
       <div className="events-field-grid">
-        {input("title", ko ? "제목 · 한국어" : "Title · Korean", record?.title, "text", true)}
-        {input("titleEn", ko ? "제목 · 영어" : "Title · English", record?.titleEn, "text", true)}
+        {input("title", ko ? "한국어 제목" : "Korean title", record?.title, "text", true)}
+        {input("titleEn", ko ? "영어 제목" : "English title", record?.titleEn, "text", true)}
       </div>
       <label>
         URL 슬러그
         <FormControl><input name="slug" aria-label="URL 슬러그" defaultValue={record?.slug ?? ""} required={!record} maxLength={100} pattern="(?=.*[a-z])[a-z0-9]+(-[a-z0-9]+)*" placeholder="bitcoin-developer-meetup" autoCapitalize="none" spellCheck={false} aria-describedby="slug-help" /></FormControl>
-        <span id="slug-help" className="muted">/{locale}/{kind === "events" ? "programs" : "journal"}/ 뒤에 붙는 주소입니다. 영문 소문자·숫자·하이픈(-)을 사용해 주세요. 주소를 바꿔도 이전 링크는 새 주소로 연결됩니다.</span>
+        <span id="slug-help" className="muted">/{locale}/{kind === "events" ? "programs" : "journal"}/ 뒤에 붙는 주소입니다. 영문 소문자, 숫자, 하이픈(-)을 사용해 주세요. 주소를 바꿔도 이전 링크는 새 주소로 연결됩니다.</span>
       </label>
       <TagsField tags={record?.tags ?? []} />
+      </section>
+      <section className="admin-editor-section">
+        <h3>{kind === "events" ? "일정과 장소" : "날짜와 표시 정보"}</h3>
       {kind === "events" ? (
         <div className="events-field-grid">
           {input("date", ko ? "행사 날짜" : "Event date", date(event?.date), "date", true)}
           <label>{ko ? "시간" : "Time"}
             <FormControl><input name="time" defaultValue={event?.time ?? ""} maxLength={100} placeholder="14:00 ~ 16:00" aria-describedby="event-time-help" /></FormControl>
-            <span id="event-time-help" className="muted">{ko ? "한국 시간의 시작·종료 시각을 입력해 주세요. 센터 행사만 ‘밋업 중’ 표시에 반영됩니다. 예: 19:00 ~ 21:00. 종료가 시작보다 이르면 다음 날 종료로 계산합니다." : "Enter start and end times in Korea time, e.g. 19:00 ~ 21:00. Only center events affect the live status. An earlier end time means the following day."}</span>
+            <span id="event-time-help" className="muted">{ko ? "한국 시간의 시작 및 종료 시각을 입력해 주세요. 센터 행사만 ‘밋업 중’ 표시에 반영됩니다. 예: 19:00 ~ 21:00. 종료가 시작보다 이르면 다음 날 종료로 계산합니다." : "Enter start and end times in Korea time, e.g. 19:00 ~ 21:00. Only center events affect the live status. An earlier end time means the following day."}</span>
           </label>
           <EventVenueFields event={event} />
         </div>
@@ -58,21 +63,23 @@ export function EditorFields({ locale, kind, record, onPending, onDirty, onExpir
             {input("date", ko ? "날짜" : "Date", date(highlight?.date), "date")}
             {input("startDate", ko ? "시작일" : "Start date", date(highlight?.startDate), "date")}
             {input("endDate", ko ? "종료일" : "End date", date(highlight?.endDate), "date")}
-            {input("meta", ko ? "짧은 안내 · 한국어" : "Short note · Korean", highlight?.meta)}
-            {input("metaEn", ko ? "짧은 안내 · 영어" : "Short note · English", highlight?.metaEn)}
-            {input("category", ko ? "분류 · 한국어" : "Category · Korean", highlight?.category ?? "행사")}
-            {input("categoryEn", ko ? "분류 · 영어" : "Category · English", highlight?.categoryEn ?? "Event")}
-            {input("host", ko ? "주최 · 한국어" : "Host · Korean", highlight?.host ?? "비트코인 센터 서울")}
-            {input("hostEn", ko ? "주최 · 영어" : "Host · English", highlight?.hostEn ?? "Bitcoin Center Seoul")}
+            {input("meta", ko ? "한국어 안내 요약" : "Korean short note", highlight?.meta)}
+            {input("metaEn", ko ? "영어 안내 요약" : "English short note", highlight?.metaEn)}
+            {input("category", ko ? "한국어 분류" : "Korean category", highlight?.category ?? "행사")}
+            {input("categoryEn", ko ? "영어 분류" : "English category", highlight?.categoryEn ?? "Event")}
+            {input("host", ko ? "한국어 주최" : "Korean host", highlight?.host ?? "비트코인 센터 서울")}
+            {input("hostEn", ko ? "영어 주최" : "English host", highlight?.hostEn ?? "Bitcoin Center Seoul")}
             <input name="sort_order" type="hidden" value={highlight?.sort_order ?? 0} />
           </div>
           <label className="events-checkbox"><ChoiceControl name="is_active" type="checkbox" defaultChecked={highlight ? Boolean(highlight.is_active) : true} />{ko ? "공개" : "Published"}</label>
           <input name="icon" type="hidden" value={highlight?.icon ?? "calendar"} />
         </>
       )}
-      {kind === "events" && <label className="events-checkbox"><ChoiceControl role="switch" name="registrationClosed" type="checkbox" defaultChecked={event?.registrationClosed ?? false} />참여 마감<span className="muted">켜면 참여 링크 대신 ‘참여 마감’이 표시됩니다. 저장하면 반영됩니다.</span></label>}
+      </section>
       {kind === "events" ? (
-        <>
+        <section className="admin-editor-section">
+          <h3>참가 신청과 결제</h3>
+          <label className="events-checkbox"><ChoiceControl role="switch" name="registrationClosed" type="checkbox" defaultChecked={event?.registrationClosed ?? false} />참여 마감<span className="muted">켜면 참여 링크 대신 ‘참여 마감’이 표시됩니다. 저장하면 반영됩니다.</span></label>
           <label className="events-checkbox"><ChoiceControl role="switch" name="externalPayment" type="checkbox" checked={externalPayment} onChange={(change) => { setExternalPayment(change.currentTarget.checked); onDirty(); }} />외부 결제 링크<span className="muted">켜면 참여하기가 아래 주소를 새 창으로 엽니다. 끄면 참가비와 정원으로 센터에서 신청을 받습니다. 무료 행사는 결제 없이 바로 확정됩니다.</span></label>
           <label hidden={!externalPayment}>
             참여하기 버튼 링크 (선택)
@@ -99,20 +106,23 @@ export function EditorFields({ locale, kind, record, onPending, onDirty, onExpir
               <FormControl><input name="onlineUrl" type="url" inputMode="url" maxLength={2048} defaultValue={event?.onlineUrl ?? ""} placeholder="https://meet.google.com/..." required={online} aria-describedby="event-online-help" /></FormControl>
               <span id="event-online-help" className="muted">구글 밋이나 다른 온라인 밋업 주소. 결제 전에는 공개되지 않습니다.</span>
             </label>
-            <label>참여 안내 · 한국어 (선택)
+            <label>한국어 참여 안내 (선택)
               <FormControl><input name="onlineInstructions" maxLength={1000} defaultValue={event?.onlineInstructions ?? ""} placeholder="입장 코드가 있으면 적어 주세요." /></FormControl>
             </label>
-            <label>참여 안내 · 영어 (선택)
+            <label>영어 참여 안내 (선택)
               <FormControl><input name="onlineInstructionsEn" maxLength={1000} defaultValue={event?.onlineInstructionsEn ?? ""} /></FormControl>
             </label>
           </div>
-        </>
+        </section>
       ) : input("link", ko ? "관련 링크 (선택)" : "Related link (optional)", record?.link ? (/^www\./.test(record.link) ? `https://${record.link}` : record.link) : "", "url")}
+      <section className="admin-editor-section">
+        <h3>소개와 설명</h3>
       <div className="events-field-grid">
-        <MarkdownEditor name="description" label="설명 · 한국어" defaultValue={record?.description ?? ""} required helpId="description-markdown-help" onPending={onPending} onDirty={onDirty} onExpired={onExpired} />
-        <MarkdownEditor name="descriptionEn" label="설명 · 영어" defaultValue={record?.descriptionEn ?? ""} required helpId="description-markdown-help" onPending={onPending} onDirty={onDirty} onExpired={onExpired} />
+        <MarkdownEditor name="description" label="한국어 설명" defaultValue={record?.description ?? ""} required helpId="description-markdown-help" onPending={onPending} onDirty={onDirty} onExpired={onExpired} />
+        <MarkdownEditor name="descriptionEn" label="영어 설명" defaultValue={record?.descriptionEn ?? ""} required helpId="description-markdown-help" onPending={onPending} onDirty={onDirty} onExpired={onExpired} />
       </div>
       <MarkdownHelp id="description-markdown-help" />
+      </section>
     </>
   );
 }

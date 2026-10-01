@@ -70,7 +70,7 @@ export function PaymentConfirmation({ code, locale }: { readonly code: string; r
     <ul className="commerce-items">
       {data.items.map((item) => <li key={`${item.titleKo}-${item.quantity}`}><div><strong>{ko ? item.titleKo : item.titleEn}</strong><span className="muted">{freeRegistration ? (ko ? `${item.quantity}명` : `${item.quantity} attendee${item.quantity === 1 ? "" : "s"}`) : (ko ? `${item.quantity}개` : `Qty ${item.quantity}`)}</span></div><span>{freeRegistration ? (ko ? "무료" : "Free") : bitcoin(item.amountSats, locale, unit, rate)}</span></li>)}
     </ul>
-    <p>{freeRegistration ? (ko ? "센터에서 확인 페이지를 보여 주세요." : "Show this confirmation at the center.") : data.fulfillment === "PICKUP" ? (ko ? "센터에서 수령합니다." : "Pickup at the center.") : (ko ? "배송" : "Delivery")}{data.addressText ? ` · ${data.addressText}` : ""}</p>
+    <p>{freeRegistration ? (ko ? "센터에서 확인 페이지를 보여 주세요." : "Show this confirmation at the center.") : data.fulfillment === "PICKUP" ? (ko ? "센터에서 수령합니다." : "Pickup at the center.") : (ko ? "배송" : "Delivery")}{data.addressText ? `, ${data.addressText}` : ""}</p>
     {data.status === "PAID" && data.sessions.map((session) => <div key={session.url} className="form-stack">
       <a className="button" href={session.url} target="_blank" rel="noopener noreferrer">{ko ? "온라인 참여" : "Join online"}</a>
       {(ko ? session.note : session.noteEn || session.note) && <p className="muted">{ko ? session.note : session.noteEn || session.note}</p>}

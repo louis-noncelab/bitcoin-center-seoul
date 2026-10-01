@@ -48,7 +48,7 @@ export function CartPageClient({ locale }: { readonly locale: Locale }) {
     </div>
     <aside className="commerce-panel commerce-summary" aria-labelledby="cart-summary-title">
       <h2 id="cart-summary-title">{ko ? "주문 미리보기" : "Cart summary"}</h2>
-      <p>{ko ? `상품 ${resolved.lines.length}종 · ${quantityLabel(ready.reduce((sum, line) => sum + line.quantity, 0), locale)}` : `${resolved.lines.length} options · ${quantityLabel(ready.reduce((sum, line) => sum + line.quantity, 0), locale)}`}</p>
+      <p>{ko ? `상품 ${resolved.lines.length}종, ${quantityLabel(ready.reduce((sum, line) => sum + line.quantity, 0), locale)}` : `${resolved.lines.length} options, ${quantityLabel(ready.reduce((sum, line) => sum + line.quantity, 0), locale)}`}</p>
       <p className="caption muted">{ko ? "표시 가격은 참고용입니다. 배송비와 비트코인 결제 총액은 주문 화면에서 서버 견적으로 확정합니다." : "Catalog prices are a preview. Shipping and the Bitcoin total are confirmed by the server quote at checkout."}</p>
       {blocked && <FormNotice>{ko ? "주문할 수 없는 옵션을 삭제하거나 수량을 조정해 주세요." : "Remove unavailable options or adjust quantities before checkout."}</FormNotice>}
       <div className="form-actions">

@@ -173,7 +173,7 @@ export function CollectionFrame({
           {detail
             ? copy.back
             : locale === "ko"
-              ? "전시·체험으로"
+              ? "전시 및 체험으로"
               : "Back to exhibitions"}
         </ContentLink>
         <div className="detail-heading">
@@ -208,7 +208,7 @@ export function CollectionGrid({
         const meta =
           record.kind === "boardgame"
             ? ""
-            : [copy[record.kind], content.creator].filter(Boolean).join(" · ");
+            : [copy[record.kind], content.creator].filter(Boolean).join(", ");
         return (
           <article className="review-card highlight-card collection-card" key={record.id}>
             <ContentLink

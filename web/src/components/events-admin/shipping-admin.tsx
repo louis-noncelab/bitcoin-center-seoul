@@ -120,7 +120,7 @@ export function ShippingAdmin() {
 
     {zones.map((zone) => <section className="events-form" key={zone.id}>
       <div className="events-admin-toolbar">
-        <h2>{zone.nameKo} · {zone.nameEn}{zone.active ? "" : " (비활성)"}</h2>
+        <h2>{zone.nameKo}, {zone.nameEn}{zone.active ? "" : " (비활성)"}</h2>
         <Button variant="quiet" disabled={pending || expired} onClick={() => void (async () => {
           const accepted = await confirm({ title: "배송 지역 삭제", description: `${zone.nameKo} 지역을 삭제할까요? 연결된 국가와 요금을 먼저 삭제해야 합니다.`, confirmLabel: "삭제" });
           if (accepted) await run(() => adminRequest("/api/admin/shipping/zones", okSchema, jsonBody({ id: zone.id }, "DELETE")), "지역을 삭제했습니다.");

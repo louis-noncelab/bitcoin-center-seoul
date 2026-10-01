@@ -14,7 +14,7 @@ export const reviewReceiver = {
 } as const;
 
 export function reviewInvoice(payment: Payment) {
-  const metadata = JSON.stringify([["text/plain", `TEST ONLY — Bitcoin Center Seoul — ${payment.creationKey}`]]);
+  const metadata = JSON.stringify([["text/plain", `TEST ONLY: Bitcoin Center Seoul: ${payment.creationKey}`]]);
   const preimage = createHash("sha256").update(`TEST-preimage:${payment.creationKey}`).digest("hex");
   const hash = createHash("sha256").update(Buffer.from(preimage, "hex")).digest("hex");
   const timestamp = Math.floor(payment.createdAt.getTime() / 1000);

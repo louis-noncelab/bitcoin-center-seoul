@@ -8,6 +8,7 @@ import { reviewAdminSchema, reviewInputSchema, reviewRecordSchema, reviewSelecti
 import { LoginForm } from "./login-form";
 import { ReviewsEditor, reviewKindLabels } from "./reviews-editor";
 import { ReviewsSelection } from "./reviews-selection";
+import { useRegisterLeave } from "./leave-guard";
 import { adminRequest, AdminRequestError, errorText, jsonBody, revisionHeaders } from "./request";
 
 export function ReviewsAdmin() {
@@ -69,6 +70,7 @@ export function ReviewsAdmin() {
     const accepted = !(onlyEditor ? dirty : unsaved) || await confirm({ title: "변경사항을 버릴까요?", description: "저장하지 않은 변경사항은 사라집니다.", confirmLabel: "버리기" });
     return accepted && !busy.current && !uploads.current;
   }
+  useRegisterLeave(() => leave());
   function edit(record: ReviewRecord | null) { setSelected(record); setEditing(true); setDirty(false); setError(""); setMessage(""); setConflict(false); }
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -101,7 +103,7 @@ export function ReviewsAdmin() {
     busy.current = true; setPending(true); setError(""); setMessage("");
     try {
       await adminRequest(`/api/admin/reviews/${record.id}`, z.unknown(), { method: "DELETE", headers: revisionHeaders(record.revision) });
-      setRecords((current) => current.filter((item) => item.id !== record.id)); setMessage("삭제했습니다. 대표·홈 선택에 남은 항목도 확인해 주세요.");
+      setRecords((current) => current.filter((item) => item.id !== record.id)); setMessage("삭제했습니다. 대표와 홈 선택에 남은 항목도 확인해 주세요.");
     } catch (caught) { handleError(caught); }
     finally { busy.current = false; setPending(false); }
   }
@@ -134,7 +136,7 @@ export function ReviewsAdmin() {
     {editing ? <ReviewsEditor key={selected ? `${selected.id}-${selected.revision}` : "new"} record={selected} disabled={pending || expired} uploading={uploading} onUpload={(value) => { uploads.current = value; setUploading(value); }} onExpired={() => setExpired(true)} onDirty={() => setDirty(true)} onSave={(event) => void save(event)} onCancel={() => void cancelEditor()} /> : <>
       {selection && <ReviewsSelection records={records} value={selection} disabled={pending || expired} dirty={selectionDirty} onChange={setSelection} onSave={() => void saveSelection()} />}
       <div className="events-admin-toolbar"><h2>방문 후기 목록</h2><div className="button-row"><Button variant="secondary" disabled={pending || expired} onClick={() => void reload()}>목록 새로고침</Button><Button disabled={pending || expired} onClick={() => edit(null)}>방문 후기 등록</Button></div></div>
-      <ul className="events-admin-list">{[...records].sort((a, b) => a.sort_order - b.sort_order || b.id - a.id).map((record) => <li key={record.id}><div><h3>{record.title}</h3><p className="muted">{reviewKindLabels[record.kind]} · {record.author} · {record.is_active ? "공개" : "비공개"} · 순서 {record.sort_order}</p></div><div className="button-row"><a href={record.url} target="_blank" rel="noopener noreferrer" className="button" data-variant="quiet" aria-label={`${record.title} 원문 (새 탭)`}>원문 보기</a><Button variant="secondary" disabled={pending || expired} onClick={() => edit(record)}>수정</Button><Button variant="quiet" disabled={pending || expired} onClick={() => void remove(record)}>삭제</Button></div></li>)}{!records.length && <li>등록된 방문 후기가 없습니다.</li>}</ul>
+      <ul className="events-admin-list">{[...records].sort((a, b) => a.sort_order - b.sort_order || b.id - a.id).map((record) => <li key={record.id}><div><h3>{record.title}</h3><p className="muted">{reviewKindLabels[record.kind]}, {record.author}, {record.is_active ? "공개" : "비공개"}, 순서 {record.sort_order}</p></div><div className="button-row"><a href={record.url} target="_blank" rel="noopener noreferrer" className="button" data-variant="quiet" aria-label={`${record.title} 원문 (새 탭)`}>원문 보기</a><Button variant="secondary" disabled={pending || expired} onClick={() => edit(record)}>수정</Button><Button variant="quiet" disabled={pending || expired} onClick={() => void remove(record)}>삭제</Button></div></li>)}{!records.length && <li>등록된 방문 후기가 없습니다.</li>}</ul>
     </>}
   </div>;
 }

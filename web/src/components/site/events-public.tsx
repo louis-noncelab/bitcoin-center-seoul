@@ -66,7 +66,7 @@ function HighlightMeta({ highlight, locale, compact = false }: { readonly highli
     : [dateLabel(start, locale), normalizedEnd && normalizedEnd !== normalizedStart ? dateLabel(end, locale) : ""].filter(Boolean).join(" – ");
   return (
     <p className="caption muted">
-      {[text(locale, highlight.category, highlight.categoryEn), period, compact ? "" : text(locale, highlight.host, highlight.hostEn)].filter(Boolean).join(" · ")}
+      {[text(locale, highlight.category, highlight.categoryEn), period, compact ? "" : text(locale, highlight.host, highlight.hostEn)].filter(Boolean).join(", ")}
     </p>
   );
 }

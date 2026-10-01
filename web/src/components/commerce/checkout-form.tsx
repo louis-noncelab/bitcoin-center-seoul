@@ -134,7 +134,7 @@ export function CheckoutForm({ locale, policyVersion, items, countries, fromCart
         {reservation ? null : <FormField id="coupon-code" label={ko ? "쿠폰 코드" : "Coupon code"}>
           <input id="coupon-code" name="couponCode" value={couponCode} maxLength={40} autoComplete="off" onChange={(event) => { setCouponCode(event.target.value); invalidateQuote(); }} />
         </FormField>}
-        <FormField id="order-notes" label={reservation ? (ko ? "전달 사항 (선택)" : "Note (optional)") : (ko ? "요청 사항 (선택)" : "Order notes (optional)")} hint={reservation ? (ko ? "입장에 필요한 말을 500자까지 남길 수 있습니다." : "Optional note for the host, up to 500 characters.") : (ko ? "배송·수령 관련 요청을 500자까지 남길 수 있습니다. 견적 금액은 바뀌지 않습니다." : "Optional delivery or pickup notes, up to 500 characters. Notes do not change the quoted total.")}>
+        <FormField id="order-notes" label={reservation ? (ko ? "전달 사항 (선택)" : "Note (optional)") : (ko ? "요청 사항 (선택)" : "Order notes (optional)")} hint={reservation ? (ko ? "입장에 필요한 말을 500자까지 남길 수 있습니다." : "Optional note for the host, up to 500 characters.") : (ko ? "배송과 수령 관련 요청을 500자까지 남길 수 있습니다. 견적 금액은 바뀌지 않습니다." : "Optional delivery or pickup notes, up to 500 characters. Notes do not change the quoted total.")}>
           <textarea id="order-notes" name="notes" maxLength={500} rows={3} autoComplete="off" aria-invalid={Boolean(notesError)} aria-describedby={`order-notes-hint${notesError ? " order-notes-error" : ""}`} />
           <FieldError id="order-notes" error={notesError} />
         </FormField>

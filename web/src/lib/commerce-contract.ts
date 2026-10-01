@@ -13,6 +13,7 @@ export const commerceSettingsRecord = z.object({
   lightningAddresses: z.array(z.object({
     id: z.string(), label: z.string(), address: z.string(), allowedOrigins: z.string(),
   })),
+  defaultLightningAddressConfigured: z.boolean(),
   notificationChannel: z.enum(["DISCORD", "MATTERMOST", "GENERIC"]),
   notificationWebhookRegistered: z.boolean(),
   notificationEmail: z.string().email(),

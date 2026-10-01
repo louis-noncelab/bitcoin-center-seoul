@@ -120,8 +120,8 @@ export function buildPaymentLetter(locale: Locale, kind: Kind, order: OrderMail,
     subject,
     lead,
     `${ko ? "금액" : "Amount"}: ${amount}`,
-    `${meetupOnly ? (ko ? "참여" : "Attendance") : (ko ? "수령·배송" : "Fulfillment")}: ${place}`,
-    ...rows.map((row) => `${row.title} · ${row.quantity}`),
+    `${meetupOnly ? (ko ? "참여" : "Attendance") : (ko ? "수령 및 배송" : "Fulfillment")}: ${place}`,
+    ...rows.map((row) => `${row.title}, ${row.quantity}`),
     `${ko ? "주문 번호" : "Order"}: ${order.id}`,
     url,
     ...joins.flatMap((join) => [`${ko ? "온라인 참여" : "Join online"}: ${join.url}`, ko ? join.note : join.noteEn || join.note].filter(Boolean)),
@@ -154,7 +154,7 @@ ${joins.map((join) => `<p style="margin:16px 0 0;"><a href="${escapeHtml(join.ur
 </td></tr>
 <tr><td style="padding:28px 0 0;border-top:1px solid #d8dcd3;font-family:${font};">
 <p style="margin:20px 0 0;font-size:14px;line-height:1.6;color:#62675f;">${ko ? "주문 번호" : "Order"} ${escapeHtml(order.id)}<br><a href="${escapeHtml(url)}" style="color:#32699f;text-decoration:underline;">${escapeHtml(url)}</a></p>
-<p style="margin:16px 0 0;font-size:14px;line-height:1.6;color:#62675f;">${ko ? "비트코인 센터 서울 · 서울 마포구" : "Bitcoin Center Seoul · Mapo, Seoul"}</p>
+<p style="margin:16px 0 0;font-size:14px;line-height:1.6;color:#62675f;">${ko ? "비트코인 센터 서울, 서울 마포구" : "Bitcoin Center Seoul, Mapo, Seoul"}</p>
 </td></tr>
 ${contractCopy ? `<tr><td style="padding:24px 0;font-family:${font};"><pre style="margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit;font-size:14px;line-height:1.7;color:#20211f;">${escapeHtml(contractCopy)}</pre></td></tr>` : ""}
 </table></td></tr></table></body></html>`;
@@ -204,7 +204,7 @@ export function buildOperatorLetter(order: OrderMail, contact: OperatorContact, 
     `금액: ${amount}`,
     `수령: ${place}`,
     ...contacts.map(([label, value]) => `${label}: ${value}`),
-    ...rows.map((row) => `${row.title} · ${row.quantity}`),
+    ...rows.map((row) => `${row.title}, ${row.quantity}`),
     `주문 번호: ${order.id}`,
     url,
   ].join("\n\n");
@@ -236,7 +236,7 @@ export function buildOperatorLetter(order: OrderMail, contact: OperatorContact, 
 </td></tr>
 <tr><td style="padding:28px 0 0;border-top:1px solid #d8dcd3;font-family:${font};">
 <p style="margin:20px 0 0;font-size:14px;line-height:1.6;color:#62675f;">주문 번호 ${escapeHtml(order.id)}<br><a href="${escapeHtml(url)}" style="color:#32699f;text-decoration:underline;">${escapeHtml(url)}</a></p>
-<p style="margin:16px 0 0;font-size:14px;line-height:1.6;color:#62675f;">비트코인 센터 서울 · 관리자 알림</p>
+<p style="margin:16px 0 0;font-size:14px;line-height:1.6;color:#62675f;">비트코인 센터 서울, 관리자 알림</p>
 </td></tr>
 </table></td></tr></table></body></html>`;
   return { subject: text.subject, text: plain, html };

@@ -31,7 +31,7 @@ export function CartItemRows({ locale, lines, missing = [], compact = false }: {
         {line.product.imageUrl ? <Link href={`/shop/${line.product.slug}`} locale={locale} className="commerce-cart-thumb"><Image src={line.product.imageUrl} alt="" width={96} height={96} unoptimized /></Link> : null}
         <div className="commerce-cart-line-copy">
           <Link href={`/shop/${line.product.slug}`} locale={locale}><strong>{title}</strong></Link>
-          <p className="muted caption">{option} · {quantityLabel(line.quantity, locale)}</p>
+          <p className="muted caption">{option}, {quantityLabel(line.quantity, locale)}</p>
           <p className="caption">{price(line.product, locale, unit, rate)} / {ko ? "1개" : "item"}</p>
           {!line.available && <p className="commerce-cart-unavailable">{ko ? "주문할 수 없는 옵션이거나 재고보다 수량이 많습니다. 수량을 줄이거나 삭제해 주세요." : "This option is unavailable or exceeds stock. Reduce its quantity or remove it."}</p>}
           {line.available && line.quantity >= line.variant.availableStock && <p className="caption muted">{ko ? "주문 가능한 최대 수량입니다." : "Maximum available quantity."}</p>}

@@ -182,13 +182,24 @@ export function ProductsAdmin() {
     {editing ? <form className="events-form" key={selected?.id ?? "new"} onSubmit={(event) => void save(event)} onChange={() => setDirty(true)}>
       <h2>{selected ? "상품 수정" : "상품 등록"}</h2>
       <fieldset className="events-editor-fields" disabled={pending}>
+        <section className="admin-editor-section">
+          <h3>기본 정보</h3>
         <div className="events-field-grid">
           <label>상품명<FormControl><input name="titleKo" required maxLength={200} defaultValue={selected?.titleKo ?? ""} /></FormControl></label>
           <label>영어 상품명<FormControl><input name="titleEn" required maxLength={200} defaultValue={selected?.titleEn ?? ""} /></FormControl></label>
         </div>
         <label>URL 슬러그<FormControl><input name="slug" required defaultValue={selected?.slug ?? ""} maxLength={100} pattern="[a-z0-9]+(-[a-z0-9]+)*" autoCapitalize="none" spellCheck={false} placeholder="bitcoin-standard" aria-describedby="product-slug-help" /></FormControl></label>
-        <p id="product-slug-help" className="muted">/shop/ 뒤에 붙는 주소입니다. 영문 소문자·숫자·하이픈을 사용해 주세요.</p>
+        <p id="product-slug-help" className="muted">/shop/ 뒤에 붙는 주소입니다. 영문 소문자, 숫자, 하이픈을 사용해 주세요.</p>
+        <label>분류 (선택)<FormControl>
+          <MenuSelect name="categoryId" defaultValue={selected?.categoryId ?? ""}>
+            <option value="">분류 없음</option>
+            {categories.map((category) => <option key={category.id} value={category.id}>{category.nameKo}</option>)}
+          </MenuSelect>
+        </FormControl></label>
+        </section>
 
+        <section className="admin-editor-section">
+          <h3>가격</h3>
         <div className="events-field-grid">
           <label>판매가<FormControl><input name="priceAmount" required inputMode="numeric" pattern="[1-9][0-9]*" defaultValue={selected?.priceAmount ?? ""} aria-describedby="product-price-help" /></FormControl></label>
           <label>가격 단위<FormControl>
@@ -201,14 +212,10 @@ export function ProductsAdmin() {
         <p id="product-price-help" className="muted">원화로 지정하면 주문할 때마다 그 시점 시세로 사토시가 정해집니다. 사토시로 지정하면 시세와 상관없이 그 사토시를 받습니다.</p>
         <label>정가 (선택)<FormControl><input name="listPriceAmount" inputMode="numeric" pattern="[1-9][0-9]*" defaultValue={selected?.listPriceAmount ?? ""} aria-describedby="product-list-help" /></FormControl></label>
         <p id="product-list-help" className="muted">판매가보다 큰 값을 넣으면 할인 전 가격으로 함께 표시됩니다. 비워 두면 표시하지 않습니다.</p>
+        </section>
 
-        <label>분류 (선택)<FormControl>
-          <MenuSelect name="categoryId" defaultValue={selected?.categoryId ?? ""}>
-            <option value="">분류 없음</option>
-            {categories.map((category) => <option key={category.id} value={category.id}>{category.nameKo}</option>)}
-          </MenuSelect>
-        </FormControl></label>
-
+        <section className="admin-editor-section">
+          <h3>수령 방법과 사진</h3>
         <fieldset className="collection-kind"><legend>수령 방법</legend><div className="button-row">
           {fulfillments.map((mode) => <label className="events-checkbox" key={mode}>
             <ChoiceControl type="checkbox" checked={fulfillment.includes(mode)} onChange={(event) => {
@@ -222,13 +229,17 @@ export function ProductsAdmin() {
 
         <GalleryField locale="ko" images={images} onChange={(next) => { setImages(next.slice(0, 12)); setDirty(true); }} onPending={uploadPending} onExpired={() => setExpired(true)} />
         <p className="muted">첫 번째 사진만 상품 대표 이미지로 사용합니다.</p>
+        </section>
 
+        <section className="admin-editor-section">
+          <h3>소개와 옵션</h3>
         <label>소개<FormControl><textarea name="descriptionKo" required rows={5} maxLength={100000} defaultValue={selected?.descriptionKo ?? ""} /></FormControl></label>
         <label>영어 소개<FormControl><textarea name="descriptionEn" required rows={4} maxLength={100000} defaultValue={selected?.descriptionEn ?? ""} /></FormControl></label>
 
         <ProductVariantsEditor variants={variants} onChange={(next) => { setVariants(next); setDirty(true); }} />
 
         <label className="events-checkbox"><ChoiceControl type="checkbox" name="published" defaultChecked={selected?.published ?? false} />공개</label>
+        </section>
       </fieldset>
       <div className="button-row">
         <Button type="submit" disabled={pending || uploading || expired}>{pending ? "저장 중…" : "저장"}</Button>
@@ -245,9 +256,9 @@ export function ProductsAdmin() {
             <h3>{product.titleKo}</h3>
             <p className="muted">
               {product.published ? "공개" : "비공개"}
-              {product.categoryNameKo ? ` · ${product.categoryNameKo}` : ""}
-              {` · ${product.priceKind === "KRW_FIXED" ? `₩${new Intl.NumberFormat("ko").format(BigInt(product.priceAmount))}` : `${new Intl.NumberFormat("ko").format(BigInt(product.priceAmount))} sats`}`}
-              {` · 재고 ${product.variants.filter((variant) => variant.active).reduce((sum, variant) => sum + variant.stockOnHand - variant.reservedStock, 0)}`}
+              {product.categoryNameKo ? `, ${product.categoryNameKo}` : ""}
+              {`, ${product.priceKind === "KRW_FIXED" ? `₩${new Intl.NumberFormat("ko").format(BigInt(product.priceAmount))}` : `${new Intl.NumberFormat("ko").format(BigInt(product.priceAmount))} sats`}`}
+              {`, 재고 ${product.variants.filter((variant) => variant.active).reduce((sum, variant) => sum + variant.stockOnHand - variant.reservedStock, 0)}`}
             </p>
           </div>
           <div className="button-row">
@@ -259,11 +270,13 @@ export function ProductsAdmin() {
         {!products.length && <li>등록된 상품이 없습니다.</li>}
       </ul>
 
+      <details className="admin-management-disclosure">
+        <summary>상품 분류 관리 <span className="muted">등록된 분류 {categories.length}개</span></summary>
       <form key={category?.id ?? "new-category"} className="events-form" onSubmit={(event) => void saveCategory(event)} onChange={() => setDirty(true)}>
         <h2>{category ? "분류 수정" : "분류"}</h2>
         <ul className="events-admin-list">
           {categories.map((item) => <li key={item.id}>
-            <div><h3>{item.nameKo}</h3><p className="muted">{item.slug} · 상품 {item.productCount}개{item.active ? "" : " · 비활성"}</p></div>
+            <div><h3>{item.nameKo}</h3><p className="muted">{item.slug}, 상품 {item.productCount}개{item.active ? "" : ", 비활성"}</p></div>
             <div className="button-row">
               <Button type="button" variant="secondary" disabled={pending || expired} onClick={() => { setCategory(item); setDirty(false); setError(""); }}>수정</Button>
               {item.active && <Button type="button" variant="quiet" disabled={pending || expired} onClick={() => void deactivateCategory(item)}>끄기</Button>}
@@ -286,6 +299,7 @@ export function ProductsAdmin() {
           {category && <Button type="button" variant="quiet" disabled={pending || expired} onClick={() => { setCategory(null); setDirty(false); }}>새 분류</Button>}
         </div>
       </form>
+      </details>
     </>}
   </div>;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, type MouseEvent, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { z } from "zod";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/primitives";
@@ -19,39 +19,39 @@ type AdminNavItem = { readonly href: string; readonly label: string };
 
 const groups: readonly { readonly label: string; readonly items: readonly AdminNavItem[] }[] = [
   {
-    label: "오늘",
+    label: "운영",
     items: [
-      { href: "/admin/dashboard", label: "대시보드" },
-      { href: "/admin/orders", label: "주문" },
+      { href: "/admin/dashboard", label: "운영 현황" },
+      { href: "/admin/orders", label: "주문 관리" },
       { href: "/admin/meetups/checkin", label: "밋업 체크인" },
-      { href: "/admin/review", label: "결제 검토" },
-      { href: "/admin/mail", label: "메일 발송" },
     ],
   },
   {
     label: "콘텐츠",
     items: [
-      { href: "/admin", label: "행사·하이라이트 관리" },
+      { href: "/admin", label: "행사와 하이라이트" },
       { href: "/admin/notices", label: "공지사항" },
       { href: "/admin/reviews", label: "방문 후기" },
-      { href: "/admin/collection", label: "전시" },
+      { href: "/admin/collection", label: "전시 소개" },
     ],
   },
   {
-    label: "상품",
+    label: "판매",
     items: [
-      { href: "/admin/products", label: "상품·분류" },
+      { href: "/admin/products", label: "상품과 분류" },
       { href: "/admin/shipping", label: "배송비" },
       { href: "/admin/coupons", label: "쿠폰" },
     ],
   },
   {
-    label: "설정",
+    label: "설정과 알림",
     items: [
-      { href: "/admin/settings", label: "결제·환율" },
-      { href: "/admin/logs", label: "기록" },
+      { href: "/admin/settings", label: "결제와 가격 설정" },
+      { href: "/admin/mail", label: "메일 발송" },
+      { href: "/admin/logs", label: "작업 기록" },
     ],
   },
+  { label: "도구", items: [{ href: "/admin/review", label: "결제 시뮬레이션" }] },
 ];
 
 function currentPage(pathname: string, href: string): boolean {
@@ -77,20 +77,31 @@ function AdminShell({ session, onLogout, children }: { readonly session: boolean
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [seenPath, setSeenPath] = useState(pathname);
+  const menuButton = useRef<HTMLButtonElement>(null);
   if (seenPath !== pathname) {
     setSeenPath(pathname);
     setOpen(false);
   }
   const signedIn = session === true;
+  const here = groups.flatMap((group) => group.items).find((item) => currentPage(pathname, item.href));
+  useEffect(() => {
+    if (!open) return;
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      if (document.querySelector("dialog[open]")) return;
+      setOpen(false);
+      menuButton.current?.focus();
+    }
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [open]);
   return <div className={signedIn ? (open ? "admin-shell admin-menu-open" : "admin-shell") : "admin-signed-out"} lang="ko">
+    {signedIn && <div className="admin-mobile-bar">
+      <Button ref={menuButton} variant="secondary" aria-expanded={open} aria-controls="admin-sidebar" onClick={() => setOpen((value) => !value)}>{open ? "메뉴 닫기" : "메뉴 열기"}</Button>
+      <span className="admin-mobile-title">{here?.label ?? "센터 관리"}</span>
+    </div>}
     {signedIn && <AdminSidebar onNavigate={() => setOpen(false)} onLogout={onLogout} />}
     <div className="admin-stage">
-      {signedIn && <div className="admin-mobile-bar">
-        <Button variant="secondary" aria-expanded={open} aria-controls="admin-sidebar" onClick={() => setOpen((value) => !value)}>{open ? "메뉴 닫기" : "관리 메뉴"}</Button>
-        <GuardLink href="/admin">행사·하이라이트 관리</GuardLink>
-        <GuardLink href="/admin/notices">공지사항</GuardLink>
-        <LogoutButton onLogout={onLogout} />
-      </div>}
       {children}
     </div>
   </div>;
@@ -100,6 +111,7 @@ function GuardLink({ href, children, onNavigate, current = false, className }: {
   const router = useRouter();
   const confirmLeave = useLeaveConfirmation();
   function go(event: MouseEvent<HTMLAnchorElement>) {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     void confirmLeave().then((accepted) => {
       if (!accepted) return;
