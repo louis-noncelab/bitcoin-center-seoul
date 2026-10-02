@@ -12,5 +12,5 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     if (!current.order) throw new HttpError(404, "NOT_FOUND", "주문을 찾을 수 없습니다.");
     await rateLimit("payment:invoice", id, 20, 60);
     return json(publicPayment(await ensureInvoice(id), current.order.confirmationCode));
-  });
+  }, { route: "api.payments.invoice" });
 }
