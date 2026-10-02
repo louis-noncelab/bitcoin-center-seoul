@@ -6,6 +6,7 @@ export const JSON_PAGE_SIZE_MAX = 100;
 export const CSV_ROW_LIMIT = 5000;
 
 const dayPattern = /^(\d{4})-(\d{2})-(\d{2})$/;
+const dateError = "날짜 형식을 확인해 주세요. / Use YYYY-MM-DD dates.";
 
 export type AdminListQuery = {
   readonly q: string;
@@ -25,9 +26,19 @@ function integer(value: string | null, fallback: number): number {
 
 function seoulDay(value: string, end: boolean): Date {
   const match = dayPattern.exec(value);
-  if (!match) throw new HttpError(400, "INVALID_INPUT", "날짜 형식을 확인해 주세요. / Use YYYY-MM-DD dates.");
-  const date = new Date(`${match[1]}-${match[2]}-${match[3]}T${end ? "23:59:59.999" : "00:00:00.000"}+09:00`);
-  if (Number.isNaN(date.getTime())) throw new HttpError(400, "INVALID_INPUT", "날짜 형식을 확인해 주세요. / Use YYYY-MM-DD dates.");
+  if (!match) throw new HttpError(400, "INVALID_INPUT", dateError);
+  const [, yearText, monthText, dayText] = match;
+  if (!yearText || !monthText || !dayText) throw new HttpError(400, "INVALID_INPUT", dateError);
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const calendar = new Date(0);
+  calendar.setUTCFullYear(year, month - 1, day);
+  if (calendar.getUTCFullYear() !== year || calendar.getUTCMonth() !== month - 1 || calendar.getUTCDate() !== day) {
+    throw new HttpError(400, "INVALID_INPUT", dateError);
+  }
+  const date = new Date(`${yearText}-${monthText}-${dayText}T${end ? "23:59:59.999" : "00:00:00.000"}+09:00`);
+  if (Number.isNaN(date.getTime())) throw new HttpError(400, "INVALID_INPUT", dateError);
   return date;
 }
 
