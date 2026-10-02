@@ -204,3 +204,25 @@ test("expired lockouts permit new attempts and rejection releases local admissio
   await assert.rejects(() => login("wrong", "expired"), status(401));
   assert.equal((await prisma.adminLoginAttempt.findUnique({ where: { clientHash: "expired" } })).failures, 1);
 });
+
+test("one login attempt cleanup pass removes at most 500 expired rows and preserves active lockouts", async (t) => {
+  // Given a backlog, an active window, and a still-blocked client, when one login reserves a row, then cleanup is bounded.
+  const now = Date.now();
+  t.mock.method(Date, "now", () => now);
+  await prisma.adminLoginAttempt.createMany({ data: [
+    ...Array.from({ length: 501 }, (_, index) => ({
+      clientHash: `expired-cleanup-${index}`,
+      failures: 1,
+      windowStarted: 0n,
+      blockedUntil: 0n,
+    })),
+    { clientHash: "active-cleanup", failures: 2, windowStarted: BigInt(now), blockedUntil: 0n },
+    { clientHash: "blocked-cleanup", failures: 5, windowStarted: 0n, blockedUntil: BigInt(now + 60_000) },
+  ] });
+  await assert.rejects(() => login("wrong", "cleanup-trigger"), status(401));
+  assert.equal(await prisma.adminLoginAttempt.count({
+    where: { windowStarted: { lt: BigInt(now - 15 * 60 * 1000) }, blockedUntil: { lt: BigInt(now) } },
+  }), 1);
+  assert.equal((await prisma.adminLoginAttempt.findUnique({ where: { clientHash: "active-cleanup" } })).failures, 2);
+  assert.equal((await prisma.adminLoginAttempt.findUnique({ where: { clientHash: "blocked-cleanup" } })).failures, 5);
+});
