@@ -21,7 +21,14 @@ const order = (id: string) => ({
 async function setup(page: Page, baseURL: string | undefined) {
   const origin = reviewOrigin(baseURL);
   const queries: URL[] = [];
-  await page.route("**/api/admin/orders/*/payment", (route) => route.fulfill({ json: { data: [] } }));
+  await page.route("**/api/admin/orders/*/payment", (route) => route.fulfill({ json: { data: [{
+    id: "review-tracking-history", action: "order.tracking", actorId: "admin",
+    createdAt: "2026-09-21T01:00:00.000Z", summary: {},
+  }] } }));
+  await page.route("**/api/admin/orders/*/payment-observations", (route) => route.fulfill({ json: { data: [{
+    id: "review-observation", paymentId: "review-payment", createdAt: "2026-09-21T01:00:00.000Z",
+    summary: { status: "PAID", reason: null, zaprite: { orderId: "review-provider-order", status: "PAID", expiresAt: null, transactions: [] } },
+  }] } }));
   await page.route("**/api/admin/orders?*", (route) => {
     const url = new URL(route.request().url());
     queries.push(url);
@@ -61,9 +68,11 @@ test("search, fulfillment, dates, page and CSV keep the same query and support B
 
 test("filter and browser Back protect drafts and failed tracking saves preserve the original CAS", async ({ page, baseURL }) => {
   await setup(page, baseURL);
-  await page.getByRole("button", { name: "결제 완료", exact: true }).click();
+  await page.getByRole("button", { name: "확정", exact: true }).click();
   const first = page.locator(".events-admin-list > li").filter({ has: page.getByRole("heading", { name: "주문 하나", exact: false }) });
   await first.getByRole("button", { name: "자세히", exact: true }).click();
+  await expect(first.locator('section > ol > li')).toHaveCount(1);
+  await expect(first.locator('[data-provider="ZAPRITE"]')).toBeVisible();
   await first.getByLabel("송장 번호", { exact: true }).fill("NEW-123");
   await page.getByRole("button", { name: "다음 페이지" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "취소", exact: true }).click();
@@ -71,13 +80,17 @@ test("filter and browser Back protect drafts and failed tracking saves preserve 
   await page.goBack();
   await page.getByRole("dialog").getByRole("button", { name: "취소", exact: true }).click();
   await expect(page).toHaveURL(/status=PAID/);
+  await expect(first.locator('section > ol > li')).toHaveCount(1);
+  await expect(first.locator('[data-provider="ZAPRITE"]')).toBeVisible();
   let submitted: unknown;
   await page.route("**/api/admin/orders/*/tracking", (route) => {
     submitted = route.request().postDataJSON();
     return route.fulfill({ status: 409, json: { error: { code: "STALE_ORDER", message: "송장 정보가 변경되었습니다." } } });
   });
   await first.getByRole("button", { name: "송장 수정 저장" }).click();
-  await expect(page.locator(".events-error")).toBeVisible();
+  const errors = page.locator(".events-admin-workspace").getByRole("alert");
+  await expect(errors).toHaveCount(1);
+  await expect(errors).toBeVisible();
   expect(submitted).toEqual({ carrier: "기존 택배", trackingNumber: "NEW-123", expectedCarrier: "기존 택배", expectedTrackingNumber: "OLD-123" });
   await expect(first.getByLabel("송장 번호", { exact: true })).toHaveValue("NEW-123");
   await page.getByRole("button", { name: "다음 페이지" }).click();

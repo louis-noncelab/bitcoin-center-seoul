@@ -61,7 +61,13 @@ test("records sidebar opens an authenticated Korean audit log", async ({ page, b
   await login(page, origin);
   await page.goto(`${origin}/ko/admin/mail`);
   // When the records entry is selected.
-  await page.getByRole("navigation", { name: "관리자 메뉴" }).getByRole("link", { name: "기록", exact: true }).click();
+  await expect(page.locator(".admin-shell")).toBeVisible();
+  const menu = page.locator('button[aria-controls="admin-sidebar"]');
+  if (await menu.isVisible()) {
+    await menu.click();
+    await expect(menu).toHaveAttribute("aria-expanded", "true");
+  }
+  await page.getByRole("navigation", { name: "관리자 메뉴" }).getByRole("link", { name: "작업 기록", exact: true }).click();
   // Then the route and authenticated audit API both resolve.
   await expect(page).toHaveURL(`${origin}/ko/admin/logs`);
   await expect(page.getByRole("heading", { name: "관리 기록" })).toBeVisible();

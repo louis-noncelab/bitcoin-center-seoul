@@ -26,18 +26,29 @@ function unusedPort() {
 }
 
 async function waitForServer(origin, child) {
-  const deadline = Date.now() + 30_000;
-  while (Date.now() < deadline) {
-    if (child.exitCode !== null) throw new Error(`Standalone server exited with code ${child.exitCode}.`);
-    try {
-      const response = await fetch(`${origin}/ko/programs`, { headers: { "cache-control": "no-store" } });
-      if (response.status === 200) return;
-    } catch (error) {
-      if (!(error instanceof TypeError)) throw error;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-  throw new Error("Standalone server did not become ready within 30 seconds.");
+  await new Promise((resolve, reject) => {
+    let output = "";
+    const finish = (error) => {
+      clearTimeout(timeout);
+      child.stdout.off("data", ready);
+      child.off("error", failed);
+      child.off("exit", exited);
+      if (error) reject(error);
+      else resolve();
+    };
+    const ready = (chunk) => {
+      output = `${output}${chunk}`.slice(-4_000);
+      if (/Ready in \d+ms/.test(output)) finish();
+    };
+    const failed = (error) => finish(error);
+    const exited = (code) => finish(new Error(`Standalone server exited with code ${code}.`));
+    const timeout = setTimeout(() => finish(new Error("Standalone server did not become ready within 30 seconds.")), 30_000);
+    child.stdout.on("data", ready);
+    child.once("error", failed);
+    child.once("exit", exited);
+  });
+  const response = await fetch(`${origin}/ko/programs`, { headers: { "cache-control": "no-store" } });
+  assert.equal(response.status, 200, "Standalone programs page must render after the ready event");
 }
 
 async function jsonRequest(origin, pathname, cookie, options = {}) {
@@ -157,7 +168,7 @@ test("event booking is available directly from bilingual home, schedule and deta
     child = spawn(process.execPath, [serverFile], {
       cwd: standaloneDirectory,
       env: renderedServerEnv({ origin, port, directory, uploads, passwordHash }),
-      stdio: ["ignore", "ignore", "pipe"],
+      stdio: ["ignore", "pipe", "pipe"],
     });
     let serverErrors = "";
     child.stderr.setEncoding("utf8");
@@ -216,7 +227,7 @@ test("event booking is available directly from bilingual home, schedule and deta
       const detailBooking = bookingAnchors(detailArticle);
       assert.equal(detailBooking.length, 1, "The upcoming detail page needs one prominent booking action");
       assertBooking(detailBooking[0], bookingUrl, locale);
-      const galleryIndex = detailArticle.indexOf('class="photo-gallery"');
+      const galleryIndex = detailArticle.search(/class="(?:[^"]*\s)?photo-gallery(?:\s[^"]*)?"/);
       const bodyIndex = detailArticle.indexOf(locale === "ko" ? baseInput.description : baseInput.descriptionEn);
       assert.ok(galleryIndex > detailBooking[0].index, "Booking must precede the image gallery");
       assert.ok(bodyIndex > detailBooking[0].index, "Booking must precede the long description");
