@@ -60,7 +60,7 @@ export async function applyObservation(id: string, observation: Observation, eve
     notifyPaid = observation.status === "PAID" && fulfillment !== "REVIEW" && Boolean(payment.orderId);
     return updated;
   });
-  if (notifyPaid && payment.orderId) void notifyOrder(payment.orderId, "결제 완료");
+  if (notifyPaid && payment.orderId) await notifyOrder(payment.orderId, "결제 완료");
   if (deliver) scheduleEmailDelivery();
   return payment;
 }
