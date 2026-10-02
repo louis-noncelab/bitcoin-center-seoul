@@ -1,8 +1,18 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { z } from "zod";
 import { productSchema } from "../src/components/commerce/contracts";
 
 const origin = process.env.COMMERCE_REVIEW_ORIGIN ?? "http://127.0.0.1:3100";
+const cartStorageKey = "center-cart";
+
+async function cartQuantities(page: Page): Promise<number[]> {
+  return page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as { items?: Array<{ quantity?: unknown }> };
+    return parsed.items?.map((item) => item.quantity).filter((quantity): quantity is number => typeof quantity === "number") ?? [];
+  }, cartStorageKey);
+}
 
 for (const width of [375, 768, 1440]) {
   test(`cart closes and restores focus at ${width}px`, async ({ page }) => {
@@ -120,6 +130,56 @@ test("cart navigation releases modality and keeps the chosen product", async ({ 
   await expect(page.locator(".commerce-cart-drawer[open]")).toHaveCount(0);
   await expect(page.locator("html")).not.toHaveCSS("overflow", "hidden");
   await expect(page.locator("main .commerce-cart-line")).toHaveCount(1);
+});
+
+test("cart quantity inputs ignore empty and invalid edits before valid updates", async ({ page }) => {
+  // Given a chosen product in both the drawer and full cart views.
+  await page.goto(`${origin}/en/shop/bitcoin-standard`);
+  await page.getByRole("button", { name: "Add to cart", exact: true }).click();
+  const dialog = page.locator(".commerce-cart-drawer");
+  await expect(dialog).toHaveAttribute("open", "");
+  await expect(dialog.locator(".commerce-cart-line")).toHaveCount(1);
+  expect(await cartQuantities(page)).toEqual([1]);
+
+  const drawerQuantity = dialog.getByRole("spinbutton", { name: "Quantity", exact: true });
+  await drawerQuantity.fill("");
+  await expect(drawerQuantity).toHaveValue("1");
+  await expect(dialog.locator(".commerce-cart-line")).toHaveCount(1);
+  expect(await cartQuantities(page)).toEqual([1]);
+
+  await drawerQuantity.fill("0");
+  await expect(drawerQuantity).toHaveValue("1");
+  await expect(dialog.locator(".commerce-cart-line")).toHaveCount(1);
+  expect(await cartQuantities(page)).toEqual([1]);
+
+  await drawerQuantity.fill("2.5");
+  await expect(drawerQuantity).toHaveValue("1");
+  await expect(dialog.locator(".commerce-cart-line")).toHaveCount(1);
+  expect(await cartQuantities(page)).toEqual([1]);
+
+  await drawerQuantity.fill("2");
+  await expect(drawerQuantity).toHaveValue("2");
+  expect(await cartQuantities(page)).toEqual([2]);
+
+  await dialog.getByRole("link", { name: "View cart", exact: true }).click();
+  await expect(page).toHaveURL(/\/en\/cart$/);
+  const cartMain = page.locator("main");
+  await expect(cartMain.locator(".commerce-cart-line")).toHaveCount(1);
+  const fullPageQuantity = cartMain.getByRole("spinbutton", { name: "Quantity", exact: true });
+  await expect(fullPageQuantity).toHaveValue("2");
+
+  await fullPageQuantity.fill("");
+  await expect(fullPageQuantity).toHaveValue("2");
+  await expect(cartMain.locator(".commerce-cart-line")).toHaveCount(1);
+  expect(await cartQuantities(page)).toEqual([2]);
+
+  await fullPageQuantity.fill("3");
+  await expect(fullPageQuantity).toHaveValue("3");
+  expect(await cartQuantities(page)).toEqual([3]);
+
+  await cartMain.getByRole("button", { name: "Remove", exact: true }).click();
+  await expect(cartMain.locator(".commerce-cart-line")).toHaveCount(0);
+  expect(await cartQuantities(page)).toEqual([]);
 });
 
 test("cart catalog failure offers retry and never enables stale checkout", async ({ page }) => {
