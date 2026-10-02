@@ -15,8 +15,10 @@ import { flushEmailDelivery } from "@/server/email/queue";
 import { runPaymentMaintenancePass } from "@/server/payments/maintenance";
 import { runPrivacyRetentionPass } from "@/server/privacy-retention";
 import { cleanExpiredPrivacyRecords } from "@/server/privacy-retention-cleanup";
+import { createCorrelationId, safeLogWorkerFailure } from "@/server/safe-log";
 
 const intervalMs = 30_000;
+const jobRunId = createCorrelationId();
 
 async function main() {
   const args = process.argv.slice(2);
@@ -47,14 +49,15 @@ async function main() {
         // Fixed event names and counts only: never provider URLs, credentials or customer data.
         console.info(JSON.stringify({
           event: "maintenance.pass",
+          jobRunId,
           checked: result.checked,
           unavailable: result.unavailable,
           requiresReconciliation: result.requiresReconciliation,
           cycleComplete: cursor === null,
         }));
-      } catch {
+      } catch (error) {
         await flushEmailDelivery().catch(() => undefined);
-        console.error("maintenance.pass_failed");
+        safeLogWorkerFailure({ event: "maintenance.pass_failed", jobRunId, stage: "payments.maintenance", retryable: watch, error });
         if (!watch) { process.exitCode = 1; break; }
       }
       if (!stop.signal.aborted && Date.now() >= nextPrivacyAt) {
@@ -63,11 +66,11 @@ async function main() {
           const cleanup = await cleanExpiredPrivacyRecords({ apply: true });
           privacyCursor = retention.nextCursor;
           if (privacyCursor === null && !cleanup.more) nextPrivacyAt = Date.now() + 86_400_000;
-          console.info(JSON.stringify({ event: "privacy.maintenance", orders: retention.orders,
+          console.info(JSON.stringify({ event: "privacy.maintenance", jobRunId, orders: retention.orders,
             archives: cleanup.archives, emails: cleanup.emails, quotes: cleanup.quotes,
             cycleComplete: privacyCursor === null && !cleanup.more }));
-        } catch {
-          console.error("privacy.maintenance_failed");
+        } catch (error) {
+          safeLogWorkerFailure({ event: "privacy.maintenance_failed", jobRunId, stage: "privacy.maintenance", retryable: true, error });
           nextPrivacyAt = Date.now() + 60_000;
         }
       }
@@ -85,4 +88,7 @@ async function main() {
   }
 }
 
-main().catch(() => { console.error("maintenance.stopped_unexpectedly"); process.exitCode = 1; });
+main().catch((error: unknown) => {
+  safeLogWorkerFailure({ event: "maintenance.stopped_unexpectedly", jobRunId, stage: "payments.worker", retryable: false, error });
+  process.exitCode = 1;
+});

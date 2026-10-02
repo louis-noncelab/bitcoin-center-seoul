@@ -10,5 +10,5 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     if (!current.order) throw new HttpError(404, "NOT_FOUND", "주문을 찾을 수 없습니다.");
     await rateLimit("payment:status", id, 30, 60);
     return json(publicPayment(await reconcilePayment(id), current.order.confirmationCode));
-  });
+  }, { route: "api.payments.status" });
 }

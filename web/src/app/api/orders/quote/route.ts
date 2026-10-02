@@ -11,4 +11,4 @@ export const POST = (request: Request) => handleApi(async () => {
   const response = json({ ...result.quote, ...(result.token ? { quoteToken: result.token } : {}) }, 201);
   if (result.token) response.headers.append("set-cookie", resourceAccessCookie("quote", result.quote.id, result.token));
   return response;
-});
+}, { route: "api.orders.quote" });

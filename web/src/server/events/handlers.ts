@@ -45,7 +45,7 @@ function withoutJoinLink<T extends { onlineUrl: string; onlineInstructions: stri
 }
 
 export async function publicEvents(): Promise<Response> {
-  return route(async () => dataResponse((await listEvents()).map(withoutJoinLink)));
+  return route(async () => dataResponse((await listEvents()).map(withoutJoinLink)), { route: "api.events.list" });
 }
 
 export async function publicEvent(_request: NextRequest, context: ItemContext): Promise<Response> {
@@ -53,11 +53,11 @@ export async function publicEvent(_request: NextRequest, context: ItemContext): 
     const event = await getEvent(await itemId(context));
     if (!event) throw new ApiError(404, "NOT_FOUND", "행사를 찾을 수 없습니다.");
     return dataResponse(withoutJoinLink(event));
-  });
+  }, { route: "api.events.detail" });
 }
 
 export async function publicHighlights(): Promise<Response> {
-  return route(async () => dataResponse(await listHighlights()));
+  return route(async () => dataResponse(await listHighlights()), { route: "api.highlights.list" });
 }
 
 export async function publicHighlight(_request: NextRequest, context: ItemContext): Promise<Response> {
@@ -65,7 +65,7 @@ export async function publicHighlight(_request: NextRequest, context: ItemContex
     const highlight = await getHighlight(await itemId(context));
     if (!highlight) throw new ApiError(404, "NOT_FOUND", "하이라이트를 찾을 수 없습니다.");
     return dataResponse(highlight);
-  });
+  }, { route: "api.highlights.detail" });
 }
 
 export async function adminEventsGet(request: NextRequest): Promise<Response> {
@@ -234,5 +234,5 @@ export async function publicImage(request: NextRequest, context: ImageContext): 
         "x-content-type-options": "nosniff",
       },
     });
-  });
+  }, { route: "api.images.public" });
 }

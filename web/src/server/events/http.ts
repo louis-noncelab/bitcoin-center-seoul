@@ -3,6 +3,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { ApiError } from "@/server/events/errors";
+import { createCorrelationId, safeLogApiFailure } from "@/server/safe-log";
 
 export type ItemContext = { readonly params: Promise<{ readonly id: string }> };
 export type ImageContext = { readonly params: Promise<{ readonly path: string[] }> };
@@ -11,24 +12,36 @@ export function dataResponse<T>(data: T, status = 200): NextResponse {
   return NextResponse.json({ data }, { status, headers: { "cache-control": "no-store" } });
 }
 
-export async function route(action: () => Response | Promise<Response>): Promise<Response> {
+type RouteOptions = {
+  readonly route?: string | undefined;
+};
+
+function retryableStatus(status: number): boolean {
+  return status === 429 || status === 503 || status >= 500;
+}
+
+export async function route(action: () => Response | Promise<Response>, options: RouteOptions = {}): Promise<Response> {
+  const requestId = createCorrelationId();
   try {
     return await action();
   } catch (error) {
     if (error instanceof ApiError) {
+      safeLogApiFailure({ requestId, route: options.route, status: error.status, code: error.code, error, retryable: retryableStatus(error.status) });
       return NextResponse.json(
-        { error: { code: error.code, message: error.message } },
+        { error: { code: error.code, requestId, message: error.message } },
         { status: error.status, headers: { "cache-control": "no-store" } },
       );
     }
     if (error instanceof z.ZodError) {
+      safeLogApiFailure({ requestId, route: options.route, status: 400, code: "VALIDATION_ERROR", error, retryable: false });
       return NextResponse.json(
-        { error: { code: "VALIDATION_ERROR", message: "입력값을 확인해주세요." } },
+        { error: { code: "VALIDATION_ERROR", requestId, message: "입력값을 확인해주세요." } },
         { status: 400, headers: { "cache-control": "no-store" } },
       );
     }
+    safeLogApiFailure({ requestId, route: options.route, status: 500, code: "INTERNAL_ERROR", error, retryable: true });
     return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "요청을 처리하지 못했습니다." } },
+      { error: { code: "INTERNAL_ERROR", requestId, message: "요청을 처리하지 못했습니다." } },
       { status: 500, headers: { "cache-control": "no-store" } },
     );
   }

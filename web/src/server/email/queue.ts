@@ -4,6 +4,7 @@ import nodemailer, { type Transporter } from "nodemailer";
 import { prisma } from "@/server/db";
 import { getServerConfig } from "@/server/config";
 import { decryptPayload, renderEmail } from "@/server/email";
+import { createCorrelationId, safeLogWorkerFailure } from "@/server/safe-log";
 
 // One claim per worker, same shape as Saturday Block's queue: SKIP LOCKED so two drains
 // cannot take the same letter, a claim token so a slow worker cannot overwrite a newer claim,
@@ -218,6 +219,7 @@ export function scheduleEmailDelivery(): void {
     return;
   }
   if (mode !== "smtp") return;
+  const jobRunId = createCorrelationId();
   chain = chain.then(async () => {
     let again = true;
     while (again) {
@@ -226,7 +228,7 @@ export function scheduleEmailDelivery(): void {
       if (result.claimed >= EMAIL_QUEUE_BATCH) again = true;
     }
   }).catch((error: unknown) => {
-    console.error(error instanceof Error ? `email.queue_failed ${error.name}` : "email.queue_failed");
+    safeLogWorkerFailure({ event: "email.queue_failed", jobRunId, stage: "email.queue", retryable: true, error });
   });
 }
 

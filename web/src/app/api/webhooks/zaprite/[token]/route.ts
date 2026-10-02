@@ -10,5 +10,5 @@ export async function POST(request: Request, context: { params: Promise<{ token:
     // this Zaprite organization. Both answer 200 so Zaprite stops retrying.
     const { handled } = await processZapriteWebhook(request, token);
     return json({ received: true, handled });
-  });
+  }, { route: "api.webhooks.zaprite" });
 }

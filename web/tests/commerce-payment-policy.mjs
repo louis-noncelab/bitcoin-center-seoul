@@ -158,6 +158,7 @@ test("maintenance reports expired LNURL holds requiring operator reconciliation"
   const passes = stdout.trim().split("\n").map(line => JSON.parse(line));
   // Then the real worker log exposes the attention count and completes its cycle.
   assert.ok(passes.some(pass => pass.event === "maintenance.pass" && pass.requiresReconciliation >= 1));
+  assert.ok(passes.every(pass => /^[0-9a-f-]{36}$/.test(pass.jobRunId)));
   assert.equal(passes.at(-1).cycleComplete, true);
 });
 
