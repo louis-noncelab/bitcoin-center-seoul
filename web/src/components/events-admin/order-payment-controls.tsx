@@ -8,6 +8,7 @@ import { useConfirmation } from "@/components/ui/confirmation-dialog";
 import { adminOrderRecord, orderStatusLabels, type AdminOrderRecord } from "@/lib/commerce-contract";
 import { orderPaymentHistory, paymentActionLabels, paymentOperationErrors, paymentStatusLabels, refundMethodLabels, refundRecordingMethods } from "@/lib/order-payment-contract";
 import { adminRequest, AdminRequestError, errorText, jsonBody } from "./request";
+import { ZapriteObservations } from "./zaprite-observations";
 
 type Operation = "PAID" | "CANCELLED" | "CANCEL_PAID" | "REFUND" | "CANCEL_FREE";
 const operations = {
@@ -129,6 +130,7 @@ export function OrderPaymentControls({ order, open, disabled, onPendingChange, o
         {needsRefund && <Button disabled={disabled || !reason.trim() || !proof.trim()} onClick={() => void submit("REFUND")}>외부 환불 완료 기록</Button>}
       </div>
     </>}
+    <ZapriteObservations orderId={order.id} open={open} revision={`${version ?? ""}:${historyRevision}`} />
     <h4>처리 이력 <span className="muted">최근 50건</span></h4>
     {historyError ? <p className="events-error" role="alert">{historyError}</p> : !history.length ? <p className="muted">관리자 처리 이력이 없습니다.</p> : <ol>
       {history.map((entry) => <li key={entry.id}>

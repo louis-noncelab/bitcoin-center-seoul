@@ -125,7 +125,10 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
     await expect(top).toBeHidden();
     await expect(page.locator("#main")).toBeFocused();
-    await expect(page.locator(".footer-collaboration")).toHaveAttribute("href", "mailto:hello@noncelab.com");
+    const collaboration = page.getByRole("button", { name: "협업 제안" });
+    await expect(collaboration).toHaveClass(/footer-collaboration/);
+    await collaboration.click();
+    await expect(page.getByRole("dialog", { name: "협업 제안" })).toBeVisible();
   });
 }
 

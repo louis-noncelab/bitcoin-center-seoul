@@ -1,11 +1,10 @@
 import assert from "node:assert/strict";
 import pg from "pg";
+import { assertSafeTestDatabaseUrl } from "./test-database-url.mjs";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 assert.ok(databaseUrl, "Set TEST_DATABASE_URL to a disposable, migrated local PostgreSQL database");
-const database = new URL(databaseUrl);
-assert.ok(["localhost", "127.0.0.1", "[::1]"].includes(database.hostname));
-assert.match(database.pathname, /(?:test|regression|audit)/i, "Rendered tests may only reset a named test database");
+assertSafeTestDatabaseUrl(databaseUrl);
 
 export function renderedServerEnv({ origin, port, directory, uploads, passwordHash }) {
   return {

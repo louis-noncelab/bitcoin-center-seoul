@@ -16,6 +16,7 @@ const { createPasswordHash } = await import("../src/server/events/password.ts");
 const { openDatabase, getDatabase } = await import("../src/server/events/db.ts");
 const { login } = await import("../src/server/events/auth.ts");
 const paymentRoute = await import("../src/app/api/admin/orders/[id]/payment/route.ts");
+const observationsRoute = await import("../src/app/api/admin/orders/[id]/payment-observations/route.ts");
 const cancelRoute = await import("../src/app/api/admin/orders/[id]/cancel-paid/route.ts");
 const freeCancelRoute = await import("../src/app/api/admin/orders/[id]/cancel-free/route.ts");
 const refundRoute = await import("../src/app/api/admin/orders/[id]/refund/route.ts");
@@ -57,4 +58,13 @@ test("external refund recording requires Bitcoin method, proof and explicit inve
 });
 test("private payment history never accepts a guest order cookie as administrator auth", async () => {
   assert.equal((await paymentRoute.GET(request(null, { cookie: "bcs_order_test-order=guest" }, "GET"), context)).status, 401);
+});
+test("Zaprite observations require administrator auth, not a guest order cookie", async () => {
+  // Given requests without an administrator session.
+  for (const cookie of ["", "bcs_order_test-order=guest"]) {
+    // When the private observation route is requested.
+    const response = await observationsRoute.GET(request(null, { cookie }, "GET"), context);
+    // Then no payment evidence is disclosed.
+    assert.equal(response.status, 401);
+  }
 });

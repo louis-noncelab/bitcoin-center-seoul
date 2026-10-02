@@ -48,7 +48,7 @@ export function GalleryField({ locale, images, portrait = false, onChange, onPen
       {error && <p className="events-error" role="alert">{error}</p>}
       <ol className="events-gallery-editor">
         {images.map((url, index) => (
-          <li key={`${url}-${index}`}>
+          <li key={`${url}-${images.slice(0, index).filter((image) => image === url).length}`}>
             <Image src={url} alt={ko ? `사진 ${index + 1}` : `Image ${index + 1}`} width={portrait ? 300 : 320} height={portrait ? 400 : 240} unoptimized />
             <div className="events-image-actions">
               <Button variant="secondary" disabled={index === 0} onClick={() => move(index, -1)} aria-label={ko ? `사진 ${index + 1} 앞으로` : `Move image ${index + 1} earlier`}>↑</Button>

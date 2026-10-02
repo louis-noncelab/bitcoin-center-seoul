@@ -3,6 +3,7 @@ import { z } from "zod";
 
 const origin = "https://bitcoincenterseoul.com";
 const sections = ["", "/about", "/programs", "/experience", "/journal", "/visit"] as const;
+const legalSections = ["/business-info", "/privacy-policy", "/terms-of-service", "/refund-policy"] as const;
 const brands = { ko: "비트코인 센터 서울", en: "Bitcoin Center Seoul" } as const;
 const publicRowsSchema = z.object({ data: z.array(z.object({ id: z.number().int().positive(), slug: z.string().default("") })) });
 
@@ -72,12 +73,13 @@ for (const locale of ["ko", "en"] as const) {
     await expect(script).toHaveCount(1);
     const identity: unknown = JSON.parse(await script.innerText());
     const email = page.locator('.footer-actions a[href^="mailto:"]');
-    const telephone = page.locator('footer a[href^="tel:"]');
+    const telephone = page.locator('.footer-actions a[href^="tel:"]');
     const phoneNumber = await telephone.getAttribute("title");
     await expect(email).toHaveAccessibleName(/hello@noncelab\.com/);
     await expect(telephone).toHaveAccessibleName(/702-1718/);
     expect(phoneNumber).toBe("+82-2-702-1718");
     await expect(telephone).toHaveAttribute("href", `tel:${phoneNumber?.replaceAll("-", "")}`);
+    await expect(page.locator('footer a[href^="tel:"]')).toHaveCount(2);
 
     expect(identity).toEqual({
       "@context": "https://schema.org",
@@ -103,7 +105,7 @@ test("the sitemap keeps the same Korean fallback for every locale pair", async (
   const shopPaths = productResponse.status() === 200
     ? ["/shop", ...z.object({ data: z.array(z.object({ slug: z.string().min(1) })) }).parse(await productResponse.json()).data.map((product) => `/shop/${product.slug}`)]
     : [];
-  const paths = [...sections, "/news", "/collection", "/goods", "/reviews", "/experience/board-game", "/experience/wallet", "/notices", ...shopPaths, ...await publicDetailPaths(request)];
+  const paths = [...sections, "/news", "/collection", "/goods", "/reviews", "/experience/board-game", "/experience/wallet", "/notices", ...legalSections, ...shopPaths, ...await publicDetailPaths(request)];
 
   expect(response.status()).toBe(200);
   expect(entries).toHaveLength(paths.length * 2);
