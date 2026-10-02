@@ -20,6 +20,7 @@
     "doctor": "react-doctor . --verbose",
     "analyze": "ANALYZE=true next build --webpack",
     "review": "node --import tsx scripts/events-review.mjs",
+    "review:pg": "node --conditions=react-server --import tsx scripts/pg-review.mjs",
     "admin:password": "node --import tsx scripts/admin-password.ts",
     "test:security": "node --conditions=react-server --import tsx --test --test-concurrency=1 tests/admin-security.mjs tests/security-rate-limits.mjs",
     "backup": "node --import tsx scripts/events-backup.ts",
@@ -46,7 +47,8 @@
     "email:queue": "node --conditions=react-server --import tsx scripts/email-queue.ts",
     "content:backfill": "node --conditions=react-server --import tsx scripts/sqlite-to-pg-content.mjs",
     "test:backfill": "node --conditions=react-server --import tsx --test tests/migration-backfill.mjs",
-    "test:markup": "node --import ./tests/helpers/register-styles.mjs --import tsx --test tests/markdown.mjs tests/content-tags-render.mjs"
+    "test:markup": "node --import ./tests/helpers/register-styles.mjs --import tsx --test tests/markdown.mjs tests/content-tags-render.mjs",
+    "test:pg-review": "node --conditions=react-server --import tsx --test tests/pg-review-runner.mjs"
   },
   "dependencies": {
     "@atomiqlabs/bolt11": "1.6.2",
