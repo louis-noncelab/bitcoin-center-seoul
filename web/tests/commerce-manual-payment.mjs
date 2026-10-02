@@ -85,6 +85,11 @@ const input = (payment, decision = "PAID", reason = "입금 내역 대조 완료
 const manual = (order, payment, decision = "PAID", reason) => resolveManualPayment(order.id, input(payment, decision, reason), "review-admin");
 const reload = (payment) => prisma.payment.findUniqueOrThrow({ where: { id: payment.id } });
 const auditCount = (order) => prisma.auditLog.count({ where: { targetId: order.id, action: "order.payment.manual" } });
+const paidOutbox = async (order) => (await prisma.emailOutbox.findMany({
+  where: { eventKey: { in: [`order:${order.id}:PAID`, `operator:${order.id}:PAID`] } },
+  select: { eventKey: true, kind: true },
+  orderBy: { eventKey: "asc" },
+})).map((row) => ({ key: row.eventKey.replace(order.id, "{order}"), kind: row.kind }));
 const conflict = (error) => error instanceof HttpError && error.status === 409;
 
 test("manual payment schema requires a reason and a version", () => {
@@ -98,10 +103,23 @@ test("concurrent identical manual paid requests settle once and audit once", asy
   const after = await stock();
   assert.deepEqual([after.stockOnHand, after.reservedStock], [before.stockOnHand - 1, before.reservedStock - 1]);
   assert.equal(await auditCount(order), 1);
+  assert.deepEqual(await paidOutbox(order), [
+    { key: "operator:{order}:PAID", kind: "operator.paid" },
+    { key: "order:{order}:PAID", kind: "order.paid" },
+  ]);
 });
 
-test("provider paid and manual paid race cannot double-consume stock", async () => {
-  const { order, payment } = await orderWithPayment();
+test("manual and provider paid transitions enqueue the same paid event contract", async () => {
+  const manualOrder = await orderWithPayment();
+  const providerOrder = await orderWithPayment();
+  await manual(manualOrder.order, manualOrder.payment);
+  await applyObservation(providerOrder.payment.id, { status: "PAID" });
+  assert.deepEqual(await paidOutbox(manualOrder.order), await paidOutbox(providerOrder.order));
+});
+
+test("provider paid and manual paid race cannot double-consume stock, coupon or paid outbox", async () => {
+  const code = await coupon();
+  const { order, payment } = await orderWithPayment(code.code);
   const before = await stock();
   const results = await Promise.allSettled([manual(order, payment), applyObservation(payment.id, { status: "PAID" })]);
   assert.equal(await orderStatus(order), "PAID");
@@ -109,7 +127,12 @@ test("provider paid and manual paid race cannot double-consume stock", async () 
   assert.ok(results.every((r) => r.status === "fulfilled" || conflict(r.reason)));
   const after = await stock();
   assert.deepEqual([after.stockOnHand, after.reservedStock], [before.stockOnHand - 1, before.reservedStock - 1]);
+  assert.equal(await uses(code), 1);
   assert.ok(await auditCount(order) <= 1);
+  assert.deepEqual(await paidOutbox(order), [
+    { key: "operator:{order}:PAID", kind: "operator.paid" },
+    { key: "order:{order}:PAID", kind: "order.paid" },
+  ]);
 });
 for (const first of ["manual", "provider"]) test(`paid/cancel serialization preserves money and stock when ${first} wins`, async () => {
   const { order, payment } = await orderWithPayment();

@@ -4,8 +4,9 @@ import type { Tx } from "@/server/db";
 import { prisma } from "@/server/db";
 import { releaseCouponUsage } from "@/server/commerce/coupons";
 import { enqueue } from "@/server/email";
+import { enqueueOperatorLetter } from "@/server/email/payment-letter";
 import { scheduleEmailDelivery } from "@/server/email/queue";
-import { openString } from "@/server/privacy";
+import { openAddress, openString } from "@/server/privacy";
 import { HttpError } from "@/server/http";
 import { lockPayment } from "@/server/payments/state";
 import { assertLnurlUnpaidResolution } from "@/server/payments/unpaid-resolution";
@@ -23,6 +24,20 @@ export const manualPaymentSchema = z.object({
   }).strict().optional(),
 }).strict();
 type ManualPaymentInput = z.infer<typeof manualPaymentSchema>;
+
+const contactAddressSchema = z.object({
+  postalCode: z.string().optional(),
+  region: z.string().optional(),
+  city: z.string().optional(),
+  line1: z.string().optional(),
+  line2: z.string().optional(),
+}).passthrough();
+
+function contactAddress(value: unknown): string {
+  const parsed = contactAddressSchema.safeParse(openAddress(value));
+  if (!parsed.success) return "";
+  return [parsed.data.postalCode, parsed.data.region, parsed.data.city, parsed.data.line1, parsed.data.line2].filter(Boolean).join(" ");
+}
 
 async function restoreCouponUsage(tx: Tx, order: OrderDetails) {
   if (await tx.couponUsage.findUnique({ where: { orderId: order.id } })) return;
@@ -106,6 +121,19 @@ export async function resolveManualPayment(orderId: string, input: ManualPayment
         fromOrderStatus: order.status, fromPaymentStatus: payment.status, toOrderStatus: input.decision, toPaymentStatus },
     } });
     await enqueue(tx, `order:${order.id}:${input.decision}`, openString(order.customerEmail), order.locale === "en" ? "en" : "ko", `order.${input.decision.toLowerCase()}`, { id: order.id, status: input.decision });
+    if (paid) {
+      await enqueueOperatorLetter(tx, {
+        eventKey: `operator:${order.id}:PAID`,
+        kind: "operator.paid",
+        order,
+        contact: {
+          name: openString(order.customerName),
+          email: openString(order.customerEmail),
+          phone: openString(order.customerPhone),
+          address: contactAddress(order.address),
+        },
+      });
+    }
     deliver = true;
     return orderView(await tx.order.findUniqueOrThrow({ where: { id: order.id }, include: orderIncludes }));
   });
