@@ -37,7 +37,13 @@ export async function applyObservation(id: string, observation: Observation, eve
     const payment = await lockPayment(tx, id);
     if (observation.reason === "NO_INVOICE_ISSUED" && payment.status !== "NEW") return payment;
     const key = `${eventKey ?? "poll"}:${id}:${createHash("sha256").update(JSON.stringify(observation)).digest("hex")}`;
-    const inserted = await tx.paymentEvent.createMany({ data: { paymentId: id, provider: payment.provider, mode: payment.mode, eventKey: key, summary: { status: observation.status, reason: observation.reason ?? null } }, skipDuplicates: true });
+    const inserted = await tx.paymentEvent.createMany({ data: { paymentId: id, provider: payment.provider, mode: payment.mode, eventKey: key, summary: {
+      status: observation.status, reason: observation.reason ?? null,
+      ...(payment.provider === "ZAPRITE" && observation.zaprite ? { zaprite: {
+        ...observation.zaprite,
+        transactions: observation.zaprite.transactions?.map((transaction) => ({ ...transaction })) ?? null,
+      } } : {}),
+    } }, skipDuplicates: true });
     if (!inserted.count || payment.status === "PAID") return payment;
     if (observation.status === "PENDING") return payment;
     const terminal = ["EXPIRED", "FAILED", "REVIEW"].includes(payment.status);

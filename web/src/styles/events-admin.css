@@ -184,6 +184,8 @@
 }
 .events-admin-list > li { padding: var(--space-4); }
 .events-admin-list > li:first-child { border-top: 0; }
+.events-admin-workspace > .events-admin-list > li:has([data-provider="ZAPRITE"]) { display: block; }
+.events-admin-workspace > .events-admin-list > li:has([data-provider="ZAPRITE"]) > .button-row { margin-block-start: var(--space-4); }
 .admin-shell .form-control > :is(input:not([type="hidden"]), select),
 .admin-shell .form-control .menu-select-control {
   box-sizing: border-box;
