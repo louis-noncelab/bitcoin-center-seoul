@@ -13,6 +13,7 @@ const sessionSeconds = 8 * 60 * 60;
 const idleMilliseconds = 30 * 60 * 1000;
 const loginWindowMs = 15 * 60 * 1000;
 const loginLimit = 5;
+const loginCleanupLimit = 500;
 const pendingClients = new Set<string>();
 let verificationTail = Promise.resolve();
 
@@ -42,9 +43,16 @@ async function reserveAttempt(key: string, now: number): Promise<void> {
     RETURNING "failures"
   `;
   if (!rows[0]) throw new ApiError(429, "RATE_LIMITED", "잠시 후 다시 시도해주세요.");
-  await prisma.adminLoginAttempt.deleteMany({
-    where: { windowStarted: { lt: BigInt(now - loginWindowMs) }, blockedUntil: { lt: BigInt(now) } },
-  });
+  await prisma.$executeRaw`
+    WITH expired AS (
+      SELECT ctid FROM "admin_login_attempts"
+      WHERE "window_started" < ${BigInt(now - loginWindowMs)} AND "blocked_until" < ${BigInt(now)}
+      LIMIT ${loginCleanupLimit}
+      FOR UPDATE SKIP LOCKED
+    )
+    DELETE FROM "admin_login_attempts"
+    WHERE ctid IN (SELECT ctid FROM expired)
+  `;
 }
 
 export function loginClientKey(request: NextRequest): string {
