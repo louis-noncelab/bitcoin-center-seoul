@@ -5,7 +5,7 @@ import { Bitcoin } from "lucide-react";
 import { ButtonSpinner } from "@/components/ui/button-spinner";
 import { ActionLink, Button } from "@/components/ui/primitives";
 import { FormNotice } from "@/components/ui/form-field";
-import { orderKind, orderValueKrw, purchaseTracked, trackPurchaseOnce, type PurchaseDetails } from "@/lib/analytics";
+import { beginPurchaseFlow, endPurchaseFlow, orderKind, orderValueKrw, purchaseFlowActive, purchaseTracked, trackPurchaseOnce } from "@/lib/analytics";
 import { apiRequest } from "@/lib/api-client";
 import { centerContent } from "@/content/center";
 import type { Locale } from "@/i18n/routing";
@@ -39,6 +39,7 @@ export function PaymentView({ id, locale }: { readonly id: string; readonly loca
       try {
         const result = await apiRequest(`/api/payments/${id}/status`, paymentSchema, { signal: controller.signal });
         if (controller.signal.aborted || busy.current) return;
+        if (result.orderId && ["NEW", "CREATING", "PENDING", "PROCESSING"].includes(result.status)) beginPurchaseFlow(result.orderId);
         setPayment(result); setError(null); setClock(Date.now());
         if (["CREATING", "PENDING", "PROCESSING"].includes(result.status)) timer = setTimeout(() => { void read(); }, 5000);
       } catch (failure) { if (!controller.signal.aborted) setError(failure); }
@@ -63,18 +64,18 @@ export function PaymentView({ id, locale }: { readonly id: string; readonly loca
     // must never reach analytics as a client-side page view. The layout skips GTM on that page.
     const target = `/${locale}/orders/confirm/${payment.confirmationCode}`;
     const orderId = payment.orderId;
-    if (!orderId || purchaseTracked(orderId)) {
+    if (!orderId || !purchaseFlowActive(orderId) || purchaseTracked(orderId)) {
       window.location.replace(target);
       return;
     }
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 3000);
     apiRequest(`/api/orders/${orderId}`, orderSchema, { signal: controller.signal })
-      .then((order): PurchaseDetails => ({ orderId, locale, kind: orderKind(order.items.map((item) => item.sku)), value: orderValueKrw(order.amountKrw, order.amountSats), itemName: order.items[0]?.titleKo }))
-      .catch((): PurchaseDetails => ({ orderId, locale }))
-      .then((details) => {
+      .then((order) => trackPurchaseOnce({ orderId, locale, kind: orderKind(order.items.map((item) => item.sku)), value: orderValueKrw(order.amountKrw, order.amountSats), amountSats: order.amountSats, itemName: order.items[0]?.titleKo }))
+      .catch(() => {})
+      .finally(() => {
         clearTimeout(timer);
-        trackPurchaseOnce(details);
+        endPurchaseFlow(orderId);
         window.location.replace(target);
       });
   }, [payment, locale]);

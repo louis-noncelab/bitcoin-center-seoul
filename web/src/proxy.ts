@@ -26,8 +26,9 @@ export default function proxy(request: NextRequest) {
     const postcodeFrames = /^\/(?:ko|en)\/checkout\/?$/.test(pathname)
       ? ` https://postcode.map.kakao.com${secure ? "" : " http://postcode.map.kakao.com"}`
       : "";
-    // Google Tag Manager and the GA4 tag it loads, only when a container id is configured.
-    const tagManager = process.env.NEXT_PUBLIC_GTM_ID?.trim();
+    // Private paths stay excluded even when an unsupported locale rewrites to a public 404.
+    const privatePage = /^\/(?:[^/]+\/)?(?:admin|orders\/confirm)(?:\/|$)/.test(pathname);
+    const tagManager = !privatePage && process.env.NEXT_PUBLIC_ANALYTICS_APPROVED === "true" && process.env.NEXT_PUBLIC_GTM_ID?.trim();
     const policy = [
       "default-src 'self'",
       `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${tagManager ? " https://www.googletagmanager.com" : ""}${development ? " 'unsafe-eval'" : ""}`,
@@ -48,12 +49,15 @@ export default function proxy(request: NextRequest) {
     if (segment && /^[a-z]{2}(?:-[a-z]{2})?$/i.test(segment) && !hasLocale(routing.locales, segment)) {
       const url = request.nextUrl.clone();
       url.pathname = "/ko/404";
-      response = NextResponse.rewrite(url, { request: { headers } });
+      response = privatePage
+        ? NextResponse.next({ request: { headers } })
+        : NextResponse.rewrite(url, { request: { headers } });
       response.headers.set("X-Robots-Tag", "noindex, nofollow");
     } else {
       response = intlProxy(new NextRequest(request, { headers }));
     }
     response.headers.set("Content-Security-Policy", policy);
+    if (privatePage) response.headers.set("Referrer-Policy", "no-referrer");
   }
 
   if (/^\/(?:(?:ko|en|api)\/)?admin(?:\/|$)/.test(pathname) || /^\/certificate(?:\/|$)/.test(pathname)) {

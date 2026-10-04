@@ -1,14 +1,16 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
-import { orderKind, orderValueKrw, trackEvent, trackPurchaseOnce } from "../src/lib/analytics.ts";
+import { beginPurchaseFlow, endPurchaseFlow, purchaseFlowActive, orderKind, orderValueKrw, trackEvent, trackPurchaseOnce } from "../src/lib/analytics.ts";
 
-function fakeWindow() {
-  const store = new Map();
+function fakeWindow(shared = new Map()) {
+  const storage = (store) => ({
+    getItem: (key) => store.has(key) ? store.get(key) : null,
+    setItem: (key, value) => { store.set(key, String(value)); },
+    removeItem: (key) => { store.delete(key); },
+  });
   globalThis.window = {
-    sessionStorage: {
-      getItem: (key) => store.has(key) ? store.get(key) : null,
-      setItem: (key, value) => { store.set(key, String(value)); },
-    },
+    sessionStorage: storage(new Map()),
+    localStorage: storage(shared),
   };
   return globalThis.window;
 }
@@ -30,6 +32,7 @@ test("orderValueKrw converts stored KRW, keeps free registrations at 0 and omits
   assert.equal(orderValueKrw(undefined, "0"), 0);
   assert.equal(orderValueKrw(null, "52000"), undefined);
   assert.equal(orderValueKrw("not-a-number", "52000"), undefined);
+  assert.equal(orderValueKrw("9007199254740992", "52000"), undefined);
 });
 
 test("trackEvent is a no-op without a window and appends to dataLayer in the browser", () => {
@@ -40,14 +43,57 @@ test("trackEvent is a no-op without a window and appends to dataLayer in the bro
   assert.deepEqual(browser.dataLayer, [{ event: "collab_submit", locale: "ko" }, { event: "outbound_click", destination: "x", locale: "en" }]);
 });
 
-test("trackPurchaseOnce sends one purchase per order and session", () => {
+test("trackPurchaseOnce sends one purchase per order and session", async () => {
   const browser = fakeWindow();
-  trackPurchaseOnce({ orderId: "order-1", locale: "ko", kind: "meetup", value: 0, itemName: "밋업" });
-  trackPurchaseOnce({ orderId: "order-1", locale: "ko", kind: "meetup", value: 0, itemName: "밋업" });
-  trackPurchaseOnce({ orderId: "order-2", locale: "en" });
+  await trackPurchaseOnce({ orderId: "order-1", locale: "ko", kind: "meetup", value: 0, itemName: "밋업" });
+  await trackPurchaseOnce({ orderId: "order-1", locale: "ko", kind: "meetup", value: 0, itemName: "밋업" });
+  await trackPurchaseOnce({ orderId: "order-2", locale: "en" });
   assert.deepEqual(browser.dataLayer, [
     { event: "purchase", order_id: "order-1", transaction_id: "order-1", locale: "ko", kind: "meetup", item_name: "밋업", value: 0, currency: "KRW" },
     { event: "purchase", order_id: "order-2", transaction_id: "order-2", locale: "en" },
   ]);
   assert.equal(browser.sessionStorage.getItem("ga_purchase_order-1"), "1");
+});
+
+test("a completed purchase is not emitted in another tab", async () => {
+  const shared = new Map();
+  fakeWindow(shared);
+  await trackPurchaseOnce({ orderId: "shared-order", locale: "ko" });
+  const nextTab = fakeWindow(shared);
+  await trackPurchaseOnce({ orderId: "shared-order", locale: "ko" });
+  assert.equal(nextTab.dataLayer, undefined);
+});
+
+test("blocked storage still deduplicates in the current document", async () => {
+  const browser = fakeWindow();
+  const blocked = { getItem() { throw new Error("blocked"); }, setItem() { throw new Error("blocked"); }, removeItem() { throw new Error("blocked"); } };
+  browser.sessionStorage = blocked;
+  browser.localStorage = blocked;
+  beginPurchaseFlow("private-order");
+  assert.equal(purchaseFlowActive("private-order"), true);
+  await Promise.all([trackPurchaseOnce({ orderId: "private-order", locale: "ko" }), trackPurchaseOnce({ orderId: "private-order", locale: "ko" })]);
+  assert.equal(browser.dataLayer.length, 1);
+  assert.equal(purchaseFlowActive("private-order"), false);
+});
+
+test("failed tags cannot throw or mark an undelivered purchase as complete", async () => {
+  const browser = fakeWindow();
+  browser.dataLayer = { push() { throw new Error("tag failure"); } };
+  assert.equal(trackEvent("collab_submit", { locale: "ko" }), false);
+  await assert.doesNotReject(trackPurchaseOnce({ orderId: "failed-order", locale: "ko" }));
+  assert.equal(browser.localStorage.getItem("ga_purchase_failed-order"), null);
+  browser.dataLayer = [];
+  await trackPurchaseOnce({ orderId: "failed-order", locale: "ko" });
+  assert.equal(browser.dataLayer.length, 1);
+});
+
+test("flow eligibility is consumed and fixed-satoshi orders keep their exact amount", async () => {
+  const browser = fakeWindow();
+  assert.equal(purchaseFlowActive("sats-order"), false);
+  beginPurchaseFlow("sats-order");
+  assert.equal(purchaseFlowActive("sats-order"), true);
+  await trackPurchaseOnce({orderId: "sats-order", locale: "en", amountSats: "52000"});
+  assert.deepEqual(browser.dataLayer, [{event: "purchase", order_id: "sats-order", transaction_id: "sats-order", locale: "en", amount_sats: "52000"}]);
+  assert.equal(purchaseFlowActive("sats-order"), false);
+  endPurchaseFlow("sats-order");
 });

@@ -32,12 +32,12 @@ export default async function LocaleLayout({
   if (!hasLocale(routing.locales, locale)) notFound();
   const theme = parseSiteTheme((await cookies()).get(themeCookieName)?.value);
   const requestHeaders = await headers();
-  // GTM loads only when the container id was provided at build time. It never loads on admin
+  // GTM loads only after configuration and privacy approval. It never loads on admin
   // screens or on /orders/confirm/<code>: that URL is a bearer link to the customer's name and
   // address and must not reach Google as page_location or page_referrer.
   const pathname = requestHeaders.get("x-bcs-pathname") ?? "";
-  const excluded = /^\/[a-z]{2}\/(?:admin|orders\/confirm)(?:\/|$)/.test(pathname);
-  const gtmId = excluded ? undefined : process.env.NEXT_PUBLIC_GTM_ID?.trim();
+  const excluded = /^\/(?:[^/]+\/)?(?:admin|orders\/confirm)(?:\/|$)/.test(pathname);
+  const gtmId = excluded || process.env.NEXT_PUBLIC_ANALYTICS_APPROVED !== "true" ? undefined : process.env.NEXT_PUBLIC_GTM_ID?.trim();
   const nonce = requestHeaders.get("x-nonce");
 
   return (
