@@ -155,10 +155,12 @@ test.describe("with a GTM container configured", () => {
   });
 
   test("an unsupported locale never exposes a private path to tags", async ({ page }) => {
-    const response = await page.goto(`/fr-CA/orders/confirm/${code}`);
-    await expect(page.locator("script#_next-gtm")).toHaveCount(0);
-    expect(response?.headers()["content-security-policy"]).not.toContain("google-analytics.com");
-    expect(response?.headers()["referrer-policy"]).toBe("no-referrer");
+    for (const pathname of [`/fr-CA/orders/confirm/${code}`, `/fr-CA/orders/%63onfirm/${code}`, "/fr-CA/%61dmin"]) {
+      const response = await page.goto(pathname);
+      await expect(page.locator("script#_next-gtm")).toHaveCount(0);
+      expect(response?.headers()["content-security-policy"]).not.toContain("google-analytics.com");
+      expect(response?.headers()["referrer-policy"]).toBe("no-referrer");
+    }
   });
 
   test("confirmation to public navigation reloads without leaking its code", async ({ page }) => {

@@ -1,3 +1,8 @@
-// Crossing this root layout reloads the document, removing GTM and its listeners before
-// private routes open and restoring analytics only after a fresh public-page request.
-export { default, generateMetadata, generateStaticParams } from "../../[locale]/layout";
+import type { ReactNode } from "react";
+import { LocaleDocument } from "@/components/locale-document";
+
+export { generateMetadata, generateStaticParams } from "../../[locale]/layout";
+
+export default function PrivateLocaleLayout({ children }: { children: ReactNode }) {
+  return <LocaleDocument analyticsEnabled={false}>{children}</LocaleDocument>;
+}

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { hasLocale } from "next-intl";
 import { randomBytes } from "node:crypto";
 import { routing } from "./i18n/routing";
+import { isPrivateAnalyticsPath } from "./lib/analytics-path";
 import { configuredOrigin } from "./server/events/config";
 
 const intlProxy = createMiddleware(routing);
@@ -27,7 +28,7 @@ export default function proxy(request: NextRequest) {
       ? ` https://postcode.map.kakao.com${secure ? "" : " http://postcode.map.kakao.com"}`
       : "";
     // Private paths stay excluded even when an unsupported locale rewrites to a public 404.
-    const privatePage = /^\/(?:[^/]+\/)?(?:admin|orders\/confirm)(?:\/|$)/.test(pathname);
+    const privatePage = isPrivateAnalyticsPath(pathname);
     const tagManager = !privatePage && process.env.NEXT_PUBLIC_ANALYTICS_APPROVED === "true" && process.env.NEXT_PUBLIC_GTM_ID?.trim();
     const policy = [
       "default-src 'self'",

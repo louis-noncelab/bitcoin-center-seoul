@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
+import { isPrivateAnalyticsPath } from "../src/lib/analytics-path.ts";
 import { beginPurchaseFlow, endPurchaseFlow, purchaseFlowActive, orderKind, orderValueKrw, trackEvent, trackPurchaseOnce } from "../src/lib/analytics.ts";
 
 function fakeWindow(shared = new Map()) {
@@ -16,6 +17,26 @@ function fakeWindow(shared = new Map()) {
 }
 
 afterEach(() => { delete globalThis.window; });
+
+test("private analytics paths include encoded and unsupported-locale segments", () => {
+  for (const pathname of ["/ko/admin", "/en/orders/confirm/code", "/fr-CA/orders/%63onfirm/code", "/ko/%61dmin", "/orders/confirm/code", "/bad%route"]) {
+    assert.equal(isPrivateAnalyticsPath(pathname), true, pathname);
+  }
+  assert.equal(isPrivateAnalyticsPath("/ko/shop"), false);
+  assert.equal(isPrivateAnalyticsPath("/en/programs/admin-lesson"), false);
+});
+
+test("a busy purchase lock skips optional tracking without waiting", async () => {
+  const browser = fakeWindow();
+  browser.navigator = { locks: { request: async (name, options, callback) => {
+    assert.equal(name, "ga_purchase_busy");
+    assert.deepEqual(options, { ifAvailable: true });
+    return callback(null);
+  } } };
+  await trackPurchaseOnce({ orderId: "busy", locale: "ko", value: 0 });
+  assert.equal(browser.dataLayer, undefined);
+  assert.equal(browser.localStorage.getItem("ga_purchase_busy"), null);
+});
 
 test("orderKind treats MEETUP- SKUs as meetups and everything else as goods", () => {
   assert.equal(orderKind(["MEETUP-12"]), "meetup");

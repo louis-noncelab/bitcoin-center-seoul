@@ -112,7 +112,7 @@ export async function trackPurchaseOnce({ orderId, locale, kind, value, amountSa
     clearTimeout(timer);
   };
   try {
-    if (window.navigator?.locks) await window.navigator.locks.request(purchaseKey(orderId), send);
+    if (window.navigator?.locks) await window.navigator.locks.request(purchaseKey(orderId), { ifAvailable: true }, (lock) => lock ? send() : undefined);
     else await send();
   } catch {}
 }
