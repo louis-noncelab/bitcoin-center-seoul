@@ -1,5 +1,6 @@
+import { GoogleTagManager } from "@next/third-parties/google";
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { locale as getRootLocale } from "next/root-params";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
@@ -30,6 +31,14 @@ export default async function LocaleLayout({
   const locale = await getRootLocale();
   if (!hasLocale(routing.locales, locale)) notFound();
   const theme = parseSiteTheme((await cookies()).get(themeCookieName)?.value);
+  const requestHeaders = await headers();
+  // GTM loads only when the container id was provided at build time. It never loads on admin
+  // screens or on /orders/confirm/<code>: that URL is a bearer link to the customer's name and
+  // address and must not reach Google as page_location or page_referrer.
+  const pathname = requestHeaders.get("x-bcs-pathname") ?? "";
+  const excluded = /^\/[a-z]{2}\/(?:admin|orders\/confirm)(?:\/|$)/.test(pathname);
+  const gtmId = excluded ? undefined : process.env.NEXT_PUBLIC_GTM_ID?.trim();
+  const nonce = requestHeaders.get("x-nonce");
 
   return (
     <html lang={locale} data-theme={theme} data-scroll-behavior="smooth" suppressHydrationWarning>
@@ -42,6 +51,7 @@ export default async function LocaleLayout({
           </ThemeProvider>
         </NextIntlClientProvider>
         <DevelopmentTools />
+        {gtmId ? <GoogleTagManager gtmId={gtmId} {...(nonce ? { nonce } : {})} /> : null}
       </body>
     </html>
   );

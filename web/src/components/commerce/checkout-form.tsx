@@ -7,6 +7,7 @@ import { SlideRegion } from "@/components/ui/slide-region";
 import "@/styles/slide-region.css";
 import "@/styles/checkout-contact-address.css";
 import { Button, ChoiceControl } from "@/components/ui/primitives";
+import { orderKind, orderValueKrw, trackPurchaseOnce } from "@/lib/analytics";
 import { ApiError, apiRequest, jsonRequest } from "@/lib/api-client";
 import { centerContent } from "@/content/center";
 import { checkoutDisclosure } from "@/content/checkout-disclosure";
@@ -111,6 +112,15 @@ export function CheckoutForm({ locale, policyVersion, items, countries, fromCart
           ...(fulfillment === "PICKUP" ? {} : { address: { countryCode: country, postalCode: data.get("postalCode"), region: data.get("region"), city: data.get("city"), line1: data.get("line1"), line2: data.get("line2") } }),
         }), headers });
         if (fromCart) removePurchasedCartItems(purchased);
+        // Free event registrations are confirmed (PAID) on creation; paid orders are tracked by
+        // the payment page when the payment settles.
+        if (quote.amountSats === "0") trackPurchaseOnce({
+          orderId: result.id,
+          locale,
+          kind: orderKind(items.map((item) => item.product.variants.find((variant) => variant.id === item.variantId)?.sku)),
+          value: orderValueKrw(quote.amountKrw, quote.amountSats),
+          itemName: items[0]?.product.titleKo,
+        });
         router.push(`/orders/${result.id}`);
       } catch (failure) {
         setError(failure);

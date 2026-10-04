@@ -2,14 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Bitcoin } from "lucide-react";
-import { useRouter } from "@/i18n/navigation";
 import { ButtonSpinner } from "@/components/ui/button-spinner";
 import { ActionLink, Button } from "@/components/ui/primitives";
 import { FormNotice } from "@/components/ui/form-field";
+import { orderKind, orderValueKrw, purchaseTracked, trackPurchaseOnce, type PurchaseDetails } from "@/lib/analytics";
 import { apiRequest } from "@/lib/api-client";
 import { centerContent } from "@/content/center";
 import type { Locale } from "@/i18n/routing";
-import { paymentSchema, type Payment } from "./contracts";
+import { orderSchema, paymentSchema, type Payment } from "./contracts";
 import { useDisplayRate, useDisplayUnit } from "./display-unit";
 import { bitcoin, dateTime } from "./format";
 import { RequestError } from "./request-error";
@@ -24,7 +24,7 @@ export function PaymentView({ id, locale }: { readonly id: string; readonly loca
   const [clock, setClock] = useState(0);
   const busy = useRef(false);
   const mounted = useRef(true);
-  const router = useRouter();
+  const leaving = useRef(false);
   const ko = locale === "ko";
   const unit = useDisplayUnit();
   const rate = useDisplayRate();
@@ -57,8 +57,27 @@ export function PaymentView({ id, locale }: { readonly id: string; readonly loca
     return () => clearTimeout(timer);
   }, [payment]);
   useEffect(() => {
-    if (payment?.status === "PAID" && payment.confirmationCode) router.replace(`/orders/confirm/${payment.confirmationCode}`);
-  }, [payment, router]);
+    if (payment?.status !== "PAID" || !payment.confirmationCode || leaving.current) return;
+    leaving.current = true;
+    // Hard navigation: the confirmation URL is a bearer link (customer name and address), so it
+    // must never reach analytics as a client-side page view. The layout skips GTM on that page.
+    const target = `/${locale}/orders/confirm/${payment.confirmationCode}`;
+    const orderId = payment.orderId;
+    if (!orderId || purchaseTracked(orderId)) {
+      window.location.replace(target);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 3000);
+    apiRequest(`/api/orders/${orderId}`, orderSchema, { signal: controller.signal })
+      .then((order): PurchaseDetails => ({ orderId, locale, kind: orderKind(order.items.map((item) => item.sku)), value: orderValueKrw(order.amountKrw, order.amountSats), itemName: order.items[0]?.titleKo }))
+      .catch((): PurchaseDetails => ({ orderId, locale }))
+      .then((details) => {
+        clearTimeout(timer);
+        trackPurchaseOnce(details);
+        window.location.replace(target);
+      });
+  }, [payment, locale]);
   const expired = payment ? new Date(payment.expiresAt).getTime() <= clock : false;
   const waiting = creating || payment?.status === "CREATING" || payment?.status === "PENDING" || payment?.status === "PROCESSING";
   const waitLabel = creating || payment?.status === "CREATING"

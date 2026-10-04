@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { hasLocale } from "next-intl";
 import { cache } from "react";
+import { TrackViewItem } from "@/components/analytics/track-view-item";
 import { CollectionFrame, ShopBrowseLink, collectionCopy, collectionMetadata, collectionText } from "@/components/site/collection-public";
 import { PhotoGallery } from "@/components/site/events-public";
 import { MarkdownContent } from "@/components/site/markdown-content";
@@ -29,6 +30,7 @@ export default async function CollectionDetailPage({ params }: Props) {
   const item = await readItem(id);
   const content = collectionText(locale, item);
   return <CollectionFrame locale={locale} section="library" title={content.title} detail><article className="event-detail">
+    <TrackViewItem kind={item.kind} itemId={item.slug || String(item.id)} itemName={item.title} locale={locale} />
     <PhotoGallery images={item.images} title={content.title} locale={locale} />
     <div className="collection-detail-meta"><p className="caption muted">{collectionCopy[locale][item.kind]}</p>{content.creator && <p lang={locale === "en" && !item.creatorEn ? "ko" : locale}>{content.creator}</p>}</div>
     {isPurchasableKind(item.kind) && <div className="button-row"><ShopBrowseLink locale={locale} /></div>}

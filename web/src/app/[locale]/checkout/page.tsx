@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TrackBeginCheckout } from "@/components/analytics/track-checkout";
 import { Checkout } from "@/components/commerce/checkout";
 import { CommercePage } from "@/components/commerce/commerce-page";
 import { commerceMetadata, pageLocale } from "@/components/commerce/page-support";
@@ -23,6 +24,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
   const meetup = query.kind === "meetup";
   const ko = locale === "ko";
   return <CommercePage locale={locale} focus="wide" section={meetup ? "programs" : "goods"} title={meetup ? (ko ? "밋업 예약" : "Meetup reservation") : (ko ? "주문하기" : "Checkout")} backTo={meetup ? "/programs" : "/cart"} backLabel={meetup ? (ko ? "행사로" : "Back to events") : (ko ? "장바구니로" : "Back to cart")}>
+    <TrackBeginCheckout kind={meetup ? "meetup" : "goods"} itemId={result.success ? result.data.variant : undefined} quantity={result.success ? result.data.quantity : undefined} locale={locale} />
     <Checkout locale={locale} policyVersion={checkoutPolicyVersion(locale)} selection={result.success ? { variantId: result.data.variant, quantity: result.data.quantity } : null} />
   </CommercePage>;
 }

@@ -26,12 +26,14 @@ export default function proxy(request: NextRequest) {
     const postcodeFrames = /^\/(?:ko|en)\/checkout\/?$/.test(pathname)
       ? ` https://postcode.map.kakao.com${secure ? "" : " http://postcode.map.kakao.com"}`
       : "";
+    // Google Tag Manager and the GA4 tag it loads, only when a container id is configured.
+    const tagManager = process.env.NEXT_PUBLIC_GTM_ID?.trim();
     const policy = [
       "default-src 'self'",
-      `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${development ? " 'unsafe-eval'" : ""}`,
+      `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${tagManager ? " https://www.googletagmanager.com" : ""}${development ? " 'unsafe-eval'" : ""}`,
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob:",
-      `connect-src 'self'${development ? " ws: wss:" : ""}`,
+      `img-src 'self' data: blob:${tagManager ? " https://*.google-analytics.com https://*.googletagmanager.com" : ""}`,
+      `connect-src 'self'${tagManager ? " https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com" : ""}${development ? " ws: wss:" : ""}`,
       "object-src 'none'",
       "base-uri 'none'",
       "form-action 'self'",

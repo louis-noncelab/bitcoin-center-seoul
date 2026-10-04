@@ -1,4 +1,5 @@
 import { ArrowUpRight } from "lucide-react";
+import { LegacyMeetupLink } from "@/components/analytics/tracked-anchor";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import type { EventRecord } from "@/lib/events-contract";
@@ -31,10 +32,10 @@ export function EventBookingLink({ event, locale, today, className = "", payment
   const title = ko ? event.title : event.titleEn || event.title;
   const provider = isSaturdayBlockUrl(href) ? (ko ? "샛비" : "SatB") : (ko ? "외부 사이트" : "External site");
   return (
-    <a className={`button event-booking-link ${className}`.trim()} href={href} target="_blank" rel="noopener noreferrer">
+    <LegacyMeetupLink locale={locale} className={`button event-booking-link ${className}`.trim()} href={href} target="_blank" rel="noopener noreferrer">
       <span><span className="sr-only">{title} </span>{ko ? "참여하기" : "Join event"}</span>
       <span className="event-booking-provider">{provider}<ArrowUpRight className="icon" aria-hidden="true" /></span>
       <span className="sr-only">{ko ? " (새 창)" : " (new window)"}</span>
-    </a>
+    </LegacyMeetupLink>
   );
 }
