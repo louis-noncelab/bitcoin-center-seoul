@@ -1,4 +1,5 @@
-import { ArrowUpRight, Mail, Phone } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
+import { OutboundLink } from "@/components/analytics/outbound-link";
 import { BackToTop } from "@/components/controls/back-to-top";
 import { ActionLink } from "@/components/ui/primitives";
 import { centerContent } from "@/content/center";
@@ -63,17 +64,9 @@ export function SiteFooter({ locale }: { readonly locale: Locale }) {
                 </Link>
               </li>
               <li>
-                <a
-                  href="https://www.saturdayblock.com/meetup?brand=bcs"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+                <Link href="/programs" locale={locale}>
                   {locale === "ko" ? "밋업 신청" : "Join a meetup"}
-                  <ArrowUpRight className="icon" aria-hidden="true" />
-                  <span className="sr-only">
-                    {locale === "ko" ? " (새 창)" : " (new window)"}
-                  </span>
-                </a>
+                </Link>
               </li>
             </ul>
           </nav>
@@ -102,7 +95,9 @@ export function SiteFooter({ locale }: { readonly locale: Locale }) {
               >
                 <Phone className="icon" aria-hidden="true" />
               </ActionLink>
-              <ActionLink
+              <OutboundLink
+                destination="x"
+                locale={locale}
                 href="https://x.com/BtcCtrSeoul"
                 variant="quiet"
                 target="_blank"
@@ -118,8 +113,10 @@ export function SiteFooter({ locale }: { readonly locale: Locale }) {
                 >
                   <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.64 7.584H.47l8.6-9.835L0 1.154h7.594l5.243 6.932 6.064-6.933Zm-1.29 19.49h2.039L6.487 3.24H4.3l13.31 17.403Z" />
                 </svg>
-              </ActionLink>
-              <ActionLink
+              </OutboundLink>
+              <OutboundLink
+                destination="instagram"
+                locale={locale}
                 href="https://www.instagram.com/bitcoincenterseoul/"
                 variant="quiet"
                 target="_blank"
@@ -149,7 +146,7 @@ export function SiteFooter({ locale }: { readonly locale: Locale }) {
                     stroke="none"
                   />
                 </svg>
-              </ActionLink>
+              </OutboundLink>
             </div>
             <CollaborationTrigger locale={locale} />
           </div>
