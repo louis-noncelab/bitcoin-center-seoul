@@ -6,6 +6,7 @@ import type { HighlightRecord } from "@/lib/events-contract";
 import type { HomeEvent } from "@/lib/home-events";
 import type { NewsItem } from "@/lib/news";
 import type { CollectionRecord } from "@/lib/collection-contract";
+import { anniversaryWindow } from "@/lib/anniversary";
 import { UpcomingEvents } from "./upcoming-events";
 import { HomeEventCalendar } from "./home-event-calendar";
 import { CenterPhoto } from "./center-photo";
@@ -14,6 +15,7 @@ import { HomeNews } from "./news-content";
 import { PageMotion } from "./page-motion";
 import { ReviewsPreview } from "./reviews-preview";
 import "@/styles/home-space.css";
+import "@/styles/anniversary.css";
 
 export function Home({
   locale,
@@ -33,9 +35,17 @@ export function Home({
   readonly collection: readonly CollectionRecord[];
 }) {
   const content = centerContent[locale];
+  const anniversary = anniversaryWindow(today);
   return (
     <main id="main" tabIndex={-1} className="site-main">
       <h1 className="sr-only">{content.hero.title}</h1>
+      {anniversary && <aside className="anniversary-marker container" aria-label={locale === "ko" ? "센터 개관 기념" : "Center anniversary"}>
+        <span className="anniversary-marker-date">2025.10.21</span>
+        <span className="anniversary-marker-copy">{locale === "ko"
+          ? today < `${anniversary}-10-21` ? `10월 21일이면 센터가 문을 연 지 ${anniversary - 2025}년입니다.` : `센터가 문을 연 지 ${anniversary - 2025}년이 됐습니다.`
+          : today < `${anniversary}-10-21` ? `The center turns ${anniversary - 2025} on October 21.` : `${anniversary - 2025} ${anniversary === 2026 ? "year" : "years"} since the center opened.`}</span>
+        <Link href={`/anniversary/${anniversary}`} locale={locale}>{locale === "ko" ? "사진 기록 보기" : "See the photos"}<ArrowRight aria-hidden="true" /></Link>
+      </aside>}
       <UpcomingEvents events={upcoming} locale={locale} today={today} />
       <div className="container">
         <nav
