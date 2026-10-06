@@ -1,0 +1,60 @@
+.anniversary-marker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-block: var(--space-4) var(--space-5);
+  padding-block: var(--space-4);
+  border-block: 1px solid var(--line);
+}
+.anniversary-marker-date { flex: none; color: var(--orange); font-size: var(--text-caption); font-weight: 700; }
+.anniversary-marker-copy { flex: 1; min-inline-size: 0; font-size: var(--text-small); font-weight: 600; line-height: 1.5; text-wrap: pretty; }
+.anniversary-marker a, .anniversary-back, .anniversary-all-link { display: inline-flex; align-items: center; gap: var(--space-2); min-block-size: 44px; color: var(--ink); font-size: var(--text-caption); font-weight: 600; text-decoration: none; }
+.anniversary-marker a svg, .anniversary-back svg, .anniversary-all-link svg { inline-size: 18px; block-size: 18px; }
+.anniversary-marker a:hover, .anniversary-back:hover, .anniversary-all-link:hover { text-decoration: underline; text-underline-offset: 4px; }
+.anniversary-page { padding-block: var(--space-6) var(--space-16); }
+.anniversary-heading { display: grid; justify-items: start; gap: var(--space-4); padding-block: 0 var(--space-12); }
+.anniversary-back { color: var(--muted); margin-block-end: var(--space-4); }
+.anniversary-eyebrow { color: var(--blue-ink); font-size: var(--text-caption); font-weight: 700; }
+.anniversary-heading h1 { max-inline-size: 20ch; font-size: clamp(2.25rem, 5vw, 4.5rem); line-height: 1.2; letter-spacing: -.05em; text-wrap: balance; word-break: keep-all; }
+.anniversary-intro { max-inline-size: 52ch; color: var(--muted); font-size: var(--text-body); line-height: 1.7; word-break: keep-all; }
+.anniversary-period { display: flex; gap: var(--space-3); align-items: center; margin-block-start: var(--space-3); color: var(--muted); font-size: var(--text-caption); }
+.anniversary-section-heading { display: flex; justify-content: space-between; align-items: end; gap: var(--space-4); padding-block-end: var(--space-5); border-bottom: 1px solid var(--line); }
+.anniversary-section-heading h2, .anniversary-next h2 { font-size: var(--text-heading); line-height: 1.3; letter-spacing: -.04em; word-break: keep-all; }
+.anniversary-section-heading > span { color: var(--muted); font-size: var(--text-caption); }
+.anniversary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-8) var(--space-5); padding-block-start: var(--space-6); }
+.anniversary-photo { min-inline-size: 0; }
+.anniversary-photo:first-child { grid-column: 1 / -1; }
+.anniversary-photo-link { display: grid; gap: var(--space-3); color: var(--ink); text-decoration: none; }
+.anniversary-photo-frame { position: relative; display: block; overflow: hidden; inline-size: 100%; aspect-ratio: 4 / 3; border-radius: var(--radius-panel); background: var(--surface); }
+.anniversary-photo:first-child .anniversary-photo-frame { aspect-ratio: 16 / 9; }
+.anniversary-photo-frame img { object-fit: cover; }
+.anniversary-photo-caption { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2); align-items: center; }
+.anniversary-photo-caption time { grid-column: 1 / -1; color: var(--muted); font-size: var(--text-caption); }
+.anniversary-photo-caption strong { font-size: var(--text-title); font-weight: 600; line-height: 1.5; word-break: keep-all; overflow-wrap: anywhere; }
+.anniversary-photo-caption svg { inline-size: 20px; block-size: 20px; }
+.anniversary-photo-link:hover .anniversary-photo-caption strong { text-decoration: underline; text-underline-offset: 4px; }
+.anniversary-empty { padding-block: var(--space-8); color: var(--muted); }
+.anniversary-all-link { margin-block-start: var(--space-6); }
+.anniversary-years { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-block-start: var(--space-6); }
+.anniversary-years a { display: inline-flex; align-items: center; min-block-size: 44px; padding-inline: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-control); color: var(--ink); text-decoration: none; }
+.anniversary-years a[aria-current="page"] { border-color: var(--ink); background: var(--surface); font-weight: 700; }
+.anniversary-next { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-8); margin-block-start: var(--space-16); padding-block: var(--space-8); border-top: 3px solid var(--orange); }
+.anniversary-next h2 { margin-block-start: var(--space-3); }
+.anniversary-next-details { display: grid; align-content: start; justify-items: start; gap: var(--space-3); }
+.anniversary-next-details time { color: var(--muted); font-size: var(--text-caption); }
+.anniversary-next-details a { display: inline-flex; align-items: center; gap: var(--space-2); min-block-size: 44px; color: var(--ink); font-size: var(--text-title); font-weight: 600; text-decoration: none; word-break: keep-all; }
+.anniversary-next-details a svg { flex: none; inline-size: 19px; block-size: 19px; }
+.anniversary-next-details a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.anniversary-next-details .anniversary-visit-link { color: var(--blue-ink); font-size: var(--text-caption); }
+.anniversary-page a:focus-visible, .anniversary-marker a:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); }
+@media (max-width: 767px) {
+  .anniversary-marker { flex-wrap: wrap; gap: var(--space-2) var(--space-4); }
+  .anniversary-marker-copy { flex-basis: calc(100% - 7rem); }
+  .anniversary-marker a { margin-inline-start: auto; }
+  .anniversary-heading { padding-block-end: var(--space-8); }
+  .anniversary-heading h1 { font-size: clamp(2rem, 8vw, 3rem); }
+  .anniversary-grid { grid-template-columns: minmax(0, 1fr); gap: var(--space-7); }
+  .anniversary-photo:first-child { grid-column: auto; }
+  .anniversary-photo:first-child .anniversary-photo-frame { aspect-ratio: 4 / 3; }
+  .anniversary-next { grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
+}
