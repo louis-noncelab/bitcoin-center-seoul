@@ -10,6 +10,7 @@ const documentSchema = z.object({
 });
 const evidenceSchema = z.object({
   locale: z.enum(["ko", "en"]),
+  kind: z.enum(["goods", "meetup", "free_meetup", "mixed"]).optional(),
   disclosure: z.array(z.string()),
   terms: documentSchema,
   refunds: documentSchema,
@@ -22,8 +23,9 @@ export function acceptedContractCopy(value: unknown): string {
   if (value === null || value === undefined) return "";
   const evidence = evidenceSchema.parse(value);
   const ko = evidence.locale === "ko";
+  const registration = evidence.kind === "meetup" || evidence.kind === "free_meetup";
   return [
-    ko ? "주문 시 동의한 약관 사본" : "Copy of the terms accepted for this order",
+    registration ? (ko ? "신청 시 동의한 약관 사본" : "Copy of the terms accepted for this registration") : (ko ? "주문 시 동의한 약관 사본" : "Copy of the terms accepted for this order"),
     `${ko ? "동의 일시" : "Accepted at"}: ${evidence.acceptedAt}`,
     `${ko ? "문서 식별값" : "Document identifier"}: ${evidence.version}`,
     ...evidence.disclosure,

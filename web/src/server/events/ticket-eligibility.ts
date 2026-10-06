@@ -1,11 +1,6 @@
 import { seoulDate } from "@/lib/center-status";
 import { isCalendarDate } from "@/lib/events-contract";
-
-export function ticketEventId(sku: string): number | null {
-  const match = /^MEETUP-([1-9]\d*)$/.exec(sku);
-  const id = match ? Number(match[1]) : NaN;
-  return Number.isSafeInteger(id) && id <= 2147483647 ? id : null;
-}
+export { ticketEventId } from "@/lib/commerce-kind";
 
 // Times are free-form display text. Registration ends at Seoul midnight after the event date.
 export function eventAcceptsTickets(event: {

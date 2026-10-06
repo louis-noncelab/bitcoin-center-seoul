@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { purchaseKind } from "./commerce-kind";
 
 const amount = z.string().regex(/^\d+$/);
 
@@ -110,6 +111,7 @@ export const fulfillmentStatusLabels = {
 /** The next fulfillment step the server will accept, or null when nothing is pending. */
 export function nextFulfillment(order: AdminOrderRecord): "READY" | "COLLECTED" | "SHIPPED" | "DELIVERED" | null {
   if (order.status !== "PAID" || order.privacyRedactedAt) return null;
+  if (purchaseKind(order.items) === "meetup") return null;
   if (order.fulfillment === "PICKUP") {
     if (order.fulfillmentStatus === "UNFULFILLED") return "READY";
     if (order.fulfillmentStatus === "READY") return "COLLECTED";

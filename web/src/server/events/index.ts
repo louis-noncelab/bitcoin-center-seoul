@@ -1,4 +1,5 @@
 import "server-only";
+import { ticketEventId, type MeetupInfo } from "@/lib/commerce-kind";
 
 import type { Prisma } from "@/generated/prisma/client";
 import {
@@ -263,10 +264,22 @@ export async function updateEvent(id: number, input: EventInput, revision: numbe
   }
 }
 
+export async function meetupInfoForSkus(skus: readonly string[]): Promise<MeetupInfo[]> {
+  const ids = [...new Set(skus.flatMap((sku) => {
+    const id = ticketEventId(sku);
+    return id === null ? [] : [id];
+  }))];
+  if (!ids.length) return [];
+  return prisma.centerEvent.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, date: true, time: true, venueType: true, location: true, locationEn: true, isOnline: true },
+  }).then((rows) => rows.map((row) => ({ ...row, venueType: row.venueType === "center" ? "center" : "external" })));
+}
+
 export async function paidOnlineSessions(skus: readonly string[]) {
   const ids = [...new Set(skus.flatMap((sku) => {
-    const match = /^MEETUP-(\d+)$/.exec(sku);
-    return match ? [Number(match[1])] : [];
+    const id = ticketEventId(sku);
+    return id === null ? [] : [id];
   }))];
   if (!ids.length) return [];
   const rows = await prisma.centerEvent.findMany({ where: { id: { in: ids }, isOnline: true, NOT: { onlineUrl: "" } } });

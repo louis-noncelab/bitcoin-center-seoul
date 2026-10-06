@@ -1,5 +1,6 @@
 import "server-only";
 import { ticketEventId } from "@/server/events/ticket-eligibility";
+import { purchaseKind } from "@/lib/commerce-kind";
 import { randomBytes, randomUUID } from "node:crypto";
 import { prisma } from "@/server/db";
 import { activePaymentProvider } from "@/server/commerce/settings";
@@ -30,7 +31,6 @@ export async function createOrder(request: Request, input: CreateOrder, account:
       return { order: orderView(existing), token, created: false };
     }
     if (input.acceptance?.accepted !== true) throw new HttpError(400, "ACCEPTANCE_REQUIRED", "Accept the terms and refund policy before ordering.");
-    const contractAcceptance = checkoutPolicyEvidence(input.locale, input.acceptance.version);
     await tx.$queryRaw`SELECT id FROM "Quote" WHERE id = ${input.quoteId} FOR UPDATE`;
     const quote = await tx.quote.findUnique({ where: { id: input.quoteId }, include: { order: { select: { id: true } } } });
     if (!quote || (account?.id !== quote.accountId && !matchesToken(readAccessToken(request, "quote", input.quoteId), quote.ownerHash))) throw new HttpError(404, "NOT_FOUND", "Quote not found.");
@@ -75,6 +75,7 @@ export async function createOrder(request: Request, input: CreateOrder, account:
       && snapshot.shippingAmountSats === "0" && !snapshot.coupon
       && snapshot.items.every((item) => ticketEventId(item.sku) !== null && item.priceKind === "FREE" && item.unitPriceAmount === "0" && item.amountSats === "0");
     if (quote.amountSats === 0n && !freeRegistration) throw new HttpError(400, "INVALID_AMOUNT", "Free checkout is only available for event registrations.");
+    const contractAcceptance = checkoutPolicyEvidence(input.locale, input.acceptance.version, new Date(), freeRegistration ? "free_meetup" : purchaseKind(snapshot.items));
     const id = randomUUID();
     const token = resourceToken(identity, "order", id);
     const config = getServerConfig();

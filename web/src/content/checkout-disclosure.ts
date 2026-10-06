@@ -1,6 +1,6 @@
 import type { Locale } from "@/i18n/routing";
 
-export const checkoutDisclosure: Record<Locale, readonly string[]> = {
+export const checkoutDisclosure: Record<Locale, readonly [string, string, string, string]> = {
   ko: [
     "환불은 최초 결제한 사토시를 기준으로 비트코인으로 반환합니다. 원화 표시 상품도 환불일 환율로 다시 계산하지 않으며, 법정 소비자 권리는 유지됩니다.",
     "상품은 원칙적으로 계약 내용을 받은 날부터 7일 이내(상품을 나중에 받으면 상품 수령일부터) 청약철회할 수 있습니다. 하자나 오배송 및 표시 내용과 다른 상품에 대한 법정 권리는 별도로 보장되며, 법정 철회 제한은 구매 전 고지된 경우에만 적용될 수 있습니다.",
