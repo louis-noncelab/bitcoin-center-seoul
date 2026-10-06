@@ -16,7 +16,7 @@ export default async function PaymentPage({ params }: Props) {
   const { locale: value, id } = await params;
   const locale = pageLocale(value);
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) notFound();
-  return <CommercePage locale={locale} focus="narrow" title={locale === "ko" ? "비트코인 결제" : "Bitcoin payment"} backTo="/shop">
+  return <CommercePage locale={locale} focus="narrow" title={locale === "ko" ? "비트코인 결제" : "Bitcoin payment"} backTo="/" backLabel={locale === "ko" ? "홈으로" : "Back to home"}>
     <PaymentView id={id} locale={locale} />
   </CommercePage>;
 }

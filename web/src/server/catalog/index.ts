@@ -1,6 +1,7 @@
 import "server-only";
 import { isEventProduct, requireOrdinaryProduct } from "./event-products";
 import { eventAcceptsTickets, ticketEventId } from "@/server/events/ticket-eligibility";
+import { meetupInfoForSkus } from "@/server/events";
 import { prisma } from "@/server/db";
 import { collectImagePaths, deleteUnusedImages, placeImagesInSlugFolder, rewriteImagePaths } from "@/server/events/images";
 import { markdownImageReferences } from "@/server/events/image-references";
@@ -25,7 +26,9 @@ export async function listCheckoutProduct(variantId: string) {
     const event = await prisma.centerEvent.findUnique({ where: { id: eventId } });
     if (!event || !eventAcceptsTickets(event)) return [];
   }
-  return variant ? [publicProduct(variant.product)] : [];
+  if (!variant) return [];
+  const [meetup] = await meetupInfoForSkus([variant.sku]);
+  return [{ ...publicProduct(variant.product), meetup: meetup ?? null }];
 }
 
 export async function getProduct(slug: string) {
