@@ -4,7 +4,7 @@
 // provider is contacted. Run with:
 //   TEST_DATABASE_URL=postgresql://localhost/bcs_test npm run test:commerce
 import assert from "node:assert/strict";
-import test, { after, before } from "node:test";
+import test, { after, before, mock } from "node:test";
 import { randomBytes, randomUUID } from "node:crypto";
 
 process.env.APP_MODE = "test";
@@ -339,6 +339,65 @@ function transactionObservation(payment, status, transactionStatus) {
     transactions: [{ id: `tx-${payment.id}`, method: "BITCOIN", status: transactionStatus, externalRef: "fixture-reference", amountInOrderCurrency: Number(payment.amountSats) }],
   }, payment));
 }
+
+test("notification database failure preserves settlement and subsequent email scheduling", { timeout: 10_000 }, async () => {
+  // Given a real reserved order and a database failure only at the optional notification read.
+  // Add this sale's stock so existing processing-order fixtures keep their inventory budget.
+  await prisma.productVariant.update({ where: { id: seeded.variantId }, data: { stockOnHand: { increment: 1 } } });
+  const { order, payment } = await observationOrder();
+  const stock = await prisma.productVariant.findUniqueOrThrow({ where: { id: seeded.variantId } });
+  const { getServerConfig } = await import("../src/server/config.ts");
+  const config = getServerConfig();
+  const emailMode = Object.getOwnPropertyDescriptor(config, "emailMode");
+  const findSetting = prisma.siteSetting.findUnique;
+  const entered = Promise.withResolvers();
+  const release = Promise.withResolvers();
+  let notificationFinished = false;
+  let scheduled = 0;
+  let returned = false;
+  prisma.siteSetting.findUnique = async (args) => {
+    if (!args.select?.productDisplayUnit) return findSetting(args);
+    entered.resolve();
+    await release.promise;
+    notificationFinished = true;
+    // Exercise an actual PostgreSQL error without disturbing settlement's tables.
+    return prisma.$queryRaw`SELECT bcs_notification_missing_column FROM "SiteSetting"`;
+  };
+  Object.defineProperty(config, "emailMode", {
+    configurable: true,
+    get() {
+      if (notificationFinished) scheduled += 1;
+      return "capture";
+    },
+  });
+  const logs = mock.method(console, "error", () => {});
+  try {
+    // When settlement reaches notification, it must still await its completion.
+    const settlement = applyObservation(payment.id, { status: "PAID" }).finally(() => { returned = true; });
+    await entered.promise;
+    assert.equal(returned, false);
+    assert.equal((await prisma.payment.findUniqueOrThrow({ where: { id: payment.id } })).status, "PAID");
+    release.resolve();
+    const result = await settlement;
+    // Then failure cannot escape, skip scheduling, or consume stock a second time.
+    assert.equal(result.status, "PAID");
+    assert.equal(scheduled, 1);
+    assert.equal(logs.mock.callCount(), 1);
+    assert.ok(logs.mock.calls[0].arguments.every(value => typeof value === "string"));
+    assert.equal((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status, "PAID");
+    await applyObservation(payment.id, { status: "PAID" });
+    const sold = await prisma.productVariant.findUniqueOrThrow({ where: { id: seeded.variantId } });
+    assert.equal(sold.stockOnHand, stock.stockOnHand - 1);
+    assert.equal(sold.reservedStock, stock.reservedStock - 1);
+    assert.equal(scheduled, 1);
+    assert.ok(await prisma.emailOutbox.count({ where: { orderId: order.id, kind: "order.paid" } }));
+  } finally {
+    release.resolve();
+    prisma.siteSetting.findUnique = findSetting;
+    logs.mock.restore();
+    Object.defineProperty(config, "emailMode", emailMode);
+  }
+});
 
 test("a lost Zaprite create response is recovered without issuing another order", async () => {
   // Given an unknown creation whose POST still fails but GET can find its externalUniqId.

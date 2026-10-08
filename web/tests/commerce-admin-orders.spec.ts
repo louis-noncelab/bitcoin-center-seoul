@@ -36,7 +36,7 @@ async function setup(page: Page, baseURL: string | undefined) {
   });
   await authenticate(page, origin);
   await page.goto(`${origin}/ko/admin/orders`);
-  await expect(page.getByRole("heading", { name: "주문 목록" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "신청과 주문" })).toBeVisible();
   return { queries, origin };
 }
 

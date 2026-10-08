@@ -8,13 +8,13 @@ export async function generateMetadata({ params }: Props) {
   const { locale: value, id } = await params;
   const locale = pageLocale(value);
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) notFound();
-  return commerceMetadata(locale, { path: `/orders/${id}`, title: locale === "ko" ? "주문 확인" : "Your order" }, { indexed: false });
+  return commerceMetadata(locale, { path: `/orders/${id}`, title: locale === "ko" ? "내역 확인" : "Your details" }, { indexed: false });
 }
 export default async function OrderPage({ params }: Props) {
   const { locale: value, id } = await params;
   const locale = pageLocale(value);
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) notFound();
-  return <CommercePage locale={locale} focus="narrow" title={locale === "ko" ? "주문 확인" : "Your order"}>
+  return <CommercePage locale={locale} focus="narrow" title={locale === "ko" ? "내역 확인" : "Your details"} backTo="/" backLabel={locale === "ko" ? "홈으로" : "Back to home"}>
     <OrderDetails id={id} locale={locale} />
   </CommercePage>;
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReviewRecord } from "@/lib/reviews-contract";
 import type { Locale } from "@/i18n/routing";
 import { markdownExcerpt } from "@/lib/markdown";
+import { withoutWordJoiners } from "@/lib/text";
 import { defaultShareImage, shareCardPath, shareImages } from "./share";
 import { pageMetadata, siteOrigin } from "./site";
 import { visitReview } from "./visit-reviews";
@@ -9,7 +10,7 @@ import { visitReview } from "./visit-reviews";
 export function reviewMetadata(record: ReviewRecord, locale: Locale): Metadata {
   const base = pageMetadata(locale);
   const review = visitReview(record);
-  const title = review.title[locale];
+  const title = withoutWordJoiners(review.title[locale]);
   const description = markdownExcerpt(review.summary[locale]);
   const path = `/reviews/${record.slug}`;
   const imageUrl = record.image ? shareCardPath("reviews", record.slug) : defaultShareImage;

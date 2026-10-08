@@ -60,7 +60,14 @@ export async function applyObservation(id: string, observation: Observation, eve
     notifyPaid = observation.status === "PAID" && fulfillment !== "REVIEW" && Boolean(payment.orderId);
     return updated;
   });
-  if (notifyPaid && payment.orderId) await notifyOrder(payment.orderId, "결제 완료");
+  if (notifyPaid && payment.orderId) {
+    try {
+      await notifyOrder(payment.orderId, "결제 완료");
+    } catch (error) {
+      // Settlement is committed; optional notification failure must not skip the mail drain.
+      console.error("[notify] failed", error instanceof Error ? error.name : "UnknownError");
+    }
+  }
   if (deliver) scheduleEmailDelivery();
   return payment;
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { Locale } from "@/i18n/routing";
 import { markdownExcerpt } from "@/lib/markdown";
 import { publicIndexingEnabled } from "@/lib/public-indexing";
+import { withoutWordJoiners } from "@/lib/text";
 import { centerContent } from "./center";
 import { defaultShareAlt, defaultShareImage, shareImages } from "./share";
 
@@ -34,7 +35,7 @@ export function pageMetadata(
 
   return {
     metadataBase: new URL(siteOrigin),
-    title,
+    title: withoutWordJoiners(title),
     description: content.introduction,
     robots: { index: publicIndexingEnabled(), follow: publicIndexingEnabled() },
     alternates: {
@@ -77,7 +78,7 @@ export function recordMetadata(
   const excerpt = markdownExcerpt(description);
   return {
     ...metadata,
-    title: `${title} | ${centerContent[locale].hero.title}`,
+    title: withoutWordJoiners(`${title} | ${centerContent[locale].hero.title}`),
     description: excerpt,
     alternates: {
       canonical: `/${locale}${path}`,

@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { purchaseKind } from "@/lib/commerce-kind";
 import { prisma } from "@/server/db";
 import { enqueue } from "@/server/email";
 import { scheduleEmailDelivery } from "@/server/email/queue";
@@ -11,10 +12,11 @@ export const fulfillmentSchema = z.object({ status: z.enum(["READY", "COLLECTED"
 export async function fulfillOrder(id: string, input: z.infer<typeof fulfillmentSchema>, actorId: string) {
   const view = await prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${id} FOR UPDATE`;
-    const order = await tx.order.findUnique({ where: { id } });
+    const order = await tx.order.findUnique({ where: { id }, include: { items: { select: { sku: true } } } });
     if (!order) throw new HttpError(404, "NOT_FOUND", "Order not found.");
     if (order.privacyRedactedAt) throw new HttpError(409, "ORDER_REDACTED", "개인정보가 파기된 주문은 변경할 수 없습니다.");
     if (order.status !== "PAID") throw new HttpError(409, "PAYMENT_REQUIRED", "Fulfillment requires confirmed payment.");
+    if (purchaseKind(order.items) === "meetup") throw new HttpError(409, "MEETUP_FULFILLMENT", "밋업은 참석자 관리에서 체크인해 주세요. / Check in event attendees through meetup management.");
     const expected = order.fulfillment === "PICKUP" ? { READY: "UNFULFILLED", COLLECTED: "READY", SHIPPED: null, DELIVERED: null } : { READY: null, COLLECTED: null, SHIPPED: "UNFULFILLED", DELIVERED: "SHIPPED" };
     if (expected[input.status] !== order.fulfillmentStatus) throw new HttpError(409, "INVALID_STATE", "This fulfillment transition is not allowed.");
     if (Boolean(input.carrier) !== Boolean(input.trackingNumber)) throw new HttpError(400, "TRACKING_REQUIRED", "Carrier and tracking number must be provided together.");

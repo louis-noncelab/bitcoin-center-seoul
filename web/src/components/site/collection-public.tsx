@@ -9,6 +9,7 @@ import type { Locale } from "@/i18n/routing";
 import { Link } from "@/i18n/navigation";
 import { isPurchasableKind, type CollectionRecord } from "@/lib/collection-contract";
 import { markdownExcerpt } from "@/lib/markdown";
+import { withoutWordJoiners } from "@/lib/text";
 import { SiteHeader } from "./site-header";
 import { SiteFooter } from "./site-footer";
 import { PageMotion } from "./page-motion";
@@ -104,7 +105,7 @@ export function collectionMetadata(
 ): Metadata {
   const copy = sectionCopy(locale, record ? recordSection(record) : section);
   const content = record ? collectionText(locale, record) : copy;
-  const title = content.title;
+  const title = withoutWordJoiners(content.title);
   const description = record
     ? markdownExcerpt(collectionText(locale, record).description) ||
       `${title} | ${copy.title}`

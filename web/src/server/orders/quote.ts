@@ -1,5 +1,6 @@
 import "server-only";
 import { eventAcceptsTickets, ticketEventId } from "@/server/events/ticket-eligibility";
+import { purchaseKind } from "@/lib/commerce-kind";
 import { z } from "zod";
 import type { Tx } from "@/server/db";
 import { prisma } from "@/server/db";
@@ -34,6 +35,7 @@ export async function cartProducts(tx: Tx, cart: Cart, account: CustomerAccount)
   requirePurchasePolicy(account, settings?.guestPurchaseAllowed === false);
   const variants = await tx.productVariant.findMany({ where: { id: { in: cart.items.map((item) => item.variantId) } }, include: { product: true } });
   if (variants.length !== cart.items.length) throw new HttpError(409, "PRODUCT_UNAVAILABLE", "A selected product is unavailable.");
+  if (purchaseKind(variants) === "mixed") throw new HttpError(409, "MIXED_CHECKOUT", "밋업 신청과 상품 주문은 각각 진행해 주세요. / Register for events and order goods separately.");
   const eventIds = variants.flatMap((variant) => {
     const id = ticketEventId(variant.sku);
     return id === null ? [] : [id];

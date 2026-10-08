@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { TrackViewItem } from "@/components/analytics/track-view-item";
 import { CommercePage } from "@/components/commerce/commerce-page";
 import { commerceMetadata, pageLocale } from "@/components/commerce/page-support";
 import { shareCardPath } from "@/content/share";
@@ -46,6 +47,7 @@ export default async function ProductPage({ params }: Props) {
     focus="wide"
   >
     <ProductJsonLd locale={locale} product={product} />
+    <TrackViewItem kind="goods" itemId={product.slug} itemName={product.titleKo} locale={locale} />
     <article className="commerce-product-page">
       <div className={`commerce-detail-grid${images.length ? "" : " commerce-detail-grid--without-image"}`}>
         {images.length > 0 ? <ProductGallery images={images} name={title} locale={locale} /> : null}
