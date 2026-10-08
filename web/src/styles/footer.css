@@ -132,6 +132,7 @@
   .footer-contact { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2) var(--space-4); }
   .footer-contact .footer-label { flex-basis: 100%; margin: 0; }
   .footer-collaboration { margin-block-start: 0; }
+  .footer-legal, .footer-copyright { padding-inline-end: calc(var(--control-height) + var(--space-2)); }
   .footer-legal a { min-block-size: var(--space-10); }
 }
 
