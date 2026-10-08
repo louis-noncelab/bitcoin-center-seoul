@@ -51,12 +51,12 @@ test("admin uploads, publishes, browses, edits and deletes a collection item", a
   await page.goto("/ko/admin/collection");
   await page.getByLabel("관리자 비밀번호", { exact: true }).fill(password);
   await page.getByRole("button", { name: "로그인", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "도서·작품·보드게임·굿즈 목록" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "도서, 작품, 보드게임, 굿즈 목록" })).toBeVisible();
   try {
     await page.getByRole("button", { name: "항목 등록", exact: true }).click();
     await page.getByRole("radio", { name: "작품", exact: true }).check();
     await page.getByLabel("제목", { exact: true }).fill(title);
-    await page.getByLabel("저자·제작사 (선택)", { exact: true }).fill("검증용 작가");
+    await page.getByLabel("저자 또는 제작사 (선택)", { exact: true }).fill("검증용 작가");
     await page.getByLabel("소개 (선택)", { exact: true }).fill("## 작품 소개\n\n**강조 문장**\n\n<script>window.testInjected=true</script>");
     await page.getByLabel("공개", { exact: true }).check();
     await page.getByRole("button", { name: "저장", exact: true }).click();
@@ -207,11 +207,11 @@ test("board games publish to their own detail page and the collection hub", asyn
   }
 });
 
-test("전시 페이지는 도서·작품, 보드게임, 하드웨어 지갑 체험 순으로 안내한다", async ({ page }) => {
+test("전시 페이지는 도서와 작품, 보드게임, 하드웨어 지갑 체험 순으로 안내한다", async ({ page }) => {
   await page.goto("/ko/experience");
   const cards = page.locator(".experience-gallery > *");
   await expect(cards).toHaveCount(3);
-  await expect(cards.locator("strong")).toHaveText(["도서·작품", "보드게임", "하드웨어 지갑 체험"]);
+  await expect(cards.locator("strong")).toHaveText(["도서와 작품", "보드게임", "하드웨어 지갑 체험"]);
   await expect(cards.nth(1).getByRole("link", { name: "보드게임 둘러보기", exact: true })).toHaveAttribute("href", "/ko/experience/board-game");
   await expect(cards.nth(1).getByRole("img", { name: "흰색 선반에 놓인 비트코인 보드게임", exact: true })).toBeVisible();
 });
@@ -224,7 +224,7 @@ test("관리자가 보드게임을 등록하면 컬렉션 필터와 보드게임
   await page.goto("/ko/admin/collection");
   await page.getByLabel("관리자 비밀번호", { exact: true }).fill(password);
   await page.getByRole("button", { name: "로그인", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "도서·작품·보드게임·굿즈 목록" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "도서, 작품, 보드게임, 굿즈 목록" })).toBeVisible();
   try {
     await page.getByRole("button", { name: "항목 등록", exact: true }).click();
     await page.getByRole("radio", { name: "보드게임", exact: true }).check();

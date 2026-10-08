@@ -1,6 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
-import bolt11 from "bolt11";
+import bolt11 from "@atomiqlabs/bolt11";
 import { z } from "zod";
 import { getServerConfig } from "@/server/config";
 import type { Payment } from "@/generated/prisma/client";
@@ -14,12 +14,12 @@ export const reviewReceiver = {
 } as const;
 
 export function reviewInvoice(payment: Payment) {
-  const metadata = JSON.stringify([["text/plain", `TEST ONLY — Bitcoin Center Seoul — ${payment.creationKey}`]]);
+  const metadata = JSON.stringify([["text/plain", `TEST ONLY: Bitcoin Center Seoul: ${payment.creationKey}`]]);
   const preimage = createHash("sha256").update(`TEST-preimage:${payment.creationKey}`).digest("hex");
   const hash = createHash("sha256").update(Buffer.from(preimage, "hex")).digest("hex");
   const timestamp = Math.floor(payment.createdAt.getTime() / 1000);
   const signed = bolt11.sign(bolt11.encode({
-    network: { bech32: "tb", pubKeyHash: 111, scriptHash: 196, validWitnessVersions: [0, 1] },
+    network: { bech32: "tb", pubKeyHash: 111, scriptHash: 196, validWitnessVersions: [0, 1], wif: 239 },
     millisatoshis: (payment.amountSats * 1000n).toString(), timestamp,
     tags: [{ tagName: "payment_hash", data: hash }, { tagName: "purpose_commit_hash", data: createHash("sha256").update(metadata).digest("hex") },
       { tagName: "expire_time", data: Math.max(60, Math.floor(payment.expiresAt.getTime() / 1000) - timestamp) }],

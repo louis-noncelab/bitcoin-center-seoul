@@ -47,7 +47,7 @@ async function expectSmoothFocus(field: Locator) {
 }
 
 for (const theme of ["light", "dark"]) {
-  test(`입력 하단 선이 중앙에서 펼쳐지고 모션 감소에서는 즉시 표시된다 · ${theme}`, async ({ page, context, baseURL }) => {
+  test(`입력 하단 선이 중앙에서 펼쳐지고 모션 감소에서는 즉시 표시된다, ${theme}`, async ({ page, context, baseURL }) => {
     await context.addCookies([{ name: "bcs-theme", value: theme, url: reviewOrigin(baseURL) }]);
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/ko/admin");
@@ -55,10 +55,10 @@ for (const theme of ["light", "dark"]) {
     await expectSmoothFocus(page.getByLabel("관리자 비밀번호", { exact: true }));
     await login(page);
     await page.getByRole("button", { name: "새 항목 등록", exact: true }).click();
-    for (const field of [page.getByLabel("제목 · 한국어", { exact: true }), page.getByLabel("행사 날짜", { exact: true }), page.getByRole("button", { name: "사진 여러 장 선택", exact: true }), page.getByRole("button", { name: "저장", exact: true })]) {
+    for (const field of [page.getByLabel("한국어 제목", { exact: true }), page.getByLabel("행사 날짜", { exact: true }), page.getByRole("button", { name: "사진 여러 장 선택", exact: true }), page.getByRole("button", { name: "저장", exact: true })]) {
       expect((await field.boundingBox())?.height).toBe(48);
     }
-    const description = page.getByLabel("설명 · 한국어", { exact: true });
+    const description = page.getByLabel("한국어 설명", { exact: true });
     await description.scrollIntoViewIfNeeded();
     await expectSmoothFocus(description);
 
@@ -92,16 +92,16 @@ test("행사 등록, 사진 두 장 업로드, 수정, 세션 만료 후 초안 
   await login(page);
   try {
     await page.getByRole("button", { name: "새 항목 등록" }).click();
-    await page.getByLabel("제목 · 한국어", { exact: true }).fill(title);
+    await page.getByLabel("한국어 제목", { exact: true }).fill(title);
     await page.getByLabel("URL 슬러그", { exact: true }).fill(slug);
-    await page.getByLabel("제목 · 영어", { exact: true }).fill("[Review] Event gallery");
-    await page.getByLabel("설명 · 한국어", { exact: true }).fill("검토용 행사입니다. 공개 운영 자료가 아닙니다.");
-    await page.getByLabel("설명 · 영어", { exact: true }).fill("Local review event, not an operational event.");
+    await page.getByLabel("영어 제목", { exact: true }).fill("[Review] Event gallery");
+    await page.getByLabel("한국어 설명", { exact: true }).fill("검토용 행사입니다. 공개 운영 자료가 아닙니다.");
+    await page.getByLabel("영어 설명", { exact: true }).fill("Local review event, not an operational event.");
     await page.getByLabel("행사 날짜", { exact: true }).fill("2026-10-10");
     await page.getByRole("textbox", { name: /^시간 한국 시간/ }).fill("14:00–16:00");
     await page.getByLabel("참여하기 버튼 링크 (선택)", { exact: true }).fill("https://pay.zaprite.com/test-payment?ticket=early&source=center#checkout");
     await expectVenue(page, "center");
-    await expect(page.getByLabel("장소 · 한국어", { exact: true })).toBeHidden();
+    await expect(page.getByLabel("한국어 장소", { exact: true })).toBeHidden();
     const buffers = await Promise.all(["#ff6b0a", "#32699f"].map((background) => sharp({ create: { width: 80, height: 60, channels: 3, background } }).png().toBuffer()));
     await page.getByLabel("사진 여러 장 선택").setInputFiles(buffers.map((buffer, index) => ({ name: `review-${index}.png`, mimeType: "image/png", buffer })));
     await expect(page.getByText("2장 선택됨", { exact: true })).toBeVisible();
@@ -143,7 +143,7 @@ test("행사 등록, 사진 두 장 업로드, 수정, 세션 만료 후 초안 
     await row.getByRole("button", { name: "수정", exact: true }).click();
     await expect(page.getByLabel("참여하기 버튼 링크 (선택)", { exact: true })).toHaveValue(initial.link);
     await page.getByLabel("참여하기 버튼 링크 (선택)", { exact: true }).fill("https://pay.zaprite.com/test-ticket?event=meetup");
-    await page.getByLabel("제목 · 한국어", { exact: true }).fill(title + " 수정");
+    await page.getByLabel("한국어 제목", { exact: true }).fill(title + " 수정");
     await page.getByLabel("URL 슬러그", { exact: true }).fill(slug + "-updated");
     await page.getByRole("button", { name: "사진 2 앞으로", exact: true }).click();
     const logout = await page.request.post("/api/admin/logout", { headers: { origin: baseURL ?? "" }, data: {} });
@@ -155,7 +155,7 @@ test("행사 등록, 사진 두 장 업로드, 수정, 세션 만료 후 초안 
     await expect(page.getByText("2장 선택됨", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "저장", exact: true }).click();
     await expect(page.getByText("세션이 만료되었습니다. 작성한 내용은 유지됩니다. 다시 로그인한 뒤 저장해 주세요.")).toBeVisible();
-    await expect(page.getByLabel("제목 · 한국어", { exact: true })).toHaveValue(title + " 수정");
+    await expect(page.getByLabel("한국어 제목", { exact: true })).toHaveValue(title + " 수정");
     const { ADMIN_PASSWORD } = await reviewRuntime();
     await page.getByLabel("관리자 비밀번호", { exact: true }).fill(ADMIN_PASSWORD);
     await page.getByRole("button", { name: "로그인", exact: true }).click();
@@ -187,11 +187,11 @@ test("센터 행사 참가비를 사토시 고정가로 저장하고 원화 고�
   await login(page);
   try {
     await page.getByRole("button", { name: "새 항목 등록", exact: true }).click();
-    await page.getByLabel("제목 · 한국어", { exact: true }).fill(title);
-    await page.getByLabel("제목 · 영어", { exact: true }).fill("Fixed satoshi meetup");
+    await page.getByLabel("한국어 제목", { exact: true }).fill(title);
+    await page.getByLabel("영어 제목", { exact: true }).fill("Fixed satoshi meetup");
     await page.getByLabel("URL 슬러그", { exact: true }).fill(slug);
-    await page.getByLabel("설명 · 한국어", { exact: true }).fill("격리 환경의 사토시 행사입니다.");
-    await page.getByLabel("설명 · 영어", { exact: true }).fill("A fixed satoshi meetup in review.");
+    await page.getByLabel("한국어 설명", { exact: true }).fill("격리 환경의 사토시 행사입니다.");
+    await page.getByLabel("영어 설명", { exact: true }).fill("A fixed satoshi meetup in review.");
     await page.getByLabel("행사 날짜", { exact: true }).fill("2099-10-01");
     await page.getByRole("textbox", { name: /^시간 한국 시간/ }).fill("19:00");
     await page.getByRole("switch", { name: /외부 결제 링크/ }).uncheck();
@@ -237,16 +237,16 @@ test("하이라이트 기간과 비공개 상태를 저장하며 관리자 화�
   const slug = `highlight-${randomUUID()}`;
   let id: number | undefined;
   await page.goto("/en/admin");
-  await expect(page.getByRole("heading", { name: "행사·하이라이트 관리", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "행사와 하이라이트 관리", exact: true })).toBeVisible();
   await login(page);
   try {
     await page.getByRole("button", { name: "하이라이트", exact: true }).click();
     await page.getByRole("button", { name: "새 항목 등록", exact: true }).click();
-    await page.getByLabel("제목 · 한국어", { exact: true }).fill(title);
+    await page.getByLabel("한국어 제목", { exact: true }).fill(title);
     await page.getByLabel("URL 슬러그", { exact: true }).fill(slug);
-    await page.getByLabel("제목 · 영어", { exact: true }).fill("[Review] Highlight");
-    await page.getByLabel("설명 · 한국어", { exact: true }).fill("검토용 하이라이트");
-    await page.getByLabel("설명 · 영어", { exact: true }).fill("Local review highlight");
+    await page.getByLabel("영어 제목", { exact: true }).fill("[Review] Highlight");
+    await page.getByLabel("한국어 설명", { exact: true }).fill("검토용 하이라이트");
+    await page.getByLabel("영어 설명", { exact: true }).fill("Local review highlight");
     await page.getByLabel("시작일", { exact: true }).fill("2026-09-01");
     await page.getByLabel("종료일", { exact: true }).fill("2026-09-03");
     await page.getByLabel("공개", { exact: true }).uncheck();

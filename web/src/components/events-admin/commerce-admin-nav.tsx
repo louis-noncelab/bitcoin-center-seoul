@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useConfirmation } from "@/components/ui/confirmation-dialog";
+import { useRegisterLeave } from "./leave-guard";
 
 function formatRemaining(ms: number): string {
   if (ms <= 0) return "만료됨";
@@ -41,12 +43,22 @@ function SessionRemainder() {
   return <p className="muted caption">세션 만료까지 {label}</p>;
 }
 
-export function CommerceAdminNav({ dirty = false }: {
+export function CommerceAdminNav({ dirty = false, disabled = false, onLeave }: {
   readonly current: string;
   readonly disabled?: boolean;
   readonly dirty?: boolean;
   readonly onLeave?: () => Promise<boolean>;
 }) {
+  const { confirm, dialog } = useConfirmation();
+  useRegisterLeave(async () => {
+    if (disabled) return false;
+    if (onLeave) return onLeave();
+    return !dirty || confirm({
+      title: "변경사항을 버릴까요?",
+      description: "저장하지 않은 변경사항은 사라집니다.",
+      confirmLabel: "버리기",
+    });
+  });
   useEffect(() => {
     if (!dirty) return;
     const prevent = (event: BeforeUnloadEvent) => event.preventDefault();
@@ -54,5 +66,5 @@ export function CommerceAdminNav({ dirty = false }: {
     return () => window.removeEventListener("beforeunload", prevent);
   }, [dirty]);
 
-  return <SessionRemainder />;
+  return <>{dialog}<SessionRemainder /></>;
 }

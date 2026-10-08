@@ -503,7 +503,7 @@ const AdminHighlights = () => {
                             <h4 className="font-semibold text-foreground">{highlight.title}</h4>
                             <p className="text-xs text-bitcoin">{highlight.meta}</p>
                             <p className="text-xs text-muted-foreground mt-1">
-                              {highlight.category || '행사'} · {getDateLabel(highlight)} · {highlight.host || '비트코인 센터 서울'}
+                              {highlight.category || '행사'}, {getDateLabel(highlight)}, {highlight.host || '비트코인 센터 서울'}
                             </p>
                             <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{highlight.description}</p>
                             {highlight.link && (

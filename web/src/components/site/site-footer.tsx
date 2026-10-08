@@ -1,4 +1,5 @@
-import { ArrowUpRight, Mail, Phone } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
+import { OutboundLink } from "@/components/analytics/outbound-link";
 import { BackToTop } from "@/components/controls/back-to-top";
 import { ActionLink } from "@/components/ui/primitives";
 import { centerContent } from "@/content/center";
@@ -63,17 +64,9 @@ export function SiteFooter({ locale }: { readonly locale: Locale }) {
                 </Link>
               </li>
               <li>
-                <a
-                  href="https://www.saturdayblock.com/meetup?brand=bcs"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+                <Link href="/programs" locale={locale}>
                   {locale === "ko" ? "밋업 신청" : "Join a meetup"}
-                  <ArrowUpRight className="icon" aria-hidden="true" />
-                  <span className="sr-only">
-                    {locale === "ko" ? " (새 창)" : " (new window)"}
-                  </span>
-                </a>
+                </Link>
               </li>
             </ul>
           </nav>
@@ -102,7 +95,9 @@ export function SiteFooter({ locale }: { readonly locale: Locale }) {
               >
                 <Phone className="icon" aria-hidden="true" />
               </ActionLink>
-              <ActionLink
+              <OutboundLink
+                destination="x"
+                locale={locale}
                 href="https://x.com/BtcCtrSeoul"
                 variant="quiet"
                 target="_blank"
@@ -118,8 +113,10 @@ export function SiteFooter({ locale }: { readonly locale: Locale }) {
                 >
                   <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.64 7.584H.47l8.6-9.835L0 1.154h7.594l5.243 6.932 6.064-6.933Zm-1.29 19.49h2.039L6.487 3.24H4.3l13.31 17.403Z" />
                 </svg>
-              </ActionLink>
-              <ActionLink
+              </OutboundLink>
+              <OutboundLink
+                destination="instagram"
+                locale={locale}
                 href="https://www.instagram.com/bitcoincenterseoul/"
                 variant="quiet"
                 target="_blank"
@@ -149,19 +146,19 @@ export function SiteFooter({ locale }: { readonly locale: Locale }) {
                     stroke="none"
                   />
                 </svg>
-              </ActionLink>
+              </OutboundLink>
             </div>
             <CollaborationTrigger locale={locale} />
           </div>
         </div>
         <div className="footer-bottom">
           <div className="footer-business">
-            <p>{locale === "ko" ? "논스랩 주식회사 · 대표 고덕윤 · 사업자등록번호 568-88-01463" : "Nonce Lab Inc. · CEO Deokyoon Ko · Business registration 568-88-01463"}</p>
-            <p>{locale === "ko" ? "통신판매업 신고번호 제 2022-서울강서-0536" : "Mail-order registration: 2022-Seoul Gangseo-0536"}</p>
-            <p><a href="https://www.ftc.go.kr/bizCommPop.do?wrkr_no=5688801463" target="_blank" rel="noopener noreferrer">{locale === "ko" ? "공정거래위원회 사업자정보 확인" : "Verify business registration with the KFTC"}<span className="sr-only">{locale === "ko" ? " (새 창)" : " (new window)"}</span></a></p>
-            <address>{locale === "ko" ? "사업장 및 센터 주소: 서울특별시 마포구 신촌로2안길 30, 2층" : "Registered business and Center address: 2F, 30 Sinchon-ro 2an-gil, Mapo-gu, Seoul 04056"}</address>
-            <p>{locale === "ko" ? "호스팅 서비스: Amazon Web Services (AWS), 서울 리전" : "Hosting service: Amazon Web Services (AWS), Seoul Region"}</p>
-            <p><a href="tel:+8227021718">{locale === "ko" ? "02-702-1718" : "+82 2-702-1718"}</a><span aria-hidden="true"> · </span><a href="mailto:hello@noncelab.com">hello@noncelab.com</a></p>
+            <p>{locale === "ko" ? "논스랩 주식회사, 대표 고덕윤" : "Nonce Lab Inc., CEO Deokyoon Ko"}</p>
+            <p>{locale === "ko" ? "사업자등록번호 568-88-01463" : "Business registration: 568-88-01463"}{" "}<a href="https://www.ftc.go.kr/bizCommPop.do?wrkr_no=5688801463" target="_blank" rel="noopener noreferrer">{locale === "ko" ? "사업자정보 확인" : "KFTC verification"}<span className="sr-only">{locale === "ko" ? " (새 창)" : " (new window)"}</span></a></p>
+            <p>{locale === "ko" ? "통신판매업 신고번호 2022-서울강서-0536" : "Mail-order registration: 2022-Seoul Gangseo-0536"}</p>
+            <address>{locale === "ko" ? "서울특별시 마포구 신촌로2안길 30, 2층" : "2F, 30 Sinchon-ro 2an-gil, Mapo-gu, Seoul 04056"}</address>
+            <p>{locale === "ko" ? "호스팅: Amazon Web Services (AWS)" : "Hosting: Amazon Web Services (AWS)"}</p>
+            <p><a href="tel:+8227021718">{locale === "ko" ? "02-702-1718" : "+82 2-702-1718"}</a><span aria-hidden="true">, </span><a href="mailto:hello@noncelab.com">hello@noncelab.com</a></p>
           </div>
           <nav className="footer-legal" aria-label={locale === "ko" ? "사업자 및 법적 안내" : "Business and legal information"}>
             <ul>

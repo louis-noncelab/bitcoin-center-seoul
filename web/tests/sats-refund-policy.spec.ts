@@ -28,8 +28,8 @@ test("refund form offers Bitcoin only and preserves legacy refund history", asyn
   await expect(page.getByText(/원결제 1,000 sats 전액/)).toBeVisible();
   await expect(page.getByText(/환불 시점의 원화 시세로 재계산하지 않습니다/)).toBeVisible();
   await expect(page.getByLabel("환불 방식").locator("option")).toHaveText(["라이트닝", "온체인"]);
-  await expect(page.getByText("계좌 이체 · reference-bank")).toBeVisible();
-  await expect(page.getByText("기타 · reference-other")).toBeVisible();
+  await expect(page.getByText("계좌 이체, reference-bank")).toBeVisible();
+  await expect(page.getByText("기타, reference-other")).toBeVisible();
 });
 
 test("redacted order retains payment inspection but hides manual refund entry", async ({ page, baseURL }) => {
@@ -47,7 +47,7 @@ test("redacted order retains payment inspection but hides manual refund entry", 
 
   // Then review controls remain while manual refund creation is unavailable.
   await expect(page.getByRole("button", { name: "결제 상태 다시 확인" })).toBeVisible();
-  await expect(page.getByText("계좌 이체 · reference-bank")).toBeVisible();
+  await expect(page.getByText("계좌 이체, reference-bank")).toBeVisible();
   await expect(page.getByLabel("환불 방식")).toHaveCount(0);
   await expect(page.getByLabel("수동 처리 사유")).toHaveCount(0);
 });

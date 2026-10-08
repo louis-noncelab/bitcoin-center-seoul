@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import bolt11 from "bolt11";
+import bolt11 from "@atomiqlabs/bolt11";
 import { digestHexSchema, PaymentError } from "./types";
 
 const singleTags = ["payment_hash", "purpose_commit_hash", "expire_time", "payee_node_key", "description"] as const;

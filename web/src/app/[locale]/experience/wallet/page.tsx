@@ -41,7 +41,7 @@ export default async function WalletPage({ params }: Props) {
         <div className="detail-heading">
           <Link href="/experience" locale={locale} className="button" data-variant="secondary">
             <ArrowLeft className="icon" aria-hidden="true" />
-            {locale === "ko" ? "전시·체험으로" : "Back to experience"}
+            {locale === "ko" ? "전시 및 체험으로" : "Back to experience"}
           </Link>
           <h1>{walletCopy[locale].welcome.title}</h1>
         </div>

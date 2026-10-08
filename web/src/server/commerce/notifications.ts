@@ -3,6 +3,7 @@ import type { NotificationChannel } from "@/generated/prisma/client";
 import { prisma } from "@/server/db";
 import { decryptPayload, encryptPayload } from "@/server/email";
 import { openString } from "@/server/privacy";
+import { purchaseKind, ticketEventId } from "@/lib/commerce-kind";
 
 export function encryptWebhookUrl(url: string): string {
   return encryptPayload({ url });
@@ -58,7 +59,8 @@ export async function notifyOrder(orderId: string, event: "접수" | "결제 완
     : unit === "BTC"
       ? `${btcFraction ? `${btcWhole.toString()}.${btcFraction}` : btcWhole.toString()} BTC`
       : `${new Intl.NumberFormat("ko-KR").format(order.amountSats)} sats`;
-  const meetup = order.items.some((item) => item.sku.startsWith("MEETUP-"));
-  const titles = order.items.map((item) => `${item.titleKo} ${item.quantity}개`).join("\n");
-  await postOrderNotification([`**${meetup ? "밋업 예약" : "상품 주문"} · ${event}**`, titles, `${openString(order.customerName)} · ${amount}`, orderId].join("\n"));
+  const kind = purchaseKind(order.items);
+  const titles = order.items.map((item) => `${item.titleKo} ${item.quantity}${ticketEventId(item.sku) !== null ? "명" : "개"}`).join("\n");
+  const total = kind === "meetup" && order.amountSats === 0n ? "무료" : amount;
+  await postOrderNotification([`**${kind === "meetup" ? "밋업 신청" : kind === "mixed" ? "밋업과 상품" : "상품 주문"}, ${event}**`, titles, `${openString(order.customerName)}, ${total}`, orderId].join("\n"));
 }

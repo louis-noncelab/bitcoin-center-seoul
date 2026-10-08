@@ -93,7 +93,7 @@ const ImageUploadField = ({ value, onChange, label = '이미지', required }: Im
         >
           {uploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <ImagePlus className="w-6 h-6" />}
           <span>{uploading ? '업로드 중...' : '클릭하거나 파일을 끌어다 놓으세요'}</span>
-          {!uploading && <span className="text-xs">jpg · png · webp · gif · 20MB 이하 · 1600px로 자동 변환</span>}
+          {!uploading && <span className="text-xs">jpg, png, webp, gif, 20MB 이하, 1600px로 자동 변환</span>}
         </button>
       )}
 

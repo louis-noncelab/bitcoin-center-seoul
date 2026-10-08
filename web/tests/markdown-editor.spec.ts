@@ -1,5 +1,6 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
+import { createServer } from "node:http";
 import sharp from "sharp";
 import { z } from "zod";
 import { eventRecordSchema } from "../src/lib/events-contract";
@@ -34,7 +35,7 @@ async function dropPhoto(page: Page, field: Locator, photo: Photo) {
   } finally { await transfer.dispose(); }
 }
 
-test("본문 사진 버튼과 드래그 업로드가 입력 위치·작성 중인 글·동시 업로드를 보존한다", async ({ page, baseURL }) => {
+test("본문 사진 버튼과 드래그 업로드가 입력 위치 및 작성 중인 글 및 동시 업로드를 보존한다", async ({ page, baseURL }) => {
   test.setTimeout(60_000);
   const slug = `inline-${randomUUID()}`;
   const release: (() => void)[] = [];
@@ -48,12 +49,12 @@ test("본문 사진 버튼과 드래그 업로드가 입력 위치·작성 중�
   });
   try {
     await page.getByRole("button", { name: "새 항목 등록", exact: true }).click();
-    await page.getByLabel("제목 · 한국어", { exact: true }).fill(`[검토] 본문 사진 ${slug}`);
+    await page.getByLabel("한국어 제목", { exact: true }).fill(`[검토] 본문 사진 ${slug}`);
     await page.getByLabel("URL 슬러그", { exact: true }).fill(slug);
-    await page.getByLabel("제목 · 영어", { exact: true }).fill("[Review] Inline photos");
+    await page.getByLabel("영어 제목", { exact: true }).fill("[Review] Inline photos");
     await page.getByLabel("행사 날짜", { exact: true }).fill("2026-10-10");
-    const korean = page.getByLabel("설명 · 한국어", { exact: true });
-    const english = page.getByLabel("설명 · 영어", { exact: true });
+    const korean = page.getByLabel("한국어 설명", { exact: true });
+    const english = page.getByLabel("영어 설명", { exact: true });
     await korean.fill("앞 문단\n\n뒤 문단");
     await english.fill("Before\n\nAfter");
     const buffer = await sharp({ create: { width: 80, height: 60, channels: 3, background: "#ff6b0a" } }).png().toBuffer();
@@ -63,11 +64,11 @@ test("본문 사진 버튼과 드래그 업로드가 입력 위치·작성 중�
       { name: "inside-two.png", mimeType: "image/png", buffer: portrait },
     ];
     await korean.evaluate((field: HTMLTextAreaElement) => field.setSelectionRange(4, 4));
-    await choosePhotos(page, "설명 · 한국어", photos);
+    await choosePhotos(page, "한국어 설명", photos);
     await expect.poll(() => release.length).toBe(1);
     await korean.focus();
     await korean.evaluate((field: HTMLTextAreaElement) => field.setSelectionRange(0, 0));
-    await korean.pressSequentially("작성 중 · ");
+    await korean.pressSequentially("작성 중, ");
     await english.evaluate((field: HTMLTextAreaElement) => field.setSelectionRange(6, 6));
     await dropPhoto(page, english, { name: "dropped.png", mimeType: "image/png", buffer });
     await expect.poll(() => release.length).toBe(2);
@@ -86,7 +87,7 @@ test("본문 사진 버튼과 드래그 업로드가 입력 위치·작성 중�
     await expect(page.getByText("1장 선택됨", { exact: true })).toBeVisible();
     await expect(save).toBeEnabled();
     const body = await korean.inputValue();
-    expect(body.startsWith("작성 중 · 앞 문단\n\n![")).toBe(true);
+    expect(body.startsWith("작성 중, 앞 문단\n\n![")).toBe(true);
     expect(body.endsWith("뒤 문단")).toBe(true);
     expect((body.match(/!\[/g) ?? [])).toHaveLength(2);
     await save.click();
@@ -168,36 +169,50 @@ test("본문 글자 제한과 세션 만료 후 사진 재시도가 글을 보�
   }
 });
 
-test("업로드 중 페이지를 떠나면 경고하고 늦은 응답이 새 초안에 들어가지 않는다", async ({ page }) => {
+test("업로드 중 페이지를 떠나면 경고하고 늦은 응답이 새 초안에 들어가지 않는다", async ({ page, baseURL }) => {
   let resume: () => void = () => {};
   let waiting = false;
   let warned = false;
-  await page.goto("/ko/admin");
-  await signIn(page);
-  await page.route("**/api/admin/images", async (route) => {
-    const response = await route.fetch();
+  let canceled = false;
+  let body = "";
+  const delayed = createServer(async (_request, response) => {
+    response.once("close", () => { canceled = !response.writableFinished; });
     await new Promise<void>((resolve) => { resume = resolve; waiting = true; });
-    await route.fulfill({ response });
+    response.writeHead(200, { "content-type": "application/json", "access-control-allow-origin": baseURL ?? "", "access-control-allow-credentials": "true" });
+    response.end(body);
   });
+  await new Promise<void>((resolve, reject) => { delayed.once("error", reject); delayed.listen(0, "127.0.0.1", resolve); });
+  const address = delayed.address();
+  if (!address || typeof address === "string") throw new Error("Upload response fixture did not bind to loopback");
   try {
+    await page.goto("/ko/admin");
+    await signIn(page);
+    await page.route("**/api/admin/images", async (route) => {
+      const response = await route.fetch();
+      body = await response.text();
+      await route.continue({ url: `http://127.0.0.1:${address.port}/api/admin/images` });
+    });
     await page.getByRole("button", { name: "새 항목 등록", exact: true }).click();
     const buffer = await sharp({ create: { width: 60, height: 40, channels: 3, background: "#ff6b0a" } }).png().toBuffer();
-    await choosePhotos(page, "설명 · 한국어", [{ name: "abandoned.png", mimeType: "image/png", buffer }]);
+    await choosePhotos(page, "한국어 설명", [{ name: "abandoned.png", mimeType: "image/png", buffer }]);
     await expect.poll(() => waiting).toBe(true);
     page.once("dialog", async (dialog) => { warned = dialog.type() === "beforeunload"; await dialog.accept(); });
-    const aborted = page.waitForEvent("requestfailed", { predicate: (request) => new URL(request.url()).pathname === "/api/admin/images" });
     await page.getByRole("link", { name: "비트코인 센터 서울 홈", exact: true }).click();
     await expect(page).toHaveURL("/ko");
+    await expect.poll(() => canceled).toBe(true);
     resume();
-    expect((await aborted).failure()?.errorText).toBeTruthy();
     expect(warned).toBe(true);
     await page.unrouteAll({ behavior: "wait" });
     await page.goto("/ko/admin");
     await page.getByRole("button", { name: "새 항목 등록", exact: true }).click();
-    await expect(page.getByLabel("설명 · 한국어", { exact: true })).toHaveValue("");
+    await expect(page.getByLabel("한국어 설명", { exact: true })).toHaveValue("");
     await expect(page.getByRole("button", { name: "저장", exact: true })).toBeEnabled();
   } finally {
     resume();
-    await page.unrouteAll({ behavior: "wait" });
+    try { await page.unrouteAll({ behavior: "wait" }); }
+    finally {
+      delayed.closeAllConnections();
+      await new Promise<void>((resolve, reject) => delayed.close((error) => error ? reject(error) : resolve()));
+    }
   }
 });

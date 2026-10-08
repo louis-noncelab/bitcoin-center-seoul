@@ -1,6 +1,6 @@
-# Dependency security review — 2026-09-23
+# Dependency security review: 2026-10-01
 
-The web mail transport uses Nodemailer 10.0.10, pinned with its lockfile. This
+The web mail transport uses Nodemailer 10.0.12, pinned with its lockfile. This
 replaces the vulnerable 7.0.13 line. Node 24 satisfies its Node >=20 requirement.
 The upstream bundled TypeScript declarations replace the local declaration shim.
 `tests/smtp-transport.mjs` composes the application's bilingual multipart message
@@ -10,24 +10,30 @@ References: [upstream release notes](https://github.com/nodemailer/nodemailer/bl
 [raw message advisory](https://github.com/advisories/GHSA-p6gq-j5cr-w38f),
 [address parser advisory](https://github.com/advisories/GHSA-2x7j-588g-ccc2).
 
-## Remaining transitive low advisory
+## Next.js and BOLT11 advisories resolved
 
-`npm audit` reports `bolt11 -> secp256k1 -> elliptic` for
+Next.js, its bundle analyzer and ESLint configuration are pinned to 16.3.8.
+This resolves the critical `next/og` advisory
+[GHSA-vcvr-r3jv-pc5j](https://github.com/advisories/GHSA-vcvr-r3jv-pc5j).
+The release still needs the guarded internal-image response-socket backport;
+the installer verifies the exact 16.3.8 CJS and ESM source/output hashes before
+writing, and rejects version or source drift.
+
+`@atomiqlabs/bolt11` 1.6.2 replaces `bolt11` 1.4.1 in validation and REVIEW
+fixtures. Its reviewed source uses Noble signature recovery and bigint amounts;
+the locked dependency tree no longer includes `secp256k1` or `elliptic`, removing
 [GHSA-848j-6mx2-7j84](https://github.com/advisories/GHSA-848j-6mx2-7j84).
-The current upstream elliptic release (6.6.1) is still in the affected range.
-The suggested automatic fix downgrades bolt11 from 1.4.1 to 1.0.0; it is not a
-security-preserving upgrade and is not applied.
+The published package was compared with the old parser and its
+[pinned upstream source](https://github.com/atomiqlabs/bolt11/blob/ca077d2443972a38d338ad41e5329b867528b919/payreq.js).
+The required REVIEW testnet network now includes WIF prefix 239. Production
+still holds no invoice-signing key; REVIEW fixtures use the public test key.
 
-The production application decodes/verifies public BOLT11 invoices; it does not
-hold a private signing key or sign an invoice. The only `bolt11.sign` call is in
-`review-transport.ts`, which rejects non-REVIEW payments and non-review/test app
-modes and uses an explicitly public fixture key. The invoice parser's signature,
-amount, network and settlement-proof checks must remain intact. Thus the
-private-key side-channel concern does not expose a production signing secret in
-this application's usage. This is a bounded risk assessment, not a claim that
-the upstream package is patched or that arbitrary library use is safe.
+Node 24 `npm ci` and full `npm audit` report zero vulnerabilities. Typecheck,
+lint, production build and 138 commerce tests passed, including captured `d`/`h`
+invoices, settlement and six new signature/amount/network/expiry regressions.
+The existing metadata, duplicate-tag and settlement-proof checks remain intact.
+The three image-optimizer tests also pass. These checks use isolated databases,
+REVIEW payments and capture mail; no live payment or email is created.
 
-Reassess on a patched upstream parser release, or before introducing production
-signing. Replacing the parser requires the invoice/signature/metadata/amount/
-network/expiry and settlement regression suites; do not remove validation or
-install an old parser merely to make the audit count zero.
+Re-review the parser source and guarded Next patch on future upgrades, and before
+introducing production signing. Keep validation and regression tests intact.

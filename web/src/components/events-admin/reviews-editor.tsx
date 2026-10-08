@@ -49,7 +49,7 @@ export function ReviewsEditor({ record, disabled, uploading, onUpload, onExpired
       <label>제목<FormControl><input name="title" required maxLength={200} defaultValue={record?.title ?? ""} /></FormControl></label>
       <label>소개<FormControl><textarea name="summary" required maxLength={2000} rows={5} defaultValue={record?.summary ?? ""} /></FormControl></label>
       <fieldset className="events-gallery-field" disabled={imagePending}>
-        <legend>썸네일 (선택)</legend><p className="muted">사진 1장 · 최대 10MB. 대표 후기에는 사진이 필요합니다.</p>
+        <legend>썸네일 (선택)</legend><p className="muted">사진 1장, 최대 10MB. 대표 후기에는 사진이 필요합니다.</p>
         <input type="hidden" name="image" value={image} />
         <div className="events-upload"><Button variant="secondary" onClick={() => picker.current?.click()}>{image ? "사진 교체" : "사진 선택"}</Button><input ref={picker} hidden type="file" aria-label="썸네일 사진 선택" accept={imageUploadAccept} onChange={(event) => void upload(event.currentTarget)} /></div>
         {imagePending && <p role="status">사진 업로드 중…</p>}{error && <p className="events-error" role="alert">{error}</p>}

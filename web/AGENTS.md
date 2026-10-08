@@ -1,4 +1,4 @@
-## Current runtime fact — 2026-09-23
+## Current runtime fact: 2026-09-23
 
 Active content, center status overrides, and admin authentication/session tables are now in
 PostgreSQL through Prisma. Historical SQLite requirements below describe the old increment and
@@ -8,16 +8,16 @@ still names the shared image root. To backfill old content, use the guarded, exp
 and login attempts are excluded. A complete current backup requires a PostgreSQL dump and all
 uploads; the SQLite archive command alone is insufficient. The no-deployment boundaries remain.
 
-## Runtime — 2026-09-10
+## Runtime: 2026-09-10
 The owner authorized Node 24 for the new web application. Use the version pinned in `.nvmrc`, npm and a fresh `npm ci` after switching major versions. Local review and backup tools enforce Node 24. This supersedes historical Node 22 references; the root legacy application and production runtime remain outside this local upgrade.
 
-## Latest security increment — 2026-09-09
+## Latest security increment: 2026-09-09
 The owner authorized implementing SQLite/security recommendations and smoother field focus. Keep SQLite (better-sqlite3 13.0.3, SQLite 3.53.4), use ADMIN_PASSWORD_HASH with the same password converted by the private scrypt CLI, and require validated trusted-proxy IP handling for remote admin login. No plaintext ADMIN_PASSWORD in the application environment. The generated loopback review credential remains only a test fixture. Follow docs/security/operations.md and docs/security/2026-09-09-hardening.md. Root legacy source remains preserved and excluded from the new service's runtime; its audit findings are not considered fixed on a still-legacy production server. No production changes, deployment, push or environment-file inspection. Only coordinator commits.
 
-## Latest owner additions — 2026-09-09
+## Latest owner additions: 2026-09-09
 The owner also authorizes local notices publishing (Korean-only admin, bilingual public pages with Korean fallback), editable slugs, journal pagination and a local wallet learning guide. Continue to exclude commerce/payments/PostgreSQL and preserve SQLite/password compatibility.
 
-## Current owner decision — 2026-09-09 events-only reset
+## Current owner decision: 2026-09-09 events-only reset
 
 The owner explicitly selected base commit `63a08b95cb54e06d9a00c89ae14d8d9eb1851284` and authorized restoring current public design changes while limiting functionality to event/highlight display and admin create/edit/delete with multiple image uploads. Keep Next.js/React/TypeScript and the existing SQLite schema/ADMIN_PASSWORD compatibility. No shop, checkout, cart, payments, booking, customer accounts, PostgreSQL migration, or unrelated administration in this increment. This supersedes older scope instructions below. Existing root legacy application and runtime/production data stay untouched. No push, deployment, GitHub Actions, real payments, refunds or operational email. Never inspect existing .env/.env.local; never output secret values. Only coordinator stages/commits.
 
@@ -38,8 +38,8 @@ Recovery point: `backup/center-web-before-events-only-20260909-175952`, commit `
 
 # This is NOT the Next.js you know
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+This version has breaking changes: APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 
-This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+This block is written and re-added by `next dev`: verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->

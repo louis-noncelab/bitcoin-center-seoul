@@ -28,7 +28,7 @@ test("stale terms are refused and accepted evidence contains the exact displayed
   assert.match(evidence.terms.title, /약관/);
   assert.match(evidence.refunds.title, /환불/);
   assert.match(evidence.business.title, /사업자/);
-  assert.equal(evidence.disclosure.length, 4);
+  assert.equal(evidence.disclosure.length, 3);
   assert.equal(JSON.stringify(evidence).includes("buyer@example.invalid"), false);
   assert.notEqual(checkoutPolicyVersion("ko"), checkoutPolicyVersion("en"));
 });

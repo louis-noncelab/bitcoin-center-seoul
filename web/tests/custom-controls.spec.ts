@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { reviewRuntime } from "./helpers/review-runtime";
 
 for (const theme of ["light", "dark"]) {
-  test(`공통 날짜 선택과 체크박스는 키보드로 조작되고 잘못된 날짜를 막는다 · ${theme}`, async ({ page, baseURL }) => {
+  test(`공통 날짜 선택과 체크박스는 키보드로 조작되고 잘못된 날짜를 막는다, ${theme}`, async ({ page, baseURL }) => {
     const { ADMIN_PASSWORD } = await reviewRuntime();
     const session = await page.request.post("/api/admin/login", { headers: { origin: baseURL ?? "" }, data: { password: ADMIN_PASSWORD } });
     expect(session.ok()).toBe(true);

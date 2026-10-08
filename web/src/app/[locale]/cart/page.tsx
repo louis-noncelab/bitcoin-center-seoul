@@ -14,7 +14,7 @@ export default async function CartPage({ params }: Props) {
     focus="narrow"
     title={locale === "ko" ? "장바구니" : "Cart"}
     introduction={locale === "ko"
-      ? "담긴 상품의 가격·재고·배송비는 주문 화면의 서버 견적으로 확정합니다."
+      ? "담긴 상품의 가격, 재고, 배송비는 주문 화면의 서버 견적으로 확정합니다."
       : "Prices, stock and shipping are confirmed by the server quote at checkout."}
   >
     <CartPageClient locale={locale} />

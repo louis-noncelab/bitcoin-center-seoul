@@ -85,7 +85,7 @@ const ActivitiesSection = () => {
     return events.map((event) => ({
       raw: event,
       title: language === 'ko' ? event.title : event.titleEn,
-      meta: `${event.date}${event.time ? ` · ${event.time}` : ''}`,
+      meta: `${event.date}${event.time ? `, ${event.time}` : ''}`,
       description: formatMultiline(language === 'ko' ? event.description : event.descriptionEn),
       image: event.image || fallbackImage,
       link: event.link || '',
@@ -275,7 +275,7 @@ const ActivitiesSection = () => {
                     <img src={view.image} alt={view.title} loading="lazy" decoding="async" className="aspect-video w-full rounded-md object-cover md:h-28 md:w-40" />
                   )}
                   <div className="flex flex-col justify-center">
-                    <p className="text-xs font-medium text-bitcoin">{event.date} · {event.time}</p>
+                    <p className="text-xs font-medium text-bitcoin">{event.date}, {event.time}</p>
                     <h3 className="mt-2 font-semibold text-foreground">{view.title}</h3>
                     <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{view.description}</p>
                   </div>

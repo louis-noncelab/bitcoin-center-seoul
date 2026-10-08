@@ -51,7 +51,10 @@ export function RecordEditor({ locale, kind, record, onSaved, onCancel, onDirty,
       <h2>{record ? (ko ? "내용 수정" : "Edit content") : (ko ? "새 항목 등록" : "Add content")}</h2>
       <fieldset disabled={pending} className="events-editor-fields">
         <EditorFields locale={locale} kind={kind} record={record} onPending={uploadPending} onDirty={onDirty} onExpired={onExpired} />
-        <GalleryField locale={locale} images={images} portrait={kind === "events"} onExpired={onExpired} onChange={(next) => { setImages(next); onDirty(); }} onPending={uploadPending} />
+        <section className="admin-editor-section">
+          <h3>사진</h3>
+          <GalleryField locale={locale} images={images} portrait={kind === "events"} onExpired={onExpired} onChange={(next) => { setImages(next); onDirty(); }} onPending={uploadPending} />
+        </section>
       </fieldset>
       {error && <p role="alert" className="events-error">{error}</p>}
       <div className="button-row">

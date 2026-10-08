@@ -151,7 +151,7 @@ test("themes and locale navigation hydrate under the production policy", async (
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await page.locator('.desktop-navigation a[href="/ko/experience"]').click();
   await expect(page).toHaveURL(/\/ko\/experience$/);
-  await page.getByRole("link", { name: "EN · Switch to English", exact: true }).click();
+  await page.getByRole("link", { name: "EN, Switch to English", exact: true }).click();
   await expect(page).toHaveURL(/\/en\/experience$/);
   await page.getByRole("button", { name: "Dark mode", exact: true }).click();
   // Then hydration, client navigation, localized SEO, and the saved theme remain usable

@@ -11,7 +11,7 @@ export function CenterVideos({ locale }: { readonly locale: Locale }) {
   const [selected, setSelected] = useState<(typeof centerVideos)[number]>(centerVideos[0]);
   const [playing, setPlaying] = useState(false);
   const title = selected.title[locale];
-  const channel = locale === "ko" ? "오머니(오리지널 머니)" : "Original Money · Korean audio";
+  const channel = locale === "ko" ? "오머니(오리지널 머니)" : "Original Money, Korean audio";
   const watchUrl = `https://www.youtube.com/watch?v=${selected.id}`;
 
   return (

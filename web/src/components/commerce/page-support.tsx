@@ -6,6 +6,7 @@ import { pageMetadata } from "@/content/site";
 import { shareImages } from "@/content/share";
 import { centerContent } from "@/content/center";
 import { markdownExcerpt } from "@/lib/markdown";
+import { withoutWordJoiners } from "@/lib/text";
 import "@/styles/commerce.css";
 
 export function pageLocale(value: string): Locale {
@@ -15,7 +16,7 @@ export function pageLocale(value: string): Locale {
 export function commerceMetadata(locale: Locale, page: { readonly path: string; readonly title: string; readonly description?: string }, options?: { readonly indexed?: boolean; readonly image?: string }): Metadata {
   const indexed = options?.indexed !== false;
   const base = pageMetadata(locale);
-  const title = `${page.title} | ${centerContent[locale].hero.title}`;
+  const title = withoutWordJoiners(`${page.title} | ${centerContent[locale].hero.title}`);
   const description = (page.description ? markdownExcerpt(page.description) : "") || (locale === "ko" ? "비트코인 센터 서울" : "Bitcoin Center Seoul");
   const canonical = `/${locale}${page.path}`;
   const images = options?.image ? shareImages(options.image, page.title) : undefined;

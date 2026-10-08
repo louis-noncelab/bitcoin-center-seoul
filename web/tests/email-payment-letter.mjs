@@ -30,8 +30,8 @@ for (const [name, order, joins, ko, en] of [
       assert.match(letter.text, expected);
       assert.match(letter.html, expected);
       if (name === "mixed delivery and online meetup" && locale === "ko") {
-        assert.match(letter.text, /책 · 1개/);
-        assert.match(letter.text, /밋업 · 1명/);
+        assert.match(letter.text, /책, 1개/);
+        assert.match(letter.text, /밋업, 1명/);
       }
       if (name !== "pickup") {
         assert.doesNotMatch(letter.text, /센터에서 아래 확인 페이지를 보여 주세요|Show the confirmation page at the center/);

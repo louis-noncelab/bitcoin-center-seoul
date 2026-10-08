@@ -11,6 +11,7 @@ import { AdminTabs } from "./admin-tabs";
 import { GalleryField } from "./gallery-field";
 import { MarkdownEditor } from "./markdown-editor";
 import { MarkdownHelp } from "./markdown-help";
+import { useRegisterLeave } from "./leave-guard";
 import { adminRequest, AdminRequestError, errorText, jsonBody, revisionHeaders } from "./request";
 
 const kindLabels = { book: "도서", artwork: "작품", boardgame: "보드게임", goods: "굿즈" } as const;
@@ -65,6 +66,7 @@ export function CollectionAdmin() {
     const accepted = !dirty || await confirm({ title: "변경사항을 버릴까요?", description: "저장하지 않은 변경사항은 사라집니다.", confirmLabel: "버리기" });
     return accepted && !busy.current && uploads.current === 0;
   }
+  useRegisterLeave(leave);
   function edit(record: CollectionRecord | null) {
     setEditingKind(record?.kind ?? (filter === "all" ? "book" : filter));
     setSelected(record); setImages(record?.images ?? []); setEditing(true); setDirty(false); setError(""); setMessage("");
@@ -107,17 +109,17 @@ export function CollectionAdmin() {
         <fieldset className="collection-kind"><legend>분류</legend><div className="button-row">{kindOptions.map((kind) => <label className="events-checkbox" key={kind}><ChoiceControl type="radio" name="kind" value={kind} checked={editingKind === kind} onChange={() => setEditingKind(kind)} />{kindLabels[kind]}</label>)}</div></fieldset>
         <div className="events-field-grid">
           <label>제목<FormControl><input name="title" required maxLength={200} defaultValue={selected?.title ?? ""} /></FormControl></label>
-          <label>저자·제작사 (선택)<FormControl><input name="creator" maxLength={200} defaultValue={selected?.creator ?? ""} /></FormControl></label>
+          <label>저자 또는 제작사 (선택)<FormControl><input name="creator" maxLength={200} defaultValue={selected?.creator ?? ""} /></FormControl></label>
         </div>
         <label>URL 슬러그 (공개 보드게임 필수)<FormControl><input name="slug" defaultValue={selected?.slug ?? ""} maxLength={100} pattern="(?=.*[a-z])[a-z0-9]+(-[a-z0-9]+)*" autoCapitalize="none" spellCheck={false} placeholder="bitcoin-larp" aria-describedby="collection-slug-help" /></FormControl></label>
-        <p id="collection-slug-help" className="muted">/experience/board-game/, /goods/ 또는 /collection/ 뒤에 붙는 주소입니다. 영문 소문자·숫자·하이픈을 사용해 주세요.</p>
-        {(editingKind === "book" || editingKind === "goods") && <p className="muted">도서와 굿즈의 가격·재고·결제는 상점 상품에서 관리합니다. 이 목록은 전시 소개만 담습니다.</p>}
+        <p id="collection-slug-help" className="muted">/experience/board-game/, /goods/ 또는 /collection/ 뒤에 붙는 주소입니다. 영문 소문자, 숫자, 하이픈을 사용해 주세요.</p>
+        {(editingKind === "book" || editingKind === "goods") && <p className="muted">도서와 굿즈의 가격, 재고, 결제는 상점 상품에서 관리합니다. 이 목록은 전시 소개만 담습니다.</p>}
         {(editingKind === "boardgame" || editingKind === "artwork") && <p className="muted">보드게임과 작품은 구매하지 않습니다.</p>}
         <GalleryField locale="ko" images={images} onChange={(next) => { setImages(next); setDirty(true); }} onPending={uploadPending} onExpired={() => setExpired(true)} />
         <MarkdownEditor name="description" label="소개 (선택)" defaultValue={selected?.description ?? ""} rows={6} helpId="collection-markdown-help" onPending={uploadPending} onDirty={() => setDirty(true)} onExpired={() => setExpired(true)} />
         <div className="events-field-grid">
           <label>영어 제목 (선택)<FormControl><input name="titleEn" maxLength={200} defaultValue={selected?.titleEn ?? ""} /></FormControl></label>
-          <label>영어 저자·제작사 (선택)<FormControl><input name="creatorEn" maxLength={200} defaultValue={selected?.creatorEn ?? ""} /></FormControl></label>
+          <label>영어 저자 또는 제작사 (선택)<FormControl><input name="creatorEn" maxLength={200} defaultValue={selected?.creatorEn ?? ""} /></FormControl></label>
         </div>
         <MarkdownEditor name="descriptionEn" label="영어 소개 (선택)" defaultValue={selected?.descriptionEn ?? ""} rows={4} helpId="collection-markdown-help" onPending={uploadPending} onDirty={() => setDirty(true)} onExpired={() => setExpired(true)} />
         <MarkdownHelp id="collection-markdown-help" />
@@ -128,9 +130,9 @@ export function CollectionAdmin() {
       </fieldset>
       <div className="button-row"><Button type="submit" disabled={pending || uploading || expired}>{pending ? "저장 중…" : "저장"}</Button><Button variant="secondary" disabled={pending || uploading} onClick={() => { void leave().then((accepted) => { if (accepted) { setEditing(false); setDirty(false); setRevision((value) => value + 1); } }); }}>취소</Button></div>
     </form> : <>
-      <div className="events-admin-toolbar"><h2>도서·작품·보드게임·굿즈 목록</h2><Button disabled={pending || expired} onClick={() => edit(null)}>항목 등록</Button></div>
+      <div className="events-admin-toolbar"><h2>도서, 작품, 보드게임, 굿즈 목록</h2><Button disabled={pending || expired} onClick={() => edit(null)}>항목 등록</Button></div>
       <AdminTabs label="종류별 필터" items={filters} value={filter} onChange={setFilter} variant="quiet" />
-      <ul key={filter} className="events-admin-list collection-admin-results">{visibleRecords.map((record) => <li key={record.id}><div><h3>{record.title}</h3><p className="muted">{kindLabels[record.kind]}{record.creator ? ` · ${record.creator}` : ""} · {record.is_active ? "공개" : "비공개"} · 순서 {record.sort_order}</p></div><div className="button-row">{Boolean(record.is_active) && <Link href={viewHref(record)} locale="ko" className="button" data-variant="quiet">보기</Link>}<Button variant="secondary" disabled={pending || expired} onClick={() => edit(record)}>수정</Button><Button variant="quiet" disabled={pending || expired} onClick={() => void remove(record)}>삭제</Button></div></li>)}{!visibleRecords.length && <li>{filter === "all" ? "등록된 항목이 없습니다." : "선택한 종류의 항목이 없습니다."}</li>}</ul>
+      <ul key={filter} className="events-admin-list collection-admin-results">{visibleRecords.map((record) => <li key={record.id}><div><h3>{record.title}</h3><p className="muted">{kindLabels[record.kind]}{record.creator ? `, ${record.creator}` : ""}, {record.is_active ? "공개" : "비공개"}, 순서 {record.sort_order}</p></div><div className="button-row">{Boolean(record.is_active) && <Link href={viewHref(record)} locale="ko" className="button" data-variant="quiet">보기</Link>}<Button variant="secondary" disabled={pending || expired} onClick={() => edit(record)}>수정</Button><Button variant="quiet" disabled={pending || expired} onClick={() => void remove(record)}>삭제</Button></div></li>)}{!visibleRecords.length && <li>{filter === "all" ? "등록된 항목이 없습니다." : "선택한 종류의 항목이 없습니다."}</li>}</ul>
     </>}
   </div>;
 }

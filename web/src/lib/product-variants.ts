@@ -7,7 +7,9 @@ export type VariantDraft = {
   readonly optionLabelKo: string;
   readonly optionLabelEn: string;
   readonly stockOnHand: number;
+  readonly stockOnHandDraft: string;
   readonly billableWeightG: number;
+  readonly billableWeightGDraft: string;
   readonly active: boolean;
   readonly reservedStock: number;
 } & (
@@ -17,10 +19,12 @@ export type VariantDraft = {
 
 export const newVariant = (): VariantDraft => ({
   key: crypto.randomUUID(), sku: "", optionLabelKo: "", optionLabelEn: "",
-  stockOnHand: 0, billableWeightG: 0, active: true, reservedStock: 0,
+  stockOnHand: 0, stockOnHandDraft: "0", billableWeightG: 0, billableWeightGDraft: "0", active: true, reservedStock: 0,
 });
 export const toDraft = (variant: AdminVariantRecord): VariantDraft => ({
   key: variant.id, ...variant, originalStockOnHand: variant.stockOnHand,
+  stockOnHandDraft: String(variant.stockOnHand),
+  billableWeightGDraft: String(variant.billableWeightG),
 });
 
 export function toVariantInput(variant: VariantDraft): ProductInput["variants"][number] {

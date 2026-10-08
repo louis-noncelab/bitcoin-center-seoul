@@ -2,6 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import { notFound, permanentRedirect } from "next/navigation";
 import { connection } from "next/server";
 import { hasLocale } from "next-intl";
+import { TrackViewItem } from "@/components/analytics/track-view-item";
 import { EventDetail } from "@/components/site/events-public";
 import { PageMotion } from "@/components/site/page-motion";
 import { SiteFooter } from "@/components/site/site-footer";
@@ -51,6 +52,7 @@ export default async function EventPage({ params }: Props) {
           <h1>{title}</h1>
         </div>
         <EventJsonLd locale={locale} event={event} />
+        <TrackViewItem kind="meetup" itemId={canonical} itemName={event.title} locale={locale} />
         <EventDetail event={event} locale={locale} today={seoulDate()} paymentHref={(await meetupPaymentHrefs([event.id]))[event.id]} />
         <PageMotion pageKey={`${locale}-program-${event.id}`} />
       </main>

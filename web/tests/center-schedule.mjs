@@ -56,7 +56,7 @@ test("daily Seoul hours, public holidays, exceptions and meetup boundaries", asy
 });
 
 test("legacy meetup time ranges remain readable; ambiguous times do not claim an ongoing meetup", () => {
-  for (const time of ["14:00 - 1700", "14:00 ~ 17:00", "1400–1700", "14:00 — 17:00", "14:00 ～ 17:00"]) {
+  for (const time of ["14:00 - 1700", "14:00 ~ 17:00", "1400–1700", "14:00 \u2014 17:00", "14:00 ～ 17:00"]) {
     assert.deepEqual(eventWindow(event("2026.09.10", time)), { start: at("2026-09-10", "14:00:00").getTime(), end: at("2026-09-10", "17:00:00").getTime() });
   }
   assert.equal(eventWindow(event("2026-09-10", "00:00 ~ 24:00")).end, at("2026-09-11", "00:00:00").getTime());

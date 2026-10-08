@@ -109,7 +109,7 @@ test("mobile navigation, locale and theme preserve a usable destination", async 
   await expect(page).toHaveURL(/\/ko\/experience$/);
   await page.getByRole("button", { name: "메뉴", exact: true }).click();
   await page
-    .getByRole("link", { name: "EN · Switch to English", exact: true })
+    .getByRole("link", { name: "EN, Switch to English", exact: true })
     .click();
   await expect(page).toHaveURL(/\/en\/experience$/);
   await page.getByRole("button", { name: "Menu", exact: true }).click();

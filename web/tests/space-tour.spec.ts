@@ -30,7 +30,7 @@ test("space films respect motion preferences, visibility and explicit pause", as
   await expect.poll(() => lounge.evaluate((film: HTMLVideoElement) => film.paused)).toBe(true);
   await page.getByRole("tab", { name: "서재", exact: true }).click();
   await expect(library).not.toHaveAttribute("src");
-  await page.getByRole("button", { name: "서재 · 재생", exact: true }).click();
+  await page.getByRole("button", { name: "서재, 재생", exact: true }).click();
   await expect.poll(() => library.evaluate((film: HTMLVideoElement) => !film.paused && film.videoWidth === 640)).toBe(true);
 
   // Then: allowing motion again lets new scenes play; manual pause still persists.
@@ -38,11 +38,11 @@ test("space films respect motion preferences, visibility and explicit pause", as
   await page.getByRole("tab", { name: "전시", exact: true }).click();
   await expect.poll(() => gallery.evaluate((film: HTMLVideoElement) => !film.paused && film.videoWidth === 640)).toBe(true);
   await expect.poll(() => library.evaluate((film: HTMLVideoElement) => film.paused)).toBe(true);
-  await page.getByRole("button", { name: "전시 · 일시정지", exact: true }).click();
+  await page.getByRole("button", { name: "전시, 일시정지", exact: true }).click();
   await page.evaluate(() => scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }));
   await gallery.scrollIntoViewIfNeeded();
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await expect.poll(() => gallery.evaluate((film: HTMLVideoElement) => film.paused)).toBe(true);
-  await expect(page.getByRole("button", { name: "전시 · 재생", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "전시, 재생", exact: true })).toBeVisible();
 });

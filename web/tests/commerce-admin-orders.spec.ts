@@ -29,7 +29,7 @@ async function setup(page: Page, baseURL: string | undefined) {
   });
   await authenticate(page, origin);
   await page.goto(`${origin}/ko/admin/orders`);
-  await expect(page.getByRole("heading", { name: "주문 목록" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "신청과 주문" })).toBeVisible();
   return { queries, origin };
 }
 
@@ -61,7 +61,7 @@ test("search, fulfillment, dates, page and CSV keep the same query and support B
 
 test("filter and browser Back protect drafts and failed tracking saves preserve the original CAS", async ({ page, baseURL }) => {
   await setup(page, baseURL);
-  await page.getByRole("button", { name: "결제 완료", exact: true }).click();
+  await page.getByRole("button", { name: "확정", exact: true }).click();
   const first = page.locator(".events-admin-list > li").filter({ has: page.getByRole("heading", { name: "주문 하나", exact: false }) });
   await first.getByRole("button", { name: "자세히", exact: true }).click();
   await first.getByLabel("송장 번호", { exact: true }).fill("NEW-123");

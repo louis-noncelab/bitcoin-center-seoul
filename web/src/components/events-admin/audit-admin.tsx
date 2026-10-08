@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/primitives";
 import { LoginForm } from "./login-form";
 import { adminRequest, AdminRequestError, errorText } from "./request";
 import { CommerceAdminNav } from "./commerce-admin-nav";
+import { auditActionLabel, auditTargetLabel } from "./audit-labels";
 
 const schema = z.object({
   logs: z.array(z.object({
@@ -68,8 +69,9 @@ export function AuditAdmin() {
     <ul className="events-admin-list">
       {logs.map((row) => <li key={row.id}>
         <div>
-          <h3>{row.action}</h3>
-          <p className="muted">{row.targetType} {row.targetId} · {row.actorId ?? "시스템"} · {new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", dateStyle: "medium", timeStyle: "short" }).format(new Date(row.createdAt))}</p>
+          <h3>{auditActionLabel(row.action)}</h3>
+          <p className="muted">{auditTargetLabel(row.targetType)}, {row.actorId ? "관리자" : "시스템"}, {new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", dateStyle: "medium", timeStyle: "short" }).format(new Date(row.createdAt))}</p>
+          <details className="admin-audit-detail"><summary>기록 ID 보기</summary><code>{row.action}, {row.targetType} {row.targetId}, {row.actorId ?? "시스템"}</code></details>
         </div>
       </li>)}
       {!logs.length && !error && <li>{pending ? "불러오는 중…" : "기록이 없습니다."}</li>}

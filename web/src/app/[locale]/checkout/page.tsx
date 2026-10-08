@@ -12,9 +12,10 @@ const selection = z.object({
   variant: z.string().min(1).max(100).regex(/^[A-Za-z0-9_-]+$/),
   quantity: z.coerce.number().int().min(1).max(100).default(1),
 });
-export async function generateMetadata({ params }: Props) {
+export async function generateMetadata({ params, searchParams }: Props) {
   const locale = pageLocale((await params).locale);
-  return commerceMetadata(locale, { path: "/checkout", title: locale === "ko" ? "주문하기" : "Checkout" }, { indexed: false });
+  const meetup = (await searchParams).kind === "meetup";
+  return commerceMetadata(locale, { path: "/checkout", title: meetup ? (locale === "ko" ? "밋업 신청" : "Event registration") : (locale === "ko" ? "주문하기" : "Checkout") }, { indexed: false });
 }
 export default async function CheckoutPage({ params, searchParams }: Props) {
   const locale = pageLocale((await params).locale);
@@ -23,6 +24,6 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
   const meetup = query.kind === "meetup";
   const ko = locale === "ko";
   return <CommercePage locale={locale} focus="wide" section={meetup ? "programs" : "goods"} title={meetup ? (ko ? "밋업 예약" : "Meetup reservation") : (ko ? "주문하기" : "Checkout")} backTo={meetup ? "/programs" : "/cart"} backLabel={meetup ? (ko ? "행사로" : "Back to events") : (ko ? "장바구니로" : "Back to cart")}>
-    <Checkout locale={locale} policyVersion={checkoutPolicyVersion(locale)} selection={result.success ? { variantId: result.data.variant, quantity: result.data.quantity } : null} />
+    <Checkout locale={locale} policyVersions={{ goods: checkoutPolicyVersion(locale), meetup: checkoutPolicyVersion(locale, "meetup"), free_meetup: checkoutPolicyVersion(locale, "free_meetup") }} meetupHint={meetup} selection={result.success ? { variantId: result.data.variant, quantity: result.data.quantity } : null} />
   </CommercePage>;
 }

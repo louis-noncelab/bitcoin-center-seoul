@@ -8,6 +8,8 @@ import { listNotices } from "@/server/notices";
 import { libraryKinds } from "@/lib/collection-contract";
 import { listCollection } from "@/server/collection";
 import { listProducts } from "@/server/catalog";
+import { anniversaryYears } from "@/lib/anniversary";
+import { seoulDate } from "@/lib/center-status";
 
 async function listedShopPaths(): Promise<string[]> {
   try {
@@ -37,6 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/experience/wallet",
     "/notices",
     "/news",
+    ...anniversaryYears(seoulDate()).map((year) => `/anniversary/${year}`),
     "/collection",
     "/goods",
     "/experience/board-game",

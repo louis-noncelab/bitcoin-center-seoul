@@ -125,7 +125,7 @@ test("payment return uses the authorized order and offers sandbox checkout witho
   // When returning from the provider to the English payment page.
   await page.goto("/en/payments/payment-one?order=untrusted-order");
   // Then only the authorized API response supplies the order navigation.
-  await expect(page.getByRole("link", { name: /View order/ })).toHaveAttribute("href", "/en/orders/trusted-order");
+  await expect(page.getByRole("link", { name: /View details/ })).toHaveAttribute("href", "/en/orders/trusted-order");
   await expect(page.getByRole("link", { name: /Open checkout/ })).toHaveAttribute("href", "https://pay.zaprite.com/test-checkout");
   await expect(page).toHaveURL(/\/en\/payments\/payment-one/);
 });
