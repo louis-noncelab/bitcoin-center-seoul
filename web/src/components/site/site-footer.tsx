@@ -1,5 +1,6 @@
 import { Mail, Phone } from "lucide-react";
 import { OutboundLink } from "@/components/analytics/outbound-link";
+import { AnalyticsSettingsButton } from "@/components/analytics/analytics-consent";
 import { BackToTop } from "@/components/controls/back-to-top";
 import { ActionLink } from "@/components/ui/primitives";
 import { centerContent } from "@/content/center";
@@ -166,6 +167,7 @@ export function SiteFooter({ locale }: { readonly locale: Locale }) {
               <li><Link href="/privacy-policy" locale={locale}>{locale === "ko" ? "개인정보 처리방침" : "Privacy policy"}</Link></li>
               <li><Link href="/terms-of-service" locale={locale}>{locale === "ko" ? "이용약관" : "Terms of service"}</Link></li>
               <li><Link href="/refund-policy" locale={locale}>{locale === "ko" ? "환불 및 반품정책" : "Refund and returns"}</Link></li>
+              <li><AnalyticsSettingsButton locale={locale} /></li>
             </ul>
           </nav>
           <span className="footer-copyright" lang="en">© Bitcoin Center Seoul</span>

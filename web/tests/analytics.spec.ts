@@ -57,9 +57,50 @@ test.describe("with a GTM container configured", () => {
     expect(consent.index).toBeGreaterThanOrEqual(0);
     expect(consent.index).toBeLessThan(consent.init);
     expect(consent.value).toEqual({ ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied", analytics_storage: "denied" });
+    await expect(page.locator(".analytics-consent")).toBeVisible();
     const policy = response?.headers()["content-security-policy"] ?? "";
     expect(policy).toContain("https://www.google.com/g/collect");
     expect(policy).not.toContain("'unsafe-eval'");
+  });
+
+  test("analytics choice persists, precedes tags on return, and can be withdrawn", async ({ page, context }) => {
+    await page.goto("/ko");
+    await page.getByRole("button", { name: "분석 쿠키 허용", exact: true }).click();
+    await expect(page.locator(".analytics-consent")).toHaveCount(0);
+    expect((await context.cookies()).find(cookie => cookie.name === "bcs-analytics-consent")?.value).toBe("granted");
+    await page.goto("/en");
+    await page.waitForFunction(() => !!document.querySelector("script#_next-gtm"));
+    const consent = await page.evaluate(() => {
+      const layer = (window as unknown as { dataLayer: Record<string, unknown>[] }).dataLayer;
+      return { index: layer.findIndex(entry => entry?.[0] === "consent"), init: layer.findIndex(entry => entry?.event === "gtm.js"), value: layer.find(entry => entry?.[0] === "consent")?.[2] };
+    });
+    expect(consent.index).toBeLessThan(consent.init);
+    expect(consent.value).toEqual({ ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied", analytics_storage: "granted" });
+    await expect(page.locator(".analytics-consent")).toHaveCount(0);
+    await context.addCookies([{ name: "_ga", value: "test", url: page.url() }]);
+    await page.getByRole("button", { name: "Cookie settings", exact: true }).click();
+    await expect(page.locator("#analytics-consent-title")).toBeFocused();
+    await page.getByRole("button", { name: "Decline analytics cookies", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Cookie settings", exact: true })).toBeFocused();
+    expect((await context.cookies()).filter(cookie => /^_ga(?:_|$)/.test(cookie.name))).toHaveLength(0);
+    await page.reload();
+    await expect(page.locator(".analytics-consent")).toHaveCount(0);
+    expect((await context.cookies()).find(cookie => cookie.name === "bcs-analytics-consent")?.value).toBe("denied");
+  });
+
+  test("revocation applies to another open tab", async ({ page, context }) => {
+    await page.goto("/ko");
+    await page.getByRole("button", { name: "분석 쿠키 허용", exact: true }).click();
+    const other = await context.newPage();
+    await other.goto("/en");
+    await expect(other.locator(".analytics-consent")).toHaveCount(0);
+    await page.getByRole("button", { name: "쿠키 설정", exact: true }).click();
+    await page.getByRole("button", { name: "분석 쿠키 거부", exact: true }).click();
+    await other.waitForFunction(() => {
+      const layer = (window as unknown as { dataLayer: Record<string, unknown>[] }).dataLayer;
+      return layer.some(entry => entry?.[0] === "consent" && entry?.[1] === "update" && (entry?.[2] as Record<string, unknown>)?.analytics_storage === "denied");
+    });
+    await other.close();
   });
 
   test("program detail pushes view_item for a meetup", async ({ page }) => {
@@ -146,6 +187,7 @@ test.describe("with a GTM container configured", () => {
     await page.getByRole("button", { name: "상태 다시 확인" }).click();
     await page.waitForURL(`**/ko/orders/confirm/${code}`);
     await expect(page.locator("script#_next-gtm")).toHaveCount(0);
+    await expect(page.locator(".analytics-consent, .analytics-settings")).toHaveCount(0);
     const log = await page.evaluate(() => JSON.parse(sessionStorage.getItem("analytics_test_log") ?? "[]") as Record<string, unknown>[]);
     expect(log.filter((entry) => entry.event === "purchase")).toEqual([{
       event: "purchase", order_id: "analytics-order", transaction_id: "analytics-order", locale: "ko", kind: "meetup", item_name: "테스트 밋업", amount_sats: "52000", value: 78000, currency: "KRW", eventTimeout: 1000,
@@ -264,6 +306,7 @@ test.describe("without a GTM container", () => {
   test("no Google Tag Manager script is rendered", async ({ page }) => {
     const response = await page.goto("/ko");
     await expect(page.locator('script#_next-gtm, script[src*="googletagmanager.com"]')).toHaveCount(0);
+    await expect(page.locator(".analytics-consent, .analytics-settings")).toHaveCount(0);
     expect(response?.headers()["content-security-policy"] ?? "").not.toContain("googletagmanager.com");
     const initialized = await page.evaluate(() => ((window as unknown as { dataLayer?: Record<string, unknown>[] }).dataLayer ?? []).some((entry) => entry.event === "gtm.js"));
     expect(initialized).toBe(false);
