@@ -3,8 +3,11 @@ import { createHash } from "node:crypto";
 import { isIP } from "node:net";
 import { z } from "zod";
 import { getServerConfig } from "./config";
+import { isSafeHttpError, safeHttpErrorSymbol, safeHttpPayload } from "./http-error-contract";
 
 export class HttpError extends Error {
+  readonly [safeHttpErrorSymbol] = true;
+
   constructor(
     readonly status: number,
     readonly code: string,
@@ -43,12 +46,8 @@ export async function handleApi(action: () => Promise<Response>): Promise<Respon
   try {
     return await action();
   } catch (error) {
-    if (error instanceof HttpError) {
-      return response({ error: {
-        code: error.code,
-        message: error.message,
-        ...(error.fields ? { fields: error.fields } : {}),
-      } }, error.status);
+    if (isSafeHttpError(error)) {
+      return response(safeHttpPayload(error), error.status);
     }
     if (error instanceof z.ZodError) {
       return response({ error: {
