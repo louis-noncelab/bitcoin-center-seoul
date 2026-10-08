@@ -63,12 +63,12 @@ test.describe("with a GTM container configured", () => {
     expect(policy).not.toContain("'unsafe-eval'");
   });
 
-  test("a previous analytics refusal stays denied without displaying a popup", async ({ page, context }) => {
+  test("an obsolete analytics choice does not override the fixed storage settings", async ({ page, context }) => {
     await context.addCookies([{ name: "bcs-analytics-consent", value: "denied", url: process.env.COMMERCE_REVIEW_ORIGIN ?? "http://127.0.0.1:3100" }]);
     await page.goto("/ko");
     await page.waitForFunction(() => !!document.querySelector("script#_next-gtm"));
     const consent = await page.evaluate(() => (window as unknown as { dataLayer: Record<string, unknown>[] }).dataLayer.find(entry => entry?.[0] === "consent")?.[2]);
-    expect(consent).toEqual({ ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied", analytics_storage: "denied" });
+    expect(consent).toEqual({ ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied", analytics_storage: "granted" });
     await expect(page.locator(".analytics-consent, .analytics-settings")).toHaveCount(0);
   });
 
