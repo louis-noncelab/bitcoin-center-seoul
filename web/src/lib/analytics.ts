@@ -1,3 +1,5 @@
+import { withoutWordJoiners } from "./text";
+
 export type GaEventName =
   | "view_item"
   | "begin_checkout"
@@ -9,12 +11,24 @@ export type GaEventName =
 export type AnalyticsItem = { readonly item_id: string; readonly item_name: string; readonly quantity: number };
 export type GaEventParams = Record<string, string | number | boolean | readonly AnalyticsItem[]>;
 
+function analyticsParams(params?: GaEventParams): GaEventParams {
+  const cleaned = { ...params };
+  for (const key of ["item_name", "page_title"]) {
+    const value = cleaned[key];
+    if (typeof value === "string") cleaned[key] = withoutWordJoiners(value);
+  }
+  if (Array.isArray(cleaned.items)) {
+    cleaned.items = cleaned.items.map((item: AnalyticsItem) => ({ ...item, item_name: withoutWordJoiners(item.item_name) }));
+  }
+  return cleaned;
+}
+
 export function trackEvent(name: GaEventName, params?: GaEventParams): boolean {
   if (typeof window === "undefined") return false;
   try {
     const target = window as unknown as { dataLayer?: unknown[] };
     target.dataLayer = target.dataLayer ?? [];
-    target.dataLayer.push({ event: name, ...params });
+    target.dataLayer.push({ event: name, ...analyticsParams(params) });
     return true;
   } catch {
     return false;
@@ -97,7 +111,7 @@ export async function trackPurchaseOnce({ orderId, locale, kind, value, amountSa
     try {
       const target = window as unknown as { dataLayer?: unknown[] };
       target.dataLayer = target.dataLayer ?? [];
-      target.dataLayer.push({ event: "purchase", ...params, ...(finish ? { eventCallback: finish, eventTimeout: 1000 } : {}) });
+      target.dataLayer.push({ event: "purchase", ...analyticsParams(params), ...(finish ? { eventCallback: finish, eventTimeout: 1000 } : {}) });
       queued = true;
     } catch {
       finish?.();

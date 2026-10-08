@@ -64,6 +64,29 @@ test("trackEvent is a no-op without a window and appends to dataLayer in the bro
   assert.deepEqual(browser.dataLayer, [{ event: "collab_submit", locale: "ko" }, { event: "outbound_click", destination: "x", locale: "en" }]);
 });
 
+test("analytics strips word joiners from labels without changing display data or identifiers", () => {
+  const browser = fakeWindow();
+  const name = "\u2060센터\u2060 상품\u2060 👩‍💻";
+  const item = Object.freeze({ item_id: "sku\u2060-one", item_name: name, quantity: 2 });
+  const items = Object.freeze([item]);
+  const params = Object.freeze({ item_id: item.item_id, item_name: name, page_title: `${name} | Center`, items, quantity: 2, locale: "ko" });
+  trackEvent("view_item", params);
+  trackEvent("begin_checkout", { items, value: 0 });
+  assert.deepEqual(browser.dataLayer, [
+    { event: "view_item", item_id: item.item_id, item_name: "센터 상품 👩‍💻", page_title: "센터 상품 👩‍💻 | Center", items: [{ ...item, item_name: "센터 상품 👩‍💻" }], quantity: 2, locale: "ko" },
+    { event: "begin_checkout", items: [{ ...item, item_name: "센터 상품 👩‍💻" }], value: 0 },
+  ]);
+  assert.equal(params.item_name, name);
+  assert.equal(items[0].item_name, name);
+});
+
+test("purchase labels are cleaned while purchase deduplication stays intact", async () => {
+  const browser = fakeWindow();
+  await trackPurchaseOnce({ orderId: "clean-label-order", locale: "ko", itemName: "비트\u2060코인\u2060 밋업", value: 0 });
+  await trackPurchaseOnce({ orderId: "clean-label-order", locale: "ko", itemName: "비트코인 밋업", value: 0 });
+  assert.deepEqual(browser.dataLayer, [{ event: "purchase", order_id: "clean-label-order", transaction_id: "clean-label-order", locale: "ko", item_name: "비트코인 밋업", value: 0, currency: "KRW" }]);
+});
+
 test("trackPurchaseOnce sends one purchase per order and session", async () => {
   const browser = fakeWindow();
   await trackPurchaseOnce({ orderId: "order-1", locale: "ko", kind: "meetup", value: 0, itemName: "밋업" });
