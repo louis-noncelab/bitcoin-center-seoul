@@ -4,7 +4,7 @@ import { reviewRecordSchema, reviewSelectionSchema, type ReviewInput, type Revie
 import { prisma } from "@/server/db";
 import { ApiError } from "@/server/events/errors";
 import { markdownImageReferences } from "@/server/events/image-references";
-import { collectImagePaths, deleteUnusedImages, placeImagesInSlugFolder, requireExistingImages, rewriteImagePaths } from "@/server/events/images";
+import { collectImagePaths, deleteUnusedImages, placeImagesInSlugFolder, requireExistingImages, restoreMovedImagesOnConfirmedRollback, rewriteImagePaths } from "@/server/events/images";
 import { reserveRevision } from "@/server/events/revision";
 
 function storedTime(value: Date): string {
@@ -66,8 +66,7 @@ export async function saveReview(input: ReviewInput, id?: number, revision?: num
   const image = input.image ? placed.images[sources.indexOf(input.image)] ?? "" : "";
   const description = rewriteImagePaths(input.description, sources, placed.images);
   const descriptionEn = rewriteImagePaths(input.descriptionEn, sources, placed.images);
-  try {
-  const savedId = await prisma.$transaction(async (tx) => {
+  const savedId = await restoreMovedImagesOnConfirmedRollback(placed, (markTransactionBodyComplete) => prisma.$transaction(async (tx) => {
     if (id !== undefined) await reserveRevision(tx, "visit_reviews", id, revision);
     if (input.slug) {
       const owner = await tx.reviewSlug.findUnique({ where: { slug: input.slug } });
@@ -80,17 +79,14 @@ export async function saveReview(input: ReviewInput, id?: number, revision?: num
     };
     const reviewId = id === undefined ? (await tx.visitReview.create({ data })).id : (await tx.visitReview.update({ where: { id }, data })).id;
     if (input.slug) await tx.reviewSlug.upsert({ where: { slug: input.slug }, create: { slug: input.slug, reviewId }, update: {} });
+    markTransactionBodyComplete();
     return reviewId;
-  });
+  }));
   const saved = await getReview(savedId);
   if (!saved) throw new ApiError(500, "SAVE_FAILED", "후기를 저장하지 못했습니다.");
   const kept = new Set(collectImagePaths(image, description, descriptionEn));
   await deleteUnusedImages(collectImagePaths(previous?.image, previous?.description, previous?.descriptionEn).filter((item) => !kept.has(item)));
   return saved;
-  } catch (error) {
-    await placed.restore();
-    throw error;
-  }
 }
 
 export async function deleteReview(id: number, revision: number): Promise<void> {

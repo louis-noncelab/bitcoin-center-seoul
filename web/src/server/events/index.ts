@@ -14,7 +14,7 @@ import {
 import { centerEventLocation } from "@/lib/event-location";
 import { prisma } from "@/server/db";
 import { ApiError } from "@/server/events/errors";
-import { collectImagePaths, deleteUnusedImages, placeImagesInSlugFolder, requireExistingImages, rewriteImagePaths } from "@/server/events/images";
+import { collectImagePaths, deleteUnusedImages, placeImagesInSlugFolder, requireExistingImages, restoreMovedImagesOnConfirmedRollback, rewriteImagePaths } from "@/server/events/images";
 import { reserveRevision } from "@/server/events/revision";
 import { storedTagsSchema } from "@/server/events/tags";
 
@@ -189,8 +189,7 @@ export async function createEvent(input: EventInput): Promise<EventRecord> {
   const placed = await placeImagesInSlugFolder("events", input.slug, input.images);
   const description = rewriteImagePaths(input.description, input.images, placed.images);
   const descriptionEn = rewriteImagePaths(input.descriptionEn, input.images, placed.images);
-  try {
-  const id = await prisma.$transaction(async (tx) => {
+  const id = await restoreMovedImagesOnConfirmedRollback(placed, (markTransactionBodyComplete) => prisma.$transaction(async (tx) => {
     const image = placed.images[0] ?? "";
     const created = await tx.centerEvent.create({
       data: {
@@ -205,15 +204,12 @@ export async function createEvent(input: EventInput): Promise<EventRecord> {
     await replaceImages(tx, "event", created.id, placed.images);
     await setSlug(tx, "event", created.id, input.slug);
     await syncEventTicketInTransaction(tx, created, 0);
+    markTransactionBodyComplete();
     return created.id;
-  });
+  }));
   const event = await getEvent(id);
   if (!event) throw new ApiError(500, "WRITE_FAILED", "행사 저장에 실패했습니다.");
   return event;
-  } catch (error) {
-    await placed.restore();
-    throw error;
-  }
 }
 
 export async function setEventRegistration(id: number, registrationClosed: boolean, revision: number): Promise<EventRecord> {
@@ -233,8 +229,7 @@ export async function updateEvent(id: number, input: EventInput, revision: numbe
   const placed = await placeImagesInSlugFolder("events", input.slug, input.images);
   const description = rewriteImagePaths(input.description, input.images, placed.images);
   const descriptionEn = rewriteImagePaths(input.descriptionEn, input.images, placed.images);
-  try {
-  await prisma.$transaction(async (tx) => {
+  await restoreMovedImagesOnConfirmedRollback(placed, (markTransactionBodyComplete) => prisma.$transaction(async (tx) => {
     await reserveRevision(tx, "events", id, revision);
     const current = await tx.centerEvent.findUnique({ where: { id } });
     if (!current) throw new ApiError(404, "NOT_FOUND", "행사를 찾을 수 없습니다.");
@@ -252,16 +247,13 @@ export async function updateEvent(id: number, input: EventInput, revision: numbe
     await syncEventTicketInTransaction(tx, updated, current.ticketCapacity);
     await replaceImages(tx, "event", id, placed.images);
     await setSlug(tx, "event", id, input.slug);
-  });
+    markTransactionBodyComplete();
+  }));
   const event = await getEvent(id);
   if (!event) throw new ApiError(500, "WRITE_FAILED", "행사 저장에 실패했습니다.");
   const kept = new Set(collectImagePaths(placed.images, description, descriptionEn));
   await deleteUnusedImages(collectImagePaths(previous?.images, previous?.description, previous?.descriptionEn).filter((image) => !kept.has(image)));
   return event;
-  } catch (error) {
-    await placed.restore();
-    throw error;
-  }
 }
 
 export async function meetupInfoForSkus(skus: readonly string[]): Promise<MeetupInfo[]> {
@@ -303,8 +295,7 @@ export async function createHighlight(input: HighlightInput): Promise<HighlightR
   const placed = await placeImagesInSlugFolder("highlights", input.slug, input.images);
   const description = rewriteImagePaths(input.description, input.images, placed.images);
   const descriptionEn = rewriteImagePaths(input.descriptionEn, input.images, placed.images);
-  try {
-  const id = await prisma.$transaction(async (tx) => {
+  const id = await restoreMovedImagesOnConfirmedRollback(placed, (markTransactionBodyComplete) => prisma.$transaction(async (tx) => {
     const created = await tx.centerHighlight.create({
       data: {
         title: input.title, titleEn: input.titleEn, meta: input.meta, metaEn: input.metaEn, category: input.category, categoryEn: input.categoryEn,
@@ -315,15 +306,12 @@ export async function createHighlight(input: HighlightInput): Promise<HighlightR
     });
     await replaceImages(tx, "highlight", created.id, placed.images);
     await setSlug(tx, "highlight", created.id, input.slug);
+    markTransactionBodyComplete();
     return created.id;
-  });
+  }));
   const highlight = await getHighlight(id, { includeInactive: true });
   if (!highlight) throw new ApiError(500, "WRITE_FAILED", "하이라이트 저장에 실패했습니다.");
   return highlight;
-  } catch (error) {
-    await placed.restore();
-    throw error;
-  }
 }
 
 export async function updateHighlight(id: number, input: HighlightInput, revision: number): Promise<HighlightRecord> {
@@ -332,8 +320,7 @@ export async function updateHighlight(id: number, input: HighlightInput, revisio
   const placed = await placeImagesInSlugFolder("highlights", input.slug, input.images);
   const description = rewriteImagePaths(input.description, input.images, placed.images);
   const descriptionEn = rewriteImagePaths(input.descriptionEn, input.images, placed.images);
-  try {
-  await prisma.$transaction(async (tx) => {
+  await restoreMovedImagesOnConfirmedRollback(placed, (markTransactionBodyComplete) => prisma.$transaction(async (tx) => {
     await reserveRevision(tx, "highlights", id, revision);
     await tx.centerHighlight.update({
       where: { id },
@@ -346,16 +333,13 @@ export async function updateHighlight(id: number, input: HighlightInput, revisio
     });
     await replaceImages(tx, "highlight", id, placed.images);
     await setSlug(tx, "highlight", id, input.slug);
-  });
+    markTransactionBodyComplete();
+  }));
   const highlight = await getHighlight(id, { includeInactive: true });
   if (!highlight) throw new ApiError(500, "WRITE_FAILED", "하이라이트 저장에 실패했습니다.");
   const kept = new Set(collectImagePaths(placed.images, description, descriptionEn));
   await deleteUnusedImages(collectImagePaths(previous?.images, previous?.description, previous?.descriptionEn).filter((image) => !kept.has(image)));
   return highlight;
-  } catch (error) {
-    await placed.restore();
-    throw error;
-  }
 }
 
 export async function deleteHighlight(id: number, revision: number): Promise<void> {

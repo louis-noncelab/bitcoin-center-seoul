@@ -40,6 +40,19 @@ export function rewriteImagePaths(value: string, sources: readonly string[], tar
   }, value);
 }
 
+export async function restoreMovedImagesOnConfirmedRollback<T>(
+  placed: { readonly restore: () => Promise<void> },
+  operation: (markTransactionBodyComplete: () => void) => Promise<T>,
+): Promise<T> {
+  let transactionBodyComplete = false;
+  try {
+    return await operation(() => { transactionBodyComplete = true; });
+  } catch (error) {
+    if (!transactionBodyComplete) await placed.restore();
+    throw error;
+  }
+}
+
 async function undoMoves(moved: readonly { readonly from: string; readonly to: string; readonly copied: boolean }[]): Promise<void> {
   for (const step of [...moved].reverse()) {
     if (step.copied) await fs.promises.unlink(step.to).catch(() => undefined);
