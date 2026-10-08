@@ -15,4 +15,4 @@ export const POST = (request: Request) => handleApi(async () => {
   const response = json({ ...result.order, ...(result.created && result.token ? { accessToken: result.token } : {}) }, result.created ? 201 : 200);
   if (result.token) response.headers.append("set-cookie", resourceAccessCookie("order", result.order.id, result.token));
   return response;
-});
+}, { route: "api.orders.create" });

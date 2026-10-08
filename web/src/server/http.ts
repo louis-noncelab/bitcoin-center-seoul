@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { isIP } from "node:net";
 import { z } from "zod";
 import { getServerConfig } from "./config";
+import { createCorrelationId, safeLogApiFailure, safeMachineCode } from "./safe-log";
 
 export class HttpError extends Error {
   constructor(
@@ -39,20 +40,33 @@ export function json(data: unknown, status = 200): Response {
   return response({ data }, status);
 }
 
-export async function handleApi(action: () => Promise<Response>): Promise<Response> {
+type ApiHandlerOptions = {
+  readonly route?: string;
+};
+
+function retryableStatus(status: number): boolean {
+  return status === 429 || status === 503 || status >= 500;
+}
+
+export async function handleApi(action: () => Promise<Response>, options: ApiHandlerOptions = {}): Promise<Response> {
+  const requestId = createCorrelationId();
   try {
     return await action();
   } catch (error) {
     if (error instanceof HttpError) {
+      safeLogApiFailure({ requestId, route: options.route, status: error.status, code: error.code, error, retryable: retryableStatus(error.status) });
       return response({ error: {
         code: error.code,
+        requestId,
         message: error.message,
         ...(error.fields ? { fields: error.fields } : {}),
       } }, error.status);
     }
     if (error instanceof z.ZodError) {
+      safeLogApiFailure({ requestId, route: options.route, status: 400, code: "INVALID_INPUT", error, retryable: false });
       return response({ error: {
         code: "INVALID_INPUT",
+        requestId,
         message: "입력 내용을 확인해 주세요. / Check the entered information.",
         fields: Object.fromEntries(error.issues.map((issue) => [
           issue.path.join("."), issue.message,
@@ -60,9 +74,10 @@ export async function handleApi(action: () => Promise<Response>): Promise<Respon
       } }, 400);
     }
     // Error text can include credentials, submitted values or provider URLs.
-    console.error("[api] Unexpected server error", error instanceof Error ? error.name : "UnknownError");
+    safeLogApiFailure({ requestId, route: options.route, status: 500, code: safeMachineCode(undefined, "INTERNAL_ERROR"), error, retryable: true });
     return response({ error: {
       code: "INTERNAL_ERROR",
+      requestId,
       message: "처리하지 못했습니다. 잠시 후 다시 시도해 주세요. / Please try again shortly.",
     } }, 500);
   }
