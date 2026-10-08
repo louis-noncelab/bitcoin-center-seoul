@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { locale as getRootLocale } from "next/root-params";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import type { ReactNode } from "react";
+import { AnalyticsConsentBanner } from "@/components/analytics/analytics-consent";
 import { CursorFollower } from "@/components/controls/cursor-follower";
 import { ReadingProgress } from "@/components/controls/reading-progress";
 import { ThemeProvider } from "@/components/controls/theme-provider";
@@ -11,6 +12,7 @@ import { DevelopmentTools } from "@/components/development-tools";
 import { routing } from "@/i18n/routing";
 import { parseSiteTheme, themeCookieName } from "@/lib/theme-cookie";
 import { isPrivateAnalyticsPath } from "@/lib/analytics-path";
+import { analyticsConsentCookieName, analyticsConsentSettings, parseAnalyticsConsent } from "@/lib/analytics-consent";
 import "@/app/globals.css";
 
 export async function LocaleDocument({
@@ -22,7 +24,9 @@ export async function LocaleDocument({
 }) {
   const locale = await getRootLocale();
   if (!hasLocale(routing.locales, locale)) notFound();
-  const theme = parseSiteTheme((await cookies()).get(themeCookieName)?.value);
+  const cookieStore = await cookies();
+  const theme = parseSiteTheme(cookieStore.get(themeCookieName)?.value);
+  const consent = parseAnalyticsConsent(cookieStore.get(analyticsConsentCookieName)?.value);
   const requestHeaders = await headers();
   const pathname = requestHeaders.get("x-bcs-pathname") ?? "";
   const excluded = !analyticsEnabled || isPrivateAnalyticsPath(pathname);
@@ -37,15 +41,15 @@ export async function LocaleDocument({
             <ReadingProgress />
             {children}
             <CursorFollower />
+            {gtmId ? <AnalyticsConsentBanner locale={locale} initialConsent={consent} /> : null}
           </ThemeProvider>
         </NextIntlClientProvider>
         <DevelopmentTools />
         {gtmId ? <>
-          {/* ponytail: cookieless measurement; add visitor opt-in before enabling analytics storage. */}
           <script id="bcs-analytics-consent" nonce={nonce ?? undefined} dangerouslySetInnerHTML={{ __html: `
             window.dataLayer=window.dataLayer||[];
             (function(){function gtag(){window.dataLayer.push(arguments);}
-              gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied'});
+              gtag('consent','default',${JSON.stringify(analyticsConsentSettings(consent ?? "denied"))});
               gtag('set','ads_data_redaction',true);
             })();
           ` }} />
