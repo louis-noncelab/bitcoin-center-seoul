@@ -21,7 +21,7 @@
     "analyze": "ANALYZE=true next build --webpack",
     "review": "node --import tsx scripts/events-review.mjs",
     "admin:password": "node --import tsx scripts/admin-password.ts",
-    "test:security": "node --conditions=react-server --import tsx --test --test-concurrency=1 tests/admin-security.mjs tests/security-rate-limits.mjs",
+    "test:security": "node --conditions=react-server --import tsx --test --test-concurrency=1 tests/pg-content-env-safety.mjs tests/admin-security.mjs tests/security-rate-limits.mjs",
     "backup": "node --import tsx scripts/events-backup.ts",
     "test:collection": "node --conditions=react-server --import tsx --test tests/collection-db.mjs",
     "test:reviews": "node --conditions=react-server --import tsx --test tests/reviews-db.mjs tests/reviews-import.mjs",
