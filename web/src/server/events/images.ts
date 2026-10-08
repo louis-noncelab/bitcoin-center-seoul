@@ -5,7 +5,9 @@ import fs from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
 import type { Metadata } from "sharp";
+import type { Prisma } from "@/generated/prisma/client";
 import { imagePathSchema } from "@/lib/events-contract";
+import { prisma } from "@/server/db";
 import { configuredUploadsPath } from "@/server/events/config";
 import { ApiError } from "@/server/events/errors";
 import { markdownImageReferences } from "@/server/events/image-references";
@@ -14,6 +16,44 @@ const maximumFileBytes = 10 * 1024 * 1024;
 const maximumTotalBytes = 30 * 1024 * 1024;
 const allowedMimeTypes = new Set(["image/avif", "image/gif", "image/jpeg", "image/png", "image/webp"]);
 const allowedFormats = new Set(["avif", "gif", "heif", "jpeg", "png", "webp"]);
+export const imageReferenceLockKeys = { namespace: 4_204_101, id: 4_204_199 } as const;
+
+function configuredLockTimeout(): number | null {
+  const raw = process.env.BCS_IMAGE_REFERENCE_LOCK_TIMEOUT_MS;
+  if (!raw) return null;
+  const value = Number(raw);
+  return Number.isInteger(value) && value >= 0 && value <= 60_000 ? value : null;
+}
+
+function isPostgresLockTimeout(error: unknown): boolean {
+  return error instanceof Error && (
+    error.message.includes("canceling statement due to lock timeout") ||
+    error.message.includes("55P03") ||
+    error.message.includes("lock timeout")
+  );
+}
+
+export async function acquireImageReferenceLock(tx: Prisma.TransactionClient): Promise<void> {
+  const timeout = configuredLockTimeout();
+  if (timeout !== null) {
+    await tx.$executeRaw`SELECT set_config('lock_timeout', ${`${timeout}ms`}, true)`;
+  }
+  try {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${imageReferenceLockKeys.namespace}, ${imageReferenceLockKeys.id})`;
+  } catch (error) {
+    if (isPostgresLockTimeout(error)) {
+      throw new ApiError(503, "IMAGE_REFERENCE_LOCK_UNAVAILABLE", "이미지 참조 잠금을 얻지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    }
+    throw error;
+  }
+}
+
+export async function withImageReferenceLock<T>(action: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
+  return prisma.$transaction(async (tx) => {
+    await acquireImageReferenceLock(tx);
+    return action(tx);
+  }, { timeout: 15_000 });
+}
 
 function imageRoot(): string {
   const root = configuredUploadsPath();
@@ -134,44 +174,47 @@ export function collectImagePaths(...values: readonly (string | readonly string[
 export async function deleteUnusedImages(candidates: readonly string[], used?: ReadonlySet<string>): Promise<void> {
   const unique = [...new Set(candidates.filter((image) => image.startsWith("/images/")))];
   if (unique.length === 0) return;
-  let referenced: ReadonlySet<string>;
-  if (used) referenced = used;
-  else {
-    try {
-      referenced = new Set(await (await import("@/server/events/content-images")).referencedImagePaths(false));
-    } catch {
-      return;
-    }
-  }
-  const root = imageRoot();
-  const uploads = path.join(root, "uploads");
-  for (const image of unique) {
-    if (referenced.has(image)) continue;
-    const parsed = imagePathSchema.safeParse(image);
-    if (!parsed.success || parsed.data === "") continue;
-    let file: string;
-    try {
-      file = fs.realpathSync(resolveImageFile(parsed.data));
-    } catch {
-      continue;
-    }
-    if (!file.startsWith(`${root}${path.sep}`)) continue;
-    await fs.promises.unlink(file).catch(() => undefined);
-    let directory = path.dirname(file);
-    while (directory.startsWith(`${uploads}${path.sep}`)) {
+  await withImageReferenceLock(async (tx) => {
+    let referenced: ReadonlySet<string>;
+    if (used) referenced = used;
+    else {
       try {
-        await fs.promises.rmdir(directory);
+        referenced = new Set(await (await import("@/server/events/content-images")).referencedImagePaths(false, tx));
       } catch {
-        break;
+        return;
       }
-      directory = path.dirname(directory);
     }
-  }
+    const root = imageRoot();
+    const uploads = path.join(root, "uploads");
+    for (const image of unique) {
+      if (referenced.has(image)) continue;
+      const parsed = imagePathSchema.safeParse(image);
+      if (!parsed.success || parsed.data === "") continue;
+      let file: string;
+      try {
+        file = fs.realpathSync(resolveImageFile(parsed.data));
+      } catch {
+        continue;
+      }
+      if (!file.startsWith(`${root}${path.sep}`)) continue;
+      await fs.promises.unlink(file).catch(() => undefined);
+      let directory = path.dirname(file);
+      while (directory.startsWith(`${uploads}${path.sep}`)) {
+        try {
+          await fs.promises.rmdir(directory);
+        } catch {
+          break;
+        }
+        directory = path.dirname(directory);
+      }
+    }
+  });
 }
 
 export function requireExistingImages(images: readonly string[]): void {
   const root = imageRoot();
-  for (const image of images) {
+  for (const image of [...new Set(images)]) {
+    if (!image.startsWith("/images/")) continue;
     const candidate = resolveImageFile(image);
     let resolved: string;
     try {

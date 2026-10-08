@@ -1,7 +1,7 @@
 import "server-only";
 import { noticeRecordSchema, type NoticeInput, type NoticeRecord } from "@/lib/notices-contract";
 import { prisma } from "@/server/db";
-import { collectImagePaths, deleteUnusedImages } from "@/server/events/images";
+import { collectImagePaths, deleteUnusedImages, requireExistingImages, withImageReferenceLock } from "@/server/events/images";
 import { ApiError } from "@/server/events/errors";
 import { reserveRevision } from "@/server/events/revision";
 import { storedTagsSchema } from "@/server/events/tags";
@@ -41,7 +41,8 @@ export async function noticeBySlug(slug: string): Promise<NoticeRecord | null> {
 
 export async function saveNotice(input: NoticeInput, id?: number, revision?: number): Promise<NoticeRecord> {
   const previous = id === undefined ? null : await getNotice(id, true);
-  const savedId = await prisma.$transaction(async (tx) => {
+  const savedId = await withImageReferenceLock(async (tx) => {
+    requireExistingImages(collectImagePaths(input.description, input.descriptionEn));
     if (id !== undefined) {
       await reserveRevision(tx, "notices", id, revision);
       if (!await tx.notice.findUnique({ where: { id } })) throw new ApiError(404, "NOT_FOUND", "공지를 찾을 수 없습니다.");
