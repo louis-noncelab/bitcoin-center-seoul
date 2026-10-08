@@ -9,14 +9,15 @@ export async function generateMetadata({ params }: Props) {
   const { locale: value, code } = await params;
   const locale = pageLocale(value);
   if (!/^[a-f0-9]{24}$/.test(code)) notFound();
-  return commerceMetadata(locale, { path: `/orders/confirm/${code}`, title: locale === "ko" ? "결제 확인" : "Payment confirmation" }, { indexed: false });
+  // The code in this URL is a bearer link; later full page loads must not see it as document.referrer.
+  return { ...commerceMetadata(locale, { path: `/orders/confirm/${code}`, title: locale === "ko" ? "확인 페이지" : "Confirmation" }, { indexed: false }), referrer: "no-referrer" };
 }
 
 export default async function PaymentConfirmationPage({ params }: Props) {
   const { locale: value, code } = await params;
   const locale = pageLocale(value);
   if (!/^[a-f0-9]{24}$/.test(code)) notFound();
-  return <CommercePage locale={locale} focus="narrow" title={locale === "ko" ? "결제 확인" : "Payment confirmation"}>
+  return <CommercePage locale={locale} focus="narrow" title={locale === "ko" ? "확인 페이지" : "Confirmation"} backTo="/" backLabel={locale === "ko" ? "홈으로" : "Back to home"}>
     <PaymentConfirmation code={code} locale={locale} />
   </CommercePage>;
 }

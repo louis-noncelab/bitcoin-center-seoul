@@ -3,15 +3,27 @@ import { ArrowLeft } from "lucide-react";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { legalDocuments } from "@/content/legal";
+import { purchaseRefunds, purchaseTerms } from "@/content/meetup-policy";
+import type { CheckoutPolicyKind } from "@/lib/commerce-kind";
 import type { LegalKind } from "@/content/legal-types";
 import { pageMetadata } from "@/content/site";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import "@/styles/legal.css";
 
-export function legalMetadata(locale: Locale, kind: LegalKind): Metadata {
+export function legalPurchase(value: string | string[] | undefined): CheckoutPolicyKind | undefined {
+  return value === "goods" || value === "meetup" || value === "free_meetup" ? value : undefined;
+}
+
+function legalDocument(locale: Locale, kind: LegalKind, purchase?: CheckoutPolicyKind) {
+  if (purchase && kind === "terms-of-service") return purchaseTerms(locale, purchase);
+  if (purchase && kind === "refund-policy") return purchaseRefunds(locale, purchase);
+  return legalDocuments[kind][locale];
+}
+
+export function legalMetadata(locale: Locale, kind: LegalKind, purchase?: CheckoutPolicyKind): Metadata {
   const base = pageMetadata(locale);
-  const document = legalDocuments[kind][locale];
+  const document = legalDocument(locale, kind, purchase);
   const path = `/${kind}`;
   const title = `${document.title} | Bitcoin Center Seoul`;
   return {
@@ -36,8 +48,8 @@ export function legalMetadata(locale: Locale, kind: LegalKind): Metadata {
   };
 }
 
-export function LegalPage({ locale, kind }: { readonly locale: Locale; readonly kind: LegalKind }) {
-  const document = legalDocuments[kind][locale];
+export function LegalPage({ locale, kind, purchase }: { readonly locale: Locale; readonly kind: LegalKind; readonly purchase?: CheckoutPolicyKind | undefined }) {
+  const document = legalDocument(locale, kind, purchase);
   return <>
     <SiteHeader locale={locale} />
     <main id="main" className="container legal-page" tabIndex={-1}>

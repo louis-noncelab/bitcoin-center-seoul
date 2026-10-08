@@ -52,5 +52,5 @@ test("manual payment rejects stale data without losing the operator reason", asy
   await expect(page.locator(".events-error[role=alert]")).toContainText("결제 상태");
   expect(requests).toEqual([{ paymentId: "manual-payment", expectedPaymentUpdatedAt: version, decision: "PAID", reason: "입금 확인 근거" }]);
   await expect(page.getByRole("textbox", { name: "수동 처리 사유", exact: true })).toHaveValue("입금 확인 근거");
-  await expect(page.getByRole("button", { name: "최신 주문 불러오기", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "최신 내역 불러오기", exact: true })).toBeVisible();
 });

@@ -78,6 +78,15 @@ test("public pages point link previews at a sized share image", () => {
   assert.match(String(meetup.description), /meetup at the center/);
 });
 
+test("page titles omit word joiners so automatic GA4 titles use the visible name", () => {
+  for (const locale of ["ko", "en"]) {
+    const title = "비트\u2060코인\u2060 밋업";
+    const metadata = recordMetadata(locale, "programs", "meetup", title, "A center meetup.");
+    assert.equal(String(metadata.title).includes("\u2060"), false);
+    assert.match(String(metadata.title), /^비트코인 밋업 \| /);
+  }
+});
+
 const paidMeetup = {
     id: 7,
     revision: 1,

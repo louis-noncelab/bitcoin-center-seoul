@@ -5,6 +5,7 @@ import { paidOnlineSessions } from "@/server/events";
 import { getCommerceSettings } from "@/server/commerce/settings";
 import { enqueue } from "@/server/email";
 import { acceptedContractCopy } from "./contract-copy";
+import { purchaseKind, ticketEventId } from "@/lib/commerce-kind";
 
 type Locale = "ko" | "en";
 type Unit = "KRW" | "SATS" | "BTC";
@@ -87,8 +88,9 @@ type OnlineJoin = { readonly url: string; readonly note: string; readonly noteEn
 export function buildPaymentLetter(locale: Locale, kind: Kind, order: OrderMail, url: string, unit: Unit, origin: string, joins: readonly OnlineJoin[] = []) {
   const ko = locale === "ko";
   const index = ko ? 0 : 1;
-  const meetup = order.items.some((item) => item.sku?.startsWith("MEETUP-"));
-  const meetupOnly = meetup && order.items.every((item) => item.sku?.startsWith("MEETUP-"));
+  const purchase = purchaseKind(order.items);
+  const meetup = purchase !== "goods";
+  const meetupOnly = purchase === "meetup";
   const freeRegistration = meetupOnly && order.amountSats === 0n;
   const text = meetupOnly ? {
     "order.created": { subject: ["예약이 접수되었습니다", "Your reservation was received"], lead: ["결제를 마치면 자리가 확정됩니다.", "The seat is confirmed once payment arrives."], action: ["예약 확인", "View your reservation"] },
@@ -111,7 +113,8 @@ export function buildPaymentLetter(locale: Locale, kind: Kind, order: OrderMail,
   const place = meetupOnly ? (joins.length ? (ko ? "온라인 밋업" : "Online meetup") : (ko ? "밋업 참여" : "Meetup attendance")) : fulfillment[locale][order.fulfillment];
   const rows = order.items.map((item) => {
     const title = ko ? item.titleKo || item.titleEn : item.titleEn || item.titleKo;
-    const quantity = ko ? `${item.quantity}${item.sku?.startsWith("MEETUP-") ? "명" : "개"}` : item.quantity === 1 ? "1" : String(item.quantity);
+    const attendee = ticketEventId(item.sku) !== null;
+    const quantity = ko ? `${item.quantity}${attendee ? "명" : "개"}` : attendee ? `${item.quantity} attendee${item.quantity === 1 ? "" : "s"}` : `Qty ${item.quantity}`;
     return { title, quantity };
   });
   const contractCopy = kind === "order.created" ? acceptedContractCopy(order.contractAcceptance) : "";
@@ -122,7 +125,7 @@ export function buildPaymentLetter(locale: Locale, kind: Kind, order: OrderMail,
     `${ko ? "금액" : "Amount"}: ${amount}`,
     `${meetupOnly ? (ko ? "참여" : "Attendance") : (ko ? "수령 및 배송" : "Fulfillment")}: ${place}`,
     ...rows.map((row) => `${row.title}, ${row.quantity}`),
-    `${ko ? "주문 번호" : "Order"}: ${order.id}`,
+    `${meetupOnly ? (ko ? "신청 번호" : "Registration") : (ko ? "주문 번호" : "Order")}: ${order.id}`,
     url,
     ...joins.flatMap((join) => [`${ko ? "온라인 참여" : "Join online"}: ${join.url}`, ko ? join.note : join.noteEn || join.note].filter(Boolean)),
     ...(contractCopy ? [contractCopy] : []),
@@ -153,7 +156,7 @@ export function buildPaymentLetter(locale: Locale, kind: Kind, order: OrderMail,
 ${joins.map((join) => `<p style="margin:16px 0 0;"><a href="${escapeHtml(join.url)}" style="display:inline-block;background:#20211f;color:#fafaf8;text-decoration:none;border-radius:8px;padding:14px 22px;font-size:16px;line-height:1.5;font-weight:500;">${ko ? "온라인 참여" : "Join online"}</a></p>${(ko ? join.note : join.noteEn || join.note) ? `<p style="margin:8px 0 0;font-size:15px;line-height:1.6;color:#62675f;">${escapeHtml(ko ? join.note : join.noteEn || join.note)}</p>` : ""}`).join("")}
 </td></tr>
 <tr><td style="padding:28px 0 0;border-top:1px solid #d8dcd3;font-family:${font};">
-<p style="margin:20px 0 0;font-size:14px;line-height:1.6;color:#62675f;">${ko ? "주문 번호" : "Order"} ${escapeHtml(order.id)}<br><a href="${escapeHtml(url)}" style="color:#32699f;text-decoration:underline;">${escapeHtml(url)}</a></p>
+<p style="margin:20px 0 0;font-size:14px;line-height:1.6;color:#62675f;">${meetupOnly ? (ko ? "신청 번호" : "Registration") : (ko ? "주문 번호" : "Order")} ${escapeHtml(order.id)}<br><a href="${escapeHtml(url)}" style="color:#32699f;text-decoration:underline;">${escapeHtml(url)}</a></p>
 <p style="margin:16px 0 0;font-size:14px;line-height:1.6;color:#62675f;">${ko ? "비트코인 센터 서울, 서울 마포구" : "Bitcoin Center Seoul, Mapo, Seoul"}</p>
 </td></tr>
 ${contractCopy ? `<tr><td style="padding:24px 0;font-family:${font};"><pre style="margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit;font-size:14px;line-height:1.7;color:#20211f;">${escapeHtml(contractCopy)}</pre></td></tr>` : ""}
@@ -178,19 +181,20 @@ const operatorCopy = {
 } as const;
 
 export function buildOperatorLetter(order: OrderMail, contact: OperatorContact, url: string, unit: Unit, origin: string, kind: OperatorKind) {
-  const meetup = order.items.some((item) => item.sku?.startsWith("MEETUP-"));
+  const meetup = purchaseKind(order.items) === "meetup";
   const freeRegistration = meetup && order.amountSats === 0n;
   const base = operatorCopy[kind];
-  const text = freeRegistration && kind === "operator.paid"
+  const context = freeRegistration && kind === "operator.paid"
     ? { ...base, subject: "무료 밋업 신청이 확정되었습니다", lead: "결제 없이 자리가 확정되었습니다. 참석 인원을 확인하면 됩니다." }
     : meetup && kind === "operator.created"
     ? { ...base, subject: "새 밋업 예약이 들어왔습니다" }
     : meetup && kind === "operator.paid"
       ? { ...base, subject: "밋업 예약 결제가 확인되었습니다", lead: "입금이 확인되었습니다. 참석 인원을 확인하면 됩니다." }
       : base;
+  const text = { ...context, action: meetup ? "신청 관리 열기" : context.action };
   const amount = freeRegistration ? "무료" : formatAmount(unit, order.amountSats, order.amountKrw, "ko");
-  const place = fulfillment.ko[order.fulfillment as keyof typeof fulfillment.ko] ?? order.fulfillment;
-  const rows = order.items.map((item) => ({ title: item.titleKo || item.titleEn, quantity: `${item.quantity}${meetup ? "명" : "개"}` }));
+  const place = meetup ? "밋업 참여" : fulfillment.ko[order.fulfillment as keyof typeof fulfillment.ko] ?? order.fulfillment;
+  const rows = order.items.map((item) => ({ title: item.titleKo || item.titleEn, quantity: `${item.quantity}${ticketEventId(item.sku) !== null ? "명" : "개"}` }));
   const contacts = [
     ["이름", contact.name],
     ["이메일", contact.email],
@@ -202,10 +206,10 @@ export function buildOperatorLetter(order: OrderMail, contact: OperatorContact, 
     text.subject,
     text.lead,
     `금액: ${amount}`,
-    `수령: ${place}`,
+    `${meetup ? "참여" : "수령"}: ${place}`,
     ...contacts.map(([label, value]) => `${label}: ${value}`),
     ...rows.map((row) => `${row.title}, ${row.quantity}`),
-    `주문 번호: ${order.id}`,
+    `${meetup ? "신청 번호" : "주문 번호"}: ${order.id}`,
     url,
   ].join("\n\n");
   const font = "'Pretendard Variable','Apple SD Gothic Neo','Malgun Gothic',sans-serif";
@@ -235,7 +239,7 @@ export function buildOperatorLetter(order: OrderMail, contact: OperatorContact, 
 <a href="${escapeHtml(url)}" style="display:inline-block;background:#e2e6dc;color:#20211f;text-decoration:none;border-radius:8px;padding:14px 22px;font-size:16px;line-height:1.5;font-weight:500;">${escapeHtml(text.action)}</a>
 </td></tr>
 <tr><td style="padding:28px 0 0;border-top:1px solid #d8dcd3;font-family:${font};">
-<p style="margin:20px 0 0;font-size:14px;line-height:1.6;color:#62675f;">주문 번호 ${escapeHtml(order.id)}<br><a href="${escapeHtml(url)}" style="color:#32699f;text-decoration:underline;">${escapeHtml(url)}</a></p>
+<p style="margin:20px 0 0;font-size:14px;line-height:1.6;color:#62675f;">${meetup ? "신청 번호" : "주문 번호"} ${escapeHtml(order.id)}<br><a href="${escapeHtml(url)}" style="color:#32699f;text-decoration:underline;">${escapeHtml(url)}</a></p>
 <p style="margin:16px 0 0;font-size:14px;line-height:1.6;color:#62675f;">비트코인 센터 서울, 관리자 알림</p>
 </td></tr>
 </table></td></tr></table></body></html>`;

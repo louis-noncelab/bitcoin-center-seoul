@@ -1,4 +1,6 @@
 export const apiMessages: Readonly<Record<string, readonly [string, string]>> = {
+  MIXED_CHECKOUT: ["밋업 신청과 상품 주문은 각각 진행해 주세요.", "Register for events and order goods separately."],
+  MEETUP_FULFILLMENT: ["밋업은 수령 처리 대신 행사 체크인을 이용해 주세요.", "Use event check-in for meetup registrations."],
   INVALID_INPUT: ["입력한 항목을 확인해 주세요.", "Check the information you entered."],
   AUTH_REQUIRED: ["로그인한 뒤 계속해 주세요.", "Sign in to continue."],
   INVALID_SESSION: ["로그인 시간이 만료되었습니다. 다시 로그인해 주세요.", "Your session has expired. Please sign in again."],
@@ -102,4 +104,12 @@ export const apiMessages: Readonly<Record<string, readonly [string, string]>> = 
   PASSKEY_ALREADY_REGISTERED: ["이미 등록된 패스키입니다.", "This passkey is already registered."],
   PASSKEY_CLONED: ["패스키가 복제된 것으로 보입니다.", "This passkey looks cloned."],
   INVALID_SIGNATURE: ["라이트닝 서명이 올바르지 않습니다.", "The Lightning signature is invalid."],
+};
+
+export const meetupApiMessages: Readonly<Record<string, readonly [string, string]>> = {
+  OUT_OF_STOCK: ["선택한 인원만큼 자리가 남아 있지 않습니다. 신청 인원을 확인해 주세요.", "There are not enough seats. Check the attendee count."],
+  PRODUCT_UNAVAILABLE: ["지금 신청할 수 없는 행사입니다. 행사 일정을 확인해 주세요.", "Registration is unavailable. Check the event schedule."],
+  QUOTE_STALE: ["행사 신청 정보가 바뀌었습니다. 변경된 내용을 확인해 주세요.", "Event registration details changed. Review the updated information."],
+  QUOTE_EXPIRED: ["신청 정보 확인 시간이 지났습니다. 새로 확인한 뒤 신청해 주세요.", "The registration quote has expired. Review it again before registering."],
+  ACCEPTANCE_REQUIRED: ["신청하려면 이용약관과 취소 안내에 동의해 주세요.", "Agree to the registration terms and cancellation policy."],
 };

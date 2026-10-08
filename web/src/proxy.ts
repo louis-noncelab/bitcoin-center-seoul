@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { hasLocale } from "next-intl";
 import { randomBytes } from "node:crypto";
 import { routing } from "./i18n/routing";
+import { isPrivateAnalyticsPath } from "./lib/analytics-path";
 import { configuredOrigin } from "./server/events/config";
 
 const intlProxy = createMiddleware(routing);
@@ -26,12 +27,15 @@ export default function proxy(request: NextRequest) {
     const postcodeFrames = /^\/(?:ko|en)\/checkout\/?$/.test(pathname)
       ? ` https://postcode.map.kakao.com${secure ? "" : " http://postcode.map.kakao.com"}`
       : "";
+    // Private paths stay excluded even when an unsupported locale rewrites to a public 404.
+    const privatePage = isPrivateAnalyticsPath(pathname);
+    const tagManager = !privatePage && process.env.NEXT_PUBLIC_ANALYTICS_APPROVED === "true" && process.env.NEXT_PUBLIC_GTM_ID?.trim();
     const policy = [
       "default-src 'self'",
-      `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${development ? " 'unsafe-eval'" : ""}`,
+      `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${tagManager ? " https://www.googletagmanager.com" : ""}${development ? " 'unsafe-eval'" : ""}`,
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob:",
-      `connect-src 'self'${development ? " ws: wss:" : ""}`,
+      `img-src 'self' data: blob:${tagManager ? " https://*.google-analytics.com https://*.googletagmanager.com" : ""}`,
+      `connect-src 'self'${tagManager ? " https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://www.google.com/g/collect" : ""}${development ? " ws: wss:" : ""}`,
       "object-src 'none'",
       "base-uri 'none'",
       "form-action 'self'",
@@ -46,12 +50,15 @@ export default function proxy(request: NextRequest) {
     if (segment && /^[a-z]{2}(?:-[a-z]{2})?$/i.test(segment) && !hasLocale(routing.locales, segment)) {
       const url = request.nextUrl.clone();
       url.pathname = "/ko/404";
-      response = NextResponse.rewrite(url, { request: { headers } });
+      response = privatePage
+        ? NextResponse.next({ request: { headers } })
+        : NextResponse.rewrite(url, { request: { headers } });
       response.headers.set("X-Robots-Tag", "noindex, nofollow");
     } else {
       response = intlProxy(new NextRequest(request, { headers }));
     }
     response.headers.set("Content-Security-Policy", policy);
+    if (privatePage) response.headers.set("Referrer-Policy", "no-referrer");
   }
 
   if (/^\/(?:(?:ko|en|api)\/)?admin(?:\/|$)/.test(pathname) || /^\/certificate(?:\/|$)/.test(pathname)) {

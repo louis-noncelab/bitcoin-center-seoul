@@ -7,9 +7,12 @@ import { SlideRegion } from "@/components/ui/slide-region";
 import "@/styles/slide-region.css";
 import "@/styles/checkout-contact-address.css";
 import { Button, ChoiceControl } from "@/components/ui/primitives";
+import { TrackBeginCheckout } from "@/components/analytics/track-checkout";
+import { beginPurchaseFlow, orderKind, orderValueKrw, trackPurchaseOnce } from "@/lib/analytics";
 import { ApiError, apiRequest, jsonRequest } from "@/lib/api-client";
 import { centerContent } from "@/content/center";
-import { checkoutDisclosure } from "@/content/checkout-disclosure";
+import { purchaseDisclosure, purchaseRefunds } from "@/content/meetup-policy";
+import { purchaseKind } from "@/lib/commerce-kind";
 import type { Locale } from "@/i18n/routing";
 import { quoteRequestBody, sharedFulfillments } from "./cart";
 import { getCartItems, removePurchasedCartItems } from "./cart-store";
@@ -17,13 +20,14 @@ import { createdSchema, quoteSchema, type Countries, type Fulfillment, type Prod
 import { ContactFields } from "./contact-fields";
 import { ShippingFields } from "./shipping-fields";
 import { CheckoutSummary } from "./checkout-summary";
+import { MeetupDetails } from "./meetup-details";
 import { RequestError } from "./request-error";
 import { constraintError, FieldError, fieldError } from "./field-error";
 import { fulfillmentLabels, submissionHeaders } from "./format";
 
-export function CheckoutForm({ locale, policyVersion, items, countries, fromCart }: {
+export function CheckoutForm({ locale, policyVersions, items, countries, fromCart }: {
   readonly locale: Locale;
-  readonly policyVersion: string;
+  readonly policyVersions: Readonly<Record<"goods" | "meetup" | "free_meetup", string>>;
   readonly items: readonly { readonly variantId: string; readonly quantity: number; readonly product: Product }[];
   readonly countries: Countries;
   readonly fromCart: boolean;
@@ -34,7 +38,8 @@ export function CheckoutForm({ locale, policyVersion, items, countries, fromCart
   const [fulfillment, setFulfillment] = useState<Fulfillment>(() => allowed[0] ?? "PICKUP");
   const [internationalCountry, setInternationalCountry] = useState("");
   const [couponCode, setCouponCode] = useState("");
-  const [quoted, setQuote] = useState<{ readonly value: Quote; readonly itemsKey: string } | null>(null);
+  const [couponQuery, setCouponQuery] = useState("");
+  const [quoted, setQuote] = useState<{ readonly value: Quote; readonly requestKey: string } | null>(null);
   const [pending, setPending] = useState(false);
   const [quoting, setQuoting] = useState(false);
   const [trackedQuoteKey, setTrackedQuoteKey] = useState("");
@@ -48,8 +53,13 @@ export function CheckoutForm({ locale, policyVersion, items, countries, fromCart
   const ko = locale === "ko";
   const shippingAvailable = fulfillment === "PICKUP" || countries.some((item) => fulfillment === "DOMESTIC" ? item.code === "KR" : item.code !== "KR");
   const itemsKey = items.map((item) => `${item.variantId}:${item.quantity}`).join(",");
-  const quote = quoted?.itemsKey === itemsKey ? quoted.value : null;
-  const returnTo = fromCart ? `/${locale}/checkout` : `/${locale}/checkout?variant=${items[0]?.variantId ?? ""}&quantity=${items[0]?.quantity ?? 1}`;
+  const reservation = purchaseKind(items.map((item) => item.product.variants.find((variant) => variant.id === item.variantId) ?? {})) === "meetup";
+  const canonicalCoupon = reservation ? "" : couponCode.trim().toUpperCase();
+  const appliedCoupon = reservation ? "" : couponQuery;
+  const canQuote = allowed.length > 0 && shippingAvailable && !(fulfillment === "INTERNATIONAL" && country.length === 0) && appliedCoupon === canonicalCoupon;
+  const requestKey = canQuote ? `${itemsKey}|${fulfillment}|${country}|${appliedCoupon}|${quoteRefreshNonce}` : "";
+  const quote = quoted?.requestKey === requestKey ? quoted.value : null;
+  const returnTo = fromCart ? `/${locale}/checkout` : `/${locale}/checkout?variant=${items[0]?.variantId ?? ""}&quantity=${items[0]?.quantity ?? 1}${reservation ? "&kind=meetup" : ""}`;
   const invalidateQuote = ({ resetAcceptance = false } = {}) => {
     setQuote(null);
     setError(null);
@@ -77,15 +87,18 @@ export function CheckoutForm({ locale, policyVersion, items, countries, fromCart
     return { product: item.product, quantity: item.quantity, option: variant ? (ko ? variant.optionLabelKo : variant.optionLabelEn) : "" };
   });
   const notesError = fieldError(error, "notes", locale);
-  const reservation = items.every((item) => item.product.slug.startsWith("meetup-"));
-  const freeRegistration = reservation && quote?.amountSats === "0";
-  const [couponQuery, setCouponQuery] = useState("");
+  const freeRegistration = reservation && (quote ? quote.amountSats === "0" : items.every((item) => item.product.priceKind === "FREE"));
+  const policyKind = freeRegistration ? "free_meetup" : reservation ? "meetup" : "goods";
+  const [acceptanceFor, setAcceptanceFor] = useState(policyKind);
+  if (acceptanceFor !== policyKind) {
+    setAcceptanceFor(policyKind);
+    setAcceptanceChecked(false);
+  }
+  const refundsTitle = purchaseRefunds(locale, policyKind).title;
   useEffect(() => {
-    const timer = window.setTimeout(() => setCouponQuery(couponCode.trim()), 400);
+    const timer = window.setTimeout(() => setCouponQuery(canonicalCoupon), 400);
     return () => window.clearTimeout(timer);
-  }, [couponCode]);
-  const canQuote = allowed.length > 0 && shippingAvailable && !(fulfillment === "INTERNATIONAL" && country.length === 0);
-  const requestKey = canQuote ? `${itemsKey}|${fulfillment}|${country}|${couponQuery}|${quoteRefreshNonce}` : "";
+  }, [canonicalCoupon]);
   if (trackedQuoteKey !== requestKey) {
     setTrackedQuoteKey(requestKey);
     setQuoting(canQuote);
@@ -93,31 +106,31 @@ export function CheckoutForm({ locale, policyVersion, items, countries, fromCart
   useEffect(() => {
     if (!canQuote) return;
     const controller = new AbortController();
-    const key = itemsKey;
+    const key = requestKey;
     let active = true;
-    apiRequest("/api/orders/quote", quoteSchema, { ...jsonRequest(quoteRequestBody(items, fulfillment, country, couponQuery)), signal: controller.signal })
+    apiRequest("/api/orders/quote", quoteSchema, { ...jsonRequest(quoteRequestBody(items, fulfillment, country, appliedCoupon)), signal: controller.signal })
       .then((next) => {
         if (active) {
-          setQuote({ value: next, itemsKey: key });
+          setQuote({ value: next, requestKey: key });
           setQuoting(false);
           setError((current: unknown) => current instanceof ApiError && (current.code === "QUOTE_EXPIRED" || current.code === "QUOTE_STALE") ? null : current);
         }
       })
       .catch((failure: unknown) => { if (active && !(failure instanceof DOMException && failure.name === "AbortError")) { setError(failure); setQuoting(false); } });
     return () => { active = false; controller.abort(); };
-  }, [canQuote, fulfillment, country, couponQuery, itemsKey, items, quoteRefreshNonce]);
+  }, [canQuote, fulfillment, country, appliedCoupon, requestKey, items]);
 
   return <div className="commerce-checkout">
+    <TrackBeginCheckout locale={locale} items={items} />
     <form className="form-stack" onInvalidCapture={(event) => { event.preventDefault(); setError(constraintError(event.currentTarget)); }} onChange={() => { setSubmission(null); }} onSubmit={async (event) => {
       event.preventDefault();
-      if (busy.current) return;
+      if (busy.current || quoting || !quote || !acceptanceChecked) return;
       busy.current = true;
       setPending(true);
       setError(null);
       const data = new FormData(event.currentTarget);
       const notes = String(data.get("notes") ?? "").trim();
       try {
-        if (!quote) return;
         const headers = submission ?? submissionHeaders();
         if (!submission) setSubmission(headers);
         const purchased = getCartItems().filter((line) => items.some((item) => item.variantId === line.variantId && item.quantity === line.quantity));
@@ -125,11 +138,22 @@ export function CheckoutForm({ locale, policyVersion, items, countries, fromCart
           quoteId: quote.id,
           customer: { name: data.get("name"), email: data.get("email"), phone: data.get("phone") },
           locale,
-          acceptance: { accepted: acceptanceChecked, version: policyVersion },
+          acceptance: { accepted: acceptanceChecked, version: policyVersions[policyKind] },
           ...(notes ? { notes } : {}),
           ...(fulfillment === "PICKUP" ? {} : { address: { countryCode: country, postalCode: data.get("postalCode"), region: data.get("region"), city: data.get("city"), line1: data.get("line1"), line2: data.get("line2") } }),
         }), headers });
         if (fromCart) removePurchasedCartItems(purchased);
+        // Free event registrations are confirmed (PAID) on creation; paid orders are tracked by
+        // the payment page when the payment settles.
+        if (quote.amountSats === "0") await trackPurchaseOnce({
+          orderId: result.id,
+          locale,
+          kind: orderKind(items.map((item) => item.product.variants.find((variant) => variant.id === item.variantId)?.sku)),
+          value: orderValueKrw(quote.amountKrw, quote.amountSats),
+          amountSats: quote.amountSats,
+          itemName: items[0]?.product.titleKo,
+        });
+        else beginPurchaseFlow(result.id);
         router.push(`/orders/${result.id}`);
       } catch (failure) {
         setError(failure);
@@ -146,7 +170,7 @@ export function CheckoutForm({ locale, policyVersion, items, countries, fromCart
       } finally { busy.current = false; setPending(false); }
     }}>
       <fieldset className="commerce-fieldset form-stack" disabled={pending}>
-        <ContactFields error={error} locale={locale} shipping={!reservation && fulfillment !== "PICKUP"} />
+        <ContactFields error={error} locale={locale} meetup={reservation} shipping={!reservation && fulfillment !== "PICKUP"} />
         {reservation ? null : <fieldset className="commerce-fieldset form-stack">
           <legend>{ko ? "수령 방법" : "Delivery method"}</legend>
           {!allowed.length && <FormNotice>{ko ? "선택한 상품을 함께 받을 수 있는 수령 방법이 없습니다. 장바구니에서 상품을 나눠 주문해 주세요." : "These items cannot share a delivery method. Remove items from the cart and order them separately."}</FormNotice>}
@@ -155,36 +179,36 @@ export function CheckoutForm({ locale, policyVersion, items, countries, fromCart
             <span>{fulfillmentLabels[locale][value]}{!allowed.includes(value) && <small>{ko ? "이 주문은 이용 불가" : "Unavailable for this order"}</small>}</span>
           </label>)}</div>
         </fieldset>}
-        {reservation ? <p className="muted">{freeRegistration ? (ko ? "무료 신청은 결제 없이 바로 확정됩니다. 현장에서 확인 페이지를 보여 주세요." : "Free registration is confirmed immediately without payment. Show the confirmation page at the center.") : (ko ? "참가비는 인원 수에 따라 바로 계산됩니다. 장소가 센터인 밋업은 현장에서 확인 페이지를 보여 주세요." : "The ticket total updates with the number of seats. Show the confirmation page at the center.")}</p> : fulfillment === "PICKUP" && <p className="commerce-pickup">{centerContent[locale].visit.address.value}</p>}
+        {reservation ? <><MeetupDetails locale={locale} meetups={items.flatMap((item) => item.product.meetup ? [item.product.meetup] : [])} /><p className="muted">{freeRegistration ? (ko ? "무료 신청은 결제 없이 바로 확정됩니다." : "Free registration is confirmed immediately without payment.") : (ko ? "참가비는 신청 인원에 따라 계산됩니다. 결제가 확인되면 자리가 확정됩니다." : "The fee is calculated for your attendee count. Seats are confirmed when payment is verified.")}</p></> : fulfillment === "PICKUP" && <p className="commerce-pickup">{centerContent[locale].visit.address.value}</p>}
         <SlideRegion open={!reservation && fulfillment !== "PICKUP"}>
           <ShippingFields key={fulfillment} error={error} locale={locale} fulfillment={fulfillment} country={country} countries={countries} onCountry={(value) => { setInternationalCountry(value); invalidateQuote({ resetAcceptance: true }); }} />
         </SlideRegion>
         {reservation ? null : <FormField id="coupon-code" label={ko ? "쿠폰 코드" : "Coupon code"}>
-          <input id="coupon-code" name="couponCode" value={couponCode} maxLength={40} autoComplete="off" onChange={(event) => { setCouponCode(event.target.value); invalidateQuote({ resetAcceptance: true }); }} />
+          <input id="coupon-code" name="couponCode" value={couponCode} maxLength={40} autoComplete="off" onChange={(event) => { const value = event.target.value; setCouponCode(value); if (value.trim().toUpperCase() !== canonicalCoupon) invalidateQuote({ resetAcceptance: true }); }} />
         </FormField>}
         <FormField id="order-notes" label={reservation ? (ko ? "전달 사항 (선택)" : "Note (optional)") : (ko ? "요청 사항 (선택)" : "Order notes (optional)")} hint={reservation ? (ko ? "입장에 필요한 말을 500자까지 남길 수 있습니다." : "Optional note for the host, up to 500 characters.") : (ko ? "배송과 수령 관련 요청을 500자까지 남길 수 있습니다. 견적 금액은 바뀌지 않습니다." : "Optional delivery or pickup notes, up to 500 characters. Notes do not change the quoted total.")}>
           <textarea id="order-notes" name="notes" maxLength={500} rows={3} autoComplete="off" aria-invalid={Boolean(notesError)} aria-describedby={`order-notes-hint${notesError ? " order-notes-error" : ""}`} />
           <FieldError id="order-notes" error={notesError} />
         </FormField>
       </fieldset>
-      <RequestError error={error} locale={locale} returnTo={returnTo} />
+      <RequestError error={error} locale={locale} meetup={reservation} returnTo={returnTo} />
       <section className="form-stack" aria-labelledby="checkout-policy-heading">
         <h2 id="checkout-policy-heading">{freeRegistration ? (ko ? "신청 전 확인할 조건" : "Terms to review before registration") : (ko ? "결제 전 확인할 조건" : "Terms to review before payment")}</h2>
-        <ul className="commerce-checkout-disclosure">{checkoutDisclosure[locale].map((item) => <li key={item}>{item}</li>)}</ul>
+        <ul className="commerce-checkout-disclosure">{purchaseDisclosure(locale, policyKind).map((item) => <li key={item}>{item}</li>)}</ul>
       </section>
-      <nav className="commerce-checkout-policies" aria-label={ko ? "주문 관련 정책" : "Order policies"}>
-        <Link href="/terms-of-service" locale={locale} target="_blank" rel="noopener noreferrer">{ko ? "이용약관" : "Terms of service"}<span className="sr-only">{ko ? " (새 창)" : " (new window)"}</span></Link>
+      <nav className="commerce-checkout-policies" aria-label={reservation ? (ko ? "신청 관련 정책" : "Registration policies") : (ko ? "주문 관련 정책" : "Order policies")}>
+        <Link href={`/terms-of-service?purchase=${policyKind}`} locale={locale} target="_blank" rel="noopener noreferrer">{reservation ? (ko ? "밋업 신청 이용약관" : "Event registration terms") : (ko ? "상품 주문 이용약관" : "Goods order terms")}<span className="sr-only">{ko ? " (새 창)" : " (new window)"}</span></Link>
         <Link href="/privacy-policy" locale={locale} target="_blank" rel="noopener noreferrer">{ko ? "개인정보 처리방침" : "Privacy policy"}<span className="sr-only">{ko ? " (새 창)" : " (new window)"}</span></Link>
-        <Link href="/refund-policy" locale={locale} target="_blank" rel="noopener noreferrer">{ko ? "환불 및 반품정책" : "Refund and return policy"}<span className="sr-only">{ko ? " (새 창)" : " (new window)"}</span></Link>
+        <Link href={`/refund-policy?purchase=${policyKind}`} locale={locale} target="_blank" rel="noopener noreferrer">{refundsTitle}<span className="sr-only">{ko ? " (새 창)" : " (new window)"}</span></Link>
       </nav>
       {quoteRecovery && quote && <FormNotice kind="info"><p data-quote-recovery={quoteRecovery === "QUOTE_EXPIRED" ? "expired" : "stale"}>{quoteRecovery === "QUOTE_EXPIRED"
         ? (ko ? "새 금액을 다시 확인했습니다. 그대로 결제를 다시 시도할 수 있습니다." : "A fresh total is ready. You can try payment again.")
         : (ko ? "변경된 금액을 다시 확인했습니다. 다시 검토한 뒤 동의해 주세요." : "The updated total is ready. Review it and agree again before paying.")}</p></FormNotice>}
       <label className="commerce-choice">
-        <ChoiceControl id="checkout-acceptance" type="checkbox" name="acceptance" required checked={acceptanceChecked} onChange={(event) => setAcceptanceChecked(event.currentTarget.checked)} aria-invalid={error instanceof ApiError && Boolean(error.fields.acceptance)} aria-describedby={error instanceof ApiError && error.fields.acceptance ? "checkout-acceptance-error" : undefined} />
-        <span>{ko ? "이용약관과 환불 및 반품정책을 확인하고 동의합니다. (필수)" : "I have reviewed and agree to the Terms of Service and Refund and Return Policy. (Required)"}</span>
+        <ChoiceControl key={policyKind} id="checkout-acceptance" type="checkbox" name="acceptance" required disabled={pending || quoting || !quote} checked={acceptanceChecked} onChange={(event) => { if (!pending && !quoting && quote) setAcceptanceChecked(event.currentTarget.checked); }} aria-invalid={error instanceof ApiError && Boolean(error.fields.acceptance)} aria-describedby={error instanceof ApiError && error.fields.acceptance ? "checkout-acceptance-error" : undefined} />
+        <span>{ko ? `${reservation ? "밋업 신청 이용약관" : "이용약관"}과 ${refundsTitle} 내용을 확인하고 동의합니다. (필수)` : `I have reviewed and agree to the ${reservation ? "Event Registration Terms" : "Terms of Service"} and ${refundsTitle}. (Required)`}</span>
       </label>
-      {error instanceof ApiError && error.fields.acceptance && <p id="checkout-acceptance-error" className="commerce-field-error">{ko ? "약관과 환불정책에 동의해 주세요." : "Agree to the terms and refund policy."}</p>}
+      {error instanceof ApiError && error.fields.acceptance && <p id="checkout-acceptance-error" className="commerce-field-error">{ko ? `약관과 ${refundsTitle}에 동의해 주세요.` : `Agree to the terms and ${refundsTitle}.`}</p>}
       {error instanceof ApiError && error.code === "POLICY_STALE" && <Button onClick={() => window.location.reload()}>{ko ? "변경된 정책 다시 확인" : "Review updated policies"}</Button>}
       <div className="form-actions">
         <Button type="submit" className="commerce-pay" disabled={pending || quoting || !quote || !allowed.length || !shippingAvailable}>{freeRegistration ? pending ? (ko ? "신청 확정 중…" : "Confirming registration…") : (ko ? "무료 신청 확정" : "Confirm free registration") : pending ? (ko ? "결제 화면으로 이동 중…" : "Opening payment…") : (ko ? "결제하기" : "Pay")}</Button>
