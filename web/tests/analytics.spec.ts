@@ -56,51 +56,20 @@ test.describe("with a GTM container configured", () => {
     });
     expect(consent.index).toBeGreaterThanOrEqual(0);
     expect(consent.index).toBeLessThan(consent.init);
-    expect(consent.value).toEqual({ ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied", analytics_storage: "denied" });
-    await expect(page.locator(".analytics-consent")).toBeVisible();
+    expect(consent.value).toEqual({ ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied", analytics_storage: "granted" });
+    await expect(page.locator(".analytics-consent, .analytics-settings")).toHaveCount(0);
     const policy = response?.headers()["content-security-policy"] ?? "";
     expect(policy).toContain("https://www.google.com/g/collect");
     expect(policy).not.toContain("'unsafe-eval'");
   });
 
-  test("analytics choice persists, precedes tags on return, and can be withdrawn", async ({ page, context }) => {
+  test("a previous analytics refusal stays denied without displaying a popup", async ({ page, context }) => {
+    await context.addCookies([{ name: "bcs-analytics-consent", value: "denied", url: process.env.COMMERCE_REVIEW_ORIGIN ?? "http://127.0.0.1:3100" }]);
     await page.goto("/ko");
-    await page.getByRole("button", { name: "분석 쿠키 허용", exact: true }).click();
-    await expect(page.locator(".analytics-consent")).toHaveCount(0);
-    expect((await context.cookies()).find(cookie => cookie.name === "bcs-analytics-consent")?.value).toBe("granted");
-    await page.goto("/en");
     await page.waitForFunction(() => !!document.querySelector("script#_next-gtm"));
-    const consent = await page.evaluate(() => {
-      const layer = (window as unknown as { dataLayer: Record<string, unknown>[] }).dataLayer;
-      return { index: layer.findIndex(entry => entry?.[0] === "consent"), init: layer.findIndex(entry => entry?.event === "gtm.js"), value: layer.find(entry => entry?.[0] === "consent")?.[2] };
-    });
-    expect(consent.index).toBeLessThan(consent.init);
-    expect(consent.value).toEqual({ ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied", analytics_storage: "granted" });
-    await expect(page.locator(".analytics-consent")).toHaveCount(0);
-    await context.addCookies([{ name: "_ga", value: "test", url: page.url() }]);
-    await page.getByRole("button", { name: "Cookie settings", exact: true }).click();
-    await expect(page.locator("#analytics-consent-title")).toBeFocused();
-    await page.getByRole("button", { name: "Decline analytics cookies", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Cookie settings", exact: true })).toBeFocused();
-    expect((await context.cookies()).filter(cookie => /^_ga(?:_|$)/.test(cookie.name))).toHaveLength(0);
-    await page.reload();
-    await expect(page.locator(".analytics-consent")).toHaveCount(0);
-    expect((await context.cookies()).find(cookie => cookie.name === "bcs-analytics-consent")?.value).toBe("denied");
-  });
-
-  test("revocation applies to another open tab", async ({ page, context }) => {
-    await page.goto("/ko");
-    await page.getByRole("button", { name: "분석 쿠키 허용", exact: true }).click();
-    const other = await context.newPage();
-    await other.goto("/en");
-    await expect(other.locator(".analytics-consent")).toHaveCount(0);
-    await page.getByRole("button", { name: "쿠키 설정", exact: true }).click();
-    await page.getByRole("button", { name: "분석 쿠키 거부", exact: true }).click();
-    await other.waitForFunction(() => {
-      const layer = (window as unknown as { dataLayer: Record<string, unknown>[] }).dataLayer;
-      return layer.some(entry => entry?.[0] === "consent" && entry?.[1] === "update" && (entry?.[2] as Record<string, unknown>)?.analytics_storage === "denied");
-    });
-    await other.close();
+    const consent = await page.evaluate(() => (window as unknown as { dataLayer: Record<string, unknown>[] }).dataLayer.find(entry => entry?.[0] === "consent")?.[2]);
+    expect(consent).toEqual({ ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied", analytics_storage: "denied" });
+    await expect(page.locator(".analytics-consent, .analytics-settings")).toHaveCount(0);
   });
 
   test("program detail pushes view_item for a meetup", async ({ page }) => {

@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { locale as getRootLocale } from "next/root-params";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import type { ReactNode } from "react";
-import { AnalyticsConsentBanner } from "@/components/analytics/analytics-consent";
 import { CursorFollower } from "@/components/controls/cursor-follower";
 import { ReadingProgress } from "@/components/controls/reading-progress";
 import { ThemeProvider } from "@/components/controls/theme-provider";
@@ -41,7 +40,6 @@ export async function LocaleDocument({
             <ReadingProgress />
             {children}
             <CursorFollower />
-            {gtmId ? <AnalyticsConsentBanner locale={locale} initialConsent={consent} /> : null}
           </ThemeProvider>
         </NextIntlClientProvider>
         <DevelopmentTools />
@@ -49,7 +47,7 @@ export async function LocaleDocument({
           <script id="bcs-analytics-consent" nonce={nonce ?? undefined} dangerouslySetInnerHTML={{ __html: `
             window.dataLayer=window.dataLayer||[];
             (function(){function gtag(){window.dataLayer.push(arguments);}
-              gtag('consent','default',${JSON.stringify(analyticsConsentSettings(consent ?? "denied"))});
+              gtag('consent','default',${JSON.stringify(analyticsConsentSettings(consent ?? "granted"))});
               gtag('set','ads_data_redaction',true);
             })();
           ` }} />
