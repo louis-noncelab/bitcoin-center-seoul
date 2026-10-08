@@ -95,17 +95,20 @@ async function replaceImages(tx: Db, kind: ContentKind, contentId: number, image
 
 async function setSlug(tx: Db, kind: ContentKind, contentId: number, slug: string): Promise<void> {
   if (slug) {
+    await tx.contentSlug.createMany({
+      data: { kind, slug, contentId, isCurrent: false },
+      skipDuplicates: true,
+    });
     const owner = await tx.contentSlug.findUnique({ where: { kind_slug: { kind, slug } } });
-    if (owner && owner.contentId !== contentId) {
+    if (owner?.contentId !== contentId) {
       throw new ApiError(409, "SLUG_CONFLICT", "다른 게시물에서 사용 중이거나 이전에 사용한 주소입니다. 다른 주소를 입력해주세요.");
     }
   }
   await tx.contentSlug.updateMany({ where: { kind, contentId, isCurrent: true }, data: { isCurrent: false } });
   if (slug) {
-    await tx.contentSlug.upsert({
-      where: { kind_slug: { kind, slug } },
-      create: { kind, slug, contentId, isCurrent: true },
-      update: { contentId, isCurrent: true },
+    await tx.contentSlug.updateMany({
+      where: { kind, slug, contentId },
+      data: { isCurrent: true },
     });
   }
 }

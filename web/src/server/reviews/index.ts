@@ -79,7 +79,11 @@ export async function saveReview(input: ReviewInput, id?: number, revision?: num
       featureTitle: input.feature_title, featureTitleEn: input.feature_titleEn, image, sortOrder: input.sort_order, isActive: input.is_active,
     };
     const reviewId = id === undefined ? (await tx.visitReview.create({ data })).id : (await tx.visitReview.update({ where: { id }, data })).id;
-    if (input.slug) await tx.reviewSlug.upsert({ where: { slug: input.slug }, create: { slug: input.slug, reviewId }, update: {} });
+    if (input.slug) {
+      await tx.reviewSlug.createMany({ data: { slug: input.slug, reviewId }, skipDuplicates: true });
+      const claimed = await tx.reviewSlug.findUnique({ where: { slug: input.slug } });
+      if (claimed?.reviewId !== reviewId) throw new ApiError(409, "SLUG_CONFLICT", "이미 사용 중인 URL 슬러그입니다.");
+    }
     return reviewId;
   });
   const saved = await getReview(savedId);
