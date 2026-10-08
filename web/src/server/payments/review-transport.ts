@@ -48,6 +48,11 @@ export function reviewTransport(payment: Payment): Transport {
         currency: "BTC",
         externalUniqId: payment.id,
         expiresAt: payment.expiresAt.toISOString(),
+        transactions: paid || scenario === "processing" ? [{
+          id: `TEST-TX-${payment.creationKey}`, status: paid ? "CONFIRMED" : "PENDING",
+          method: "LIGHTNING", externalRef: `TEST-REF-${payment.creationKey}`,
+          amountInOrderCurrency: amount,
+        }] : [],
       };
       if (input.method === "POST") {
         if (url.pathname !== "/v1/orders") throw new PaymentError("REVIEW_REQUEST_UNSUPPORTED");

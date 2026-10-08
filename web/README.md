@@ -36,6 +36,34 @@ __NEXT_PROCESSED_ENV=true npm run build
 
 `npm ci`의 postinstall, `npm run typecheck`, `npm run build`는 Prisma client를 생성합니다. `prisma.config.ts`는 환경 파일을 읽지 않으며 `db:generate`에는 DB 접속이 필요하지 않습니다. `db:seed`는 로컬 데모 상품의 재고를 20으로 되돌리므로 격리된 DB에만 사용합니다.
 
+### 반복 가능한 PostgreSQL 검토
+
+Node 24.21.0과 로컬 PostgreSQL을 준비한 뒤 `npm run review:pg -- init`으로
+`bcs_review_<무작위값>_test` DB와 검토용 상품을 만듭니다. PostgreSQL role은
+`PGUSER` 또는 현재 OS 사용자명입니다. 기존 DB를 재사용하거나 운영 데이터를
+가져오지 않습니다. 생성한 설정과 credentials는 `.local/pg-review/`의 비공개
+파일에 보관하며 값은 출력하지 않습니다.
+
+```sh
+npm run review:pg -- init
+npm run review:pg -- start
+# start를 유지한 다른 터미널에서 실행합니다.
+npm run review:pg -- test tests/commerce-catalog.spec.ts tests/commerce-storefront.spec.ts
+npm run review:pg -- test tests/admin-email.spec.ts
+npm run review:pg -- test tests/security-rate-limits.mjs
+# 서버를 종료한 뒤 자기 소유 DB와 설정만 정리합니다.
+npm run review:pg -- cleanup
+```
+
+서버는 기존 `.next-events/standalone` 빌드를 `public/`과 static 파일까지
+복사하여 `http://127.0.0.1:3633`에서 실행합니다. 빌드가 없으면 먼저 승인된
+로컬 빌드를 수행해야 합니다. 결제는 REVIEW, 메일은 capture입니다.
+테스트는 지정한 파일만 순차 실행하고 파일 사이에서만 해당 DB의 로그인
+시도와 rate-limit 상태를 초기화합니다. 한 파일 내부의 보안 검사는 우회하지
+않습니다. 실패한 파일이 있어도 나머지 파일을 실행하며 최종 상태는 실패로
+남깁니다. 과거 공개 데이터 스냅샷이 필요한 검사는 그 원본을 별도로 준비해야
+하며 실행기가 대체 데이터를 만들거나 검사를 건너뛰지 않습니다.
+
 ## Commerce 로컬 검토
 
 레거시 SQLite용 `review` 실행기는 PostgreSQL 콘텐츠 설정을 만들지 않습니다. 테스트 전용 PostgreSQL DB를 따로 준비하고 **명시적 `TEST_DATABASE_URL`**로 `npm run test:commerce`를 실행합니다. 이 테스트는 데이터를 작성, 삭제하므로 개발 중인 주문 DB나 공유 sandbox DB를 지정하지 않습니다. 테스트는 REVIEW fixture를 사용하며 네트워크 결제나 이메일을 보내지 않습니다. migration은 해당 테스트 DB에만 적용합니다.

@@ -17,6 +17,7 @@ async function openOrder(page: Page) {
   await page.route(/\/api\/admin\/orders(?:\?.*)?$/, (route) => route.fulfill({ json: { data: { items: [order], total: 1, page: 1, pageSize: 50 } } }));
   await page.route("**/api/admin/orders/manual-order/payment", (route) => route.request().method() === "GET"
     ? route.fulfill({ json: { data: [] } }) : route.fallback());
+  await page.route("**/api/admin/orders/manual-order/payment-observations", (route) => route.fulfill({ json: { data: [] } }));
   await page.goto(`${origin}/ko/admin/orders`);
   await page.getByRole("button", { name: "자세히", exact: true }).click();
 }

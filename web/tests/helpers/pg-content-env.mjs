@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
+import { assertSafeTestDatabaseUrl } from "./test-database-url.mjs";
 
 assert.ok(process.env.TEST_DATABASE_URL, "Set TEST_DATABASE_URL to an isolated, migrated local PostgreSQL database");
+assertSafeTestDatabaseUrl(process.env.TEST_DATABASE_URL);
 Object.assign(process.env, {
   APP_MODE: "test",
   APP_ORIGIN: "http://127.0.0.1:3100",

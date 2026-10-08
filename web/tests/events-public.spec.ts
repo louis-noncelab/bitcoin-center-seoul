@@ -1,6 +1,6 @@
 import { deleteContentFixture } from "./content-cleanup";
 import { randomUUID } from "node:crypto";
-import { expect, request, test, type APIRequestContext } from "@playwright/test";
+import { expect, request, test, type APIRequestContext, type Page } from "@playwright/test";
 import { z } from "zod";
 import { eventRecordSchema, highlightRecordSchema } from "../src/lib/events-contract";
 import { reviewRuntime } from "./helpers/review-runtime";
@@ -12,6 +12,18 @@ const futureEventDate = (() => {
   date.setUTCDate(date.getUTCDate() + 2);
   return date.toISOString().slice(0, 10);
 })();
+
+async function switchHeaderLocale(page: Page, {
+  menuName,
+  localeLinkName,
+}: {
+  readonly menuName: string;
+  readonly localeLinkName: RegExp;
+}) {
+  const menu = page.getByRole("button", { name: menuName, exact: true });
+  if (await menu.count() > 0) await menu.click();
+  await page.getByRole("link", { name: localeLinkName }).click();
+}
 
 test.describe.serial("events-only public pages", () => {
   let admin: APIRequestContext;
@@ -89,8 +101,7 @@ test.describe.serial("events-only public pages", () => {
     // Then the published content, original link, and locale-preserving control are present
     await expect(page.getByRole("heading", { name: highlightTitleEn, exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: /Read the original/ })).toHaveAttribute("href", "https://example.com/highlight");
-    await page.getByRole("button", { name: "Menu", exact: true }).click();
-    await page.getByRole("link", { name: /한국어로 전환/ }).click();
+    await switchHeaderLocale(page, { menuName: "Menu", localeLinkName: /한국어로 전환/ });
     await expect(page).toHaveURL(new RegExp(`/ko/journal/${highlightSlug}$`));
     await expect(page.getByRole("heading", { name: highlightTitleKo, exact: true })).toBeVisible();
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", new RegExp(`/ko/journal/${highlightSlug}$`));
@@ -191,8 +202,7 @@ test.describe.serial("events-only public pages", () => {
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/ko\/journal\?page=2$/);
     await expect(page.locator('link[hreflang="en"]')).toHaveAttribute("href", /\/en\/journal\?page=2$/);
     await expect(page.locator('meta[property="og:url"]')).toHaveAttribute("content", /\/ko\/journal\?page=2$/);
-    await page.getByRole("button", { name: "메뉴", exact: true }).click();
-    await page.getByRole("link", { name: /Switch to English/ }).click();
+    await switchHeaderLocale(page, { menuName: "메뉴", localeLinkName: /Switch to English/ });
     await expect(page).toHaveURL(/\/en\/journal\?page=2$/);
     await expect(page.getByRole("navigation", { name: "Highlights pagination" }).locator('[aria-current="page"]')).toHaveText("2");
     await page.goto(`/en/journal?page=${lastPage}`);

@@ -4,7 +4,7 @@
 // provider is contacted. Run with:
 //   TEST_DATABASE_URL=postgresql://localhost/bcs_test npm run test:commerce
 import assert from "node:assert/strict";
-import test, { after, before } from "node:test";
+import test, { after, before, mock } from "node:test";
 import { randomBytes, randomUUID } from "node:crypto";
 
 process.env.APP_MODE = "test";
@@ -32,6 +32,7 @@ const { makeQuote } = await import("../src/server/orders/quote.ts");
 const { createOrder } = await import("../src/server/orders/create.ts");
 const { checkoutPolicyVersion } = await import("../src/server/orders/checkout-policy.ts");
 const { ensureInvoice, reconcilePayment } = await import("../src/server/payments/index.ts");
+const { applyObservation } = await import("../src/server/payments/state.ts");
 
 const prefix = `t${Date.now().toString(36)}`;
 const seeded = { productId: "", variantId: "", zoneId: "" };
@@ -167,7 +168,30 @@ const zapriteOrder = {
   id: "od_1", orgId: "org_test", checkoutUrl: "https://pay.zaprite.com/order/od_1",
   status: "PENDING", totalAmount: 1000, currency: "BTC", externalUniqId: "pay_1",
   expiresAt: "2026-10-01T00:00:00.000Z",
+  transactions: [],
 };
+
+test("Zaprite observations preserve only the minimal transaction evidence", async () => {
+  // Given a real response shape with unrelated private fields.
+  const transaction = { id: "tx_1", status: "PENDING", method: "BITCOIN", externalRef: "btc-fixture-reference", amountInOrderCurrency: 1000, customerEmail: "private@example.invalid", preimage: "private-value" };
+  // When the provider adapter reads the order.
+  const observed = await readZapriteInvoice(zapriteContext({ ...zapriteOrder, status: "PROCESSING", transactions: [transaction] }));
+  // Then only declared reconciliation fields survive the boundary.
+  assert.deepEqual(observed.zaprite, {
+    orderId: "od_1", status: "PROCESSING", expiresAt: zapriteOrder.expiresAt,
+    transactions: [{ id: "tx_1", status: "PENDING", method: "BITCOIN", externalRef: "btc-fixture-reference", amountInOrderCurrency: 1000 }],
+  });
+});
+
+test("missing transaction data remains distinct from an empty transaction list", async () => {
+  // Given a response without transaction data.
+  const withoutTransactions = { ...zapriteOrder };
+  delete withoutTransactions.transactions;
+  // When the adapter observes it.
+  const observed = await readZapriteInvoice(zapriteContext(withoutTransactions));
+  // Then absence is not represented as proof of no transactions.
+  assert.equal(observed.zaprite.transactions, null);
+});
 
 test("Zaprite order statuses map to payment observations", async () => {
   const cases = [["PENDING", "PENDING"], ["PROCESSING", "PROCESSING"], ["PAID", "PAID"], ["COMPLETE", "PAID"], ["OVERPAID", "PAID"]];
@@ -295,4 +319,177 @@ test("a quote is refused once a product runs short", async () => {
     }, null),
     (error) => error.code === "OUT_OF_STOCK",
   );
+});
+
+async function observationOrder(scenario = "pending") {
+  const { quote, token } = await makeQuote({ items: [{ variantId: seeded.variantId, quantity: 1 }], fulfillment: "PICKUP" }, null);
+  const request = guestRequest(randomBytes(32).toString("base64url"), randomUUID());
+  request.headers.set("cookie", `bcs_quote_${quote.id}=${token}`);
+  const created = await createOrder(request, {
+    quoteId: quote.id, customer: { name: "Tester", email: `${prefix}@example.invalid`, phone: "" },
+    locale: "ko", acceptance: { accepted: true, version: checkoutPolicyVersion("ko") },
+  }, null);
+  const payment = await prisma.payment.findFirstOrThrow({ where: { orderId: created.order.id } });
+  await prisma.payment.update({ where: { id: payment.id }, data: { metadata: { ...payment.metadata, reviewScenario: scenario } } });
+  return { order: created.order, payment: await ensureInvoice(payment.id) };
+}
+function transactionObservation(payment, status, transactionStatus) {
+  return readZapriteInvoice(zapriteContext({
+    ...zapriteOrder, id: payment.externalId, externalUniqId: payment.id, status, totalAmount: Number(payment.amountSats),
+    transactions: [{ id: `tx-${payment.id}`, method: "BITCOIN", status: transactionStatus, externalRef: "fixture-reference", amountInOrderCurrency: Number(payment.amountSats) }],
+  }, payment));
+}
+
+test("notification database failure preserves settlement and subsequent email scheduling", { timeout: 10_000 }, async () => {
+  // Given a real reserved order and a database failure only at the optional notification read.
+  // Add this sale's stock so existing processing-order fixtures keep their inventory budget.
+  await prisma.productVariant.update({ where: { id: seeded.variantId }, data: { stockOnHand: { increment: 1 } } });
+  const { order, payment } = await observationOrder();
+  const stock = await prisma.productVariant.findUniqueOrThrow({ where: { id: seeded.variantId } });
+  const { getServerConfig } = await import("../src/server/config.ts");
+  const config = getServerConfig();
+  const emailMode = Object.getOwnPropertyDescriptor(config, "emailMode");
+  const findSetting = prisma.siteSetting.findUnique;
+  const entered = Promise.withResolvers();
+  const release = Promise.withResolvers();
+  let notificationFinished = false;
+  let scheduled = 0;
+  let returned = false;
+  prisma.siteSetting.findUnique = async (args) => {
+    if (!args.select?.productDisplayUnit) return findSetting(args);
+    entered.resolve();
+    await release.promise;
+    notificationFinished = true;
+    // Exercise an actual PostgreSQL error without disturbing settlement's tables.
+    return prisma.$queryRaw`SELECT bcs_notification_missing_column FROM "SiteSetting"`;
+  };
+  Object.defineProperty(config, "emailMode", {
+    configurable: true,
+    get() {
+      if (notificationFinished) scheduled += 1;
+      return "capture";
+    },
+  });
+  const logs = mock.method(console, "error", () => {});
+  try {
+    // When settlement reaches notification, it must still await its completion.
+    const settlement = applyObservation(payment.id, { status: "PAID" }).finally(() => { returned = true; });
+    await entered.promise;
+    assert.equal(returned, false);
+    assert.equal((await prisma.payment.findUniqueOrThrow({ where: { id: payment.id } })).status, "PAID");
+    release.resolve();
+    const result = await settlement;
+    // Then failure cannot escape, skip scheduling, or consume stock a second time.
+    assert.equal(result.status, "PAID");
+    assert.equal(scheduled, 1);
+    assert.equal(logs.mock.callCount(), 1);
+    assert.ok(logs.mock.calls[0].arguments.every(value => typeof value === "string"));
+    assert.equal((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status, "PAID");
+    await applyObservation(payment.id, { status: "PAID" });
+    const sold = await prisma.productVariant.findUniqueOrThrow({ where: { id: seeded.variantId } });
+    assert.equal(sold.stockOnHand, stock.stockOnHand - 1);
+    assert.equal(sold.reservedStock, stock.reservedStock - 1);
+    assert.equal(scheduled, 1);
+    assert.ok(await prisma.emailOutbox.count({ where: { orderId: order.id, kind: "order.paid" } }));
+  } finally {
+    release.resolve();
+    prisma.siteSetting.findUnique = findSetting;
+    logs.mock.restore();
+    Object.defineProperty(config, "emailMode", emailMode);
+  }
+});
+
+test("a lost Zaprite create response is recovered without issuing another order", async () => {
+  // Given an unknown creation whose POST still fails but GET can find its externalUniqId.
+  const { payment } = await observationOrder("timeout");
+  assert.equal(payment.creationUnknown, true);
+  assert.equal(payment.externalId, null);
+  // When reconciliation recovers the existing provider order.
+  const recovered = await reconcilePayment(payment.id);
+  // Then the same payment binds to an invoice and records its observation.
+  assert.equal(recovered.id, payment.id);
+  assert.equal(recovered.creationKey, payment.creationKey);
+  assert.equal(recovered.creationUnknown, false);
+  assert.equal(recovered.status, "PENDING");
+  const event = await prisma.paymentEvent.findFirstOrThrow({ where: { paymentId: payment.id } });
+  assert.equal(event.summary.zaprite.orderId, recovered.externalId);
+  assert.deepEqual(event.summary.zaprite.transactions, []);
+});
+
+test("changed and repeated Zaprite transaction observations keep evidence without releasing processing stock", async () => {
+  // Given a processing payment with a recorded pending transaction.
+  const { order, payment } = await observationOrder();
+  await applyObservation(payment.id, await transactionObservation(payment, "PROCESSING", "PENDING"));
+  const stock = await prisma.productVariant.findUniqueOrThrow({ where: { id: seeded.variantId } });
+  // When the transaction is reported canceled, including a duplicate delivery.
+  const canceled = await transactionObservation(payment, "PROCESSING", "CANCELED");
+  await Promise.all([applyObservation(payment.id, canceled), applyObservation(payment.id, canceled)]);
+  // Then both distinct snapshots remain and the existing processing guard keeps the reservation.
+  const events = await prisma.paymentEvent.findMany({ where: { paymentId: payment.id } });
+  assert.equal(events.length, 2);
+  assert.deepEqual(events.map(event => event.summary.zaprite.transactions[0].status).sort(), ["CANCELED", "PENDING"]);
+  assert.equal((await prisma.payment.findUniqueOrThrow({ where: { id: payment.id } })).status, "PROCESSING");
+  assert.equal((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status, "PENDING_PAYMENT");
+  assert.equal((await prisma.productVariant.findUniqueOrThrow({ where: { id: seeded.variantId } })).reservedStock, stock.reservedStock);
+});
+
+test("late Zaprite money remains in review and its confirmed transaction is retained", async () => {
+  // Given a pending order whose existing expiry mapping has released its reservation.
+  const { order, payment } = await observationOrder();
+  await applyObservation(payment.id, await transactionObservation(payment, "ABANDONED", "CANCELED"));
+  const stock = await prisma.productVariant.findUniqueOrThrow({ where: { id: seeded.variantId } });
+  // When a later confirmed payment arrives.
+  const result = await applyObservation(payment.id, await transactionObservation(payment, "PAID", "CONFIRMED"));
+  // Then money is quarantined instead of fulfilling or consuming stock again.
+  assert.equal(result.status, "REVIEW");
+  assert.ok(result.paidAt);
+  assert.equal((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status, "REVIEW");
+  const after = await prisma.productVariant.findUniqueOrThrow({ where: { id: seeded.variantId } });
+  assert.equal(after.stockOnHand, stock.stockOnHand);
+  assert.equal(after.reservedStock, stock.reservedStock);
+  const events = await prisma.paymentEvent.findMany({ where: { paymentId: payment.id } });
+  assert.ok(events.some(event => event.summary.zaprite.transactions[0].status === "CONFIRMED"));
+});
+
+test("the administrator observation API returns bounded evidence for only the requested order", async () => {
+  // Given a separate order with stored provider observations and a local administrator session.
+  const { order, payment } = await observationOrder("processing");
+  await reconcilePayment(payment.id);
+  const event = await prisma.paymentEvent.findFirstOrThrow({ where: { paymentId: payment.id } });
+  await prisma.paymentEvent.createMany({ data: Array.from({ length: 25 }, (_, index) => ({
+    paymentId: payment.id, provider: "ZAPRITE", mode: "REVIEW", eventKey: `api-limit-${payment.id}-${index}`, summary: event.summary,
+  })) });
+  const { createPasswordHash } = await import("../src/server/events/password.ts");
+  const { login } = await import("../src/server/events/auth.ts");
+  const password = randomUUID();
+  process.env.ADMIN_PASSWORD_HASH = await createPasswordHash(password);
+  const cookie = `bcs_admin_session=${await login(password, "observation-api-fixture")}`;
+  const { GET } = await import("../src/app/api/admin/orders/[id]/payment-observations/route.ts");
+  // When the real authenticated API reads this order.
+  const response = await GET(new Request(`http://127.0.0.1:3100/api/admin/orders/${order.id}/payment-observations`, { headers: { cookie } }), { params: Promise.resolve({ id: order.id }) });
+  // Then no other order's evidence is exposed and the response is limited to 20 records.
+  assert.equal(response.status, 200);
+  const { data: payload } = await response.json();
+  assert.equal(payload.length, 20);
+  assert.ok(payload.every(row => row.paymentId === payment.id && row.summary.zaprite.orderId === payment.externalId));
+});
+
+test("an abandoned Zaprite observation cannot downgrade a processing payment", async () => {
+  // Given a processing payment, regardless of the provider's later order label.
+  const payment = await prisma.payment.create({ data: {
+    provider: "ZAPRITE", mode: "REVIEW", status: "PROCESSING", creationKey: randomUUID(),
+    externalId: randomUUID(), amountSats: 1000n, metadata: {}, expiresAt: new Date("2030-01-01T00:00:00Z"),
+  } });
+  try {
+    // When the provider reports an abandoned order and canceled transaction.
+    const result = await applyObservation(payment.id, await transactionObservation(payment, "ABANDONED", "CANCELED"));
+    // Then the processing guard remains and the contradictory evidence is still retained.
+    assert.equal(result.status, "PROCESSING");
+    const event = await prisma.paymentEvent.findFirstOrThrow({ where: { paymentId: payment.id } });
+    assert.equal(event.summary.zaprite.status, "ABANDONED");
+    assert.equal(event.summary.zaprite.transactions[0].status, "CANCELED");
+  } finally {
+    await prisma.paymentEvent.deleteMany({ where: { paymentId: payment.id } });
+    await prisma.payment.delete({ where: { id: payment.id } });
+  }
 });

@@ -1,5 +1,6 @@
 import { Button, ChoiceControl, FormControl } from "@/components/ui/primitives";
 import type { AdminVariantRecord } from "@/lib/commerce-contract";
+import type { ChangeEvent } from "react";
 
 export type VariantDraft = {
   readonly key: string;
@@ -8,16 +9,23 @@ export type VariantDraft = {
   readonly optionLabelKo: string;
   readonly optionLabelEn: string;
   readonly stockOnHand: number;
+  readonly stockOnHandDraft: string;
   readonly billableWeightG: number;
+  readonly billableWeightGDraft: string;
   readonly active: boolean;
   readonly reservedStock: number;
 };
 
 export const newVariant = (): VariantDraft => ({
   key: crypto.randomUUID(), sku: "", optionLabelKo: "", optionLabelEn: "",
-  stockOnHand: 0, billableWeightG: 0, active: true, reservedStock: 0,
+  stockOnHand: 0, stockOnHandDraft: "0", billableWeightG: 0, billableWeightGDraft: "0", active: true, reservedStock: 0,
 });
-export const toDraft = (variant: AdminVariantRecord): VariantDraft => ({ key: variant.id, ...variant });
+export const toDraft = (variant: AdminVariantRecord): VariantDraft => ({
+  key: variant.id,
+  ...variant,
+  stockOnHandDraft: String(variant.stockOnHand),
+  billableWeightGDraft: String(variant.billableWeightG),
+});
 
 export const toVariantInput = (variant: VariantDraft) => ({
   ...(variant.id ? { id: variant.id } : {}),
@@ -36,6 +44,15 @@ export function ProductVariantsEditor({ variants, onChange }: {
   function patchVariant(key: string, patch: Partial<VariantDraft>) {
     onChange(variants.map((variant) => variant.key === key ? { ...variant, ...patch } : variant));
   }
+  function numericPatch(event: ChangeEvent<HTMLInputElement>, property: "stockOnHand" | "billableWeightG", minimum: number) {
+    const draftProperty = property === "stockOnHand" ? "stockOnHandDraft" : "billableWeightGDraft";
+    const value = event.currentTarget.valueAsNumber;
+    const draftOnly = { [draftProperty]: event.currentTarget.value };
+    if (!event.currentTarget.validity.valid || !Number.isFinite(value) || !Number.isInteger(value) || value < minimum || value > 1000000) {
+      return draftOnly;
+    }
+    return { ...draftOnly, [property]: value };
+  }
   return <>
     <h3>옵션</h3>
     <p className="muted">SKU는 저장 뒤 바꿀 수 없습니다. 판매를 멈추려면 옵션을 삭제하지 말고 공개를 해제해 주세요. 결제 대기 중인 수량보다 재고를 적게 줄일 수 없습니다.</p>
@@ -46,10 +63,10 @@ export function ProductVariantsEditor({ variants, onChange }: {
       </div>
       <div className="events-field-grid">
         <label>영어 옵션 이름<FormControl><input value={variant.optionLabelEn} maxLength={200} onChange={(event) => patchVariant(variant.key, { optionLabelEn: event.target.value })} /></FormControl></label>
-        <label>재고<FormControl><input type="number" min={variant.reservedStock} max={1000000} step={1} value={variant.stockOnHand} onChange={(event) => patchVariant(variant.key, { stockOnHand: Number(event.target.value) })} /></FormControl></label>
+        <label>재고<FormControl><input type="number" min={variant.reservedStock} max={1000000} step={1} value={variant.stockOnHandDraft} onChange={(event) => patchVariant(variant.key, numericPatch(event, "stockOnHand", variant.reservedStock))} /></FormControl></label>
       </div>
       <div className="events-field-grid">
-        <label>포장 무게 (g)<FormControl><input type="number" min={0} max={1000000} step={1} value={variant.billableWeightG} onChange={(event) => patchVariant(variant.key, { billableWeightG: Number(event.target.value) })} /></FormControl></label>
+        <label>포장 무게 (g)<FormControl><input type="number" min={0} max={1000000} step={1} value={variant.billableWeightGDraft} onChange={(event) => patchVariant(variant.key, numericPatch(event, "billableWeightG", 0))} /></FormControl></label>
         <label className="events-checkbox"><ChoiceControl type="checkbox" checked={variant.active} onChange={(event) => patchVariant(variant.key, { active: event.target.checked })} />판매 중</label>
       </div>
       {variant.reservedStock > 0 && <p className="muted">결제 대기 {variant.reservedStock}개</p>}

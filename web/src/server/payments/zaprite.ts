@@ -2,6 +2,7 @@ import { z } from "zod";
 import { prisma } from "@/server/db";
 import { getServerConfig } from "@/server/config";
 import { openString } from "@/server/privacy";
+import { zapriteOrderStatus, zapriteTransaction, type ZapriteSnapshot } from "@/lib/zaprite-contract";
 import { metadataSchema, PaymentError, type Invoice, type Observation, type ProviderContext } from "./types";
 
 // Contract verified against https://api.zaprite.com/openapi.json on 2026-09-21.
@@ -9,12 +10,11 @@ import { metadataSchema, PaymentError, type Invoice, type Observation, type Prov
 // currency is BTC, so the quoted sat amount is pinned exactly rather than re-derived by Zaprite.
 // ABANDONED is documented on the list filter as a valid order status; treat it as expired instead
 // of failing the parse, which would strand the payment in REVIEW.
-const statusSchema = z.enum(["PENDING", "PROCESSING", "PAID", "OVERPAID", "UNDERPAID", "COMPLETE", "ABANDONED"]);
 const orderSchema = z.object({
   id: z.string().min(1),
   orgId: z.string().min(1).optional(),
   checkoutUrl: z.url(),
-  status: statusSchema,
+  status: zapriteOrderStatus,
   totalAmount: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
   currency: z.literal("BTC"),
   externalUniqId: z.string().nullable(),
@@ -137,19 +137,28 @@ export async function recoverZapriteInvoice(context: ProviderContext): Promise<I
 export async function readZapriteInvoice(context: ProviderContext): Promise<Observation> {
   const { payment, receiver, transport } = context;
   if (receiver.provider !== "ZAPRITE" || !payment.externalId) throw new PaymentError("INVOICE_INCOMPLETE");
-  const order = parseOrder(await transport({ url: lookupPath(context) }), context);
+  const raw = await transport({ url: lookupPath(context) });
+  const order = parseOrder(raw, context);
+  // Keep only reconciliation evidence, not customer data or the full provider response.
+  const { transactions } = z.object({
+    transactions: z.array(zapriteTransaction.extend({ id: z.string().optional() })).optional(),
+  }).parse(raw);
+  const zaprite: ZapriteSnapshot = {
+    orderId: order.id, status: order.status, expiresAt: order.expiresAt,
+    transactions: transactions?.map((transaction) => ({ ...transaction, id: transaction.id ?? null })) ?? null,
+  };
   switch (order.status) {
     case "PENDING":
-      return { status: "PENDING" };
+      return { status: "PENDING", zaprite };
     case "PROCESSING":
-      return { status: "PROCESSING" };
+      return { status: "PROCESSING", zaprite };
     case "PAID":
     case "COMPLETE":
     case "OVERPAID":
-      return BigInt(order.totalAmount) >= payment.amountSats ? { status: "PAID" } : { status: "REVIEW", reason: "UNDERPAYMENT" };
+      return BigInt(order.totalAmount) >= payment.amountSats ? { status: "PAID", zaprite } : { status: "REVIEW", reason: "UNDERPAYMENT", zaprite };
     case "UNDERPAID":
-      return { status: "REVIEW", reason: "UNDERPAYMENT" };
+      return { status: "REVIEW", reason: "UNDERPAYMENT", zaprite };
     case "ABANDONED":
-      return { status: "EXPIRED" };
+      return { status: "EXPIRED", zaprite };
   }
 }

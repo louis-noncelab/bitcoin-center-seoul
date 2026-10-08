@@ -41,7 +41,7 @@ export function CartItemRows({ locale, lines, missing = [], compact = false }: {
             <Button variant="quiet" aria-label={ko ? "수량 줄이기" : "Decrease quantity"} onClick={() => { if (line.quantity <= 1) removeCartItem(line.variantId); else updateCartQuantity(line.variantId, line.quantity - 1); }}>−</Button>
             <input aria-label={ko ? "수량" : "Quantity"} type="number" inputMode="numeric" min={1} max={max} step={1} value={line.quantity} disabled={line.variant.availableStock < 1 || line.product.memberOnly} onChange={(event) => {
               const next = Number(event.target.value);
-              if (!Number.isInteger(next)) return;
+              if (!Number.isFinite(next) || !Number.isInteger(next) || next < 1) return;
               updateCartQuantity(line.variantId, Math.min(max, next));
             }} />
             <Button variant="quiet" aria-label={ko ? "수량 늘리기" : "Increase quantity"} disabled={!line.available || line.quantity >= max} onClick={() => updateCartQuantity(line.variantId, line.quantity + 1)}>+</Button>

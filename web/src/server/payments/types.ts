@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Payment } from "@/generated/prisma/client";
+import type { ZapriteSnapshot } from "@/lib/zaprite-contract";
 
 export class PaymentError extends Error {
   override readonly name = "PaymentError";
@@ -27,7 +28,7 @@ export type Invoice = {
   readonly paymentHash: string | null; readonly verifyUrl: string | null;
   readonly lnurlMetadata?: string;
 };
-export type Observation = { readonly status: "PENDING" | "PROCESSING" | "PAID" | "EXPIRED" | "REVIEW"; readonly reason?: string };
+export type Observation = { readonly status: "PENDING" | "PROCESSING" | "PAID" | "EXPIRED" | "REVIEW"; readonly reason?: string; readonly zaprite?: ZapriteSnapshot };
 export type ProviderContext = { readonly payment: Payment; readonly receiver: Receiver; readonly transport: Transport };
 export const digestHexSchema = z.string().regex(/^[0-9a-f]{64}$/i).transform((value) => value.toLowerCase());
 export function btcDecimal(sats: bigint): string { return `${sats / 100_000_000n}.${(sats % 100_000_000n).toString().padStart(8, "0")}`; }
