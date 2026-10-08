@@ -141,7 +141,7 @@ export async function updateCommerceSettings(input: CommerceSettingsInput, actor
     }
     if (input.lightningAddressId) {
       const found = await tx.lightningAddress.findUnique({ where: { id: input.lightningAddressId }, select: { id: true } });
-      if (!found) throw new HttpError(400, "LIGHTNING_ADDRESS_NOT_FOUND", "선택한 라이트닝 주소를 찾을 수 없습니다.");
+      if (!found) throw new HttpError(409, "LIGHTNING_ADDRESS_NOT_FOUND", "선택한 라이트닝 주소가 삭제되었습니다. 최신 주소 목록을 확인한 뒤 다시 선택해 주세요.");
     }
     await tx.siteSetting.update({ where: { id: "site" }, data: { ...data, updatedAt: new Date(Math.max(Date.now(), current.updatedAt.getTime() + 1)) } });
     await tx.auditLog.create({ data: {

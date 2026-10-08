@@ -64,14 +64,14 @@ test("the pinned installer rejects drift before writing and applies exactly once
     await writeFile(join(directory, path), sources[index].replace(insertion, ""));
   }
   const metadata = join(directory, "package.json");
-  await writeFile(metadata, JSON.stringify({ version: "16.3.4" }));
+  await writeFile(metadata, JSON.stringify({ version: "16.3.8" }));
   const originals = await Promise.all(paths.map((path) => readFile(join(directory, path), "utf8")));
 
   // When verification finds an omitted patch, an unexpected version or either changed source.
   assert.throws(() => applyPatch({ directory, check: true }), /patch is missing/);
-  await writeFile(metadata, JSON.stringify({ version: "16.3.5" }));
-  assert.throws(() => applyPatch({ directory }), /requires exactly 16\.3\.4/);
-  await writeFile(metadata, JSON.stringify({ version: "16.3.4" }));
+  await writeFile(metadata, JSON.stringify({ version: "16.3.9" }));
+  assert.throws(() => applyPatch({ directory }), /requires exactly 16\.3\.8/);
+  await writeFile(metadata, JSON.stringify({ version: "16.3.8" }));
   for (const [index, path] of paths.entries()) {
     await writeFile(join(directory, path), `${originals[index]}\n// unexpected source\n`);
     assert.throws(() => applyPatch({ directory }), /Unrecognized Next image optimizer bytes/);
@@ -81,7 +81,7 @@ test("the pinned installer rejects drift before writing and applies exactly once
   }
 
   // Then only the known sources are changed, and subsequent apply/check runs make no changes.
-  assert.deepEqual(applyPatch({ directory }), { version: "16.3.4", applied: 2, verified: 2 });
-  assert.deepEqual(applyPatch({ directory }), { version: "16.3.4", applied: 0, verified: 2 });
-  assert.deepEqual(applyPatch({ directory, check: true }), { version: "16.3.4", applied: 0, verified: 2 });
+  assert.deepEqual(applyPatch({ directory }), { version: "16.3.8", applied: 2, verified: 2 });
+  assert.deepEqual(applyPatch({ directory }), { version: "16.3.8", applied: 0, verified: 2 });
+  assert.deepEqual(applyPatch({ directory, check: true }), { version: "16.3.8", applied: 0, verified: 2 });
 });

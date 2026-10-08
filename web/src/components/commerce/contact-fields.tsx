@@ -3,7 +3,7 @@ import type { Locale } from "@/i18n/routing";
 import { FieldError, fieldError } from "./field-error";
 import { IntlPhoneInput } from "./intl-phone-input";
 
-export function ContactFields({ locale, shipping = false, phoneRequired = false, error }: { readonly locale: Locale; readonly shipping?: boolean; readonly phoneRequired?: boolean; readonly error?: unknown }) {
+export function ContactFields({ locale, shipping = false, phoneRequired = false, meetup = false, error }: { readonly locale: Locale; readonly shipping?: boolean; readonly phoneRequired?: boolean; readonly meetup?: boolean; readonly error?: unknown }) {
   const ko = locale === "ko";
   const nameError = fieldError(error, "customer.name", locale);
   const emailError = fieldError(error, "customer.email", locale);
@@ -15,7 +15,7 @@ export function ContactFields({ locale, shipping = false, phoneRequired = false,
       <input id="customer-name" name="name" autoComplete="name" required maxLength={100} aria-invalid={Boolean(nameError)} aria-describedby={nameError ? "customer-name-error" : undefined} />
       <FieldError id="customer-name" error={nameError} />
     </FormField>
-    <FormField id="customer-email" label={ko ? "이메일" : "Email"} hint={ko ? "주문 관련 연락을 받을 주소입니다." : "An address where the center can contact you about your order."}>
+    <FormField id="customer-email" label={ko ? "이메일" : "Email"} hint={meetup ? (ko ? "신청 확인과 행사 안내를 받을 주소입니다." : "An address for registration confirmation and event notices.") : (ko ? "주문 관련 연락을 받을 주소입니다." : "An address where the center can contact you about your order.")}>
       <input id="customer-email" name="email" type="email" autoComplete="email" aria-describedby={`customer-email-hint${emailError ? " customer-email-error" : ""}`} aria-invalid={Boolean(emailError)} required maxLength={254} />
       <FieldError id="customer-email" error={emailError} />
     </FormField>

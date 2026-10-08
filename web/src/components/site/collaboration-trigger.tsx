@@ -5,6 +5,7 @@ import { ArrowRight, X } from "lucide-react";
 import { z } from "zod";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
+import { trackEvent } from "@/lib/analytics";
 import { apiErrorMessage, apiRequest, jsonRequest } from "@/lib/api-client";
 import { Dialog } from "@/components/ui/confirmation-dialog";
 import { Button } from "@/components/ui/primitives";
@@ -61,6 +62,7 @@ export function CollaborationTrigger({ locale }: { readonly locale: Locale }) {
       }));
       form.reset();
       setResult({ kind: "success" });
+      trackEvent("collab_submit", { locale });
     } catch (error) {
       setResult({ kind: "error", message: apiErrorMessage(error, locale) });
     } finally {

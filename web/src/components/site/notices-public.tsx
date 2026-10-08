@@ -10,6 +10,7 @@ import { pageMetadata } from "@/content/site";
 import type { Locale } from "@/i18n/routing";
 import type { NoticeRecord } from "@/lib/notices-contract";
 import { markdownExcerpt } from "@/lib/markdown";
+import { withoutWordJoiners } from "@/lib/text";
 import "@/styles/events-public.css";
 import "@/styles/site.css";
 import "@/styles/notices.css";
@@ -18,7 +19,7 @@ export function noticeText(locale: Locale, notice: NoticeRecord) {
   return { title: locale === "en" ? notice.titleEn || notice.title : notice.title, description: locale === "en" ? notice.descriptionEn || notice.description : notice.description };
 }
 export function noticesMetadata(locale: Locale, notice?: NoticeRecord): Metadata {
-  const title = notice ? noticeText(locale, notice).title : locale === "ko" ? "공지사항" : "Notices";
+  const title = withoutWordJoiners(notice ? noticeText(locale, notice).title : locale === "ko" ? "공지사항" : "Notices");
   const description = notice ? markdownExcerpt(noticeText(locale, notice).description) : locale === "ko" ? "비트코인 센터 서울의 운영 소식과 안내입니다." : "News and updates from Bitcoin Center Seoul.";
   const path = `/notices${notice ? `/${notice.slug}` : ""}`;
   const base = pageMetadata(locale);

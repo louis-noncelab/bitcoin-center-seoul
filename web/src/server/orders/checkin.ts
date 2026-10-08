@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/server/db";
 import { HttpError } from "@/server/http";
 import { openString } from "@/server/privacy";
+import { ticketEventId } from "@/lib/commerce-kind";
 
 const codePattern = /(?:orders\/confirm\/)?([a-f0-9]{24})\b/i;
 
@@ -11,15 +12,16 @@ export function confirmationCodeFrom(value: string): string | null {
 }
 
 function view(order: { id: string; status: string; confirmationCode: string | null; checkedInAt: Date | null; customerName: string; items: { sku: string; titleKo: string; quantity: number }[] }) {
+  const tickets = order.items.filter((item) => ticketEventId(item.sku) !== null);
   return {
     id: order.id,
     status: order.status,
     confirmationCode: order.confirmationCode,
     checkedInAt: order.checkedInAt?.toISOString() ?? null,
     customerName: openString(order.customerName),
-    quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
-    title: order.items.map((item) => item.titleKo).join(", "),
-    meetup: order.items.some((item) => item.sku.startsWith("MEETUP-")),
+    quantity: tickets.reduce((sum, item) => sum + item.quantity, 0),
+    title: tickets.map((item) => item.titleKo).join(", "),
+    meetup: tickets.length > 0,
   };
 }
 
@@ -30,7 +32,7 @@ export async function listMeetupCheckins() {
     take: 100,
     include: { items: { select: { sku: true, titleKo: true, quantity: true } } },
   });
-  return { items: rows.map(view) };
+  return { items: rows.map(view).filter((entry) => entry.meetup) };
 }
 
 export async function setMeetupCheckin(input: { code?: string | undefined; orderId?: string | undefined; undo?: boolean | undefined }, actorId: string) {
@@ -46,12 +48,12 @@ export async function setMeetupCheckin(input: { code?: string | undefined; order
     });
     if (!order) throw new HttpError(404, "NOT_FOUND", "예약을 찾을 수 없습니다.");
     if (order.privacyRedactedAt) throw new HttpError(409, "ORDER_REDACTED", "개인정보가 파기된 주문은 변경할 수 없습니다.");
-    if (!order.items.some((item) => item.sku.startsWith("MEETUP-"))) throw new HttpError(400, "NOT_MEETUP", "밋업 예약이 아닙니다.");
+    if (!order.items.some((item) => ticketEventId(item.sku) !== null)) throw new HttpError(400, "NOT_MEETUP", "밋업 신청이 아닙니다.");
     if (order.status !== "PAID") throw new HttpError(400, "NOT_PAID", "결제가 확인된 예약만 체크인할 수 있습니다.");
     if (order.checkedInAt && !input.undo) return { status: "already_checked_in" as const, booking: view(order) };
     const checkedInAt = input.undo ? null : new Date();
     const updated = await tx.order.update({ where: { id: order.id }, data: { checkedInAt }, include: { items: { select: { sku: true, titleKo: true, quantity: true } } } });
-    await tx.auditLog.create({ data: { actorId, action: input.undo ? "meetup.checkin_cleared" : "meetup.checked_in", targetType: "Order", targetId: order.id, summary: { quantity: updated.items.reduce((sum, item) => sum + item.quantity, 0) } } });
+    await tx.auditLog.create({ data: { actorId, action: input.undo ? "meetup.checkin_cleared" : "meetup.checked_in", targetType: "Order", targetId: order.id, summary: { quantity: view(updated).quantity } } });
     return { status: input.undo ? "cleared" as const : "checked_in" as const, booking: view(updated) };
   });
 }

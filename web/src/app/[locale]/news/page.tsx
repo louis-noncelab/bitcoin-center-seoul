@@ -9,6 +9,8 @@ import { pageMetadata } from "@/content/site";
 import { routing } from "@/i18n/routing";
 import { Link } from "@/i18n/navigation";
 import { buildNewsFeed } from "@/lib/news";
+import { anniversaryYears } from "@/lib/anniversary";
+import { seoulDate } from "@/lib/center-status";
 import { listHighlights } from "@/server/events";
 import { listNotices } from "@/server/notices";
 import "@/styles/site.css";
@@ -35,6 +37,7 @@ export default async function NewsPage({ params, searchParams }: Props) {
   await connection();
   const [highlights, notices] = await Promise.all([listHighlights(), listNotices()]);
   const items = buildNewsFeed(notices, highlights), t = newsCopy[locale];
+  const latestAnniversary = anniversaryYears(seoulDate())[0];
   const media = view === "media";
   return <>
     <SiteHeader locale={locale} section="news" />
@@ -44,7 +47,7 @@ export default async function NewsPage({ params, searchParams }: Props) {
       <section className="news-page-section" aria-labelledby="news-content-title">
         <div className="news-section-heading"><h2 id="news-content-title">{media ? t.media : t.recent}</h2>{media && <span className="news-eyebrow">MEDIA WALL</span>}</div>
         {media ? <NewsMedia highlights={highlights} locale={locale} /> : <NewsList items={items.slice(0, 12)} locale={locale} />}
-        <div className="news-archive-links"><p className="muted">{t.archive}</p><Link href="/notices" locale={locale} className="section-link">{t.notices}<ArrowRight className="icon" aria-hidden="true" /></Link><Link href="/journal" locale={locale} prefetch={false} className="section-link">{t.journal}<ArrowRight className="icon" aria-hidden="true" /></Link></div>
+        <div className="news-archive-links"><p className="muted">{t.archive}</p><Link href="/notices" locale={locale} className="section-link">{t.notices}<ArrowRight className="icon" aria-hidden="true" /></Link><Link href="/journal" locale={locale} prefetch={false} className="section-link">{t.journal}<ArrowRight className="icon" aria-hidden="true" /></Link>{latestAnniversary && <Link href={`/anniversary/${latestAnniversary}`} locale={locale} className="section-link">{locale === "ko" ? `개관 ${latestAnniversary - 2025}주년 사진` : `Year ${latestAnniversary - 2025} photos`}<ArrowRight className="icon" aria-hidden="true" /></Link>}</div>
       </section>
     </main>
     <SiteFooter locale={locale} />

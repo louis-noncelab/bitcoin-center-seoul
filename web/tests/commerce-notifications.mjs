@@ -166,6 +166,48 @@ function withFetch(fetcher) {
   };
 }
 
+test("webhook payloads preserve meetup, goods, and free attendance semantics", async () => {
+  // Given: real orders cover valid tickets, malformed ticket codes, and historical mixed carts.
+  const cases = [
+    { sku: "BOOK", amountSats: 1000n, heading: "상품 주문", unit: "개", total: "1,000 sats" },
+    { sku: "MEETUP-07", amountSats: 1000n, heading: "상품 주문", unit: "개", total: "1,000 sats" },
+    { sku: "MEETUP-7", amountSats: 1000n, heading: "밋업 신청", unit: "명", total: "1,000 sats" },
+    { sku: "MEETUP-7", amountSats: 0n, heading: "밋업 신청", unit: "명", total: "무료" },
+    { sku: "MEETUP-7", amountSats: 1000n, heading: "밋업과 상품", unit: "명", total: "1,000 sats", mixed: true },
+  ];
+  for (const scenario of cases) {
+    const { order } = await createFixtureOrder();
+    await prisma.order.update({ where: { id: order.id }, data: { amountSats: scenario.amountSats } });
+    await prisma.orderItem.updateMany({ where: { orderId: order.id }, data: { sku: scenario.sku } });
+    if (scenario.mixed) {
+      const item = await prisma.orderItem.findFirstOrThrow({ where: { orderId: order.id } });
+      await prisma.orderItem.create({ data: { ...item, id: randomUUID(), sku: "BOOK", titleKo: "도서", quantity: 2 } });
+    }
+    await prisma.siteSetting.update({ where: { id: "site" }, data: {
+      notificationWebhook: encryptWebhookUrl("https://notify.example.test/hook"),
+      notificationChannel: "DISCORD", productDisplayUnit: "SATS",
+    } });
+    const requests = [];
+    const restoreFetch = withFetch(async (request) => {
+      requests.push(await request.json());
+      return new Response("", { status: 200 });
+    });
+    try {
+      // When: the real notification builder posts into the capture seam.
+      await notifyOrder(order.id, "접수");
+      // Then: the shipped webhook payload preserves main's purchase classification.
+      assert.equal(requests.length, 1);
+      assert.deepEqual(Object.keys(requests[0]), ["content"]);
+      const lines = requests[0].content.split("\n");
+      assert.equal(lines[0], `**${scenario.heading}, 접수**`);
+      assert.deepEqual(lines.slice(1, -2).sort(), [`알림 테스트 1${scenario.unit}`, ...(scenario.mixed ? ["도서 2개"] : [])].sort());
+      assert.deepEqual(lines.slice(-2), [`Tester, ${scenario.total}`, order.id]);
+    } finally {
+      restoreFetch();
+    }
+  }
+});
+
 test("missing webhook configuration returns before customer decryption", async () => {
   // Given: a real order exists, but its encrypted customer field is unreadable.
   const { order } = await createFixtureOrder();

@@ -3,6 +3,7 @@ import type { NotificationChannel } from "@/generated/prisma/client";
 import { prisma } from "@/server/db";
 import { decryptPayload, encryptPayload } from "@/server/email";
 import { openString } from "@/server/privacy";
+import { purchaseKind, ticketEventId } from "@/lib/commerce-kind";
 
 type NotificationFailureStage = "settings_lookup" | "customer_lookup" | "customer_decrypt" | "request_build" | "delivery";
 type NotificationFailureReason =
@@ -97,9 +98,10 @@ export async function notifyOrder(orderId: string, event: "접수" | "결제 완
     ? `${new Intl.NumberFormat("ko-KR").format(order.amountKrw)}원`
     : unit === "BTC"
       ? `${btcFraction ? `${btcWhole.toString()}.${btcFraction}` : btcWhole.toString()} BTC`
-    : `${new Intl.NumberFormat("ko-KR").format(order.amountSats)} sats`;
-  const meetup = order.items.some((item) => item.sku.startsWith("MEETUP-"));
-  const titles = order.items.map((item) => `${item.titleKo} ${item.quantity}개`).join("\n");
+      : `${new Intl.NumberFormat("ko-KR").format(order.amountSats)} sats`;
+  const kind = purchaseKind(order.items);
+  const titles = order.items.map((item) => `${item.titleKo} ${item.quantity}${ticketEventId(item.sku) !== null ? "명" : "개"}`).join("\n");
+  const total = kind === "meetup" && order.amountSats === 0n ? "무료" : amount;
   let customerName: string;
   try {
     customerName = openString(order.customerName);
@@ -107,5 +109,5 @@ export async function notifyOrder(orderId: string, event: "접수" | "결제 완
     logNotificationFailure(orderId, "customer_decrypt", "CUSTOMER_DECRYPT_FAILED");
     return;
   }
-  await postOrderNotification(orderId, [`**${meetup ? "밋업 예약" : "상품 주문"}, ${event}**`, titles, `${customerName}, ${amount}`, orderId].join("\n"));
+  await postOrderNotification(orderId, [`**${kind === "meetup" ? "밋업 신청" : kind === "mixed" ? "밋업과 상품" : "상품 주문"}, ${event}**`, titles, `${customerName}, ${total}`, orderId].join("\n"));
 }

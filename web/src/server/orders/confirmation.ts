@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/server/db";
-import { paidOnlineSessions } from "@/server/events";
+import { meetupInfoForSkus, paidOnlineSessions } from "@/server/events";
 import { HttpError } from "@/server/http";
 import { orderIncludes, orderView } from "./projection";
 
@@ -19,7 +19,8 @@ export async function confirmationByCode(code: string) {
     fulfillment: view.fulfillment,
     fulfillmentStatus: view.fulfillmentStatus,
     addressText: address ? [address.postalCode, address.region, address.city, address.line1, address.line2].filter(Boolean).join(" ") : null,
-    items: view.items.map((item) => ({ titleKo: item.titleKo, titleEn: item.titleEn, quantity: item.quantity, amountSats: item.amountSats })),
+    items: view.items.map((item) => ({ sku: item.sku, titleKo: item.titleKo, titleEn: item.titleEn, quantity: item.quantity, amountSats: item.amountSats })),
+    meetups: await meetupInfoForSkus(view.items.map((item) => item.sku)),
     sessions: view.status === "PAID" ? await paidOnlineSessions(view.items.map((item) => item.sku)) : [],
     amountSats: view.amountSats,
     createdAt: view.createdAt instanceof Date ? view.createdAt.toISOString() : String(view.createdAt),

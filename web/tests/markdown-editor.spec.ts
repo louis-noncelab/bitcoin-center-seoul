@@ -1,5 +1,6 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
+import { createServer } from "node:http";
 import sharp from "sharp";
 import { z } from "zod";
 import { eventRecordSchema } from "../src/lib/events-contract";
@@ -168,28 +169,38 @@ test("본문 글자 제한과 세션 만료 후 사진 재시도가 글을 보�
   }
 });
 
-test("업로드 중 페이지를 떠나면 경고하고 늦은 응답이 새 초안에 들어가지 않는다", async ({ page }) => {
+test("업로드 중 페이지를 떠나면 경고하고 늦은 응답이 새 초안에 들어가지 않는다", async ({ page, baseURL }) => {
   let resume: () => void = () => {};
   let waiting = false;
   let warned = false;
-  await page.goto("/ko/admin");
-  await signIn(page);
-  await page.route("**/api/admin/images", async (route) => {
-    const response = await route.fetch();
+  let canceled = false;
+  let body = "";
+  const delayed = createServer(async (_request, response) => {
+    response.once("close", () => { canceled = !response.writableFinished; });
     await new Promise<void>((resolve) => { resume = resolve; waiting = true; });
-    await route.fulfill({ response });
+    response.writeHead(200, { "content-type": "application/json", "access-control-allow-origin": baseURL ?? "", "access-control-allow-credentials": "true" });
+    response.end(body);
   });
+  await new Promise<void>((resolve, reject) => { delayed.once("error", reject); delayed.listen(0, "127.0.0.1", resolve); });
+  const address = delayed.address();
+  if (!address || typeof address === "string") throw new Error("Upload response fixture did not bind to loopback");
   try {
+    await page.goto("/ko/admin");
+    await signIn(page);
+    await page.route("**/api/admin/images", async (route) => {
+      const response = await route.fetch();
+      body = await response.text();
+      await route.continue({ url: `http://127.0.0.1:${address.port}/api/admin/images` });
+    });
     await page.getByRole("button", { name: "새 항목 등록", exact: true }).click();
     const buffer = await sharp({ create: { width: 60, height: 40, channels: 3, background: "#ff6b0a" } }).png().toBuffer();
     await choosePhotos(page, "한국어 설명", [{ name: "abandoned.png", mimeType: "image/png", buffer }]);
     await expect.poll(() => waiting).toBe(true);
     page.once("dialog", async (dialog) => { warned = dialog.type() === "beforeunload"; await dialog.accept(); });
-    const aborted = page.waitForEvent("requestfailed", { predicate: (request) => new URL(request.url()).pathname === "/api/admin/images" });
     await page.getByRole("link", { name: "비트코인 센터 서울 홈", exact: true }).click();
     await expect(page).toHaveURL("/ko");
+    await expect.poll(() => canceled).toBe(true);
     resume();
-    expect((await aborted).failure()?.errorText).toBeTruthy();
     expect(warned).toBe(true);
     await page.unrouteAll({ behavior: "wait" });
     await page.goto("/ko/admin");
@@ -198,6 +209,10 @@ test("업로드 중 페이지를 떠나면 경고하고 늦은 응답이 새 초
     await expect(page.getByRole("button", { name: "저장", exact: true })).toBeEnabled();
   } finally {
     resume();
-    await page.unrouteAll({ behavior: "wait" });
+    try { await page.unrouteAll({ behavior: "wait" }); }
+    finally {
+      delayed.closeAllConnections();
+      await new Promise<void>((resolve, reject) => delayed.close((error) => error ? reject(error) : resolve()));
+    }
   }
 });

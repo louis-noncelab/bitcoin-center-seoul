@@ -6,19 +6,19 @@ import { fileURLToPath } from "node:url";
 
 // Backport https://github.com/vercel/next.js/pull/98168 until a verified release includes it.
 // Keep the request socket, headers and body limit unchanged; detach only the mock response.
-const version = "16.3.4";
+const version = "16.3.8";
 const require = createRequire(import.meta.url);
 const installedDirectory = dirname(require.resolve("next/package.json"));
 const files = [
   {
     path: "dist/server/image-optimizer.js",
-    original: "e9dae780db97eb11cbed0c5b1c872dc249fedfe9aab50132b43e5b54d34b47a8",
-    patched: "044fc3fd98ff74f35f4bb83a84841e4934149cf745a7d2620567a46cd3d8d48a",
+    original: "38b92fde5bc72aa23c999d283052da11a6dfb36be75c2d92683d539551065a3c",
+    patched: "331e10c6c971a8f91d8b7c4e7ab41db213c6e76408b238796ef7f63761432738",
   },
   {
     path: "dist/esm/server/image-optimizer.js",
-    original: "3ebd7bad4de250400b0f347cae2a17ab7ec03722914f3736260366df457e27d2",
-    patched: "87b8d6d7936ea3b8826cc20fd400e8fdf382983c98a4e1f54285322a22b4bf0f",
+    original: "b5dd6849f39477e7e17f61e3428d53a548f2d83d8837fb03274ab59a4f576f34",
+    patched: "e1c5cf98afcd91d4739d9b8ecb6cc2613d1c63d4f0d43e187c0dc844aee1b66d",
   },
 ];
 const before = "            maximumResponseBody\n        });\n        await handleRequest(mocked.req, mocked.res,";
@@ -28,7 +28,7 @@ const hash = (source) => createHash("sha256").update(source).digest("hex");
 /** Verify both files before changing either; `check` never writes. Throws on version/source drift. */
 export function applyPatch({ check = false, directory = installedDirectory } = {}) {
   if (JSON.parse(readFileSync(join(directory, "package.json"), "utf8")).version !== version) {
-    throw new Error("Next image patch requires exactly 16.3.4; review the upstream fix before upgrading.");
+    throw new Error("Next image patch requires exactly 16.3.8; review the upstream fix before upgrading.");
   }
   const changes = [];
   for (const file of files) {
@@ -52,7 +52,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     console.error("Usage: node scripts/patch-next-image-optimizer.mjs [apply|check|--help]");
     process.exitCode = 1;
   } else if (command === "--help" || command === "help") {
-    console.log("Usage: node scripts/patch-next-image-optimizer.mjs [apply|check|--help]\nPinned Next 16.3.4 CJS/ESM response-socket fix. check verifies without writing.");
+    console.log("Usage: node scripts/patch-next-image-optimizer.mjs [apply|check|--help]\nPinned Next 16.3.8 CJS/ESM response-socket fix. check verifies without writing.");
   } else {
     try {
       console.log("Next image optimizer patch:", applyPatch({ check: command === "check" }));
