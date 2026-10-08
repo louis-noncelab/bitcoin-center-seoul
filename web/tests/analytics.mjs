@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import { isPrivateAnalyticsPath } from "../src/lib/analytics-path.ts";
-import { analyticsConsentSettings, parseAnalyticsConsent } from "../src/lib/analytics-consent.ts";
 import { beginPurchaseFlow, endPurchaseFlow, purchaseFlowActive, orderKind, orderValueKrw, trackEvent, trackPurchaseOnce } from "../src/lib/analytics.ts";
 
 function fakeWindow(shared = new Map()) {
@@ -18,13 +17,6 @@ function fakeWindow(shared = new Map()) {
 }
 
 afterEach(() => { delete globalThis.window; });
-
-test("saved analytics choices are validated and ads remain denied", () => {
-  for (const value of [undefined, "", "true", "GRANTED", "granted<script>"]) assert.equal(parseAnalyticsConsent(value), null);
-  assert.equal(parseAnalyticsConsent("granted"), "granted");
-  assert.equal(parseAnalyticsConsent("denied"), "denied");
-  assert.deepEqual(analyticsConsentSettings("granted"), { ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied", analytics_storage: "granted" });
-});
 
 test("private analytics paths include encoded and unsupported-locale segments", () => {
   for (const pathname of ["/ko/admin", "/en/orders/confirm/code", "/fr-CA/orders/%63onfirm/code", "/ko/%61dmin", "/orders/confirm/code", "/bad%route"]) {

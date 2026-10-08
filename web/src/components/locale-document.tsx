@@ -11,7 +11,6 @@ import { DevelopmentTools } from "@/components/development-tools";
 import { routing } from "@/i18n/routing";
 import { parseSiteTheme, themeCookieName } from "@/lib/theme-cookie";
 import { isPrivateAnalyticsPath } from "@/lib/analytics-path";
-import { analyticsConsentCookieName, analyticsConsentSettings, parseAnalyticsConsent } from "@/lib/analytics-consent";
 import "@/app/globals.css";
 
 export async function LocaleDocument({
@@ -25,7 +24,6 @@ export async function LocaleDocument({
   if (!hasLocale(routing.locales, locale)) notFound();
   const cookieStore = await cookies();
   const theme = parseSiteTheme(cookieStore.get(themeCookieName)?.value);
-  const consent = parseAnalyticsConsent(cookieStore.get(analyticsConsentCookieName)?.value);
   const requestHeaders = await headers();
   const pathname = requestHeaders.get("x-bcs-pathname") ?? "";
   const excluded = !analyticsEnabled || isPrivateAnalyticsPath(pathname);
@@ -47,7 +45,7 @@ export async function LocaleDocument({
           <script id="bcs-analytics-consent" nonce={nonce ?? undefined} dangerouslySetInnerHTML={{ __html: `
             window.dataLayer=window.dataLayer||[];
             (function(){function gtag(){window.dataLayer.push(arguments);}
-              gtag('consent','default',${JSON.stringify(analyticsConsentSettings(consent ?? "granted"))});
+              gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'granted'});
               gtag('set','ads_data_redaction',true);
             })();
           ` }} />
