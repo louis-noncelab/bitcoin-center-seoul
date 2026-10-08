@@ -243,7 +243,7 @@ export function CommerceSettingsAdmin() {
           </div>
           <label>알림 웹훅 주소<FormControl><input name="notificationWebhook" type="url" autoComplete="off" placeholder={settings.notificationWebhookRegistered ? "등록된 주소가 있습니다. 변경하려면 새 주소를 입력하세요" : "https://"} aria-describedby="webhook-help" /></FormControl></label>
           {settings.notificationWebhookRegistered && <label className="events-checkbox"><ChoiceControl type="checkbox" name="clearNotificationWebhook" />기존 웹훅 주소 지우기</label>}
-          <p id="webhook-help" className="muted">웹훅 주소는 암호화하여 보관합니다. 기록 모드에서는 이메일이 실제로 발송되지 않습니다.</p>
+          <p id="webhook-help" className="muted">웹훅 주소는 암호화하여 보관합니다. 주문 알림 웹훅은 재시도 보장 없는 보조 알림이며, 접수와 수령·배송 처리는 관리자 주문 화면의 상태를 기준으로 수동 대조합니다. 기록 모드에서는 이메일이 실제로 발송되지 않습니다.</p>
         </fieldset>
       </section>
 
