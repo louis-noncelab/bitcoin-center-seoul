@@ -40,7 +40,17 @@ export async function LocaleDocument({
           </ThemeProvider>
         </NextIntlClientProvider>
         <DevelopmentTools />
-        {gtmId ? <GoogleTagManager gtmId={gtmId} {...(nonce ? { nonce } : {})} /> : null}
+        {gtmId ? <>
+          {/* ponytail: cookieless measurement; add visitor opt-in before enabling analytics storage. */}
+          <script id="bcs-analytics-consent" nonce={nonce ?? undefined} dangerouslySetInnerHTML={{ __html: `
+            window.dataLayer=window.dataLayer||[];
+            (function(){function gtag(){window.dataLayer.push(arguments);}
+              gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied'});
+              gtag('set','ads_data_redaction',true);
+            })();
+          ` }} />
+          <GoogleTagManager gtmId={gtmId} {...(nonce ? { nonce } : {})} />
+        </> : null}
       </body>
     </html>
   );

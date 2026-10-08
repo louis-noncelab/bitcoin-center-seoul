@@ -35,7 +35,7 @@ export default function proxy(request: NextRequest) {
       `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${tagManager ? " https://www.googletagmanager.com" : ""}${development ? " 'unsafe-eval'" : ""}`,
       "style-src 'self' 'unsafe-inline'",
       `img-src 'self' data: blob:${tagManager ? " https://*.google-analytics.com https://*.googletagmanager.com" : ""}`,
-      `connect-src 'self'${tagManager ? " https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com" : ""}${development ? " ws: wss:" : ""}`,
+      `connect-src 'self'${tagManager ? " https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://www.google.com/g/collect" : ""}${development ? " ws: wss:" : ""}`,
       "object-src 'none'",
       "base-uri 'none'",
       "form-action 'self'",

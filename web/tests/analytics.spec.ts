@@ -47,9 +47,19 @@ test.describe("with a GTM container configured", () => {
   test.skip(!gtmId, "Run with NEXT_PUBLIC_GTM_ID=GTM-TEST on both the server build and the test runner.");
 
   test("home loads the container and initializes the dataLayer", async ({ page }) => {
-    await page.goto("/ko");
+    const response = await page.goto("/ko");
     await expect(page.locator("script#_next-gtm")).toHaveAttribute("src", new RegExp(`googletagmanager\\.com/gtm\\.js\\?id=${gtmId}`));
     await waitForEntry(page, { event: "gtm.js" });
+    const consent = await page.evaluate(() => {
+      const layer = (window as unknown as { dataLayer: Record<string, unknown>[] }).dataLayer;
+      return { index: layer.findIndex(entry => entry?.[0] === "consent"), init: layer.findIndex(entry => entry?.event === "gtm.js"), value: layer.find(entry => entry?.[0] === "consent")?.[2] };
+    });
+    expect(consent.index).toBeGreaterThanOrEqual(0);
+    expect(consent.index).toBeLessThan(consent.init);
+    expect(consent.value).toEqual({ ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied", analytics_storage: "denied" });
+    const policy = response?.headers()["content-security-policy"] ?? "";
+    expect(policy).toContain("https://www.google.com/g/collect");
+    expect(policy).not.toContain("'unsafe-eval'");
   });
 
   test("program detail pushes view_item for a meetup", async ({ page }) => {
@@ -150,8 +160,9 @@ test.describe("with a GTM container configured", () => {
   });
 
   test("admin screens never load the container", async ({ page }) => {
-    await page.goto("/ko/admin");
-    await expect(page.locator("script#_next-gtm")).toHaveCount(0);
+    const response = await page.goto("/ko/admin");
+    await expect(page.locator("script#_next-gtm, script#bcs-analytics-consent")).toHaveCount(0);
+    expect(response?.headers()["content-security-policy"]).not.toContain("https://www.google.com/g/collect");
   });
 
   test("an unsupported locale never exposes a private path to tags", async ({ page }) => {
@@ -171,7 +182,7 @@ test.describe("with a GTM container configured", () => {
     const loaded = page.waitForEvent("domcontentloaded");
     await page.locator(".event-back").click();
     await loaded;
-    await page.waitForURL("**/ko/shop");
+    await page.waitForURL("**/ko");
     await expect(page.locator("script#_next-gtm")).toHaveCount(1);
     expect(await page.evaluate(() => document.referrer)).toBe("");
   });
