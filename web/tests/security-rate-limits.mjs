@@ -67,9 +67,10 @@ test("a real confirmation capability still returns only its intended read-only p
     assert.equal(response.headers.get("cache-control"), "no-store");
     assert.equal(response.headers.get("referrer-policy"), "no-referrer");
     const { data } = await response.json();
-    assert.deepEqual(Object.keys(data).sort(), ["addressText", "amountSats", "code", "createdAt", "customerName", "fulfillment", "fulfillmentStatus", "items", "sessions", "status"].sort());
+    assert.deepEqual(Object.keys(data).sort(), ["addressText", "amountSats", "code", "createdAt", "customerName", "fulfillment", "fulfillmentStatus", "items", "meetups", "sessions", "status"].sort());
     assert.equal(data.customerName, "Test Guest");
     assert.equal(data.amountSats, "10");
+    assert.deepEqual(data.meetups, []);
     assert.deepEqual(data.sessions, []);
   } finally {
     if (order) await prisma.order.delete({ where: { id: order.id } });
