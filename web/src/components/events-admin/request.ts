@@ -34,6 +34,12 @@ export function errorText(error: unknown, locale: Locale): string {
   if (error instanceof AdminRequestError) {
     switch (error.status) {
       case 409:
+        if (error.code === "STOCK_CONFLICT") return ko
+          ? "재고가 변경되어 저장하지 않았습니다. 입력한 내용은 유지됩니다. 필요한 내용을 복사한 뒤 취소하고, 최신 상품을 다시 열어 재고를 확인해 주세요."
+          : "Stock changed, so nothing was saved. Your entries are preserved. Copy anything you need, cancel, and reopen the latest product to check its stock.";
+        if (error.code === "STOCK_RESERVED") return ko
+          ? "결제 대기 중인 수량보다 재고를 적게 줄일 수 없습니다. 최신 상품을 다시 열어 예약 수량을 확인해 주세요."
+          : "Stock cannot drop below pending reservations. Reopen the latest product to check its reserved quantity.";
         if (error.code === "EDIT_CONFLICT") return ko ? "다른 사람이 먼저 수정했습니다. 덮어쓰지 않았으며 입력한 내용은 유지됩니다. 필요한 내용을 복사한 뒤 취소하고, 최신 항목을 다시 열어주세요." : "Someone else edited this item first. Nothing was overwritten and your entries are preserved. Copy anything you need, cancel, and reopen the latest item.";
         if (error.code === "SETTINGS_CHANGED") return ko ? "다른 관리자가 설정을 먼저 저장했습니다. 입력한 내용은 유지됩니다. 필요한 내용을 복사한 뒤 새로고침하여 최신 설정을 확인해 주세요." : "Another administrator saved these settings first. Your entries are preserved. Copy what you need, then reload to review the latest settings.";
         if (error.code === "LIGHTNING_ADDRESS_IN_USE") return ko ? "현재 결제금을 받는 주소입니다. 다른 주소를 선택하고 설정을 저장한 뒤 삭제해 주세요." : "This address currently receives payments. Select and save another address before deleting it.";

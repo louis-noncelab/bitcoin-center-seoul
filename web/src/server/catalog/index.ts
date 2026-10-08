@@ -105,7 +105,10 @@ export async function saveProduct(input: ProductInput, actorId: string, id?: str
         const stored = locked.find((item) => item.id === variant.id);
         if (variant.id && !stored) throw new HttpError(400, "INVALID_VARIANT", "이 상품의 옵션이 아닙니다. / Variant does not belong to this product.");
         if (stored && stored.sku !== variant.sku) throw new HttpError(409, "SKU_IMMUTABLE", "SKU는 바꿀 수 없습니다. 새 옵션을 만들어 주세요. / Create a new variant to change its SKU.");
-        if (stored && variant.stockOnHand < stored.reservedStock) throw new HttpError(409, "STOCK_RESERVED", "결제 대기 중인 수량보다 적게 줄일 수 없습니다. / Stock cannot drop below reservations.");
+        if (stored && variant.stockOnHand !== undefined) {
+          if (stored.stockOnHand !== variant.expectedStockOnHand) throw new HttpError(409, "STOCK_CONFLICT", "재고가 변경되었습니다. 최신 상품을 다시 열어 확인해 주세요. / Stock has changed. Reopen the latest product.");
+          if (variant.stockOnHand < stored.reservedStock) throw new HttpError(409, "STOCK_RESERVED", "결제 대기 중인 수량보다 적게 줄일 수 없습니다. / Stock cannot drop below reservations.");
+        }
       }
     } else if (input.variants.some((variant) => variant.id)) {
       throw new HttpError(400, "INVALID_VARIANT", "새 옵션에는 ID를 지정할 수 없습니다. / New variants cannot specify an ID.");
@@ -135,7 +138,9 @@ export async function saveProduct(input: ProductInput, actorId: string, id?: str
       });
     }
     for (const variant of variants) {
-      const { id: variantId, ...variantData } = variant;
+      const { id: variantId, expectedStockOnHand, stockOnHand, ...fields } = variant;
+      void expectedStockOnHand;
+      const variantData = { ...fields, ...(stockOnHand !== undefined ? { stockOnHand } : {}) };
       if (variantId) await tx.productVariant.update({ where: { id: variantId }, data: variantData });
       else await tx.productVariant.create({ data: { ...variantData, productId: product.id } });
     }
