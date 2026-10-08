@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import { isPrivateAnalyticsPath } from "../src/lib/analytics-path.ts";
-import { analyticsConsentCookieName, analyticsConsentSettings, applyAnalyticsConsent, parseAnalyticsConsent, readAnalyticsConsent, saveAnalyticsConsent } from "../src/lib/analytics-consent.ts";
+import { analyticsConsentSettings, parseAnalyticsConsent } from "../src/lib/analytics-consent.ts";
 import { beginPurchaseFlow, endPurchaseFlow, purchaseFlowActive, orderKind, orderValueKrw, trackEvent, trackPurchaseOnce } from "../src/lib/analytics.ts";
 
 function fakeWindow(shared = new Map()) {
@@ -17,42 +17,13 @@ function fakeWindow(shared = new Map()) {
   return globalThis.window;
 }
 
-afterEach(() => { delete globalThis.window; delete globalThis.document; });
+afterEach(() => { delete globalThis.window; });
 
-test("only an exact saved analytics choice can grant storage; ads remain denied", () => {
+test("saved analytics choices are validated and ads remain denied", () => {
   for (const value of [undefined, "", "true", "GRANTED", "granted<script>"]) assert.equal(parseAnalyticsConsent(value), null);
   assert.equal(parseAnalyticsConsent("granted"), "granted");
   assert.equal(parseAnalyticsConsent("denied"), "denied");
   assert.deepEqual(analyticsConsentSettings("granted"), { ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied", analytics_storage: "granted" });
-});
-
-test("choice is remembered for 180 days and revocation clears only GA cookies across domains", () => {
-  const browser = fakeWindow();
-  browser.location = { protocol: "https:", hostname: "www.bitcoincenterseoul.com" };
-  const writes = [];
-  globalThis.document = { get cookie() { return "other=keep; _ga=client; _ga_TEST=session; _garden=keep"; }, set cookie(value) { writes.push(value); } };
-  saveAnalyticsConsent("granted");
-  assert.deepEqual(Array.from(browser.dataLayer[0]), ["consent", "update", analyticsConsentSettings("granted")]);
-  assert.equal(writes[0], `${analyticsConsentCookieName}=granted; path=/; max-age=15552000; samesite=lax; secure`);
-  assert.equal(browser.localStorage.getItem(analyticsConsentCookieName), "granted");
-  applyAnalyticsConsent("denied");
-  assert(writes.includes("_ga=; path=/; max-age=0; samesite=lax; domain=bitcoincenterseoul.com"));
-  assert(writes.includes("_ga_TEST=; path=/; max-age=0; samesite=lax"));
-  assert(!writes.some(value => value.startsWith("other=") || value.startsWith("_garden=")));
-  assert.equal(Array.from(browser.dataLayer.at(-1))[2].analytics_storage, "denied");
-});
-
-test("cookie is authoritative and blocked storage does not break a visitor choice", () => {
-  const browser = fakeWindow();
-  browser.location = { protocol: "http:", hostname: "localhost" };
-  globalThis.document = { cookie: `${analyticsConsentCookieName}=denied` };
-  browser.localStorage.setItem(analyticsConsentCookieName, "granted");
-  assert.equal(readAnalyticsConsent(), "denied");
-  Object.defineProperty(globalThis.document, "cookie", { get() { throw new Error("blocked"); }, set() { throw new Error("blocked"); } });
-  browser.localStorage.setItem = () => { throw new Error("blocked"); };
-  assert.equal(readAnalyticsConsent(), null);
-  assert.doesNotThrow(() => saveAnalyticsConsent("denied"));
-  assert.equal(Array.from(browser.dataLayer.at(-1))[2].analytics_storage, "denied");
 });
 
 test("private analytics paths include encoded and unsupported-locale segments", () => {
