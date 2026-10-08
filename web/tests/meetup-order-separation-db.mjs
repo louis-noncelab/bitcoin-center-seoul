@@ -32,6 +32,8 @@ test("the server derives paid/free event acceptance and never exposes joining cr
     const confirmation = await confirmationByCode(row.confirmationCode);
     assert.equal(confirmation.items[0].sku, `MEETUP-${event.id}`);
     assert.equal(confirmation.meetups[0].isOnline, true);
+    assert.deepEqual(Object.keys(confirmation.meetups[0]).sort(), ["id", "date", "time", "venueType", "location", "locationEn", "isOnline"].sort());
+    assert(!JSON.stringify(confirmation.meetups).includes("private-join"));
     assert.equal(confirmation.sessions.length, free ? 1 : 0);
     const mail = await prisma.emailOutbox.findUniqueOrThrow({ where: { eventKey: `order:${row.id}:${free ? "PAID" : "created"}` } });
     assert.equal(mail.status, "CAPTURED");

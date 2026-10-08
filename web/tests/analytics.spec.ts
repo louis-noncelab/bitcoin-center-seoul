@@ -34,6 +34,24 @@ async function waitForEntry(page: Page, expected: Entry): Promise<Entry> {
   return await handle.jsonValue() as Entry;
 }
 
+async function mockGoodsCheckout(page: Page) {
+  const product = {
+    id: "analytics-product", slug: "analytics-product", titleKo: "분석 테스트 상품", titleEn: "Analytics test product",
+    descriptionKo: "", descriptionEn: "", imageUrl: "", contentFormat: "PLAIN", priceKind: "BTC_FIXED", priceAmount: "1000",
+    memberOnly: false, allowedFulfillments: ["PICKUP"],
+    variants: [{ id: "analytics-test-variant", sku: "GOODS-ANALYTICS", optionLabelKo: "기본", optionLabelEn: "Default", availableStock: 10 }],
+  };
+  await page.route(/\/api\/products(?:\?.*)?$/, (route) => route.fulfill({ json: { data: [product] } }));
+  await page.route("**/api/shipping/countries", (route) => route.fulfill({ json: { data: [] } }));
+  await page.route("**/api/orders/quote", (route) => route.fulfill({ json: { data: {
+    id: "analytics-quote", amountSats: "2000", expiresAt: "2030-01-01T00:00:00Z",
+    snapshot: {
+      items: [{ titleKo: product.titleKo, titleEn: product.titleEn, optionLabelKo: "기본", optionLabelEn: "Default", quantity: 2, amountSats: "2000" }],
+      shippingAmountSats: "0", amountSats: "2000", shipping: { countryCode: null, requiresPostalCode: false },
+    },
+  } } }));
+}
+
 test.beforeEach(async ({ context }) => {
   await context.route("**/*", (route) => new URL(route.request().url()).hostname === "127.0.0.1"
     ? route.continue()
@@ -84,8 +102,14 @@ test.describe("with a GTM container configured", () => {
   });
 
   test("checkout tracks the resolved product rather than the requested kind", async ({ page }) => {
+    await mockGoodsCheckout(page);
     await page.goto("/en/checkout?variant=analytics-test-variant&quantity=2&kind=meetup");
     await waitForEntry(page, { event: "begin_checkout", kind: "goods", item_id: "analytics-test-variant", quantity: 2, locale: "en" });
+    await page.locator("#customer-name").fill("Analytics fixture");
+    await page.locator("#customer-email").fill("private@example.invalid");
+    const entries = await page.evaluate(() => ((window as unknown as { dataLayer: Entry[] }).dataLayer).filter((entry) => entry.event === "begin_checkout"));
+    expect(entries).toHaveLength(1);
+    expect(JSON.stringify(entries)).not.toContain("private@example.invalid");
   });
 
   test("a received collaboration proposal pushes collab_submit", async ({ page }) => {
@@ -199,11 +223,13 @@ test.describe("with a GTM container configured", () => {
   });
 
   test("cart checkout tracks its resolved lines", async ({ page }) => {
+    await mockGoodsCheckout(page);
     await page.addInitScript(() => localStorage.setItem("center-cart", JSON.stringify({ v: 1, items: [{ variantId: "analytics-test-variant", quantity: 2 }] })));
     await page.goto("/ko/cart");
     await page.goto("/ko/checkout");
     const entry = await waitForEntry(page, { event: "begin_checkout", item_id: "analytics-test-variant", quantity: 2, locale: "ko" });
     expect(entry.items).toEqual([{ item_id: "analytics-test-variant", item_name: "분석 테스트 상품", quantity: 2 }]);
+    expect(await page.evaluate(() => ((window as unknown as { dataLayer: Entry[] }).dataLayer).filter((item) => item.event === "begin_checkout").length)).toBe(1);
   });
 
   test("reopening an already paid payment never counts a new purchase", async ({ page }) => {
