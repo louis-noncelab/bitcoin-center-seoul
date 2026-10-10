@@ -1,3 +1,6 @@
 .guestbook-save-state { position: sticky; bottom: var(--space-3); z-index: var(--layer-disclosure); padding: var(--space-3) var(--space-4); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-control); }
 .guestbook-save-state p { margin: 0; font-size: var(--text-small); }
 .guestbook-save-state progress { display: block; inline-size: 100%; block-size: var(--space-2); margin-top: var(--space-3); accent-color: var(--blue-ink); }
+.form-control > input.guestbook-number[type="number"] { appearance: auto; }
+.form-control > input.guestbook-number[type="number"]::-webkit-inner-spin-button,
+.form-control > input.guestbook-number[type="number"]::-webkit-outer-spin-button { appearance: auto; opacity: 1; }

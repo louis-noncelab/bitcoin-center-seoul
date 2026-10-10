@@ -55,7 +55,7 @@ export function GuestbookAdmin() {
   }
   useRegisterLeave(leave);
   function handleError(caught: unknown) {
-    const stale = caught instanceof AdminRequestError && (caught.status === 409 || caught.status === 404);
+    const stale = caught instanceof AdminRequestError && (caught.code === "EDIT_CONFLICT" || caught.status === 404);
     setConflict(stale);
     setError(stale ? "다른 사람이 수정하거나 삭제했습니다. 입력한 내용은 유지됩니다. 필요한 내용을 복사한 뒤 최신 내용을 불러와 주세요." : errorText(caught, "ko"));
     if (caught instanceof AdminRequestError && caught.status === 401) setExpired(true);
@@ -68,7 +68,7 @@ export function GuestbookAdmin() {
     event.preventDefault();
     if (busy.current || expired || uploads.current) return;
     const form = new FormData(event.currentTarget);
-    const input = guestbookInputSchema.safeParse({ ...Object.fromEntries(form), images, is_active: Number(form.get("is_active")) });
+    const input = guestbookInputSchema.safeParse({ ...Object.fromEntries(form), entryNumber: Number(form.get("entryNumber")), volume: Number(form.get("volume")), images, is_active: Number(form.get("is_active")) });
     if (!input.success) { setError(input.error.issues[0]?.message ?? "입력 내용을 확인해 주세요."); return; }
     busy.current = true; setPending(true); setError(""); setMessage("");
     try {
@@ -81,7 +81,7 @@ export function GuestbookAdmin() {
   }
   async function remove(record: GuestbookRecord) {
     if (busy.current || expired) return;
-    if (!await confirm({ title: "방명록 삭제", description: `${record.visitDate} 방명록을 삭제할까요? 삭제한 내용은 복구할 수 없습니다.`, confirmLabel: "삭제" }) || busy.current || expired) return;
+    if (!await confirm({ title: "방명록 삭제", description: `${record.volume}권 No.${record.entryNumber} 방명록을 삭제할까요? 삭제한 내용은 복구할 수 없습니다.`, confirmLabel: "삭제" }) || busy.current || expired) return;
     busy.current = true; setPending(true); setError(""); setMessage("");
     try {
       await adminRequest(`/api/admin/guestbook/${record.id}`, z.unknown(), { method: "DELETE", headers: revisionHeaders(record.revision) });
@@ -102,7 +102,7 @@ export function GuestbookAdmin() {
   if (!authenticated) return <LoginForm locale="ko" onLogin={() => { setError(""); setRevision((value) => value + 1); }} />;
   return <div className="events-admin-workspace">
     {dialog}
-    <p className="muted">센터에서 받은 방명록을 옮겨 적어 주세요. 공개한 글은 방문 날짜가 최근인 순서로 표시되고, 홈에는 3개가 소개됩니다.</p>
+    <p className="muted">센터에서 받은 방명록을 옮겨 적어 주세요. 공개한 글은 고유번호가 큰 순서로 표시되고, 홈에는 3개가 소개됩니다.</p>
     {expired && <aside className="events-reauth"><p role="alert">세션이 만료되었습니다. 작성한 내용은 유지됩니다. 다시 로그인한 뒤 저장해 주세요.</p><LoginForm locale="ko" onLogin={() => { setExpired(false); setError(""); }} /></aside>}
     {error && <p className="events-error" role="alert">{error}</p>}
     {conflict && <Button variant="secondary" disabled={pending || uploading || expired} onClick={() => void reload()}>최신 내용 불러오기</Button>}
@@ -110,7 +110,12 @@ export function GuestbookAdmin() {
       <h2>{selected ? "방명록 수정" : "방명록 등록"}</h2>
       <fieldset className="events-editor-fields" disabled={pending || expired}>
         <div className="events-field-grid">
-          <DateField name="visitDate" label="방문 날짜" required defaultValue={selected?.visitDate ?? new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" })} onDirty={() => setDirty(true)} />
+          <label>권 번호<FormControl><input className="guestbook-number" name="volume" type="number" inputMode="numeric" required min={1} max={2147483647} step={1} defaultValue={selected?.volume ?? 1} /></FormControl></label>
+          <label>고유번호<FormControl><input className="guestbook-number" name="entryNumber" type="number" inputMode="numeric" required min={1} max={2147483647} step={1} defaultValue={selected?.entryNumber ?? ""} aria-describedby="guestbook-number-help" /></FormControl></label>
+        </div>
+        <p id="guestbook-number-help" className="muted">고유번호는 No.1 형식으로 표시됩니다. 권이 달라도 같은 번호를 사용할 수 없습니다.</p>
+        <div className="events-field-grid">
+          <DateField name="visitDate" label="방문 날짜 (선택)" defaultValue={selected?.visitDate ?? ""} onDirty={() => setDirty(true)} />
           <label>방문자명 (선택)<FormControl><input name="visitorName" maxLength={100} defaultValue={selected?.visitorName ?? ""} aria-describedby="guestbook-name-help" /></FormControl></label>
         </div>
         <p id="guestbook-name-help" className="muted">닉네임도 괜찮습니다. 비워 두면 ‘방문자’로 표시됩니다.</p>
@@ -125,8 +130,8 @@ export function GuestbookAdmin() {
       <div className="button-row"><Button type="submit" disabled={pending || uploading || expired}>저장</Button><Button variant="secondary" disabled={pending || uploading} onClick={() => void reload()}>취소</Button></div>
     </form> : <>
       <div className="events-admin-toolbar"><h2>방명록 목록</h2><div className="button-row"><Button variant="secondary" disabled={pending || expired} onClick={() => void reload()}>목록 새로고침</Button><Button disabled={pending || expired} onClick={() => edit(null)}>방명록 등록</Button></div></div>
-      <ul className="events-admin-list">{[...records].sort((a, b) => b.visitDate.localeCompare(a.visitDate) || b.id - a.id).map((record) => <li key={record.id}>
-        <div><h3>{record.visitorName || "방문자"}</h3><p className="muted">{record.visitDate}, {record.is_active ? "공개" : "비공개"}</p><p>{record.body.slice(0, 100)}{record.body.length > 100 ? "…" : ""}</p></div>
+      <ul className="events-admin-list">{[...records].sort((a, b) => b.entryNumber - a.entryNumber).map((record) => <li key={record.id}>
+        <div><h3>{record.volume}권 No.{record.entryNumber} / {record.visitorName || "방문자"}</h3><p className="muted">{record.visitDate && `${record.visitDate}, `}{record.is_active ? "공개" : "비공개"}</p><p>{record.body.slice(0, 100)}{record.body.length > 100 ? "…" : ""}</p></div>
         <div className="button-row"><Button variant="secondary" disabled={pending || expired} onClick={() => edit(record)}>수정</Button><Button variant="quiet" disabled={pending || expired} onClick={() => void remove(record)}>삭제</Button></div>
       </li>)}{!records.length && <li>아직 등록된 방명록이 없습니다. 첫 방명록을 등록해 주세요.</li>}</ul>
       <a href="/ko/guestbook" target="_blank" rel="noopener noreferrer" className="button" data-variant="quiet">공개 방명록 보기 (새 탭)</a>

@@ -16,7 +16,8 @@ export function GuestbookEntry({ entry, locale, preview = false }: {
   return <article id={`entry-${entry.id}`} className={`guestbook-entry${preview ? " guestbook-entry-preview" : ""}`} aria-labelledby={`guestbook-name-${entry.id}`}>
     <header className="guestbook-byline">
       <h2 id={`guestbook-name-${entry.id}`}>{name}</h2>
-      <p className="muted"><time dateTime={entry.visitDate}>{entry.visitDate.replaceAll("-", ".")}</time>{" "}{t.visitDate}</p>
+      <p className="muted">{locale === "ko" ? `${entry.volume}권` : `Volume ${entry.volume}`} / No.{entry.entryNumber}</p>
+      {entry.visitDate && <p className="muted">{locale === "en" && `${t.visitDate} `}<time dateTime={entry.visitDate}>{entry.visitDate.replaceAll("-", ".")}</time>{locale === "ko" && ` ${t.visitDate}`}</p>}
     </header>
     <div className="guestbook-entry-content">
       <p className="guestbook-body" lang={locale === "en" && entry.bodyEn ? "en" : "ko"}>{body}</p>
