@@ -606,7 +606,9 @@ model VisitReview {
 model GuestbookEntry {
   id          Int      @id @default(autoincrement())
   revision    Int      @default(1)
-  visitDate   String   @map("visit_date")
+  entryNumber Int      @unique @map("entry_number")
+  volume      Int      @default(1)
+  visitDate   String   @default("") @map("visit_date")
   visitorName String   @default("") @map("visitor_name")
   body        String
   bodyEn      String   @default("") @map("body_en")
@@ -615,7 +617,7 @@ model GuestbookEntry {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  @@index([isActive, visitDate(sort: Desc), id(sort: Desc)])
+  @@index([isActive, entryNumber(sort: Desc)])
   @@map("guestbook_entries")
 }
 

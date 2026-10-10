@@ -2,7 +2,9 @@ import { z } from "zod";
 import { contentImagesSchema, isCalendarDate } from "@/lib/events-contract";
 
 export const guestbookInputSchema = z.object({
-  visitDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(isCalendarDate, "방문 날짜를 확인해 주세요."),
+  entryNumber: z.number().int().min(1, "고유번호는 1 이상의 정수로 입력해 주세요.").max(2147483647),
+  volume: z.number().int().min(1, "권 번호는 1 이상의 정수로 입력해 주세요.").max(2147483647).default(1),
+  visitDate: z.string().refine((value) => value === "" || (/^\d{4}-\d{2}-\d{2}$/.test(value) && isCalendarDate(value)), "방문 날짜를 확인해 주세요.").default(""),
   visitorName: z.string().trim().max(100).default(""),
   body: z.string().trim().min(1, "방명록 내용을 입력해 주세요.").max(4000),
   bodyEn: z.string().trim().max(4000).default(""),

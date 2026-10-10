@@ -34,7 +34,11 @@ test("방명록 등록, 이미지 변환, 공개와 비공개, 충돌과 세션 
     expect((await page.request.post("/api/admin/guestbook", { headers: { origin: "https://example.com" }, data: {} })).status()).toBe(403);
     await page.getByRole("button", { name: "방명록 등록", exact: true }).click();
     await expect(page.getByRole("radio", { name: "비공개", exact: true })).toBeChecked();
-    await page.getByLabel("방문 날짜", { exact: true }).fill("2026-10-09");
+    await expect(page.getByLabel("방문 날짜 (선택)", { exact: true })).toHaveValue("");
+    await page.getByRole("spinbutton", { name: "고유번호", exact: true }).fill("1");
+    await page.getByRole("spinbutton", { name: "권 번호", exact: true }).fill("25");
+    await page.getByRole("spinbutton", { name: "권 번호", exact: true }).press("ArrowUp");
+    await expect(page.getByRole("spinbutton", { name: "권 번호", exact: true })).toHaveValue("26");
     await page.getByLabel("방문자명 (선택)").fill(visitorName);
     const body = "책을 읽다가 이야기를 나누고 왔습니다.\n다음에 친구와 함께 들를게요. <script>alert(1)</script>";
     await page.getByLabel("방명록 내용", { exact: true }).fill(body);
@@ -50,6 +54,9 @@ test("방명록 등록, 이미지 변환, 공개와 비공개, 충돌과 세션 
     await expect(page.getByText("비공개로 저장했습니다.", { exact: true })).toBeVisible();
     const draft = (await records()).find((entry) => entry.visitorName === visitorName)!;
     id = draft.id;
+    expect(draft.visitDate).toBe("");
+    expect(draft.entryNumber).toBe(1);
+    expect(draft.volume).toBe(26);
     expect(draft.images[0]).toMatch(/\.webp$/);
     const photo = await page.request.get(draft.images[0]!);
     const metadata = await sharp(await photo.body()).metadata();
@@ -58,8 +65,9 @@ test("방명록 등록, 이미지 변환, 공개와 비공개, 충돌과 세션 
     expect(metadata.exif).toBeUndefined();
     expect((await request.get(draft.images[0]!)).status()).toBe(404);
     expect(await (await request.get("/ko/guestbook")).text()).not.toContain(visitorName);
-    expect((await page.request.put(`/api/admin/guestbook/${id}`, { headers, data: { visitDate: draft.visitDate, body } })).status()).toBe(428);
+    expect((await page.request.put(`/api/admin/guestbook/${id}`, { headers, data: { entryNumber: draft.entryNumber, body } })).status()).toBe(428);
     await row().getByRole("button", { name: "수정", exact: true }).click();
+    await expect(page.getByLabel("방문 날짜 (선택)", { exact: true })).toHaveValue("");
     await page.getByRole("radio", { name: "공개", exact: true }).check();
     await page.getByRole("button", { name: "저장", exact: true }).click();
     await expect(page.getByText("저장했습니다. 사이트에 공개됩니다.", { exact: true })).toBeVisible();
@@ -68,6 +76,8 @@ test("방명록 등록, 이미지 변환, 공개와 비공개, 충돌과 세션 
       await page.goto(`/${locale}/guestbook`);
       await expect(page.locator(`#entry-${id} .guestbook-body`)).toHaveText(body);
       await expect(page.locator(`#entry-${id} script`)).toHaveCount(0);
+      await expect(page.locator(`#entry-${id} time`)).toHaveCount(0);
+      await expect(page.locator(`#entry-${id} .guestbook-byline`)).toContainText(locale === "ko" ? "26권 / No.1" : "Volume 26 / No.1");
       await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `https://bitcoincenterseoul.com/${locale}/guestbook`);
       await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "index, follow");
       await expect(page.locator(".guestbook-visit a")).toHaveAttribute("href", `/${locale}/visit`);
@@ -90,7 +100,7 @@ test("방명록 등록, 이미지 변환, 공개와 비공개, 충돌과 세션 
     await page.getByRole("dialog").getByRole("button", { name: "취소", exact: true }).click();
     const before = await current();
     const { revision } = before;
-    const input = { visitDate: before.visitDate, visitorName: before.visitorName, body: before.body, bodyEn: before.bodyEn, images: before.images, is_active: before.is_active };
+    const input = { entryNumber: before.entryNumber, volume: before.volume, visitDate: "2026-10-09", visitorName: before.visitorName, body: before.body, bodyEn: before.bodyEn, images: before.images, is_active: before.is_active };
     expect((await page.request.put(`/api/admin/guestbook/${id}`, { headers: { ...headers, "if-match": `"${revision}"` }, data: { ...input, body: "다른 관리자가 먼저 저장", bodyEn: "A translated guestbook note." } })).status()).toBe(200);
     expect(await (await request.get("/en/guestbook")).text()).toContain("A translated guestbook note.");
     await page.getByRole("button", { name: "저장", exact: true }).click();
@@ -127,7 +137,7 @@ test("페이지별 SSR, canonical, 다음 링크와 비공개 제외", async ({ 
   const ids: number[] = [];
   try {
     for (let index = 0; index < 13; index++) {
-      const response = await page.request.post("/api/admin/guestbook", { headers: { origin }, data: { visitDate: "2026-10-08", body: `Pagination test ${index}`, is_active: 1 } });
+      const response = await page.request.post("/api/admin/guestbook", { headers: { origin }, data: { entryNumber: index + 1, visitDate: "2026-10-08", body: `Pagination test ${index}`, is_active: 1 } });
       expect(response.status()).toBe(201);
       ids.push((await response.json()).data.id);
     }
@@ -146,4 +156,40 @@ test("페이지별 SSR, canonical, 다음 링크와 비공개 제외", async ({ 
     for (const id of ids) await page.request.delete(`/api/admin/guestbook/${id}`, { headers: { origin, "if-match": '"1"' } });
   }
   expect(await (await request.get("/sitemap.xml")).text()).not.toContain("/ko/guestbook");
+});
+
+test("권이 달라도 번호 중복을 안내하고 작성한 내용을 유지한다", async ({ page, baseURL }, testInfo) => {
+  const origin = reviewOrigin(baseURL);
+  const { ADMIN_PASSWORD } = await reviewRuntime();
+  expect((await page.request.post("/api/admin/login", { headers: { origin }, data: { password: ADMIN_PASSWORD } })).status()).toBe(200);
+  const ids: number[] = [];
+  try {
+    const response = await page.request.post("/api/admin/guestbook", { headers: { origin }, data: { entryNumber: 1, volume: 1, body: "기존 방명록" } });
+    expect(response.status()).toBe(201);
+    ids.push((await response.json()).data.id);
+    await page.goto("/ko/admin/guestbook");
+    await page.getByRole("button", { name: "방명록 등록", exact: true }).click();
+    await page.getByRole("spinbutton", { name: "고유번호", exact: true }).fill("1");
+    await page.getByRole("spinbutton", { name: "권 번호", exact: true }).fill("3");
+    await page.getByLabel("방명록 내용", { exact: true }).fill("중복이어도 남아 있어야 하는 내용");
+    await page.getByRole("button", { name: "저장", exact: true }).click();
+    await expect(page.locator(".events-admin-workspace .events-error")).toContainText("이미 사용 중인 고유번호입니다.");
+    await expect(page.getByLabel("방명록 내용", { exact: true })).toHaveValue("중복이어도 남아 있어야 하는 내용");
+    await expect(page.getByRole("button", { name: "최신 내용 불러오기" })).toHaveCount(0);
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath("admin-number-conflict-mobile.png"), fullPage: true });
+    await page.getByRole("spinbutton", { name: "고유번호", exact: true }).fill("2");
+    await page.getByLabel("방문 날짜 (선택)", { exact: true }).fill("2026-10-09");
+    await page.getByRole("button", { name: "저장", exact: true }).click();
+    await expect(page.getByText("비공개로 저장했습니다.", { exact: true })).toBeVisible();
+    const records = z.array(guestbookRecordSchema).parse((await (await page.request.get("/api/admin/guestbook")).json()).data);
+    const saved = records.find((entry) => entry.entryNumber === 2)!;
+    ids.push(saved.id);
+    expect(saved.volume).toBe(3);
+    expect(saved.visitDate).toBe("2026-10-09");
+    await expect(page.locator(".events-admin-list > li").first()).toContainText("3권 No.2");
+  } finally {
+    for (const id of ids) await page.request.delete(`/api/admin/guestbook/${id}`, { headers: { origin, "if-match": '"1"' } });
+  }
 });
