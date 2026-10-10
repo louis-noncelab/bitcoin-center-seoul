@@ -158,10 +158,11 @@ test("페이지별 SSR, 카드 정렬, canonical, 다음 링크와 비공개 제
     const layout = await cards.evaluateAll((entries) => entries.map((entry) => {
       const rect = entry.getBoundingClientRect();
       return { width: rect.width, height: rect.height, top: rect.y,
+        number: entry.querySelector(".guestbook-byline p")!.getBoundingClientRect().y,
         body: entry.querySelector(".guestbook-body")!.getBoundingClientRect().y,
         link: entry.querySelector(".section-link")!.getBoundingClientRect().y };
     }));
-    for (const key of ["width", "height", "top", "body", "link"] as const) {
+    for (const key of ["width", "height", "top", "number", "body", "link"] as const) {
       expect(Math.max(...layout.map((row) => row[key])) - Math.min(...layout.map((row) => row[key]))).toBeLessThan(1);
     }
     await page.locator(".guestbook-preview").screenshot({ path: testInfo.outputPath("home-cards-aligned-desktop.png") });
