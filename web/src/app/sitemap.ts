@@ -4,6 +4,7 @@ import { publicSections, siteOrigin } from "@/content/site";
 import { routing } from "@/i18n/routing";
 import { listEvents, listHighlights } from "@/server/events";
 import { listReviews } from "@/server/reviews";
+import { guestbookPage } from "@/server/guestbook";
 import { listNotices } from "@/server/notices";
 import { libraryKinds } from "@/lib/collection-contract";
 import { listCollection } from "@/server/collection";
@@ -35,6 +36,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]);
   const paths = [
     "",
+    ...((await guestbookPage()).total > 0 ? ["/guestbook"] : []),
     ...shopPaths,
     "/experience/wallet",
     "/notices",

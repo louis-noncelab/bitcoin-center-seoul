@@ -32,6 +32,7 @@ const groups: readonly { readonly label: string; readonly items: readonly AdminN
       { href: "/admin", label: "행사와 하이라이트" },
       { href: "/admin/notices", label: "공지사항" },
       { href: "/admin/reviews", label: "방문 후기" },
+      { href: "/admin/guestbook", label: "방명록" },
       { href: "/admin/collection", label: "전시 소개" },
     ],
   },

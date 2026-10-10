@@ -13,6 +13,8 @@ export async function referencedImagePaths(publicOnly = false): Promise<readonly
   const notices = await prisma.notice.findMany({ where: publicOnly ? { isActive: 1 } : {}, select: { description: true, descriptionEn: true } });
   const collection = await prisma.collectionItem.findMany({ where: publicOnly ? { isActive: 1 } : {}, select: { images: true, description: true, descriptionEn: true } });
   const reviews = await prisma.visitReview.findMany({ where: publicOnly ? { isActive: 1 } : {}, select: { image: true, description: true, descriptionEn: true } });
+  const guestbook = await prisma.guestbookEntry.findMany({ where: publicOnly ? { isActive: 1 } : {}, select: { images: true } });
+  for (const entry of guestbook) for (const image of entry.images) paths.add(image);
   const products = await prisma.product.findMany({ select: { imageUrl: true, images: true, descriptionKo: true, descriptionEn: true, contentFormat: true, published: true } });
   for (const row of [...events, ...highlights, ...reviews]) if (row.image) paths.add(row.image);
   for (const product of products) {
