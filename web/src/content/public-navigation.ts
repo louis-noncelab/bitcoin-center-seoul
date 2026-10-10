@@ -53,6 +53,7 @@ export function publicNavigation(locale: Locale) {
         link("/journal", "현장 스케치", "Field stories"),
         link("/news?view=media", "사진과 영상", "Photos & videos"),
         link("/reviews", "방문 후기", "Visitor stories"),
+        link("/guestbook", "방명록", "Guestbook"),
       ],
     },
     {

@@ -11,7 +11,7 @@ export function expectedRevision(request: Request): number {
   return revision;
 }
 
-type ContentTable = "events" | "highlights" | "notices" | "collection_items" | "visit_reviews" | "review_selection";
+type ContentTable = "events" | "highlights" | "notices" | "collection_items" | "visit_reviews" | "guestbook_entries" | "review_selection";
 
 export async function reserveRevision(tx: Prisma.TransactionClient, table: ContentTable, id: number, revision: number | undefined): Promise<void> {
   if (revision === undefined) throw new ApiError(428, "REVISION_REQUIRED", "최신 내용을 불러온 뒤 다시 시도해주세요.");
@@ -22,6 +22,7 @@ export async function reserveRevision(tx: Prisma.TransactionClient, table: Conte
     : table === "notices" ? tx.notice.updateMany({ where, data })
     : table === "collection_items" ? tx.collectionItem.updateMany({ where, data })
     : table === "visit_reviews" ? tx.visitReview.updateMany({ where, data })
+    : table === "guestbook_entries" ? tx.guestbookEntry.updateMany({ where, data })
     : tx.reviewSelection.updateMany({ where, data }));
   if (updated.count === 1) return;
   const current = await (table === "events" ? tx.centerEvent.findUnique({ where: { id } })
@@ -29,6 +30,7 @@ export async function reserveRevision(tx: Prisma.TransactionClient, table: Conte
     : table === "notices" ? tx.notice.findUnique({ where: { id } })
     : table === "collection_items" ? tx.collectionItem.findUnique({ where: { id } })
     : table === "visit_reviews" ? tx.visitReview.findUnique({ where: { id } })
+    : table === "guestbook_entries" ? tx.guestbookEntry.findUnique({ where: { id } })
     : tx.reviewSelection.findUnique({ where: { id } }));
   if (!current) throw new ApiError(404, "NOT_FOUND", "항목을 찾을 수 없습니다.");
   throw new ApiError(409, "EDIT_CONFLICT", "다른 사람이 먼저 수정했습니다. 최신 내용을 확인해주세요.");

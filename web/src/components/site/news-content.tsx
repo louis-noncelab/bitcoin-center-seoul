@@ -12,19 +12,19 @@ import "@/styles/news.css";
 export const newsCopy = {
   ko: {
     title: "비센서 소식", intro: "센터의 공지와 현장 이야기, 사진과 영상을 한곳에서 만나보세요.",
-    all: "전체 소식", notices: "공지사항", journal: "현장 스케치", media: "사진과 영상", reviews: "방문 후기",
+    all: "전체 소식", notices: "공지사항", journal: "현장 스케치", media: "사진과 영상", reviews: "방문 후기", guestbook: "방명록",
     recent: "최근 소식", more: "전체 보기", mediaMore: "사진과 영상 더 보기", empty: "아직 공개된 소식이 없습니다.",
     photo: "사진", video: "영상", window: "새 창", archive: "이전 소식도 찾아보세요", nav: "소식 분류",
   },
   en: {
     title: "BCS news", intro: "Updates, stories, photos and videos from Bitcoin Center Seoul.",
-    all: "All news", notices: "Notices", journal: "Highlights", media: "Photos & videos", reviews: "Visitor stories",
+    all: "All news", notices: "Notices", journal: "Highlights", media: "Photos & videos", reviews: "Visitor stories", guestbook: "Guestbook",
     recent: "Latest updates", more: "View all", mediaMore: "More photos & videos", empty: "No news has been published yet.",
     photo: "Photo", video: "Video", window: "new window", archive: "Explore earlier stories", nav: "News categories",
   },
 } as const;
 
-type NewsView = "all" | "media" | "notices" | "journal" | "reviews";
+type NewsView = "all" | "media" | "notices" | "journal" | "reviews" | "guestbook";
 
 export function NewsNavigation({ locale, current }: { readonly locale: Locale; readonly current: NewsView }) {
   const t = newsCopy[locale];
@@ -32,6 +32,7 @@ export function NewsNavigation({ locale, current }: { readonly locale: Locale; r
     { key: "all", href: "/news" }, { key: "notices", href: "/notices" },
     { key: "journal", href: "/journal" }, { key: "media", href: "/news?view=media" },
     { key: "reviews", href: "/reviews" },
+    { key: "guestbook", href: "/guestbook" },
   ] as const;
   return <nav className="news-navigation" aria-label={t.nav}>
     {links.map(({ key, href }) => <Link key={key} href={href} locale={locale} prefetch={false} aria-current={current === key ? "page" : undefined}>{t[key]}</Link>)}

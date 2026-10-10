@@ -603,6 +603,22 @@ model VisitReview {
   @@map("visit_reviews")
 }
 
+model GuestbookEntry {
+  id          Int      @id @default(autoincrement())
+  revision    Int      @default(1)
+  visitDate   String   @map("visit_date")
+  visitorName String   @default("") @map("visitor_name")
+  body        String
+  bodyEn      String   @default("") @map("body_en")
+  images      String[] @default([])
+  isActive    Int      @default(0) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive, visitDate(sort: Desc), id(sort: Desc)])
+  @@map("guestbook_entries")
+}
+
 model ReviewSlug {
   slug     String @id
   reviewId Int    @map("review_id")

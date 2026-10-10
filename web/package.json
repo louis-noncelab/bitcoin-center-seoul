@@ -24,6 +24,7 @@
     "test:security": "node --conditions=react-server --import tsx --test --test-concurrency=1 tests/admin-security.mjs tests/security-rate-limits.mjs",
     "backup": "node --import tsx scripts/events-backup.ts",
     "test:collection": "node --conditions=react-server --import tsx --test tests/collection-db.mjs",
+    "test:guestbook": "node --conditions=react-server --import tsx --test tests/guestbook.mjs",
     "test:reviews": "node --conditions=react-server --import tsx --test tests/reviews-db.mjs tests/reviews-import.mjs",
     "reviews:import": "node --conditions=react-server --import tsx scripts/reviews-import.ts",
     "test:backup": "node --test tests/events-backup.mjs",

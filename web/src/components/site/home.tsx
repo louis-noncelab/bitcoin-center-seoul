@@ -14,6 +14,7 @@ import { HomeDiscovery } from "./home-discovery";
 import { HomeNews } from "./news-content";
 import { PageMotion } from "./page-motion";
 import { ReviewsPreview } from "./reviews-preview";
+import { GuestbookPreview } from "./guestbook";
 import "@/styles/home-space.css";
 import "@/styles/anniversary.css";
 
@@ -68,6 +69,7 @@ export function Home({
         <HomeEventCalendar events={events} locale={locale} today={today} />
         <HomeNews items={news} highlights={highlights} locale={locale} />
         <ReviewsPreview locale={locale} />
+        <GuestbookPreview locale={locale} />
         <HomeDiscovery collection={collection} locale={locale} />
       </div>
       <section
