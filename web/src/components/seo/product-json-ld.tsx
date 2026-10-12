@@ -2,6 +2,7 @@ import { centerContent } from "@/content/center";
 import { siteOrigin } from "@/content/site";
 import type { Locale } from "@/i18n/routing";
 import { markdownExcerpt } from "@/lib/markdown";
+import { withoutWordJoiners } from "@/lib/text";
 
 type ProductSeo = {
   readonly slug: string;
@@ -28,7 +29,7 @@ export function btcPrice(sats: string) {
 }
 
 export function ProductJsonLd({ locale, product }: { readonly locale: Locale; readonly product: ProductSeo }) {
-  const title = locale === "ko" ? product.titleKo : product.titleEn;
+  const title = withoutWordJoiners(locale === "ko" ? product.titleKo : product.titleEn);
   const description = markdownExcerpt(locale === "ko" ? product.descriptionKo : product.descriptionEn);
   const url = `${siteOrigin}/${locale}/shop/${product.slug}`;
   const available = product.variants.some((variant) => variant.availableStock > 0);

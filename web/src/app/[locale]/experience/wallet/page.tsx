@@ -4,6 +4,7 @@ import { hasLocale } from "next-intl";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { WalletGuide } from "@/components/wallet-guide/wallet-guide";
+import { ExploreLinks } from "@/components/site/explore-links";
 import { pageMetadata } from "@/content/site";
 import { walletCopy } from "@/content/wallet-guide";
 import { Link } from "@/i18n/navigation";
@@ -19,7 +20,9 @@ export async function generateMetadata({ params }: Props) {
   if (!hasLocale(routing.locales, locale)) notFound();
   const metadata = pageMetadata(locale, "experience");
   const title = walletCopy[locale].welcome.title;
-  const description = walletCopy[locale].welcome.message2;
+  const description = locale === "ko"
+    ? "서울 홍대입구 비트코인 센터에서 하드웨어 지갑을 체험해 보세요. 코코넛 월렛으로 테스트 비트코인을 주고받는 순서를 안내합니다."
+    : "Try hardware wallets at Bitcoin Center Seoul in Hongdae. Follow the guide to send and receive test bitcoin with Coconut Wallet Learning Edition.";
   const path = "/experience/wallet";
   return {
     ...metadata,
@@ -46,6 +49,7 @@ export default async function WalletPage({ params }: Props) {
           <h1>{walletCopy[locale].welcome.title}</h1>
         </div>
         <WalletGuide locale={locale} />
+        <ExploreLinks locale={locale} from="wallet" />
       </main>
       <SiteFooter locale={locale} />
     </>

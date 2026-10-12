@@ -2,7 +2,7 @@ import { Mail, Phone } from "lucide-react";
 import { OutboundLink } from "@/components/analytics/outbound-link";
 import { BackToTop } from "@/components/controls/back-to-top";
 import { ActionLink } from "@/components/ui/primitives";
-import { centerContent } from "@/content/center";
+import { centerContent, centerSocialLinks } from "@/content/center";
 import { publicNavigation } from "@/content/public-navigation";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
@@ -98,7 +98,7 @@ export function SiteFooter({ locale }: { readonly locale: Locale }) {
               <OutboundLink
                 destination="x"
                 locale={locale}
-                href="https://x.com/BtcCtrSeoul"
+                href={centerSocialLinks.x}
                 variant="quiet"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -117,7 +117,7 @@ export function SiteFooter({ locale }: { readonly locale: Locale }) {
               <OutboundLink
                 destination="instagram"
                 locale={locale}
-                href="https://www.instagram.com/bitcoincenterseoul/"
+                href={centerSocialLinks.instagram}
                 variant="quiet"
                 target="_blank"
                 rel="noopener noreferrer"

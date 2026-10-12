@@ -8,6 +8,7 @@ import { PageMotion } from "@/components/site/page-motion";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { EventJsonLd } from "@/components/seo/event-json-ld";
+import { ExploreLinks } from "@/components/site/explore-links";
 import { shareCardPath } from "@/content/share";
 import { recordMetadata } from "@/content/site";
 import { Link } from "@/i18n/navigation";
@@ -54,6 +55,7 @@ export default async function EventPage({ params }: Props) {
         <EventJsonLd locale={locale} event={event} />
         <TrackViewItem kind="meetup" itemId={canonical} itemName={event.title} locale={locale} />
         <EventDetail event={event} locale={locale} today={seoulDate()} paymentHref={(await meetupPaymentHrefs([event.id]))[event.id]} />
+        <ExploreLinks locale={locale} from="event" />
         <PageMotion pageKey={`${locale}-program-${event.id}`} />
       </main>
       <SiteFooter locale={locale} />

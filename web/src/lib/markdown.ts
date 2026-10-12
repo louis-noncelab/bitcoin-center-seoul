@@ -1,5 +1,6 @@
 import type { Nodes } from "mdast";
 import { fromMarkdown } from "mdast-util-from-markdown";
+import { withoutWordJoiners } from "./text";
 
 function nodeText(node: Nodes): string {
   switch (node.type) {
@@ -41,7 +42,7 @@ function nodeText(node: Nodes): string {
 }
 
 export function markdownExcerpt(source: string) {
-  const plain = nodeText(fromMarkdown(source)).replace(/\s+/g, " ").trim();
+  const plain = withoutWordJoiners(nodeText(fromMarkdown(source))).replace(/\s+/g, " ").trim();
   const characters = Array.from(plain);
   return characters.length > 200 ? `${characters.slice(0, 200).join("").trimEnd()}…` : plain;
 }

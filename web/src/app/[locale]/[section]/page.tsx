@@ -4,6 +4,8 @@ import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { hasLocale } from "next-intl";
 import { SectionContent } from "@/components/site/section-content";
+import { ExploreLinks } from "@/components/site/explore-links";
+import { OrganizationJsonLd } from "@/components/seo/organization-json-ld";
 import { PageMotion } from "@/components/site/page-motion";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
@@ -96,6 +98,8 @@ export default async function SectionPage({ params, searchParams }: Props) {
         </div>
         {section === "journal" && <NewsNavigation locale={locale} current="journal" />}
         <SectionContent locale={locale} section={section} events={events} highlights={highlights} today={today} pagination={pagination} paymentHrefs={paymentHrefs} />
+        <ExploreLinks locale={locale} from={section} />
+        {section === "visit" && <OrganizationJsonLd locale={locale} />}
         <PageMotion pageKey={`${locale}-${section}-${pagination.page}`} />
       </main>
       <SiteFooter locale={locale} />

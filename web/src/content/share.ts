@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { Locale } from "@/i18n/routing";
+import { withoutWordJoiners } from "@/lib/text";
 
 export const shareCardSize = { width: 1200, height: 630 } as const;
 export const defaultShareImage = "/brand/share-default.jpg";
@@ -12,7 +13,7 @@ export function shareCardPath(kind: ShareKind, id: string | number): string {
 }
 
 export function shareImages(url: string, alt: string): NonNullable<Metadata["openGraph"]>["images"] {
-  return [{ url, width: shareCardSize.width, height: shareCardSize.height, alt }];
+  return [{ url, width: shareCardSize.width, height: shareCardSize.height, alt: withoutWordJoiners(alt) }];
 }
 
 export function defaultShareAlt(locale: Locale): string {

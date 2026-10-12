@@ -16,6 +16,25 @@ export const publicSections = [
 export type PublicSection = (typeof publicSections)[number];
 export const siteOrigin = centerContent.ko.visit.website.href;
 
+const searchTitles = {
+  ko: {
+    home: "홍대의 비트코인 모임과 체험 공간",
+    about: "서울의 비트코인 문화 공간",
+    programs: "비트코인 강의와 밋업 일정",
+    experience: "비트코인 전시와 하드웨어 지갑 체험",
+    journal: "비트코인 밋업과 행사 기록",
+    visit: "홍대입구 오시는 길과 운영시간",
+  },
+  en: {
+    home: "Meetups and a community space in Hongdae",
+    about: "A Bitcoin community space in Seoul",
+    programs: "Bitcoin classes and meetups in Seoul",
+    experience: "Bitcoin art and hardware wallet demos",
+    journal: "Bitcoin meetup stories and photos",
+    visit: "Directions and opening hours in Hongdae",
+  },
+} as const;
+
 export function pageMetadata(
   locale: Locale,
   section?: PublicSection,
@@ -25,18 +44,15 @@ export function pageMetadata(
     : centerContent[locale].hero;
   const path = section ? `/${section}` : "";
   const siteName = centerContent[locale].hero.title;
-  const pageTitle = section === "about"
-    ? centerContent[locale].nav[1].label
-    : content.title;
-  const title = pageTitle.includes(siteName)
-    ? pageTitle
-    : `${pageTitle} | ${siteName}`;
+  const pageTitle = searchTitles[locale][section ?? "home"];
+  const title = section ? `${pageTitle} | ${siteName}` : `${siteName} | ${pageTitle}`;
+  const description = withoutWordJoiners(content.introduction);
   const imageAlt = defaultShareAlt(locale);
 
   return {
     metadataBase: new URL(siteOrigin),
     title: withoutWordJoiners(title),
-    description: content.introduction,
+    description,
     robots: { index: publicIndexingEnabled(), follow: publicIndexingEnabled() },
     alternates: {
       canonical: `/${locale}${path}`,
@@ -48,7 +64,7 @@ export function pageMetadata(
     },
     openGraph: {
       title,
-      description: content.introduction,
+      description,
       siteName,
       url: `/${locale}${path}`,
       locale: locale === "ko" ? "ko_KR" : "en_US",
@@ -59,7 +75,7 @@ export function pageMetadata(
     twitter: {
       card: "summary_large_image",
       title,
-      description: content.introduction,
+      description,
       images: [defaultShareImage],
     },
   };
@@ -76,9 +92,10 @@ export function recordMetadata(
   const metadata = pageMetadata(locale, section);
   const path = `/${section}/${identifier}`;
   const excerpt = markdownExcerpt(description);
+  const cleanTitle = withoutWordJoiners(title);
   return {
     ...metadata,
-    title: withoutWordJoiners(`${title} | ${centerContent[locale].hero.title}`),
+    title: `${cleanTitle} | ${centerContent[locale].hero.title}`,
     description: excerpt,
     alternates: {
       canonical: `/${locale}${path}`,
@@ -90,15 +107,15 @@ export function recordMetadata(
     },
     openGraph: {
       ...metadata.openGraph,
-      title,
+      title: cleanTitle,
       description: excerpt,
       url: `/${locale}${path}`,
       type: section === "journal" ? "article" : "website",
-      images: shareImages(imageUrl, title),
+      images: shareImages(imageUrl, cleanTitle),
     },
     twitter: {
       card: "summary_large_image",
-      title,
+      title: cleanTitle,
       description: excerpt,
       images: [imageUrl],
     },

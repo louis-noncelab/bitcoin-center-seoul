@@ -81,10 +81,27 @@ test("public pages point link previews at a sized share image", () => {
 test("page titles omit word joiners so automatic GA4 titles use the visible name", () => {
   for (const locale of ["ko", "en"]) {
     const title = "비트\u2060코인\u2060 밋업";
-    const metadata = recordMetadata(locale, "programs", "meetup", title, "A center meetup.");
+    const metadata = recordMetadata(locale, "programs", "meetup", title, "A center\u2060 meetup.");
     assert.equal(String(metadata.title).includes("\u2060"), false);
     assert.match(String(metadata.title), /^비트코인 밋업 \| /);
+    assert.equal(JSON.stringify(metadata).includes("\u2060"), false);
   }
+});
+
+test("search summaries and structured names use plain text without changing stored content", () => {
+  const source = { ...paidMeetup, title: "비트\u2060코인", description: "**서울** 비트\u2060코인 모임" };
+  const event = eventStructuredData(source, "ko")["@graph"][0];
+  assert.equal(event.name, "비트코인");
+  assert.equal(event.description, "서울 비트코인 모임");
+  assert.equal(source.title, "비트\u2060코인");
+  const article = articleStructuredData({ locale: "ko", section: "journal", id: "visit", title: source.title, description: source.description });
+  assert.equal(article.headline, "비트코인");
+  assert.equal(article.description, "서울 비트코인 모임");
+  const offline = eventStructuredData({ ...source, isOnline: false }, "en")["@graph"][0];
+  assert.equal(offline.location.address["@type"], "PostalAddress");
+  assert.equal(offline.location.address.addressCountry, "KR");
+  assert.equal(offline.organizer["@id"], "https://bitcoincenterseoul.com/#organization");
+  assert.equal(JSON.stringify(offline).includes("secret"), false);
 });
 
 const paidMeetup = {
