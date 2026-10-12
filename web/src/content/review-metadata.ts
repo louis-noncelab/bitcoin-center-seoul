@@ -29,10 +29,10 @@ export function reviewStructuredData(record: ReviewRecord, locale: Locale) {
     "@context": "https://schema.org", "@graph": [
       {
         "@type": "Article", "@id": `${url}#article`, mainEntityOfPage: url,
-        headline: review.title[locale], description: markdownExcerpt(review.summary[locale]),
+        headline: withoutWordJoiners(review.title[locale]), description: markdownExcerpt(review.summary[locale]),
         inLanguage: locale === "en" && record.descriptionEn ? "en" : "ko",
         author: { "@type": "Person", name: review.author },
-        publisher: { "@type": "Organization", name: "Bitcoin Center Seoul", url: siteOrigin },
+        publisher: { "@type": "Organization", "@id": `${siteOrigin}/#organization`, name: "Bitcoin Center Seoul", url: siteOrigin },
         citation: record.url,
         image: [`${siteOrigin}${record.image ? shareCardPath("reviews", record.slug) : defaultShareImage}`],
       },
@@ -40,7 +40,7 @@ export function reviewStructuredData(record: ReviewRecord, locale: Locale) {
         "@type": "BreadcrumbList", itemListElement: [
           { "@type": "ListItem", position: 1, name: locale === "ko" ? "홈" : "Home", item: `${siteOrigin}/${locale}` },
           { "@type": "ListItem", position: 2, name: locale === "ko" ? "방문 후기" : "Visitor stories", item: `${siteOrigin}/${locale}/reviews` },
-          { "@type": "ListItem", position: 3, name: review.title[locale], item: url },
+          { "@type": "ListItem", position: 3, name: withoutWordJoiners(review.title[locale]), item: url },
         ],
       },
     ],

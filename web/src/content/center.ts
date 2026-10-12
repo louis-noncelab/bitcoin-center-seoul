@@ -2,6 +2,21 @@ import type { Locale } from "@/i18n/routing";
 import type { CenterMediaKey } from "./media";
 
 export const centerHours = { opens: "12:00", closes: "20:00" } as const;
+export const centerSocialLinks = {
+  x: "https://x.com/BtcCtrSeoul",
+  instagram: "https://www.instagram.com/bitcoincenterseoul/",
+} as const;
+
+export function centerPostalAddress(locale: Locale) {
+  return {
+    "@type": "PostalAddress",
+    streetAddress: locale === "ko" ? "신촌로2안길 30, 2층" : "2F, 30 Sinchon-ro 2an-gil",
+    addressLocality: locale === "ko" ? "마포구" : "Mapo-gu",
+    addressRegion: locale === "ko" ? "서울특별시" : "Seoul",
+    postalCode: "04056",
+    addressCountry: "KR",
+  } as const;
+}
 
 type Link = {
   readonly label: string;
@@ -89,14 +104,14 @@ export const centerContent = {
       eyebrow: "BITCOIN CENTER SEOUL",
       title: "비트코인 센터 서울",
       introduction:
-        "비트코인 강의와 밋업이 열리는 공간입니다. 도서와 작품을 전시하고 하드웨어 지갑 체험존을 운영합니다.",
+        "서울 마포구, 홍대입구역 가까이에 있는 비트코인 공간입니다. 강의와 밋업에 참여하고, 도서와 작품을 둘러보고, 하드웨어 지갑을 체험할 수 있습니다.",
       secondaryLink: { label: "프로그램 보기", href: "#programs" },
     },
     about: {
       eyebrow: "ABOUT",
       title: "비트코인 센터 서울",
       introduction:
-        "라운지와 비트코인 서재, 홀, 하드웨어 지갑 체험존이 있습니다.",
+        "비트코인을 읽고, 만나고, 직접 써 보는 서울의 문화 공간입니다. 홍대입구역 근처에 라운지와 비트코인 서재, 작품 전시, 강의와 밋업이 열리는 홀을 갖추고 있습니다.",
       galleryTitle: "센터의 공간",
       spaces: [
         { photo: "gallery", title: "작품", description: "비트코인을 주제로 한 그림과 판화입니다." },
@@ -111,7 +126,7 @@ export const centerContent = {
       eyebrow: "PROGRAMS",
       title: "강의와 밋업",
       introduction:
-        "입문 강의부터 개발자 과정까지 운영합니다. 강의와 모임의 일정은 행사 공지에서 확인할\u00a0수\u00a0있습니다.",
+        "비트코인 입문 강의, 개발자 밋업, 워크숍과 영화 모임을 엽니다. 서울에서 열리는 행사와 온라인 모임의 날짜, 장소, 참가비와 신청 방법을 확인할 수 있습니다.",
       description:
         "비트코인 입문, 백서와 프로토콜, 셀프 커스터디, 개발 강의를 엽니다. 개발자 밋업과 월간 모임, 영화 상영도 함께 진행합니다.",
     },
@@ -119,7 +134,7 @@ export const centerContent = {
       eyebrow: "EXPERIENCE",
       title: "전시와 체험",
       introduction:
-        "비트코인 도서와 작품을 전시합니다. 체험존에서 하드웨어 지갑을 써 보고, 보드게임도 즐길\u00a0수\u00a0있습니다.",
+        "비트코인 도서와 작품을 둘러보고, 테스트 비트코인으로 하드웨어 지갑을 체험합니다. 센터에 비치된 보드게임도 즐길 수 있습니다.",
       areas: [
         {
           id: "exhibition",
@@ -153,13 +168,13 @@ export const centerContent = {
       eyebrow: "HIGHLIGHTS",
       title: "현장 스케치",
       introduction:
-        "센터에서 열린 강의와 밋업을 사진과 글로 소개합니다.",
+        "서울에서 열린 비트코인 강의와 개발자 밋업, 워크숍과 모임을 사진과 글로 기록합니다. 지난 행사의 모습과 사람들이 나눈 이야기를 살펴보세요.",
     },
     visit: {
       eyebrow: "VISIT",
       title: "비트코인 센터 서울 방문 안내",
       introduction:
-        "홍대입구역 6번 출구에서 걸어서 3분 거리입니다. 대관 중에는 공간을 이용할\u00a0수\u00a0없습니다.",
+        "서울 마포구 신촌로2안길 30, 2층에 있습니다. 홍대입구역 6번 출구에서 도보 3분입니다. 운영시간, 입장료와 예약 안내를 확인하세요. 대관 중에는 공간을 이용할 수 없습니다.",
       firstVisit: [
         { question: "예약이 필요한가요?", answer: "일반 방문은 예약 없이 오시면 됩니다. 강의 및 밋업 참여는 행사별 안내를 확인해주세요." },
         { question: "입장료가 있나요?", answer: "입장료는 3,000 sats입니다." },
@@ -202,14 +217,14 @@ export const centerContent = {
       eyebrow: "BITCOIN CENTER SEOUL",
       title: "Bitcoin Center Seoul",
       introduction:
-        "The center hosts Bitcoin classes and meetups. Visitors can browse the books, see the artwork and try hardware wallets.",
+        "A Bitcoin community space in Hongdae, Mapo, Seoul. Join classes and meetups, browse Bitcoin books and art, and try hardware wallets with test bitcoin.",
       secondaryLink: { label: "View programs", href: "#programs" },
     },
     about: {
       eyebrow: "ABOUT",
       title: "Bitcoin Center Seoul",
       introduction:
-        "The center has a lounge, a Bitcoin library, a hall and a hardware wallet area.",
+        "Explore Bitcoin culture in Seoul, near Hongik University Station. The center has a lounge, a Bitcoin library, art displays, a hardware wallet demo area and a hall for classes and meetups.",
       galleryTitle: "Spaces at the center",
       spaces: [
         { photo: "gallery", title: "Art", description: "Discover paintings and prints inspired by Bitcoin." },
@@ -224,7 +239,7 @@ export const centerContent = {
       eyebrow: "PROGRAMS",
       title: "Classes and meetups",
       introduction:
-        "Courses cover Bitcoin basics and development. Check the event schedule for upcoming dates.",
+        "Find Bitcoin classes, developer meetups, workshops and film gatherings in Seoul, along with online events. Each listing has the date, venue, fee and registration details.",
       description:
         "Classes cover Bitcoin fundamentals, the whitepaper and protocol, self-custody and development. The center also hosts developer meetups, monthly gatherings and film screenings.",
     },
@@ -232,7 +247,7 @@ export const centerContent = {
       eyebrow: "EXPERIENCE",
       title: "Exhibitions and experiences",
       introduction:
-        "Bitcoin books and art are on display. You can try hardware wallets in the demo area and play the board games kept at the center.",
+        "Browse Bitcoin books and art, try hardware wallets with test bitcoin, and play the board games kept at Bitcoin Center Seoul.",
       areas: [
         {
           id: "exhibition",
@@ -265,13 +280,13 @@ export const centerContent = {
     journal: {
       eyebrow: "HIGHLIGHTS",
       title: "Highlights",
-      introduction: "Photos and reports from classes and meetups at the center.",
+      introduction: "Photos and stories from Bitcoin classes, developer meetups, workshops and community gatherings in Seoul. See what happened at past events.",
     },
     visit: {
       eyebrow: "VISIT",
       title: "Visit Bitcoin Center Seoul",
       introduction:
-        "The center is a three-minute walk from Hongik University Station Exit 6. It is unavailable during private rentals.",
+        "Find opening hours, admission and directions to Bitcoin Center Seoul at 2F, 30 Sinchon-ro 2an-gil, Mapo-gu. It is a three-minute walk from Hongik University Station Exit 6. Unavailable during private rentals.",
       firstVisit: [
         { question: "Do I need a reservation?", answer: "No reservation is needed for a regular visit. For classes and meetups, check the individual event details." },
         { question: "Is there an admission fee?", answer: "Admission is 3,000 sats." },

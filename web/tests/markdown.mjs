@@ -5,6 +5,11 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { EventDetail, HighlightDetail } from "../src/components/site/events-public.tsx";
 import { MarkdownContent } from "../src/components/site/markdown-content.tsx";
 import { markdownExcerpt } from "../src/lib/markdown.ts";
+
+test("word joiners do not consume the excerpt length or split searchable names", () => {
+  assert.equal(markdownExcerpt("비트\u2060코인 **모임**"), "비트코인 모임");
+  assert.equal(markdownExcerpt("가\u2060".repeat(201)), `${"가".repeat(200)}…`);
+});
 import { attachmentMarkdown, moveInsertion } from "../src/components/events-admin/markdown-insertion.ts";
 import { ImageSelectionError, uploadImages } from "../src/components/events-admin/image-upload.ts";
 

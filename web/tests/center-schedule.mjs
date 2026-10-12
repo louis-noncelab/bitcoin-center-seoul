@@ -1,11 +1,34 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { eventWindow, resolveCenterStatus } from "../src/server/center-schedule.ts";
+import { eventWindow, resolveCenterStatus, structuredOpeningHours } from "../src/server/center-schedule.ts";
 import { seoulDate } from "../src/lib/center-status.ts";
 
 const at = (date, time) => new Date(`${date}T${time}+09:00`);
 const event = (date, time) => ({ date, time });
 const exception = (date, status) => ({ date, status });
+
+test("search opening hours preserve holiday closures and explicit opening overrides", async () => {
+  const hours = await structuredOpeningHours(at("2026-09-13", "14:00:00"), [
+    exception("2026-09-25", "open"), exception("2026-09-14", "closed"),
+    exception("2026-09-12", "closed"), exception("2027-01-02", "closed"),
+  ]);
+  assert.equal(hours.openingHoursSpecification.opens, "12:00");
+  assert.equal(hours.openingHoursSpecification.closes, "20:00");
+  assert.equal(hours.openingHoursSpecification.dayOfWeek.length, 7);
+  assert.equal(hours.openingHoursSpecification.validThrough, "2026-12-31");
+  const exceptions = hours.specialOpeningHoursSpecification;
+  assert.equal(exceptions.find((row) => row.validFrom === "2026-09-25").opens, "12:00");
+  for (const date of ["2026-09-14", "2026-10-05"]) {
+    const row = exceptions.find((row) => row.validFrom === date);
+    assert.equal(row.opens, "00:00");
+    assert.equal(row.closes, "00:00");
+    assert.equal(row.validThrough, date);
+  }
+  assert.equal(exceptions.some((row) => row.validFrom < "2026-09-13" || row.validFrom > "2026-12-31"), false);
+  const newYear = await structuredOpeningHours(new Date("2026-12-31T15:00:00Z"), []);
+  assert.equal(newYear.openingHoursSpecification.validFrom, "2027-01-01");
+  assert.deepEqual(await structuredOpeningHours(at("2099-01-02", "14:00:00"), []), {});
+});
 
 test("daily Seoul hours, public holidays, exceptions and meetup boundaries", async () => {
   const cases = [

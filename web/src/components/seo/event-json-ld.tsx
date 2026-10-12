@@ -1,9 +1,10 @@
-import { centerContent } from "@/content/center";
+import { centerContent, centerPostalAddress } from "@/content/center";
 import { defaultShareImage, shareCardPath } from "@/content/share";
 import { siteOrigin } from "@/content/site";
 import type { Locale } from "@/i18n/routing";
 import type { EventRecord } from "@/lib/events-contract";
 import { markdownExcerpt } from "@/lib/markdown";
+import { withoutWordJoiners } from "@/lib/text";
 import { btcPrice } from "./product-json-ld";
 
 function absolute(path: string): string {
@@ -17,7 +18,7 @@ function eventStart(date: string, time: string): string {
 }
 
 export function eventStructuredData(event: EventRecord, locale: Locale) {
-  const title = locale === "ko" ? event.title : event.titleEn || event.title;
+  const title = withoutWordJoiners(locale === "ko" ? event.title : event.titleEn || event.title);
   const description = markdownExcerpt(locale === "ko" ? event.description : event.descriptionEn || event.description);
   const url = `${siteOrigin}/${locale}/programs/${event.slug || event.id}`;
   const card = absolute((event.images[0] || event.image) ? shareCardPath("programs", event.slug || event.id) : defaultShareImage);
@@ -26,7 +27,7 @@ export function eventStructuredData(event: EventRecord, locale: Locale) {
     ? centerContent[locale].hero.title
     : (locale === "en" && event.locationEn ? event.locationEn : event.location) || centerContent[locale].hero.title;
   const address = event.venueType === "center"
-    ? centerContent[locale].visit.address.value
+    ? centerPostalAddress(locale)
     : (locale === "en" && event.locationEn ? event.locationEn : event.location);
   const data = {
     "@context": "https://schema.org",
@@ -44,7 +45,7 @@ export function eventStructuredData(event: EventRecord, locale: Locale) {
         location: event.isOnline
           ? { "@type": "VirtualLocation", name: locale === "ko" ? "온라인" : "Online" }
           : { "@type": "Place", name: placeName, address },
-        organizer: { "@type": "Organization", name: centerContent[locale].hero.title, url: siteOrigin },
+        organizer: { "@type": "Organization", "@id": `${siteOrigin}/#organization`, name: centerContent[locale].hero.title, url: siteOrigin },
         ...((event.ticketPriceKrw || event.ticketPriceSats) && !event.externalPayment ? {
           offers: {
             "@type": "Offer",

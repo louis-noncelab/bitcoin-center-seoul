@@ -7,6 +7,7 @@ import { PageMotion } from "@/components/site/page-motion";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { ArticleJsonLd, articleStructuredData } from "@/components/seo/article-json-ld";
+import { ExploreLinks } from "@/components/site/explore-links";
 import { shareCardPath } from "@/content/share";
 import { recordMetadata } from "@/content/site";
 import { Link } from "@/i18n/navigation";
@@ -57,6 +58,7 @@ export default async function HighlightPage({ params }: Props) {
           image: highlight.images[0] || highlight.image,
         })} />
         <HighlightDetail highlight={highlight} locale={locale} />
+        <ExploreLinks locale={locale} from="story" />
         <PageMotion pageKey={`${locale}-journal-${highlight.id}`} />
       </main>
       <SiteFooter locale={locale} />

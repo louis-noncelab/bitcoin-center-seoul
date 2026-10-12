@@ -1,5 +1,5 @@
 import "server-only";
-import { getHolidayNames } from "@hyunbinseo/holidays-kr";
+import { getHolidayNames, getHolidayPreset } from "@hyunbinseo/holidays-kr";
 import { centerHours } from "@/content/center";
 import { seoulDate, type CenterStatus, type CenterStatusSnapshot, type OpeningOverride } from "@/lib/center-status";
 import { isCalendarDate } from "@/lib/events-contract";
@@ -7,6 +7,38 @@ import { isCalendarDate } from "@/lib/events-contract";
 const dayMs = 86_400_000;
 export type ScheduledEvent = { readonly date: string; readonly time: string };
 export type OpeningException = { readonly date: string; readonly status: OpeningOverride };
+
+export async function structuredOpeningHours(now: Date, exceptions: readonly OpeningException[]) {
+  const today = seoulDate(now);
+  const year = today.slice(0, 4);
+  const lastDay = `${year}-12-31`;
+  let holidays: Awaited<ReturnType<typeof getHolidayPreset>>;
+  try { holidays = await getHolidayPreset(year); }
+  catch (error) {
+    if (!(error instanceof RangeError)) throw error;
+    return {};
+  }
+  const dates = new Map<string, OpeningOverride>(Object.keys(holidays).map((date) => [date, "closed"]));
+  for (const exception of exceptions) dates.set(exception.date, exception.status);
+  return {
+    openingHoursSpecification: {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+      ...centerHours,
+      validFrom: today,
+      validThrough: lastDay,
+    },
+    specialOpeningHoursSpecification: [...dates]
+      .filter(([date]) => date >= today && date <= lastDay)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([date, status]) => ({
+        "@type": "OpeningHoursSpecification",
+        validFrom: date,
+        validThrough: date,
+        ...(status === "open" ? centerHours : { opens: "00:00", closes: "00:00" }),
+      })),
+  };
+}
 
 export function eventWindow(event: ScheduledEvent): { start: number; end: number } | null {
   const date = event.date.trim().replaceAll(".", "-");

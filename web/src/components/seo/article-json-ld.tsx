@@ -3,6 +3,7 @@ import { defaultShareImage, shareCardPath, type ShareKind } from "@/content/shar
 import { siteOrigin } from "@/content/site";
 import type { Locale } from "@/i18n/routing";
 import { markdownExcerpt } from "@/lib/markdown";
+import { withoutWordJoiners } from "@/lib/text";
 
 export function articleStructuredData(input: {
   readonly locale: Locale;
@@ -21,14 +22,14 @@ export function articleStructuredData(input: {
   return {
     "@context": "https://schema.org",
     "@type": "Article",
-    headline: input.title,
+    headline: withoutWordJoiners(input.title),
     description: markdownExcerpt(input.description),
     image: [image],
     inLanguage: input.locale,
     mainEntityOfPage: url,
     ...(published ? { datePublished: published } : {}),
     author: { "@type": "Organization", name: centerContent[input.locale].hero.title, url: siteOrigin },
-    publisher: { "@type": "Organization", name: centerContent[input.locale].hero.title, url: siteOrigin, logo: { "@type": "ImageObject", url: `${siteOrigin}/brand/bcs-horizontal-color.png` } },
+    publisher: { "@type": "Organization", "@id": `${siteOrigin}/#organization`, name: centerContent[input.locale].hero.title, url: siteOrigin, logo: { "@type": "ImageObject", url: `${siteOrigin}/brand/bcs-horizontal-color.png` } },
   };
 }
 
