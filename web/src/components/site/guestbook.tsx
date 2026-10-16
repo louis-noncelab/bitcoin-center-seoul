@@ -31,7 +31,7 @@ export function GuestbookEntry({ entry, locale, preview = false }: {
       </> : <>
         <p className="guestbook-excerpt" lang={lang}>{excerpt.slice(0, 180).join("")}{excerpt.length > 180 && "…"}</p>
         <GuestbookNote id={entry.id} name={name} reference={reference} locale={locale} photoCount={entry.images.length}
-          thumbnail={entry.images[0] ? <Image src={entry.images[0]} alt="" fill sizes="128px" unoptimized /> : null}>
+          thumbnail={entry.images[0] ? <Image src={entry.images[0]} alt="" fill unoptimized /> : null}>
           <p className="guestbook-body" lang={lang}>{body}</p>
           {entry.images.length > 0 && <div className="guestbook-photos">{entry.images.map((image, index) => <figure key={image}><OriginalPhoto src={image} alt={`${name}, ${t.photo} ${index + 1}`} /></figure>)}</div>}
         </GuestbookNote>
