@@ -64,24 +64,46 @@ test.beforeEach(async ({ page, baseURL }) => {
 });
 
 for (const locale of ["ko", "en"]) {
-  test(`${locale} news lists share the visitor stories frame at every screen size`, async ({ page }) => {
+  test(`${locale} news tabs keep their header, navigation and content aligned`, async ({ page }) => {
     test.setTimeout(90_000);
     for (const width of [375, 768, 1440]) {
       await page.setViewportSize({ width, height: 1000 });
-      let reference: { x: number; width: number } | undefined;
+      let reference: { x: number; y: number; width: number; height: number } | undefined;
+      let headingReference: typeof reference;
+      let linkReferences: NonNullable<typeof reference>[] | undefined;
+      let contentGap: number | undefined;
       for (const path of newsPaths) {
-        await loaded(page, `/${locale}${path}`);
+        const href = `/${locale}${path}`;
+        if (!reference) await loaded(page, href);
+        else await page.locator(`.news-navigation a[href="${href}"]`).click();
         const navigation = page.locator(".news-navigation");
+        await expect(navigation.locator('[aria-current="page"]')).toHaveAttribute("href", href);
+        await page.evaluate(() => document.fonts.ready);
         const box = (await navigation.boundingBox())!;
+        const heading = (await page.locator(".news-heading").boundingBox())!;
+        const links = await navigation.locator("a").evaluateAll((nodes) => nodes.map((node) => {
+          const { x, y, width, height } = node.getBoundingClientRect();
+          return { x, y, width, height };
+        }));
         reference ??= box;
-        expect(Math.abs(box.x - reference.x), path).toBeLessThan(1);
-        expect(Math.abs(box.width - reference.width), path).toBeLessThan(1);
-        await expect(navigation.locator('[aria-current="page"]')).toHaveCount(1);
-        const content = page.locator(".news-page-section, .notices-list, .guestbook-list").first();
+        headingReference ??= heading;
+        linkReferences ??= links;
+        expect(links).toHaveLength(6);
+        for (const dimension of ["x", "y", "width", "height"] as const) {
+          expect(Math.abs(box[dimension] - reference[dimension]), `${path} navigation ${dimension}`).toBeLessThan(1);
+          expect(Math.abs(heading[dimension] - headingReference[dimension]), `${path} heading ${dimension}`).toBeLessThan(1);
+          links.forEach((link, index) => expect(Math.abs(link[dimension] - linkReferences![index]![dimension]), `${path} tab ${index} ${dimension}`).toBeLessThan(1));
+        }
+        await expect(page.locator("main h1")).toHaveCount(1);
+        await expect(page.locator("main > .button, main > .detail-heading")).toHaveCount(0);
+        const content = page.locator(".news-page-section, .notices-list, .guestbook-list, .journal-results, .review-feature").first();
         if (await content.count()) {
           const contentBox = (await content.boundingBox())!;
           expect(Math.abs(contentBox.x - box.x), path).toBeLessThan(1);
           expect(Math.abs(contentBox.width - box.width), path).toBeLessThan(1);
+          const gap = contentBox.y - box.y - box.height;
+          contentGap ??= gap;
+          expect(Math.abs(gap - contentGap), `${path} content spacing`).toBeLessThan(1);
         }
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       }
