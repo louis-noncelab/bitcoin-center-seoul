@@ -1,4 +1,4 @@
-.guestbook-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-6); margin-block: var(--space-8); }
+.guestbook-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-6); margin-block: 0 var(--space-8); }
 .guestbook-entry { min-inline-size: 0; border-top: var(--border-width) solid var(--line); scroll-margin-top: var(--space-24); }
 .guestbook-byline h2 { margin: 0; font-size: var(--text-body); font-weight: 600; overflow-wrap: anywhere; }
 .guestbook-byline p { margin-block: var(--space-2) 0; font-size: var(--text-caption); font-variant-numeric: tabular-nums; }

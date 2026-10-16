@@ -9,7 +9,7 @@ import { OrganizationJsonLd } from "@/components/seo/organization-json-ld";
 import { PageMotion } from "@/components/site/page-motion";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
-import { NewsNavigation } from "@/components/site/news-content";
+import { NewsHeader } from "@/components/site/news-content";
 import { centerContent } from "@/content/center";
 import { pageMetadata, publicSections } from "@/content/site";
 import { Link } from "@/i18n/navigation";
@@ -85,18 +85,17 @@ export default async function SectionPage({ params, searchParams }: Props) {
       <SiteHeader locale={locale} section={section} />
       <main
         id="main"
-        className={`container detail-page detail-${section}`}
+        className={`container ${section === "journal" ? "news-page" : "detail-page"} detail-${section}`}
         tabIndex={-1}
       >
-        <div className="detail-heading">
-          <Link href={section === "journal" ? "/news" : "/"} locale={locale} className="button" data-variant="secondary">
+        {section === "journal" ? <NewsHeader locale={locale} current="journal" /> : <div className="detail-heading">
+          <Link href="/" locale={locale} className="button" data-variant="secondary">
             <ArrowLeft className="icon" aria-hidden="true" />
-            {section === "journal" ? locale === "ko" ? "소식으로" : "Back to news" : locale === "ko" ? "홈으로" : "Back to home"}
+            {locale === "ko" ? "홈으로" : "Back to home"}
           </Link>
           <h1>{content.title}</h1>
           <p className="body-copy muted">{content.introduction}</p>
-        </div>
-        {section === "journal" && <NewsNavigation locale={locale} current="journal" />}
+        </div>}
         <SectionContent locale={locale} section={section} events={events} highlights={highlights} today={today} pagination={pagination} paymentHrefs={paymentHrefs} />
         <ExploreLinks locale={locale} from={section} />
         {section === "visit" && <OrganizationJsonLd locale={locale} />}

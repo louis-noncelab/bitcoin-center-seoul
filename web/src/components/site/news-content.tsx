@@ -26,7 +26,19 @@ export const newsCopy = {
 
 type NewsView = "all" | "media" | "notices" | "journal" | "reviews" | "guestbook";
 
-export function NewsNavigation({ locale, current }: { readonly locale: Locale; readonly current: NewsView }) {
+export function NewsHeader({ locale, current }: { readonly locale: Locale; readonly current: NewsView }) {
+  const t = newsCopy[locale];
+  return <>
+    <header className="news-heading">
+      <p className="news-eyebrow">NEWS & STORIES</p>
+      <h1>{t.title}{current !== "all" && <span className="sr-only">: {t[current]}</span>}</h1>
+      <p className="body-copy muted">{t.intro}</p>
+    </header>
+    <NewsNavigation locale={locale} current={current} />
+  </>;
+}
+
+function NewsNavigation({ locale, current }: { readonly locale: Locale; readonly current: NewsView }) {
   const t = newsCopy[locale];
   const links = [
     { key: "all", href: "/news" }, { key: "notices", href: "/notices" },

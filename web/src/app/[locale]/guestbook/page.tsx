@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { GuestbookEntry } from "@/components/site/guestbook";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
-import { NewsNavigation } from "@/components/site/news-content";
+import { NewsHeader } from "@/components/site/news-content";
 import { guestbookCopy } from "@/content/guestbook";
 import { pageMetadata } from "@/content/site";
 import { Link } from "@/i18n/navigation";
@@ -45,9 +45,8 @@ export async function generateMetadata(props: Props) {
 export default async function GuestbookPage(props: Props) {
   const { locale, page, records, totalPages } = await content(props);
   const t = guestbookCopy[locale];
-  return <><SiteHeader locale={locale} section="news" /><main id="main" tabIndex={-1} className="container detail-page guestbook-page">
-    <div className="detail-heading"><h1>{t.title}</h1><p className="body-copy muted">{t.intro}</p></div>
-    <NewsNavigation locale={locale} current="guestbook" />
+  return <><SiteHeader locale={locale} section="news" /><main id="main" tabIndex={-1} className="container news-page guestbook-page">
+    <NewsHeader locale={locale} current="guestbook" />
     <div className="guestbook-list">{records.map((entry) => <GuestbookEntry key={entry.id} entry={entry} locale={locale} />)}{!records.length && <p className="guestbook-empty muted">{t.empty}</p>}</div>
     {totalPages > 1 && <nav className="guestbook-pagination" aria-label={t.pagination}>
       {page > 1 && <Link href={guestbookHref(page - 1)} locale={locale} rel="prev" className="button" data-variant="secondary">{t.previous}</Link>}

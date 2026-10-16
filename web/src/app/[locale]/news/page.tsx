@@ -4,7 +4,7 @@ import { hasLocale } from "next-intl";
 import { ArrowRight } from "lucide-react";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
-import { NewsList, NewsMedia, NewsNavigation, newsCopy } from "@/components/site/news-content";
+import { NewsHeader, NewsList, NewsMedia, newsCopy } from "@/components/site/news-content";
 import { pageMetadata } from "@/content/site";
 import { routing } from "@/i18n/routing";
 import { Link } from "@/i18n/navigation";
@@ -42,8 +42,7 @@ export default async function NewsPage({ params, searchParams }: Props) {
   return <>
     <SiteHeader locale={locale} section="news" />
     <main id="main" className="container news-page" tabIndex={-1}>
-      <header className="news-heading"><p className="news-eyebrow">NEWS & STORIES</p><h1>{t.title}</h1><p className="body-copy muted">{t.intro}</p></header>
-      <NewsNavigation locale={locale} current={media ? "media" : "all"} />
+      <NewsHeader locale={locale} current={media ? "media" : "all"} />
       <section className="news-page-section" aria-labelledby="news-content-title">
         <div className="news-section-heading"><h2 id="news-content-title">{media ? t.media : t.recent}</h2>{media && <span className="news-eyebrow">MEDIA WALL</span>}</div>
         {media ? <NewsMedia highlights={highlights} locale={locale} /> : <NewsList items={items.slice(0, 12)} locale={locale} />}
