@@ -5,6 +5,7 @@ export const guestbookCopy = {
     visitor: "방문자", visitDate: "방문", more: "방명록 전체 보기", empty: "아직 공개된 방명록이 없습니다.",
     visitTitle: "다음에는 센터에서 만나요", visitCopy: "오시는 길과 운영시간을 확인해 보세요.", visitLink: "방문 안내",
     previous: "이전", next: "다음", pagination: "방명록 페이지", photo: "방문 사진",
+    read: "전체 읽기", close: "닫기", photos: "사진",
   },
   en: {
     title: "Guestbook", intro: "Notes from people who have visited the center.",
@@ -12,5 +13,6 @@ export const guestbookCopy = {
     visitor: "Visitor", visitDate: "Visited", more: "Read the guestbook", empty: "No guestbook entries have been published yet.",
     visitTitle: "See you at the center", visitCopy: "Find directions and opening hours for your visit.", visitLink: "Plan your visit",
     previous: "Previous", next: "Next", pagination: "Guestbook pages", photo: "Visit photo",
+    read: "Read note", close: "Close note", photos: "Photos",
   },
 } as const;

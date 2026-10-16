@@ -5,6 +5,7 @@ import type { Locale } from "@/i18n/routing";
 import type { GuestbookRecord } from "@/lib/guestbook-contract";
 import { guestbookPage } from "@/server/guestbook";
 import { OriginalPhoto } from "./original-photo";
+import { GuestbookNote } from "./guestbook-note";
 import "@/styles/guestbook.css";
 
 export function GuestbookEntry({ entry, locale, preview = false }: {
@@ -13,16 +14,26 @@ export function GuestbookEntry({ entry, locale, preview = false }: {
   const t = guestbookCopy[locale];
   const name = entry.visitorName || t.visitor;
   const body = locale === "en" ? entry.bodyEn || entry.body : entry.body;
-  return <article id={`entry-${entry.id}`} className={`guestbook-entry${preview ? " guestbook-entry-preview" : ""}`} aria-labelledby={`guestbook-name-${entry.id}`}>
+  const lang = locale === "en" && entry.bodyEn ? "en" : "ko";
+  const excerpt = Array.from(body);
+  const reference = `${locale === "ko" ? `${entry.volume}권` : `Volume ${entry.volume}`} / No.${entry.entryNumber}`;
+  return <article id={`entry-${entry.id}`} className={`guestbook-entry ${preview ? "guestbook-entry-preview" : "guestbook-card"}`} aria-labelledby={`guestbook-name-${entry.id}`}>
     <header className="guestbook-byline">
       <h2 id={`guestbook-name-${entry.id}`}>{name}</h2>
-      <p className="muted">{locale === "ko" ? `${entry.volume}권` : `Volume ${entry.volume}`} / No.{entry.entryNumber}</p>
+      <p className="muted">{reference}</p>
       {entry.visitDate && <p className="muted">{locale === "en" && `${t.visitDate} `}<time dateTime={entry.visitDate}>{entry.visitDate.replaceAll("-", ".")}</time>{locale === "ko" && ` ${t.visitDate}`}</p>}
     </header>
     <div className="guestbook-entry-content">
-      <p className="guestbook-body" lang={locale === "en" && entry.bodyEn ? "en" : "ko"}>{body}</p>
-      {preview ? <Link href={`/guestbook#entry-${entry.id}`} locale={locale} className="section-link" aria-label={locale === "ko" ? `${name} 방명록 읽기` : `Read ${name}’s note`}>{locale === "ko" ? "계속 읽기" : "Read more"}<ArrowRight className="icon" aria-hidden="true" /></Link>
-        : entry.images.length > 0 && <div className="guestbook-photos">{entry.images.map((image, index) => <figure key={image}><OriginalPhoto src={image} alt={`${name}, ${t.photo} ${index + 1}`} /></figure>)}</div>}
+      {preview ? <>
+        <p className="guestbook-body" lang={lang}>{body}</p>
+        <Link href={`/guestbook#entry-${entry.id}`} locale={locale} className="section-link" aria-label={locale === "ko" ? `${name} 방명록 읽기` : `Read ${name}’s note`}>{locale === "ko" ? "계속 읽기" : "Read more"}<ArrowRight className="icon" aria-hidden="true" /></Link>
+      </> : <>
+        <p className="guestbook-excerpt" lang={lang}>{excerpt.slice(0, 180).join("")}{excerpt.length > 180 && "…"}</p>
+        <GuestbookNote id={entry.id} name={name} reference={reference} locale={locale} photoCount={entry.images.length}>
+          <p className="guestbook-body" lang={lang}>{body}</p>
+          {entry.images.length > 0 && <div className="guestbook-photos">{entry.images.map((image, index) => <figure key={image}><OriginalPhoto src={image} alt={`${name}, ${t.photo} ${index + 1}`} /></figure>)}</div>}
+        </GuestbookNote>
+      </>}
     </div>
   </article>;
 }
