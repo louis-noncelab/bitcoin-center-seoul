@@ -6,9 +6,9 @@ import { Dialog } from "@/components/ui/confirmation-dialog";
 import { guestbookCopy } from "@/content/guestbook";
 import type { Locale } from "@/i18n/routing";
 
-export function GuestbookNote({ id, name, reference, locale, photoCount, children }: {
+export function GuestbookNote({ id, name, reference, locale, photoCount, thumbnail, children }: {
   readonly id: number; readonly name: string; readonly locale: Locale;
-  readonly reference: string; readonly photoCount: number; readonly children: ReactNode;
+  readonly reference: string; readonly photoCount: number; readonly thumbnail: ReactNode; readonly children: ReactNode;
 }) {
   const summary = useRef<HTMLElement>(null);
   const details = useRef<HTMLDetailsElement>(null);
@@ -33,8 +33,15 @@ export function GuestbookNote({ id, name, reference, locale, photoCount, childre
     window.addEventListener("hashchange", revealLinkedNote);
     return () => window.removeEventListener("hashchange", revealLinkedNote);
   }, [id]);
-  return <><details ref={details} className="guestbook-note">
-    <summary ref={summary} onClick={(event) => { event.preventDefault(); if (details.current) details.current.open = false; summary.current?.focus({ preventScroll: true }); setOpen(true); }}>
+  function readNote(trigger: HTMLElement) {
+    if (details.current) details.current.open = false;
+    trigger.focus({ preventScroll: true });
+    setOpen(true);
+  }
+  return <>
+    {thumbnail && <button type="button" className="guestbook-thumbnail" aria-label={`${t.read}: ${name}, ${t.photo}`} onClick={(event) => readNote(event.currentTarget)}>{thumbnail}</button>}
+    <details ref={details} className="guestbook-note">
+    <summary ref={summary} onClick={(event) => { event.preventDefault(); readNote(event.currentTarget); }}>
       <span>{t.read}</span>
       <span className="sr-only">: {name}</span>
       {photoCount > 0 && <span className="guestbook-photo-count">{t.photos} {photoCount}</span>}

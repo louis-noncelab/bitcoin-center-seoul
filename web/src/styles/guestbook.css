@@ -20,9 +20,13 @@
 .guestbook-entry-preview .guestbook-body { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .guestbook-entry-preview .section-link { margin-top: auto; align-self: start; }
 .guestbook-card { padding: var(--space-5); border: var(--border-width) solid var(--line); border-radius: var(--radius-panel); background: var(--canvas); }
-.guestbook-excerpt { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; min-block-size: 4lh; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--text-small); line-height: var(--leading-body); }
-.guestbook-card:has(.guestbook-note[open]) .guestbook-excerpt { display: none; }
-.guestbook-note { margin-block-start: auto; }
+.guestbook-card .guestbook-entry-content { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: 1fr auto; }
+.guestbook-card .guestbook-entry-content:has(.guestbook-thumbnail) { grid-template-columns: minmax(0, 1fr) min(40%, var(--space-32)); }
+.guestbook-excerpt { grid-column: 1; grid-row: 1; align-self: start; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; min-block-size: 4lh; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--text-small); line-height: var(--leading-body); }
+.guestbook-thumbnail { grid-column: 2; grid-row: 1; align-self: start; position: relative; inline-size: 100%; aspect-ratio: var(--ratio-portrait); padding: 0; border: 0; border-radius: var(--radius-control); overflow: hidden; background: var(--surface); cursor: zoom-in; }
+.guestbook-thumbnail img { object-fit: contain; }
+.guestbook-card:has(.guestbook-note[open]) :is(.guestbook-excerpt, .guestbook-thumbnail) { display: none; }
+.guestbook-note { grid-column: 1 / -1; grid-row: 2; margin-block-start: auto; }
 .guestbook-note > summary { display: flex; align-items: center; gap: var(--space-2); min-block-size: var(--control-height); list-style: none; cursor: pointer; color: var(--ink); font-size: var(--text-small); }
 .guestbook-note > summary::-webkit-details-marker { display: none; }
 .guestbook-note > summary:hover { color: var(--blue-ink); }

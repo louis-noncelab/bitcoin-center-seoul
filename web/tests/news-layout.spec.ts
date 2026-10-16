@@ -126,6 +126,19 @@ for (const locale of ["ko", "en"]) {
     await expect(reader).toBeVisible();
     await reader.getByRole("button").click();
     await expect(reader).not.toBeVisible();
+    const photoButton = cards.locator(".guestbook-thumbnail").first();
+    await expect(photoButton).toBeVisible();
+    const photo = photoButton.locator("img");
+    await expect(photo).toHaveJSProperty("complete", true);
+    expect(await photo.evaluate((image) => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+    const source = await photo.getAttribute("src");
+    await photoButton.focus();
+    await page.keyboard.press("Enter");
+    await expect(reader).toBeVisible();
+    await expect(reader.locator(".guestbook-photos img").first()).toHaveAttribute("src", source!);
+    await page.keyboard.press("Escape");
+    await expect(reader).not.toBeVisible();
+    await expect(photoButton).toBeFocused();
   });
 }
 
