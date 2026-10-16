@@ -17,7 +17,7 @@
 .event-card-list { display: grid; gap: var(--space-3); margin: 0; padding: 0 0 0 var(--space-5); border-inline-start: var(--border-width) solid var(--line); list-style: none; }
 .event-card {
   display: grid;
-  grid-template-columns: var(--space-24) minmax(0, 1fr) var(--space-24);
+  grid-template-columns: var(--space-32) minmax(0, 1fr) var(--space-24);
   align-items: center;
   gap: var(--space-5);
   min-block-size: var(--space-24);
@@ -29,7 +29,7 @@
   color: var(--ink);
   text-decoration: none;
 }
-.event-card:not(:has(.event-card-photo)) { grid-template-columns: var(--space-24) minmax(0, 1fr); }
+.event-card:not(:has(.event-card-photo)) { grid-template-columns: var(--space-32) minmax(0, 1fr); }
 .event-card-time { font-size: var(--text-small); line-height: var(--leading-small); color: var(--muted); font-variant-numeric: tabular-nums; }
 .event-card-copy { display: grid; gap: var(--space-2); min-inline-size: 0; }
 .event-card-copy > strong { font-size: var(--text-title); font-weight: var(--weight-semibold); line-height: var(--leading-small); }
