@@ -6,8 +6,8 @@ import { requireResourceAccess } from "@/server/orders/access";
 
 export async function requirePaymentAccess(request: Request, paymentId: string) {
   const payment = await prisma.payment.findUnique({ where: { id: paymentId }, include: { order: true } });
-  if (!payment) throw new HttpError(404, "PAYMENT_NOT_FOUND", "결제를 찾을 수 없습니다. / Payment not found.");
-  if (!payment.order) throw new HttpError(404, "PAYMENT_NOT_FOUND", "결제를 찾을 수 없습니다. / Payment not found.");
+  if (!payment) throw new HttpError(404, "PAYMENT_NOT_FOUND", "결제를 찾을 수 없습니다 / Payment not found");
+  if (!payment.order) throw new HttpError(404, "PAYMENT_NOT_FOUND", "결제를 찾을 수 없습니다 / Payment not found");
   await requireResourceAccess(request, { ...payment.order, kind: "order" });
   return payment;
 }

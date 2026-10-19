@@ -14,21 +14,21 @@ export async function cancelFreeOrder(orderId: string, input: z.infer<typeof can
     await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${orderId} FOR UPDATE`;
     const order = await tx.order.findUnique({ where: { id: orderId }, include: orderIncludes });
     if (!order) throw new HttpError(404, "NOT_FOUND", "Order not found.");
-    if (order.privacyRedactedAt) throw new HttpError(409, "PRIVACY_REDACTED", "개인정보가 삭제된 신청은 변경할 수 없습니다.");
+    if (order.privacyRedactedAt) throw new HttpError(409, "PRIVACY_REDACTED", "개인정보가 삭제된 신청은 변경할 수 없습니다");
     const freeRegistration = order.amountSats === 0n && order.amountKrw === 0n && order.payments.length === 0
       && order.items.length > 0 && order.items.every((item) => ticketEventId(item.sku) !== null && item.priceKind === "FREE" && item.amountSats === 0n);
-    if (!freeRegistration) throw new HttpError(409, "INVALID_STATE", "무료 행사 신청만 결제 없이 취소할 수 있습니다.");
+    if (!freeRegistration) throw new HttpError(409, "INVALID_STATE", "무료 행사 신청만 결제 없이 취소할 수 있습니다");
     if (order.status === "CANCELLED") {
       const retry = await tx.auditLog.findFirst({ where: {
         action: "order.free.cancelled", actorId, targetType: "Order", targetId: orderId,
         summary: { path: ["reason"], equals: input.reason },
       } });
       if (retry) return orderView(order);
-      throw new HttpError(409, "INVALID_STATE", "이미 취소된 신청입니다.");
+      throw new HttpError(409, "INVALID_STATE", "이미 취소된 신청입니다");
     }
     if (order.status !== "PAID" || order.refundStatus !== "NONE" || order.checkedInAt
       || !["UNFULFILLED", "READY"].includes(order.fulfillmentStatus)) {
-      throw new HttpError(409, "INVALID_STATE", "입장 처리 전 확정된 무료 신청만 취소할 수 있습니다.");
+      throw new HttpError(409, "INVALID_STATE", "입장 처리 전 확정된 무료 신청만 취소할 수 있습니다");
     }
     for (const item of [...order.items].sort((a, b) => a.sku.localeCompare(b.sku))) {
       await tx.$queryRaw`SELECT id FROM "ProductVariant" WHERE id = ${item.variantId} FOR UPDATE`;

@@ -5,7 +5,7 @@ const requiredText = (maximum: number) => z.string().trim().min(1).max(maximum);
 const optionalText = (maximum: number) => z.string().trim().max(maximum);
 export const contentSlugSchema = z.string().trim().toLowerCase().max(100).refine(
   (value) => value === "" || (/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) && /[a-z]/.test(value)),
-  "주소는 영문 소문자, 숫자, 하이픈으로 입력하고 영문자를 하나 이상 포함해주세요.",
+  "주소는 영문 소문자, 숫자, 하이픈으로 입력하고 영문자를 하나 이상 포함해주세요",
 ).default("");
 export const isCalendarDate = (value: string): boolean => {
   const match = /^(\d{4})[-.](\d{2})[-.](\d{2})$/.exec(value.trim());
@@ -19,13 +19,13 @@ export const isCalendarDate = (value: string): boolean => {
 const date = z
   .string()
   .max(32)
-  .refine(isCalendarDate, "날짜 형식이 올바르지 않습니다.");
+  .refine(isCalendarDate, "날짜 형식이 올바르지 않습니다");
 const optionalDate = z
   .string()
   .max(32)
   .refine(
     (value) => value === "" || isCalendarDate(value),
-    "날짜 형식이 올바르지 않습니다.",
+    "날짜 형식이 올바르지 않습니다",
   );
 export const imagePathSchema = z
   .string()
@@ -36,7 +36,7 @@ export const imagePathSchema = z
       /^\/images\/(?:uploads|events\/uploads|highlights\/uploads)\/(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.(?:avif|gif|jpe?g|png|webp)$/i.test(
         value,
       ),
-    "이미지 경로가 올바르지 않습니다.",
+    "이미지 경로가 올바르지 않습니다",
   );
 export const externalLink = z
   .string()
@@ -50,11 +50,11 @@ export const externalLink = z
       if (error instanceof TypeError) return false;
       throw error;
     }
-  }, "링크는 http 또는 https URL이어야 합니다.");
+  }, "링크는 http 또는 https URL이어야 합니다");
 export const contentImagesSchema = z
-  .array(imagePathSchema.refine((value) => value !== "", "빈 이미지 경로는 사용할 수 없습니다."))
+  .array(imagePathSchema.refine((value) => value !== "", "빈 이미지 경로는 사용할 수 없습니다"))
   .max(12)
-  .refine((values) => new Set(values).size === values.length, "같은 이미지를 중복해서 사용할 수 없습니다.");
+  .refine((values) => new Set(values).size === values.length, "같은 이미지를 중복해서 사용할 수 없습니다");
 
 const eventFields = {
   registrationClosed: z.boolean().optional(),
@@ -71,8 +71,8 @@ const eventFields = {
   descriptionEn: requiredText(20_000),
   image: imagePathSchema,
   link: externalLink,
-  ticketPriceKrw: z.string().trim().regex(/^$|^(?:0|[1-9]\d{0,8})$/, "참가비는 0원 이상의 정수로 입력해 주세요.").default(""),
-  ticketPriceSats: z.string().trim().regex(/^$|^(?:0|[1-9]\d{0,14})$/, "참가비는 0 sats 이상의 정수로 입력해 주세요.").default(""),
+  ticketPriceKrw: z.string().trim().regex(/^$|^(?:0|[1-9]\d{0,8})$/, "참가비는 0원 이상의 정수로 입력해 주세요").default(""),
+  ticketPriceSats: z.string().trim().regex(/^$|^(?:0|[1-9]\d{0,14})$/, "참가비는 0 sats 이상의 정수로 입력해 주세요").default(""),
   ticketCapacity: z.number().int().min(0).max(100_000).default(0),
   externalPayment: z.boolean().default(true),
   isOnline: z.boolean().default(false),
@@ -83,10 +83,10 @@ const eventFields = {
 } as const;
 
 const ticketFieldsConsistent = (event: { readonly externalPayment: boolean; readonly ticketPriceKrw: string; readonly ticketPriceSats: string; readonly ticketCapacity: number }, context: z.RefinementCtx) => {
-  if (event.ticketPriceKrw && event.ticketPriceSats) context.addIssue({ code: "custom", path: ["ticketPriceSats"], message: "참가비는 원화 또는 사토시 중 한 단위로 입력해 주세요." });
+  if (event.ticketPriceKrw && event.ticketPriceSats) context.addIssue({ code: "custom", path: ["ticketPriceSats"], message: "참가비는 원화 또는 사토시 중 한 단위로 입력해 주세요" });
   if (event.externalPayment) return;
-  if (!event.ticketPriceKrw && !event.ticketPriceSats) context.addIssue({ code: "custom", path: ["ticketPriceKrw"], message: "센터 신청을 쓰려면 참가비를 입력해 주세요." });
-  if (event.ticketCapacity < 1) context.addIssue({ code: "custom", path: ["ticketCapacity"], message: "센터 신청을 쓰려면 정원을 1명 이상 입력해 주세요." });
+  if (!event.ticketPriceKrw && !event.ticketPriceSats) context.addIssue({ code: "custom", path: ["ticketPriceKrw"], message: "센터 신청을 쓰려면 참가비를 입력해 주세요" });
+  if (event.ticketCapacity < 1) context.addIssue({ code: "custom", path: ["ticketCapacity"], message: "센터 신청을 쓰려면 정원을 1명 이상 입력해 주세요" });
 };
 
 const highlightFields = {
@@ -124,10 +124,10 @@ const validateHighlightPeriod = (
   const validSingle = single && !start && !end;
   const validPeriod = !single && period;
   if (!validSingle && !validPeriod) {
-    context.addIssue({ code: "custom", path: ["date"], message: "단일 날짜 또는 시작일과 종료일 중 하나만 입력해주세요." });
+    context.addIssue({ code: "custom", path: ["date"], message: "단일 날짜 또는 시작일과 종료일 중 하나만 입력해주세요" });
   }
   if (period && value.endDate.trim().replaceAll(".", "-") < value.startDate.trim().replaceAll(".", "-")) {
-    context.addIssue({ code: "custom", path: ["endDate"], message: "종료일은 시작일보다 빠를 수 없습니다." });
+    context.addIssue({ code: "custom", path: ["endDate"], message: "종료일은 시작일보다 빠를 수 없습니다" });
   }
 };
 
@@ -151,8 +151,8 @@ export const highlightRecordSchema = z
   .superRefine(validateHighlightPeriod);
 
 export const eventInputSchema = z.object(eventFields).strict().superRefine((event, context) => {
-  if (event.isOnline && event.onlineUrl.length === 0) context.addIssue({ code: "custom", path: ["onlineUrl"], message: "온라인 밋업은 참여 링크가 필요합니다." });
-  if (event.venueType === "external" && !event.isOnline && event.location.length === 0) context.addIssue({ code: "custom", path: ["location"], message: "외부 장소를 입력해 주세요." });
+  if (event.isOnline && event.onlineUrl.length === 0) context.addIssue({ code: "custom", path: ["onlineUrl"], message: "온라인 밋업은 참여 링크가 필요합니다" });
+  if (event.venueType === "external" && !event.isOnline && event.location.length === 0) context.addIssue({ code: "custom", path: ["location"], message: "외부 장소를 입력해 주세요" });
   ticketFieldsConsistent(event, context);
 });
 export const highlightInputSchema = z.object(highlightFields).strict().superRefine(validateHighlightPeriod);

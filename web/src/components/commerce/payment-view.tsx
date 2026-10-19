@@ -85,18 +85,18 @@ export function PaymentView({ id, locale }: { readonly id: string; readonly loca
     ? (ko ? "결제 요청을 만드는 중…" : "Creating the payment request…")
     : payment?.status === "PROCESSING"
       ? (ko ? "입금을 확인하는 중…" : "Confirming the payment…")
-      : (ko ? "입금을 기다리는 중… 결제되면 이 화면이 확인 페이지로 바뀝니다." : "Waiting for payment… this page opens the confirmation when it arrives.");
+      : (ko ? "입금을 기다리는 중… 결제되면 이 화면이 확인 페이지로 바뀝니다" : "Waiting for payment… this page opens the confirmation when it arrives");
   const payable = payment?.status === "PENDING" && payment.mode !== "REVIEW" && !payment.review && !payment.creationUnknown && !expired;
   return <div className="commerce-payment form-stack">
     {Boolean(error) && <RequestError error={error} locale={locale} returnTo={`/${locale}/payments/${id}`} />}
     {payment ? <>
       <div className="commerce-status-heading"><span className="caption commerce-payment-label"><Bitcoin size={24} aria-hidden="true" />{ko ? "비트코인 결제" : "Bitcoin payment"}</span><h2 aria-live="polite" aria-atomic="true">{statusLabels[locale][payment.status]}</h2><p className="commerce-payment-amount">{bitcoin(payment.amountSats, locale, unit, rate)}</p></div>
-      {payment.mode === "REVIEW" && <FormNotice kind="info"><strong>{ko ? "로컬 검토 모드. 실제 비트코인을 보내지 마세요." : "Local review mode. Do not send real Bitcoin."}</strong><p>{ko ? "결제 상태는 검토용 제공자에서 확인합니다." : "Payment status is provided by the review service."}</p></FormNotice>}
-      {payment.status === "PAID" && <FormNotice kind="success">{ko ? "결제가 확인되었습니다. 확인 페이지에서 신청 또는 주문 내역을 확인해 주세요." : "Payment has been confirmed. Open the confirmation page for your registration or order details."}</FormNotice>}
-      {payment.status === "PROCESSING" && <FormNotice kind="info">{ko ? "전송이 감지되어 확인 중입니다. 같은 금액을 다시 보내지\u00a0마세요." : "Your payment was detected and is being confirmed. Do not send it again."}</FormNotice>}
-      {(payment.status === "REVIEW" || payment.creationUnknown) && <FormNotice kind="info">{ko ? "결제 결과를 운영자가 확인해야 합니다. 추가 송금이나 새 결제를 진행하기 전에 센터로 문의해 주세요." : "This payment needs review. Contact the center before sending more Bitcoin or starting another payment."}</FormNotice>}
-      {(payment.status === "EXPIRED" || expired && payment.status === "PENDING") && <FormNotice kind="info">{ko ? "결제 기한이 지났습니다. 기존 요청으로 송금하지 말고 현재 상태를 다시 확인해 주세요." : "The payment deadline has passed. Do not pay the old request. Check the current status below."}</FormNotice>}
-      {payment.status === "FAILED" && <FormNotice>{ko ? "결제 요청을 만들지 못했습니다. 내역을 확인하고 센터로 문의해 주세요." : "The payment request could not be created. Check your details and contact the center."}</FormNotice>}
+      {payment.mode === "REVIEW" && <FormNotice kind="info"><strong>{ko ? "로컬 검토 모드 실제 비트코인을 보내지 마세요" : "Local review mode Do not send real Bitcoin"}</strong><p>{ko ? "결제 상태는 검토용 제공자에서 확인합니다" : "Payment status is provided by the review service"}</p></FormNotice>}
+      {payment.status === "PAID" && <FormNotice kind="success">{ko ? "결제가 확인되었습니다 확인 페이지에서 신청 또는 주문 내역을 확인해 주세요" : "Payment has been confirmed Open the confirmation page for your registration or order details"}</FormNotice>}
+      {payment.status === "PROCESSING" && <FormNotice kind="info">{ko ? "전송이 감지되어 확인 중입니다 같은 금액을 다시 보내지\u00a0마세요" : "Your payment was detected and is being confirmed Do not send it again"}</FormNotice>}
+      {(payment.status === "REVIEW" || payment.creationUnknown) && <FormNotice kind="info">{ko ? "결제 결과를 운영자가 확인해야 합니다 추가 송금이나 새 결제를 진행하기 전에 센터로 문의해 주세요" : "This payment needs review Contact the center before sending more Bitcoin or starting another payment"}</FormNotice>}
+      {(payment.status === "EXPIRED" || expired && payment.status === "PENDING") && <FormNotice kind="info">{ko ? "결제 기한이 지났습니다 기존 요청으로 송금하지 말고 현재 상태를 다시 확인해 주세요" : "The payment deadline has passed Do not pay the old request Check the current status below"}</FormNotice>}
+      {payment.status === "FAILED" && <FormNotice>{ko ? "결제 요청을 만들지 못했습니다 내역을 확인하고 센터로 문의해 주세요" : "The payment request could not be created Check your details and contact the center"}</FormNotice>}
       {waiting && <p className="commerce-payment-wait" role="status"><ButtonSpinner />{waitLabel}</p>}
       {payment.status === "NEW" && !payment.creationUnknown && <Button disabled={creating} onClick={async () => {
         if (busy.current) return;

@@ -35,7 +35,7 @@ export async function apiRequest<T>(
       const error = parsed.data.error;
       throw new ApiError(error.code, error.message, result.status, error.fields);
     }
-    throw new ApiError("REQUEST_FAILED", "처리하지 못했습니다. / The request could not be completed.", result.status);
+    throw new ApiError("REQUEST_FAILED", "처리하지 못했습니다 / The request could not be completed", result.status);
   }
   return z.object({ data: schema }).parse(body).data;
 }
@@ -45,40 +45,40 @@ export function jsonRequest(body: unknown, method = "POST"): RequestInit {
 }
 
 const fieldFallbacks: Readonly<Record<string, readonly [string, string]>> = {
-  name: ["이름을 입력해 주세요.", "Enter your name."],
-  email: ["이메일 주소를 확인해 주세요.", "Check your email address."],
-  password: ["비밀번호를 확인해 주세요.", "Check your password."],
-  currentPassword: ["현재 비밀번호를 확인해 주세요.", "Check your current password."],
-  confirmPassword: ["새 비밀번호 확인이 일치하지 않습니다.", "The new password confirmation does not match."],
-  "customer.name": ["이름을 입력해 주세요.", "Enter your name."],
-  "customer.email": ["이메일 주소를 확인해 주세요.", "Check your email address."],
-  "customer.phone": ["전화번호를 확인해 주세요.", "Check your phone number."],
-  countryCode: ["배송 국가를 선택해 주세요.", "Select a delivery country."],
-  "address.line1": ["배송지 주소를 입력해 주세요.", "Enter the street address."],
-  "address.line2": ["상세 주소를 확인해 주세요.", "Check the apartment or suite."],
-  "address.city": ["시, 군, 구를 입력해 주세요.", "Enter the city."],
-  "address.region": ["시 또는 도 또는 주를 확인해 주세요.", "Check the state or province."],
-  "address.postalCode": ["우편번호를 확인해 주세요.", "Check the postal code."],
-  notes: ["요청 사항은 500자 이내로 입력해 주세요.", "Keep order notes to 500 characters."],
-  attendees: ["참가 인원을 확인해 주세요.", "Check the number of attendees."],
-  scheduleStartsAt: ["회차를 선택해 주세요.", "Choose a session."],
-  memo: ["요청 사항을 입력해 주세요.", "Enter the requested note."],
-  company: ["소속 또는 단체명을 확인해 주세요.", "Check the organization name."],
-  type: ["문의 유형을 선택해 주세요.", "Choose an inquiry type."],
-  message: ["문의 내용을 입력해 주세요.", "Enter your message."],
-  phone: ["전화번호를 확인해 주세요.", "Check the phone number."],
-  website: ["웹사이트 주소를 확인해 주세요.", "Check the website URL."],
-  timeline: ["희망 일정을 확인해 주세요.", "Check the timeline."],
-  authorName: ["이름을 입력해 주세요.", "Enter your name."],
-  authorEmail: ["이메일 주소를 확인해 주세요.", "Check your email address."],
-  rating: ["별점을 1–5점으로 선택해 주세요.", "Choose a rating from 1 to 5."],
-  body: ["후기 내용을 입력해 주세요.", "Enter your review."],
-  question: ["문의 내용을 입력해 주세요.", "Enter your question."],
-  adminReply: ["답변을 입력해 주세요.", "Enter a reply."],
-  answer: ["답변을 입력해 주세요.", "Enter an answer."],
+  name: ["이름을 입력해 주세요", "Enter your name"],
+  email: ["이메일 주소를 확인해 주세요", "Check your email address"],
+  password: ["비밀번호를 확인해 주세요", "Check your password"],
+  currentPassword: ["현재 비밀번호를 확인해 주세요", "Check your current password"],
+  confirmPassword: ["새 비밀번호 확인이 일치하지 않습니다", "The new password confirmation does not match"],
+  "customer.name": ["이름을 입력해 주세요", "Enter your name"],
+  "customer.email": ["이메일 주소를 확인해 주세요", "Check your email address"],
+  "customer.phone": ["전화번호를 확인해 주세요", "Check your phone number"],
+  countryCode: ["배송 국가를 선택해 주세요", "Select a delivery country"],
+  "address.line1": ["배송지 주소를 입력해 주세요", "Enter the street address"],
+  "address.line2": ["상세 주소를 확인해 주세요", "Check the apartment or suite"],
+  "address.city": ["시, 군, 구를 입력해 주세요", "Enter the city"],
+  "address.region": ["시 또는 도 또는 주를 확인해 주세요", "Check the state or province"],
+  "address.postalCode": ["우편번호를 확인해 주세요", "Check the postal code"],
+  notes: ["요청 사항은 500자 이내로 입력해 주세요", "Keep order notes to 500 characters"],
+  attendees: ["참가 인원을 확인해 주세요", "Check the number of attendees"],
+  scheduleStartsAt: ["회차를 선택해 주세요", "Choose a session"],
+  memo: ["요청 사항을 입력해 주세요", "Enter the requested note"],
+  company: ["소속 또는 단체명을 확인해 주세요", "Check the organization name"],
+  type: ["문의 유형을 선택해 주세요", "Choose an inquiry type"],
+  message: ["문의 내용을 입력해 주세요", "Enter your message"],
+  phone: ["전화번호를 확인해 주세요", "Check the phone number"],
+  website: ["웹사이트 주소를 확인해 주세요", "Check the website URL"],
+  timeline: ["희망 일정을 확인해 주세요", "Check the timeline"],
+  authorName: ["이름을 입력해 주세요", "Enter your name"],
+  authorEmail: ["이메일 주소를 확인해 주세요", "Check your email address"],
+  rating: ["별점을 1–5점으로 선택해 주세요", "Choose a rating from 1 to 5"],
+  body: ["후기 내용을 입력해 주세요", "Enter your review"],
+  question: ["문의 내용을 입력해 주세요", "Enter your question"],
+  adminReply: ["답변을 입력해 주세요", "Enter a reply"],
+  answer: ["답변을 입력해 주세요", "Enter an answer"],
 };
 
-const genericFieldFallback = ["입력한 항목을 확인해 주세요.", "Check the information you entered."] as const;
+const genericFieldFallback = ["입력한 항목을 확인해 주세요", "Check the information you entered"] as const;
 
 export function apiFieldMessage(error: ApiError, field: string, locale: Locale): string {
   const detail = error.fields[field];
@@ -97,6 +97,6 @@ export function apiErrorMessage(error: unknown, locale: Locale): string {
     return bilingual[locale === "ko" ? 0 : 1] ?? error.message;
   }
   return locale === "ko"
-    ? "연결을 확인한 뒤 다시 시도해 주세요. 입력한 내용은 그대로 남아 있습니다."
-    : "Check your connection and try again. Your entries have been kept.";
+    ? "연결을 확인한 뒤 다시 시도해 주세요 입력한 내용은 그대로 남아 있습니다"
+    : "Check your connection and try again Your entries have been kept";
 }

@@ -34,7 +34,7 @@ export function CheckinScanner({ disabled, onCode }: { readonly disabled: boolea
   async function start() {
     setError("");
     const reader = detector();
-    if (!reader) { setError("이 브라우저는 카메라 QR을 바로 읽지 못합니다. 아래에 확인 코드를 입력해 주세요."); return; }
+    if (!reader) { setError("이 브라우저는 카메라 QR을 바로 읽지 못합니다 아래에 확인 코드를 입력해 주세요"); return; }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: "environment" } });
       streamRef.current = stream;
@@ -57,7 +57,7 @@ export function CheckinScanner({ disabled, onCode }: { readonly disabled: boolea
       };
       frameRef.current = requestAnimationFrame(() => void scan());
     } catch {
-      setError("카메라 권한이 필요합니다.");
+      setError("카메라 권한이 필요합니다");
       stop();
     }
   }

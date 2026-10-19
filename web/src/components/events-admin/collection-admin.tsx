@@ -63,7 +63,7 @@ export function CollectionAdmin() {
   function uploadPending(value: boolean) { uploads.current += value ? 1 : -1; setUploading(uploads.current > 0); }
   async function leave() {
     if (busy.current || uploads.current > 0) return false;
-    const accepted = !dirty || await confirm({ title: "변경사항을 버릴까요?", description: "저장하지 않은 변경사항은 사라집니다.", confirmLabel: "버리기" });
+    const accepted = !dirty || await confirm({ title: "변경사항을 버릴까요?", description: "저장하지 않은 변경사항은 사라집니다", confirmLabel: "버리기" });
     return accepted && !busy.current && uploads.current === 0;
   }
   useRegisterLeave(leave);
@@ -76,23 +76,23 @@ export function CollectionAdmin() {
     if (busy.current || expired || uploads.current > 0) return;
     const form = new FormData(event.currentTarget);
     const input = collectionInputSchema.safeParse({ ...Object.fromEntries(form), images, soldOut: form.has("soldOut"), sort_order: Number(form.get("sort_order")), is_active: form.has("is_active") ? 1 : 0 });
-    if (!input.success) { setError(input.error.issues[0]?.message ?? "입력 내용을 확인해 주세요."); return; }
+    if (!input.success) { setError(input.error.issues[0]?.message ?? "입력 내용을 확인해 주세요"); return; }
     busy.current = true; setPending(true); setError("");
     try {
       await adminRequest(`/api/admin/collection${selected ? `/${selected.id}` : ""}`, collectionRecordSchema, jsonBody(input.data, selected ? "PUT" : "POST", selected?.revision));
       setFilter((current) => current === "all" ? current : input.data.kind);
-      setEditing(false); setDirty(false); setMessage("저장했습니다."); setRevision((value) => value + 1);
+      setEditing(false); setDirty(false); setMessage("저장했습니다"); setRevision((value) => value + 1);
     } catch (caught) { handleError(caught); }
     finally { busy.current = false; setPending(false); }
   }
   async function remove(record: CollectionRecord) {
     if (busy.current || uploads.current > 0) return;
-    const accepted = await confirm({ title: "항목 삭제", description: `“${record.title}” 항목을 삭제할까요? 삭제한 내용은 복구할 수 없습니다.`, confirmLabel: "삭제" });
+    const accepted = await confirm({ title: "항목 삭제", description: `“${record.title}” 항목을 삭제할까요? 삭제한 내용은 복구할 수 없습니다`, confirmLabel: "삭제" });
     if (!accepted || busy.current || uploads.current > 0) return;
     busy.current = true; setPending(true); setError("");
     try {
       await adminRequest(`/api/admin/collection/${record.id}`, z.object({ deleted: z.literal(true) }), { method: "DELETE", headers: revisionHeaders(record.revision) });
-      setMessage("삭제했습니다."); setRevision((value) => value + 1);
+      setMessage("삭제했습니다"); setRevision((value) => value + 1);
     } catch (caught) { handleError(caught); }
     finally { busy.current = false; setPending(false); }
   }
@@ -101,7 +101,7 @@ export function CollectionAdmin() {
   if (!authenticated) return <><LoginForm locale="ko" onLogin={() => { setError(""); setRevision((value) => value + 1); }} /></>;
   return <div className="events-admin-workspace">
     {dialog}
-    {expired && <aside className="events-reauth"><p role="alert">세션이 만료되었습니다. 작성한 내용은 유지됩니다. 다시 로그인한 뒤 저장해 주세요.</p><LoginForm locale="ko" onLogin={() => { setExpired(false); setError(""); setRevision((value) => value + 1); }} /></aside>}
+    {expired && <aside className="events-reauth"><p role="alert">세션이 만료되었습니다 작성한 내용은 유지됩니다 다시 로그인한 뒤 저장해 주세요</p><LoginForm locale="ko" onLogin={() => { setExpired(false); setError(""); setRevision((value) => value + 1); }} /></aside>}
     {error && <p className="events-error" role="alert">{error}</p>}<p role="status">{message}</p>
     {editing ? <form className="events-form" key={selected?.id ?? "new"} onSubmit={(event) => void save(event)} onChange={() => setDirty(true)}>
       <h2>{selected ? "항목 수정" : "항목 등록"}</h2>
@@ -112,9 +112,9 @@ export function CollectionAdmin() {
           <label>저자 또는 제작사 (선택)<FormControl><input name="creator" maxLength={200} defaultValue={selected?.creator ?? ""} /></FormControl></label>
         </div>
         <label>URL 슬러그 (공개 보드게임 필수)<FormControl><input name="slug" defaultValue={selected?.slug ?? ""} maxLength={100} pattern="(?=.*[a-z])[a-z0-9]+(-[a-z0-9]+)*" autoCapitalize="none" spellCheck={false} placeholder="bitcoin-larp" aria-describedby="collection-slug-help" /></FormControl></label>
-        <p id="collection-slug-help" className="muted">/experience/board-game/, /goods/ 또는 /collection/ 뒤에 붙는 주소입니다. 영문 소문자, 숫자, 하이픈을 사용해 주세요.</p>
-        {(editingKind === "book" || editingKind === "goods") && <p className="muted">도서와 굿즈의 가격, 재고, 결제는 상점 상품에서 관리합니다. 이 목록은 전시 소개만 담습니다.</p>}
-        {(editingKind === "boardgame" || editingKind === "artwork") && <p className="muted">보드게임과 작품은 구매하지 않습니다.</p>}
+        <p id="collection-slug-help" className="muted">/experience/board-game/, /goods/ 또는 /collection/ 뒤에 붙는 주소입니다 영문 소문자, 숫자, 하이픈을 사용해 주세요</p>
+        {(editingKind === "book" || editingKind === "goods") && <p className="muted">도서와 굿즈의 가격, 재고, 결제는 상점 상품에서 관리합니다 이 목록은 전시 소개만 담습니다</p>}
+        {(editingKind === "boardgame" || editingKind === "artwork") && <p className="muted">보드게임과 작품은 구매하지 않습니다</p>}
         <GalleryField locale="ko" images={images} onChange={(next) => { setImages(next); setDirty(true); }} onPending={uploadPending} onExpired={() => setExpired(true)} />
         <MarkdownEditor name="description" label="소개 (선택)" defaultValue={selected?.description ?? ""} rows={6} helpId="collection-markdown-help" onPending={uploadPending} onDirty={() => setDirty(true)} onExpired={() => setExpired(true)} />
         <div className="events-field-grid">
@@ -123,16 +123,16 @@ export function CollectionAdmin() {
         </div>
         <MarkdownEditor name="descriptionEn" label="영어 소개 (선택)" defaultValue={selected?.descriptionEn ?? ""} rows={4} helpId="collection-markdown-help" onPending={uploadPending} onDirty={() => setDirty(true)} onExpired={() => setExpired(true)} />
         <MarkdownHelp id="collection-markdown-help" />
-        <p className="muted">영어를 입력하지 않으면 한국어 내용이 표시됩니다. 공개하려면 대표 이미지를 등록해 주세요.</p>
+        <p className="muted">영어를 입력하지 않으면 한국어 내용이 표시됩니다 공개하려면 대표 이미지를 등록해 주세요</p>
         <label>표시 순서<FormControl><input name="sort_order" type="number" required min={-100000} max={100000} step={1} defaultValue={selected?.sort_order ?? 0} aria-describedby="collection-order-help" /></FormControl></label>
-        <p id="collection-order-help" className="muted">숫자가 작을수록 먼저 표시됩니다. 같은 순서에서는 최근 등록한 항목이 먼저 표시됩니다.</p>
+        <p id="collection-order-help" className="muted">숫자가 작을수록 먼저 표시됩니다 같은 순서에서는 최근 등록한 항목이 먼저 표시됩니다</p>
         <label className="events-checkbox"><ChoiceControl type="checkbox" name="is_active" defaultChecked={Boolean(selected?.is_active)} />공개</label>
       </fieldset>
       <div className="button-row"><Button type="submit" disabled={pending || uploading || expired}>{pending ? "저장 중…" : "저장"}</Button><Button variant="secondary" disabled={pending || uploading} onClick={() => { void leave().then((accepted) => { if (accepted) { setEditing(false); setDirty(false); setRevision((value) => value + 1); } }); }}>취소</Button></div>
     </form> : <>
       <div className="events-admin-toolbar"><h2>도서, 작품, 보드게임, 굿즈 목록</h2><Button disabled={pending || expired} onClick={() => edit(null)}>항목 등록</Button></div>
       <AdminTabs label="종류별 필터" items={filters} value={filter} onChange={setFilter} variant="quiet" />
-      <ul key={filter} className="events-admin-list collection-admin-results">{visibleRecords.map((record) => <li key={record.id}><div><h3>{record.title}</h3><p className="muted">{kindLabels[record.kind]}{record.creator ? `, ${record.creator}` : ""}, {record.is_active ? "공개" : "비공개"}, 순서 {record.sort_order}</p></div><div className="button-row">{Boolean(record.is_active) && <Link href={viewHref(record)} locale="ko" className="button" data-variant="quiet">보기</Link>}<Button variant="secondary" disabled={pending || expired} onClick={() => edit(record)}>수정</Button><Button variant="quiet" disabled={pending || expired} onClick={() => void remove(record)}>삭제</Button></div></li>)}{!visibleRecords.length && <li>{filter === "all" ? "등록된 항목이 없습니다." : "선택한 종류의 항목이 없습니다."}</li>}</ul>
+      <ul key={filter} className="events-admin-list collection-admin-results">{visibleRecords.map((record) => <li key={record.id}><div><h3>{record.title}</h3><p className="muted">{kindLabels[record.kind]}{record.creator ? `, ${record.creator}` : ""}, {record.is_active ? "공개" : "비공개"}, 순서 {record.sort_order}</p></div><div className="button-row">{Boolean(record.is_active) && <Link href={viewHref(record)} locale="ko" className="button" data-variant="quiet">보기</Link>}<Button variant="secondary" disabled={pending || expired} onClick={() => edit(record)}>수정</Button><Button variant="quiet" disabled={pending || expired} onClick={() => void remove(record)}>삭제</Button></div></li>)}{!visibleRecords.length && <li>{filter === "all" ? "등록된 항목이 없습니다" : "선택한 종류의 항목이 없습니다"}</li>}</ul>
     </>}
   </div>;
 }

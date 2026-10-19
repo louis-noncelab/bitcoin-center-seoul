@@ -29,7 +29,7 @@ export function ShippingFields({ locale, fulfillment, country, countries, onCoun
   const postalError = fieldError(error, "address.postalCode", locale);
   return <fieldset className="commerce-fieldset form-stack" disabled={fulfillment === "PICKUP"}>
     <legend>{ko ? "배송지" : "Shipping address"}</legend>
-    {destinations.length === 0 && <FormNotice kind="info">{ko ? "이 수령 방법으로 이용할 수 있는 배송지가 아직 없습니다. 다른 수령 방법을 선택하거나 센터에 문의해 주세요." : "No destinations are currently available for this delivery method. Choose another method or contact the center."}</FormNotice>}
+    {destinations.length === 0 && <FormNotice kind="info">{ko ? "이 수령 방법으로 이용할 수 있는 배송지가 아직 없습니다 다른 수령 방법을 선택하거나 센터에 문의해 주세요" : "No destinations are currently available for this delivery method Choose another method or contact the center"}</FormNotice>}
     <FormField id="shipping-country" label={ko ? "국가" : "Country"}>
       <MenuSelect id="shipping-country" autoComplete="shipping country" value={country} required aria-invalid={Boolean(countryError)} aria-describedby={countryError ? "shipping-country-error" : undefined} onChange={(event) => onCountry(event.target.value)}>
         <option value="">{ko ? "국가 선택" : "Select a country"}</option>

@@ -187,7 +187,7 @@ test.describe.serial("mobile home event discovery", () => {
       await expect(calendar.locator(".home-calendar-all")).toHaveAttribute("href", `/${locale}/programs#events`);
 
       await selectDate(calendar, dateAt(1), locale);
-      await expect(calendar.locator(".home-calendar-empty")).toHaveText(locale === "ko" ? "이날은 등록된 행사가 없어요." : "No events are scheduled for this date.");
+      await expect(calendar.locator(".home-calendar-empty")).toHaveText(locale === "ko" ? "이날은 등록된 행사가 없어요" : "No events are scheduled for this date");
       await expect(calendar.locator(".home-calendar-event")).toHaveCount(0);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
     });

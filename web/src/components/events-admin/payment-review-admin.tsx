@@ -46,7 +46,7 @@ export function PaymentReviewAdmin() {
     try {
       await adminRequest(`/api/admin/review/payments/${payment.id}`, z.unknown(),
         jsonBody({ scenario: scenario[payment.id] ?? "pending" }));
-      setMessage("제공자 응답을 적용했습니다."); setRevision((value) => value + 1);
+      setMessage("제공자 응답을 적용했습니다"); setRevision((value) => value + 1);
     } catch (caught) {
       setError(errorText(caught, "ko"));
       if (caught instanceof AdminRequestError && caught.status === 401) setExpired(true);
@@ -63,17 +63,17 @@ export function PaymentReviewAdmin() {
 
   return <div className="events-admin-workspace">
     <CommerceAdminNav current="/admin/review" disabled={pending} />
-    {expired && <aside className="events-reauth"><p role="alert">세션이 만료되었습니다. 다시 로그인한 뒤 계속해 주세요.</p><LoginForm locale="ko" onLogin={() => { setExpired(false); setError(""); setRevision((value) => value + 1); }} /></aside>}
+    {expired && <aside className="events-reauth"><p role="alert">세션이 만료되었습니다 다시 로그인한 뒤 계속해 주세요</p><LoginForm locale="ko" onLogin={() => { setExpired(false); setError(""); setRevision((value) => value + 1); }} /></aside>}
     {error && <p className="events-error" role="alert">{error}</p>}<p role="status">{message}</p>
 
     {!enabled
-      ? <p className="muted">검토 모드가 아닙니다. 이 화면은 <code>APP_MODE</code>가 review 또는 test일 때만 동작합니다.</p>
+      ? <p className="muted">검토 모드가 아닙니다 이 화면은 <code>APP_MODE</code>가 review 또는 test일 때만 동작합니다</p>
       : <>
         <div className="events-admin-toolbar"><h2>검토 결제</h2></div>
         <p className="muted">
-          돈을 쓰지 않고 결제 제공자의 응답을 골라 주문 흐름 전체를 확인합니다. 응답만 고정값으로 바꾸고,
-          실제 파서, 상태 전이와 재고 처리는 운영과 같은 경로를 그대로 탑니다. 검토 결제는 테스트넷 전용이며
-          외부 네트워크로 나가지 않습니다.
+          돈을 쓰지 않고 결제 제공자의 응답을 골라 주문 흐름 전체를 확인합니다 응답만 고정값으로 바꾸고,
+          실제 파서, 상태 전이와 재고 처리는 운영과 같은 경로를 그대로 탑니다 검토 결제는 테스트넷 전용이며
+          외부 네트워크로 나가지 않습니다
         </p>
         <ul className="events-admin-list">
           {payments.map((payment) => <li key={payment.id}>
@@ -99,7 +99,7 @@ export function PaymentReviewAdmin() {
               {payment.orderId && <Link href={`/orders/${payment.orderId}`} locale="ko" className="button" data-variant="quiet">주문 보기</Link>}
             </div>
           </li>)}
-          {!payments.length && <li>검토 결제가 없습니다. 상점에서 주문을 하나 만들면 여기에 나타납니다.</li>}
+          {!payments.length && <li>검토 결제가 없습니다 상점에서 주문을 하나 만들면 여기에 나타납니다</li>}
         </ul>
       </>}
   </div>;

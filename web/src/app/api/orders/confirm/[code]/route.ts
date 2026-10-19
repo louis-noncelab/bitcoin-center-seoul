@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request, context: { params: Promise<{ code: string }> }) {
   return handleApi(async () => {
     const { code } = await context.params;
-    if (!confirmationCodePattern.test(code)) throw new HttpError(404, "NOT_FOUND", "확인 페이지를 찾을 수 없습니다. / Confirmation not found.");
+    if (!confirmationCodePattern.test(code)) throw new HttpError(404, "NOT_FOUND", "확인 페이지를 찾을 수 없습니다 / Confirmation not found");
     await boundedRequestRateLimit(request, "order:confirm", 30, 300);
     return json(await confirmationByCode(code));
   });

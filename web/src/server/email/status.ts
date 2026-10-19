@@ -82,15 +82,15 @@ function summary(mode: "capture" | "smtp", counts: Record<EmailDeliveryStatus, n
   const waiting = counts.PENDING + counts.PROCESSING;
   if (mode === "capture") {
     const stored = counts.CAPTURED + waiting + counts.FAILED;
-    if (stored === 0 && counts.SENT === 0) return "보낼 메일이 없습니다.";
-    return `기록 모드입니다. 고객과 관리자에게 나가지 않은 메일이 ${stored}통입니다. 메일 서버가 접수한 메일은 ${counts.SENT}통입니다.`;
+    if (stored === 0 && counts.SENT === 0) return "보낼 메일이 없습니다";
+    return `기록 모드입니다 고객과 관리자에게 나가지 않은 메일이 ${stored}통입니다 메일 서버가 접수한 메일은 ${counts.SENT}통입니다`;
   }
   if (counts.FAILED > 0 || staleProcessing > 0) {
-    return `확인이 필요합니다. 실패 ${counts.FAILED}통, 멈춘 발송 ${staleProcessing}통, 대기 ${counts.PENDING}통, 서버 접수 ${counts.SENT}통.`;
+    return `확인이 필요합니다 실패 ${counts.FAILED}통, 멈춘 발송 ${staleProcessing}통, 대기 ${counts.PENDING}통, 서버 접수 ${counts.SENT}통`;
   }
-  if (waiting > 0) return `아직 보내는 중입니다. 대기 ${counts.PENDING}통, 보내는 중 ${counts.PROCESSING}통, 서버 접수 ${counts.SENT}통.`;
-  if (counts.CAPTURED > 0) return `메일 서버가 접수한 메일은 ${counts.SENT}통입니다. 기록만 남은 메일 ${counts.CAPTURED}통은 아직 나가지 않았습니다.`;
-  return `메일 서버가 접수한 메일은 ${counts.SENT}통입니다. 실패하거나 대기 중인 메일은 없습니다.`;
+  if (waiting > 0) return `아직 보내는 중입니다 대기 ${counts.PENDING}통, 보내는 중 ${counts.PROCESSING}통, 서버 접수 ${counts.SENT}통`;
+  if (counts.CAPTURED > 0) return `메일 서버가 접수한 메일은 ${counts.SENT}통입니다 기록만 남은 메일 ${counts.CAPTURED}통은 아직 나가지 않았습니다`;
+  return `메일 서버가 접수한 메일은 ${counts.SENT}통입니다 실패하거나 대기 중인 메일은 없습니다`;
 }
 
 const letterSelect = {
@@ -126,7 +126,7 @@ export async function emailDeliveryReport(): Promise<EmailDeliveryReport> {
 
 function requireSmtp(): void {
   if (getServerConfig().emailMode !== "smtp") {
-    throw new HttpError(409, "EMAIL_CAPTURE_MODE", "기록 모드에서는 메일을 보내지 않습니다.");
+    throw new HttpError(409, "EMAIL_CAPTURE_MODE", "기록 모드에서는 메일을 보내지 않습니다");
   }
 }
 
@@ -136,7 +136,7 @@ export async function retryFailedEmail(id: string, actorId: string): Promise<Ema
     where: { id, status: "FAILED" },
     data: { status: "PENDING", attempts: 0, nextAttemptAt: new Date(), claimToken: null, claimedAt: null, lastError: null },
   });
-  if (!updated.count) throw new HttpError(409, "EMAIL_NOT_FAILED", "실패한 메일만 다시 보낼 수 있습니다.");
+  if (!updated.count) throw new HttpError(409, "EMAIL_NOT_FAILED", "실패한 메일만 다시 보낼 수 있습니다");
   await prisma.auditLog.create({ data: { actorId, action: "email.retry", targetType: "EmailOutbox", targetId: id, summary: {} } });
   scheduleEmailDelivery();
   return emailDeliveryReport();

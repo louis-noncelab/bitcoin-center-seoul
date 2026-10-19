@@ -59,7 +59,7 @@ test("방명록 등록, 이미지 변환, 공개와 비공개, 충돌과 세션 
     await page.route("**/api/admin/guestbook", async (route) => { if (route.request().method() === "POST") await new Promise((resolve) => setTimeout(resolve, 700)); await route.continue(); });
     await page.getByRole("button", { name: "저장", exact: true }).click();
     await expect(page.getByRole("progressbar", { name: "방명록 처리 진행 중" })).toBeVisible();
-    await expect(page.getByText("비공개로 저장했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("비공개로 저장했습니다", { exact: true })).toBeVisible();
     const draft = (await records()).find((entry) => entry.visitorName === visitorName)!;
     id = draft.id;
     expect(draft.visitDate).toBe("");
@@ -78,7 +78,7 @@ test("방명록 등록, 이미지 변환, 공개와 비공개, 충돌과 세션 
     await expect(page.getByLabel("방문 날짜 (선택)", { exact: true })).toHaveValue("");
     await page.getByRole("radio", { name: "공개", exact: true }).check();
     await page.getByRole("button", { name: "저장", exact: true }).click();
-    await expect(page.getByText("저장했습니다. 사이트에 공개됩니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("저장했습니다 사이트에 공개됩니다", { exact: true })).toBeVisible();
     expect((await request.get(draft.images[0]!)).status()).toBe(200);
     for (const locale of ["ko", "en"]) {
       await page.goto(`/${locale}/guestbook`);
@@ -112,7 +112,7 @@ test("방명록 등록, 이미지 변환, 공개와 비공개, 충돌과 세션 
     expect((await page.request.put(`/api/admin/guestbook/${id}`, { headers: { ...headers, "if-match": `"${revision}"` }, data: { ...input, body: "다른 관리자가 먼저 저장", bodyEn: "A translated guestbook note." } })).status()).toBe(200);
     expect(await (await request.get("/en/guestbook")).text()).toContain("A translated guestbook note.");
     await page.getByRole("button", { name: "저장", exact: true }).click();
-    await expect(page.locator(".events-admin-workspace .events-error")).toContainText("다른 사람이 수정하거나 삭제했습니다.");
+    await expect(page.locator(".events-admin-workspace .events-error")).toContainText("다른 사람이 수정하거나 삭제했습니다");
     await expect(page.getByLabel("방명록 내용", { exact: true })).toHaveValue("저장 전 변경사항");
     await page.getByRole("button", { name: "최신 내용 불러오기" }).click();
     await page.getByRole("dialog").getByRole("button", { name: "버리기", exact: true }).click();
@@ -124,7 +124,7 @@ test("방명록 등록, 이미지 변환, 공개와 비공개, 충돌과 세션 
     await login();
     await expect(page.getByRole("radio", { name: "비공개", exact: true })).toBeChecked();
     await page.getByRole("button", { name: "저장", exact: true }).click();
-    await expect(page.getByText("비공개로 저장했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("비공개로 저장했습니다", { exact: true })).toBeVisible();
     expect(await (await request.get("/ko")).text()).not.toContain(visitorName);
     expect((await request.get(draft.images[0]!)).status()).toBe(404);
     await row().getByRole("button", { name: "삭제", exact: true }).click();
@@ -199,7 +199,7 @@ test("권이 달라도 번호 중복을 안내하고 작성한 내용을 유지�
     await page.getByRole("spinbutton", { name: "권 번호", exact: true }).fill("3");
     await page.getByLabel("방명록 내용", { exact: true }).fill("중복이어도 남아 있어야 하는 내용");
     await page.getByRole("button", { name: "저장", exact: true }).click();
-    await expect(page.locator(".events-admin-workspace .events-error")).toContainText("이미 사용 중인 고유번호입니다.");
+    await expect(page.locator(".events-admin-workspace .events-error")).toContainText("이미 사용 중인 고유번호입니다");
     await expect(page.getByLabel("방명록 내용", { exact: true })).toHaveValue("중복이어도 남아 있어야 하는 내용");
     await expect(page.getByRole("button", { name: "최신 내용 불러오기" })).toHaveCount(0);
     await page.setViewportSize({ width: 390, height: 844 });
@@ -208,7 +208,7 @@ test("권이 달라도 번호 중복을 안내하고 작성한 내용을 유지�
     await page.getByRole("spinbutton", { name: "고유번호", exact: true }).fill("2");
     await page.getByLabel("방문 날짜 (선택)", { exact: true }).fill("2026-10-09");
     await page.getByRole("button", { name: "저장", exact: true }).click();
-    await expect(page.getByText("비공개로 저장했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("비공개로 저장했습니다", { exact: true })).toBeVisible();
     const records = z.array(guestbookRecordSchema).parse((await (await page.request.get("/api/admin/guestbook")).json()).data);
     const saved = records.find((entry) => entry.entryNumber === 2)!;
     ids.push(saved.id);

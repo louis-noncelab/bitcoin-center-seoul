@@ -225,7 +225,7 @@ test.describe.serial("events-only HTTP API", () => {
     // Then the boundary rejects the request without exposing internals
     expect(response.status()).toBe(401);
     expect(await response.json()).toEqual({
-      error: { code: "UNAUTHORIZED", message: "관리자 인증이 필요합니다." },
+      error: { code: "UNAUTHORIZED", message: "관리자 인증이 필요합니다" },
     });
   });
 

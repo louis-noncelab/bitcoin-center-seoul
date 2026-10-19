@@ -19,22 +19,22 @@ export type AdminListQuery = {
 
 function integer(value: string | null, fallback: number): number {
   if (value === null || value === "") return fallback;
-  if (!/^[0-9]{1,6}$/.test(value)) throw new HttpError(400, "INVALID_INPUT", "페이지 값을 확인해 주세요. / Check the page values.");
+  if (!/^[0-9]{1,6}$/.test(value)) throw new HttpError(400, "INVALID_INPUT", "페이지 값을 확인해 주세요 / Check the page values");
   return Number(value);
 }
 
 function seoulDay(value: string, end: boolean): Date {
   const match = dayPattern.exec(value);
-  if (!match) throw new HttpError(400, "INVALID_INPUT", "날짜 형식을 확인해 주세요. / Use YYYY-MM-DD dates.");
+  if (!match) throw new HttpError(400, "INVALID_INPUT", "날짜 형식을 확인해 주세요 / Use YYYY-MM-DD dates");
   const date = new Date(`${match[1]}-${match[2]}-${match[3]}T${end ? "23:59:59.999" : "00:00:00.000"}+09:00`);
-  if (Number.isNaN(date.getTime())) throw new HttpError(400, "INVALID_INPUT", "날짜 형식을 확인해 주세요. / Use YYYY-MM-DD dates.");
+  if (Number.isNaN(date.getTime())) throw new HttpError(400, "INVALID_INPUT", "날짜 형식을 확인해 주세요 / Use YYYY-MM-DD dates");
   return date;
 }
 
 export function parseAdminListQuery(url: URL): AdminListQuery {
   const format = url.searchParams.get("format") === "csv" ? "csv" : "json";
   const q = (url.searchParams.get("q") ?? "").trim();
-  if (q.length > 100) throw new HttpError(400, "INVALID_INPUT", "검색어가 너무 깁니다. / Search is too long.");
+  if (q.length > 100) throw new HttpError(400, "INVALID_INPUT", "검색어가 너무 깁니다 / Search is too long");
   const page = Math.max(1, integer(url.searchParams.get("page"), 1));
   const requestedSize = integer(url.searchParams.get("pageSize"), JSON_PAGE_SIZE_DEFAULT);
   const pageSize = format === "csv"
@@ -44,7 +44,7 @@ export function parseAdminListQuery(url: URL): AdminListQuery {
   const toValue = url.searchParams.get("to");
   const from = fromValue ? seoulDay(fromValue, false) : null;
   const to = toValue ? seoulDay(toValue, true) : null;
-  if (from && to && from > to) throw new HttpError(400, "INVALID_INPUT", "기간을 확인해 주세요. / Check the date range.");
+  if (from && to && from > to) throw new HttpError(400, "INVALID_INPUT", "기간을 확인해 주세요 / Check the date range");
   const sortDir = url.searchParams.get("order") === "asc" ? "asc" : "desc";
   return { q, page: format === "csv" ? 1 : page, pageSize, format, from, to, sortDir };
 }

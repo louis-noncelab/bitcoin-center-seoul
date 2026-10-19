@@ -13,7 +13,7 @@ const fulfillmentStatuses = ["UNFULFILLED", "READY", "SHIPPED", "DELIVERED", "CO
 
 function pick<T extends string>(value: string | null, allowed: readonly T[], field: string): T | undefined {
   if (!value) return undefined;
-  if (!allowed.includes(value as T)) throw new HttpError(400, "INVALID_INPUT", `${field} 값을 확인해 주세요. / Check ${field}.`);
+  if (!allowed.includes(value as T)) throw new HttpError(400, "INVALID_INPUT", `${field} 값을 확인해 주세요 / Check ${field}`);
   return value as T;
 }
 

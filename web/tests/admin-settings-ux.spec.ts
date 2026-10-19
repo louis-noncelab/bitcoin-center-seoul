@@ -30,7 +30,7 @@ test("address setup stays with the payment choice and preserves another draft", 
     await page.getByLabel("구분할 이름").fill("UX 검토용");
     await page.getByLabel("라이트닝 주소", { exact: true }).fill(address);
     await page.getByRole("button", { name: "주소 추가하고 선택" }).click();
-    await expect(page.getByText("주소를 등록하고 선택했습니다.", { exact: false })).toBeVisible();
+    await expect(page.getByText("주소를 등록하고 선택했습니다", { exact: false })).toBeVisible();
     const selected = page.getByLabel("결제금을 받을 주소");
     created = await selected.inputValue();
     expect(created).toBeTruthy();
@@ -43,7 +43,7 @@ test("address setup stays with the payment choice and preserves another draft", 
     await expect(email).toHaveValue("ux-draft@example.com");
 
     await page.getByRole("button", { name: "설정 저장" }).click();
-    await expect(page.getByText("결제와 운영 설정을 저장했습니다.")).toBeVisible();
+    await expect(page.getByText("결제와 운영 설정을 저장했습니다")).toBeVisible();
     await page.reload();
     await expect(page.getByLabel("결제금을 받을 주소")).toHaveValue(created);
     await expect(page.getByText("현재 수신")).toBeVisible();
@@ -115,14 +115,14 @@ test("a stale settings form cannot overwrite another administrator's save", asyn
       await page.getByLabel("구분할 이름").fill("동시 저장 검토");
       await page.getByLabel("라이트닝 주소", { exact: true }).fill("stale-" + randomUUID().slice(0, 12) + "@example.com");
       await page.getByRole("button", { name: "주소 추가하고 선택" }).click();
-      await expect(page.getByText("주소를 등록하고 선택했습니다.", { exact: false })).toBeVisible();
+      await expect(page.getByText("주소를 등록하고 선택했습니다", { exact: false })).toBeVisible();
       created = await page.getByLabel("결제금을 받을 주소").inputValue();
       expect(created).toBeTruthy();
       const response = page.waitForResponse((item) => item.url() === origin + "/api/admin/settings" && item.request().method() === "PATCH");
       await page.getByRole("button", { name: "설정 저장" }).click();
       const rejected = await response;
       expect(rejected.status()).toBe(409);
-      await expect(page.locator(".events-error[role='alert']")).toContainText("다른 관리자가 설정을 먼저 저장했습니다.");
+      await expect(page.locator(".events-error[role='alert']")).toContainText("다른 관리자가 설정을 먼저 저장했습니다");
       await expect(email).toHaveValue("second-admin@example.com");
       const latest = (await (await first.request.get(origin + "/api/admin/settings")).json()).data;
       expect(latest.notificationEmail).toBe("first-admin@example.com");

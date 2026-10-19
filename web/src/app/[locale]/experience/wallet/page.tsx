@@ -21,8 +21,8 @@ export async function generateMetadata({ params }: Props) {
   const metadata = pageMetadata(locale, "experience");
   const title = walletCopy[locale].welcome.title;
   const description = locale === "ko"
-    ? "서울 홍대입구 비트코인 센터에서 하드웨어 지갑을 체험해 보세요. 코코넛 월렛으로 테스트 비트코인을 주고받는 순서를 안내합니다."
-    : "Try hardware wallets at Bitcoin Center Seoul in Hongdae. Follow the guide to send and receive test bitcoin with Coconut Wallet Learning Edition.";
+    ? "서울 홍대입구 비트코인 센터에서 하드웨어 지갑을 체험해 보세요 코코넛 월렛으로 테스트 비트코인을 주고받는 순서를 안내합니다"
+    : "Try hardware wallets at Bitcoin Center Seoul in Hongdae Follow the guide to send and receive test bitcoin with Coconut Wallet Learning Edition";
   const path = "/experience/wallet";
   return {
     ...metadata,

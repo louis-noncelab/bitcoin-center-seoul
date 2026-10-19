@@ -97,7 +97,7 @@ test("행사 등록, 사진 두 장 업로드, 수정, 세션 만료 후 초안 
     await page.getByLabel("영어 제목", { exact: true }).fill("[Review] Event gallery");
     await page.getByLabel("한국어 설명", { exact: true }).fill("검토용 행사입니다. 공개 운영 자료가 아닙니다.");
     await page.getByLabel("영어 설명", { exact: true }).fill("Local review event, not an operational event.");
-    await page.getByLabel("행사 날짜", { exact: true }).fill("2026-10-10");
+    await page.getByLabel("행사 날짜", { exact: true }).fill("2099-10-10");
     await page.getByRole("textbox", { name: /^시간 한국 시간/ }).fill("14:00–16:00");
     await page.getByLabel("참여하기 버튼 링크 (선택)", { exact: true }).fill("https://pay.zaprite.com/test-payment?ticket=early&source=center#checkout");
     await expectVenue(page, "center");
@@ -114,7 +114,7 @@ test("행사 등록, 사진 두 장 업로드, 수정, 세션 만료 후 초안 
     expect(preview.ratio).toBeCloseTo(3 / 4, 2);
     expect(preview.fit).toBe("cover");
     await page.getByRole("button", { name: "저장", exact: true }).click();
-    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("저장했습니다", { exact: true })).toBeVisible();
     const initial = z.object({ data: z.array(eventRecordSchema) }).parse(await (await page.request.get("/api/events")).json()).data.find((record) => record.title === title);
     expect(initial).toBeDefined();
     if (!initial) throw new Error("Created review event missing");
@@ -154,14 +154,14 @@ test("행사 등록, 사진 두 장 업로드, 수정, 세션 만료 후 초안 
     await expect(page.getByLabel("관리자 비밀번호", { exact: true })).toBeVisible();
     await expect(page.getByText("2장 선택됨", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "저장", exact: true }).click();
-    await expect(page.getByText("세션이 만료되었습니다. 작성한 내용은 유지됩니다. 다시 로그인한 뒤 저장해 주세요.")).toBeVisible();
+    await expect(page.getByText("세션이 만료되었습니다 작성한 내용은 유지됩니다 다시 로그인한 뒤 저장해 주세요")).toBeVisible();
     await expect(page.getByLabel("한국어 제목", { exact: true })).toHaveValue(title + " 수정");
     const { ADMIN_PASSWORD } = await reviewRuntime();
     await page.getByLabel("관리자 비밀번호", { exact: true }).fill(ADMIN_PASSWORD);
     await page.getByRole("button", { name: "로그인", exact: true }).click();
     await expect(page.getByLabel("관리자 비밀번호", { exact: true })).toHaveCount(0);
     await page.getByRole("button", { name: "저장", exact: true }).click();
-    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("저장했습니다", { exact: true })).toBeVisible();
     const amended = z.object({ data: eventRecordSchema }).parse(await (await page.request.get(`/api/events/${id}`)).json()).data;
     expect(amended.title).toBe(title + " 수정");
     expect(amended.slug).toBe(slug + "-updated");
@@ -172,7 +172,7 @@ test("행사 등록, 사진 두 장 업로드, 수정, 세션 만료 후 초안 
     expect(amended.images).toEqual([...initial.images].reverse().map((image) => image.replace(`/${slug}/`, `/${slug}-updated/`)));
     await page.locator(".events-admin-list > li").filter({ hasText: title + " 수정" }).getByRole("button", { name: "삭제", exact: true }).click();
     await page.getByRole("dialog", { name: "항목 삭제", exact: true }).getByRole("button", { name: "삭제", exact: true }).click();
-    await expect(page.getByText("삭제했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("삭제했습니다", { exact: true })).toBeVisible();
     expect((await page.request.get(`/api/events/${id}`)).status()).toBe(404);
   } finally {
     if (id !== undefined) await deleteContentFixture(page.request, `/api/admin/events/${id}`, baseURL ?? "");
@@ -203,7 +203,7 @@ test("센터 행사 참가비를 사토시 고정가로 저장하고 원화 고�
     await page.getByRole("combobox", { name: "참가비 단위" }).selectOption("SATS");
     await expect(page.getByLabel("참가비 (sats)")).toHaveValue("21000");
     await page.getByRole("button", { name: "저장", exact: true }).click();
-    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("저장했습니다", { exact: true })).toBeVisible();
     const created = z.object({ data: z.array(eventRecordSchema) }).parse(await (await page.request.get("/api/events")).json()).data.find((record) => record.slug === slug);
     expect(created).toBeDefined();
     if (!created) throw new Error("Satoshi review event missing");
@@ -221,7 +221,7 @@ test("센터 행사 참가비를 사토시 고정가로 저장하고 원화 고�
     await page.getByRole("combobox", { name: "참가비 단위" }).selectOption("KRW");
     await page.getByLabel("참가비 (원)").fill("1500");
     await page.getByRole("button", { name: "저장", exact: true }).click();
-    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("저장했습니다", { exact: true })).toBeVisible();
     const updated = z.object({ data: eventRecordSchema }).parse(await (await page.request.get(`/api/events/${id}`)).json()).data;
     expect(updated.ticketPriceKrw).toBe("1500");
     expect(updated.ticketPriceSats).toBe("");
@@ -251,7 +251,7 @@ test("하이라이트 기간과 비공개 상태를 저장하며 관리자 화�
     await page.getByLabel("종료일", { exact: true }).fill("2026-09-03");
     await page.getByLabel("공개", { exact: true }).uncheck();
     await page.getByRole("button", { name: "저장", exact: true }).click();
-    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("저장했습니다", { exact: true })).toBeVisible();
     const items = z.object({ data: z.array(highlightRecordSchema) }).parse(await (await page.request.get("/api/admin/highlights")).json()).data;
     const record = items.find((item) => item.title === title);
     expect(record).toBeDefined();
@@ -264,7 +264,7 @@ test("하이라이트 기간과 비공개 상태를 저장하며 관리자 화�
     await page.locator(".events-admin-list > li").filter({ hasText: title }).getByRole("button", { name: "수정", exact: true }).click();
     await page.getByLabel("공개", { exact: true }).check();
     await page.getByRole("button", { name: "저장", exact: true }).click();
-    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("저장했습니다", { exact: true })).toBeVisible();
     expect((await page.request.get(`/api/highlights/${id}`)).status()).toBe(200);
   } finally {
     if (id !== undefined) await deleteContentFixture(page.request, `/api/admin/highlights/${id}`, baseURL ?? "");

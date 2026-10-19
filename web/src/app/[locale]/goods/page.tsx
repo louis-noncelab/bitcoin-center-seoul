@@ -14,8 +14,8 @@ export async function generateMetadata({ params }: Props) {
   const title = locale === "ko" ? "비센서 굿즈" : "Center goods";
   const description =
     locale === "ko"
-      ? "비트코인 센터 서울 굿즈와 판매처 안내."
-      : "Bitcoin Center Seoul goods and purchasing information.";
+      ? "비트코인 센터 서울 굿즈와 판매처 안내"
+      : "Bitcoin Center Seoul goods and purchasing information";
   return {
     ...base,
     title: `${title} | Bitcoin Center Seoul`,

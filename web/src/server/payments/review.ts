@@ -17,8 +17,8 @@ export async function simulatePayment(request: Request, paymentId: string) {
   const { scenario } = await readBody(request, z.object({ scenario: z.enum(reviewScenarios) }).strict(), 1024);
   const payment = await prisma.$transaction(async (tx) => {
     const current = await lockPayment(tx, paymentId);
-    if (current.mode !== "REVIEW") throw new HttpError(403, "LIVE_PAYMENT", "검토 결제만 변경할 수 있습니다. / Only review payments are supported.");
-    if (current.status === "CREATING") throw new HttpError(409, "INVOICE_CREATING", "발행이 진행 중입니다. / Invoice creation is in progress.");
+    if (current.mode !== "REVIEW") throw new HttpError(403, "LIVE_PAYMENT", "검토 결제만 변경할 수 있습니다 / Only review payments are supported");
+    if (current.status === "CREATING") throw new HttpError(409, "INVOICE_CREATING", "발행이 진행 중입니다 / Invoice creation is in progress");
     const updated = await tx.payment.update({ where: { id: paymentId }, data: { metadata: { ...metadataSchema.parse(current.metadata), reviewScenario: scenario } } });
     await tx.auditLog.create({ data: { actorId: actor.id, action: "payment.review.scenario", targetType: "Payment", targetId: paymentId, summary: { scenario } } });
     return updated;

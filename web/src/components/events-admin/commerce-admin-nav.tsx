@@ -55,7 +55,7 @@ export function CommerceAdminNav({ dirty = false, disabled = false, onLeave }: {
     if (onLeave) return onLeave();
     return !dirty || confirm({
       title: "변경사항을 버릴까요?",
-      description: "저장하지 않은 변경사항은 사라집니다.",
+      description: "저장하지 않은 변경사항은 사라집니다",
       confirmLabel: "버리기",
     });
   });

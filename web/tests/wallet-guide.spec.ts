@@ -85,7 +85,7 @@ test("supports keyboard selection and retry on a small dark reduced-motion scree
   await page.keyboard.press("ArrowRight");
   await expect(page.getByRole("radio", { name: "아이폰", exact: true })).toBeChecked();
   await page.getByRole("button", { name: "다음", exact: true }).click();
-  await page.getByRole("button", { name: "다운로드를 완료했습니다." }).click();
+  await page.getByRole("button", { name: "다운로드를 완료했습니다" }).click();
   await page.getByRole("radio", { name: "SeedSigner", exact: true }).check();
   await page.getByRole("button", { name: "다음", exact: true }).click();
   for (let phase = 0; phase < 5; phase++) await page.getByRole("button", { name: "다음", exact: true }).click();

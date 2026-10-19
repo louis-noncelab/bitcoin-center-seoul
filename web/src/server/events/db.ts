@@ -238,13 +238,13 @@ function assertColumns(
   const found = new Set(db.prepare<[], { readonly name: string }>(`PRAGMA table_info(${table})`).all().map(({ name }) => name));
   const missing = expected.filter((name) => !found.has(name));
   if (missing.length > 0) {
-    throw new ApiError(503, "INCOMPATIBLE_DATABASE", `SQLite ${table} 스키마가 호환되지 않습니다.`);
+    throw new ApiError(503, "INCOMPATIBLE_DATABASE", `SQLite ${table} 스키마가 호환되지 않습니다`);
   }
 }
 
 export function sqliteDatabasePath(): string {
   const value = process.env.BCS_EVENTS_DB?.trim() ?? "";
-  if (!path.isAbsolute(value)) throw new ApiError(503, "DATABASE_UNAVAILABLE", "설정된 SQLite 데이터베이스를 열 수 없습니다.");
+  if (!path.isAbsolute(value)) throw new ApiError(503, "DATABASE_UNAVAILABLE", "설정된 SQLite 데이터베이스를 열 수 없습니다");
   return path.resolve(value);
 }
 
@@ -256,11 +256,11 @@ export function getDatabase(): Database.Database {
     file = fs.statSync(filename);
   } catch (error) {
     if (error instanceof Error) {
-      throw new ApiError(503, "DATABASE_UNAVAILABLE", "설정된 SQLite 데이터베이스를 열 수 없습니다.");
+      throw new ApiError(503, "DATABASE_UNAVAILABLE", "설정된 SQLite 데이터베이스를 열 수 없습니다");
     }
     throw error;
   }
-  if (!file.isFile()) throw new ApiError(503, "DATABASE_UNAVAILABLE", "설정된 SQLite 데이터베이스를 열 수 없습니다.");
+  if (!file.isFile()) throw new ApiError(503, "DATABASE_UNAVAILABLE", "설정된 SQLite 데이터베이스를 열 수 없습니다");
   let existing: Database.Database;
   try {
     existing = new Database(filename, { fileMustExist: true });
@@ -268,7 +268,7 @@ export function getDatabase(): Database.Database {
   } catch (error) {
     if (error instanceof ApiError) throw error;
     if (error instanceof Error) {
-      throw new ApiError(503, "DATABASE_UNAVAILABLE", "설정된 SQLite 데이터베이스를 열 수 없습니다.");
+      throw new ApiError(503, "DATABASE_UNAVAILABLE", "설정된 SQLite 데이터베이스를 열 수 없습니다");
     }
     throw error;
   }

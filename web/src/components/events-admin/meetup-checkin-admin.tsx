@@ -44,7 +44,7 @@ export function MeetupCheckinAdmin() {
     try {
       const result = await adminRequest("/api/admin/meetups/checkin", resultSchema, jsonBody(body));
       const when = result.booking.checkedInAt ? new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", dateStyle: "medium", timeStyle: "short" }).format(new Date(result.booking.checkedInAt)) : "";
-      setMessage(result.status === "already_checked_in" ? `${result.booking.customerName}님은 이미 체크인했습니다. ${when}` : result.status === "cleared" ? `${result.booking.customerName}님 체크인을 해제했습니다.` : `${result.booking.customerName}님 ${result.booking.quantity}명 체크인했습니다.`);
+      setMessage(result.status === "already_checked_in" ? `${result.booking.customerName}님은 이미 체크인했습니다 ${when}` : result.status === "cleared" ? `${result.booking.customerName}님 체크인을 해제했습니다` : `${result.booking.customerName}님 ${result.booking.quantity}명 체크인했습니다`);
       await load();
     } catch (caught) { setError(errorText(caught, "ko")); }
     finally { setPending(false); }
@@ -52,7 +52,7 @@ export function MeetupCheckinAdmin() {
 
   return <div className="events-admin-workspace">
     <CommerceAdminNav current="/admin/meetups/checkin" disabled={pending} />
-    <p className="muted">결제된 밋업 예약의 확인 QR을 카메라로 읽거나, 확인 코드와 주문 번호로 직접 체크인합니다.</p>
+    <p className="muted">결제된 밋업 예약의 확인 QR을 카메라로 읽거나, 확인 코드와 주문 번호로 직접 체크인합니다</p>
     {error && <p className="events-error" role="alert">{error}</p>}
     <p role="status">{message}</p>
     <CheckinScanner disabled={pending} onCode={(value) => void checkin({ code: value })} />
@@ -68,7 +68,7 @@ export function MeetupCheckinAdmin() {
           <Button variant="secondary" disabled={pending} onClick={() => void checkin(item.checkedInAt ? { orderId: item.id, undo: true } : { orderId: item.id })}>{item.checkedInAt ? "체크인 해제" : "수동 체크인"}</Button>
         </div>
       </li>)}
-      {!items.length && <li>결제된 밋업 예약이 없습니다.</li>}
+      {!items.length && <li>결제된 밋업 예약이 없습니다</li>}
     </ul>
   </div>;
 }

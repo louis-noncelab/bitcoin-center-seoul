@@ -24,28 +24,28 @@ export type CollectionSection = "library" | "boardgame" | "goods";
 export const collectionCopy = {
   ko: {
     title: "컬렉션",
-    introduction: "센터에서 만나는 책과 보드게임, 매거진과 작품.",
+    introduction: "센터에서 만나는 책과 보드게임, 매거진과 작품",
     all: "전체",
     book: "도서",
     goods: "굿즈",
     artwork: "작품",
     boardgame: "보드게임",
     magazine: "매거진",
-    empty: "아직 공개된 자료가 없습니다.",
+    empty: "아직 공개된 자료가 없습니다",
     view: "자세히 보기",
     back: "컬렉션으로",
   },
   en: {
     title: "Collection",
     introduction:
-      "Books, board games, magazines and artworks at Bitcoin Center Seoul.",
+      "Books, board games, magazines and artworks at Bitcoin Center Seoul",
     all: "All",
     book: "Books",
     goods: "Goods",
     artwork: "Art",
     boardgame: "Board games",
     magazine: "Magazines",
-    empty: "No items have been published yet.",
+    empty: "No items have been published yet",
     view: "View details",
     back: "Back to collection",
   },
@@ -54,23 +54,23 @@ export const collectionCopy = {
 export const boardGameCopy = {
   ko: {
     title: "보드게임",
-    introduction: "센터에 비치된 보드게임입니다. 방문해서 즐길 수 있습니다.",
-    empty: "아직 등록된 보드게임이 없습니다.",
+    introduction: "센터에 비치된 보드게임입니다 방문해서 즐길 수 있습니다",
+    empty: "아직 등록된 보드게임이 없습니다",
     view: collectionCopy.ko.view,
     back: "보드게임으로",
   },
   en: {
     title: "Board games",
-    introduction: "Board games kept at the center.",
-    empty: "No board games have been added yet.",
+    introduction: "Board games kept at the center",
+    empty: "No board games have been added yet",
     view: collectionCopy.en.view,
     back: "Back to board games",
   },
 } as const;
 
 export const goodsCopy = {
-  ko: { title: "비센서 굿즈", introduction: "비트코인을 일상 가까이. 센터 굿즈와 구매 안내.", back: "굿즈로" },
-  en: { title: "Center goods", introduction: "Keep Bitcoin close in everyday life. Center goods and purchasing information.", back: "Back to goods" },
+  ko: { title: "비센서 굿즈", introduction: "비트코인을 일상 가까이 센터 굿즈와 구매 안내", back: "굿즈로" },
+  en: { title: "Center goods", introduction: "Keep Bitcoin close in everyday life Center goods and purchasing information", back: "Back to goods" },
 } as const;
 
 export function ShopBrowseLink({ locale }: { readonly locale: Locale }) {

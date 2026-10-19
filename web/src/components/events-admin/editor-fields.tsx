@@ -41,7 +41,7 @@ export function EditorFields({ locale, kind, record, onPending, onDirty, onExpir
       <label>
         URL 슬러그
         <FormControl><input name="slug" aria-label="URL 슬러그" defaultValue={record?.slug ?? ""} required={!record} maxLength={100} pattern="(?=.*[a-z])[a-z0-9]+(-[a-z0-9]+)*" placeholder="bitcoin-developer-meetup" autoCapitalize="none" spellCheck={false} aria-describedby="slug-help" /></FormControl>
-        <span id="slug-help" className="muted">/{locale}/{kind === "events" ? "programs" : "journal"}/ 뒤에 붙는 주소입니다. 영문 소문자, 숫자, 하이픈(-)을 사용해 주세요. 주소를 바꿔도 이전 링크는 새 주소로 연결됩니다.</span>
+        <span id="slug-help" className="muted">/{locale}/{kind === "events" ? "programs" : "journal"}/ 뒤에 붙는 주소입니다 영문 소문자, 숫자, 하이픈(-)을 사용해 주세요 주소를 바꿔도 이전 링크는 새 주소로 연결됩니다</span>
       </label>
       <TagsField tags={record?.tags ?? []} />
       </section>
@@ -52,13 +52,13 @@ export function EditorFields({ locale, kind, record, onPending, onDirty, onExpir
           {input("date", ko ? "행사 날짜" : "Event date", date(event?.date), "date", true)}
           <label>{ko ? "시간" : "Time"}
             <FormControl><input name="time" defaultValue={event?.time ?? ""} maxLength={100} placeholder="14:00 ~ 16:00" aria-describedby="event-time-help" /></FormControl>
-            <span id="event-time-help" className="muted">{ko ? "한국 시간의 시작 및 종료 시각을 입력해 주세요. 센터 행사만 ‘밋업 중’ 표시에 반영됩니다. 예: 19:00 ~ 21:00. 종료가 시작보다 이르면 다음 날 종료로 계산합니다." : "Enter start and end times in Korea time, e.g. 19:00 ~ 21:00. Only center events affect the live status. An earlier end time means the following day."}</span>
+            <span id="event-time-help" className="muted">{ko ? "한국 시간의 시작 및 종료 시각을 입력해 주세요 센터 행사만 ‘밋업 중’ 표시에 반영됩니다 예: 19:00 ~ 21:00 종료가 시작보다 이르면 다음 날 종료로 계산합니다" : "Enter start and end times in Korea time, e.g. 19:00 ~ 21:00 Only center events affect the live status An earlier end time means the following day"}</span>
           </label>
           <EventVenueFields event={event} />
         </div>
       ) : (
         <>
-          <p className="muted">{ko ? "하루 행사라면 날짜를, 여러 날에 걸친 행사라면 시작일과 종료일을 입력해 주세요." : "Enter a single date, or a start and end date for a multi-day event."}</p>
+          <p className="muted">{ko ? "하루 행사라면 날짜를, 여러 날에 걸친 행사라면 시작일과 종료일을 입력해 주세요" : "Enter a single date, or a start and end date for a multi-day event"}</p>
           <div className="events-field-grid">
             {input("date", ko ? "날짜" : "Date", date(highlight?.date), "date")}
             {input("startDate", ko ? "시작일" : "Start date", date(highlight?.startDate), "date")}
@@ -79,12 +79,12 @@ export function EditorFields({ locale, kind, record, onPending, onDirty, onExpir
       {kind === "events" ? (
         <section className="admin-editor-section">
           <h3>참가 신청과 결제</h3>
-          <label className="events-checkbox"><ChoiceControl role="switch" name="registrationClosed" type="checkbox" defaultChecked={event?.registrationClosed ?? false} />참여 마감<span className="muted">켜면 참여 링크 대신 ‘참여 마감’이 표시됩니다. 저장하면 반영됩니다.</span></label>
-          <label className="events-checkbox"><ChoiceControl role="switch" name="externalPayment" type="checkbox" checked={externalPayment} onChange={(change) => { setExternalPayment(change.currentTarget.checked); onDirty(); }} />외부 결제 링크<span className="muted">켜면 참여하기가 아래 주소를 새 창으로 엽니다. 끄면 참가비와 정원으로 센터에서 신청을 받습니다. 무료 행사는 결제 없이 바로 확정됩니다.</span></label>
+          <label className="events-checkbox"><ChoiceControl role="switch" name="registrationClosed" type="checkbox" defaultChecked={event?.registrationClosed ?? false} />참여 마감<span className="muted">켜면 참여 링크 대신 ‘참여 마감’이 표시됩니다 저장하면 반영됩니다</span></label>
+          <label className="events-checkbox"><ChoiceControl role="switch" name="externalPayment" type="checkbox" checked={externalPayment} onChange={(change) => { setExternalPayment(change.currentTarget.checked); onDirty(); }} />외부 결제 링크<span className="muted">켜면 참여하기가 아래 주소를 새 창으로 엽니다 끄면 참가비와 정원으로 센터에서 신청을 받습니다 무료 행사는 결제 없이 바로 확정됩니다</span></label>
           <label hidden={!externalPayment}>
             참여하기 버튼 링크 (선택)
             <FormControl><input name="link" aria-label="참여하기 버튼 링크 (선택)" type="url" maxLength={2048} defaultValue={record?.link ? (/^www\./.test(record.link) ? `https://${record.link}` : record.link) : ""} placeholder="https://" aria-describedby="event-link-help" /></FormControl>
-            <span id="event-link-help" className="muted">Zaprite Payment Link 또는 이벤트 티켓 링크가 새 창으로 열립니다. 비워 두면 버튼이 표시되지 않습니다.</span>
+            <span id="event-link-help" className="muted">Zaprite Payment Link 또는 이벤트 티켓 링크가 새 창으로 열립니다 비워 두면 버튼이 표시되지 않습니다</span>
           </label>
           <div hidden={externalPayment}>
             <label>참가비 단위
@@ -98,16 +98,16 @@ export function EditorFields({ locale, kind, record, onPending, onDirty, onExpir
               <div hidden={priceUnit !== "SATS"}><label>참가비 (sats)<FormControl><input name="ticketPriceSats" disabled={priceUnit !== "SATS"} inputMode="numeric" pattern="0|[1-9][0-9]*" maxLength={15} defaultValue={event?.ticketPriceSats ?? ""} placeholder="0 또는 21000" required={!externalPayment && priceUnit === "SATS"} aria-describedby="event-ticket-help" /></FormControl></label></div>
               <label>정원 (명)<FormControl><input name="ticketCapacity" inputMode="numeric" pattern="[1-9][0-9]*" maxLength={6} defaultValue={event?.ticketCapacity ? String(event.ticketCapacity) : ""} placeholder="20" required={!externalPayment} aria-describedby="event-ticket-help" /></FormControl></label>
             </div>
-            <p id="event-ticket-help" className="muted">참여하기가 센터 신청 화면으로 열립니다. 원화는 주문 시점 시세로 사토시가 정해지고, 사토시는 시세와 상관없이 입력한 금액을 받습니다.</p>
+            <p id="event-ticket-help" className="muted">참여하기가 센터 신청 화면으로 열립니다 원화는 주문 시점 시세로 사토시가 정해지고, 사토시는 시세와 상관없이 입력한 금액을 받습니다</p>
           </div>
-          <label className="events-checkbox"><ChoiceControl role="switch" name="isOnline" type="checkbox" checked={online} onChange={(change) => { setOnline(change.currentTarget.checked); onDirty(); }} />온라인 밋업<span className="muted">켜면 장소 대신 온라인으로 안내합니다. 참여 링크는 결제 후 확인 페이지와 메일에만 버튼으로 나갑니다.</span></label>
+          <label className="events-checkbox"><ChoiceControl role="switch" name="isOnline" type="checkbox" checked={online} onChange={(change) => { setOnline(change.currentTarget.checked); onDirty(); }} />온라인 밋업<span className="muted">켜면 장소 대신 온라인으로 안내합니다 참여 링크는 결제 후 확인 페이지와 메일에만 버튼으로 나갑니다</span></label>
           <div hidden={!online} className="events-field-grid">
             <label>온라인 참여 링크
               <FormControl><input name="onlineUrl" type="url" inputMode="url" maxLength={2048} defaultValue={event?.onlineUrl ?? ""} placeholder="https://meet.google.com/..." required={online} aria-describedby="event-online-help" /></FormControl>
-              <span id="event-online-help" className="muted">구글 밋이나 다른 온라인 밋업 주소. 결제 전에는 공개되지 않습니다.</span>
+              <span id="event-online-help" className="muted">구글 밋이나 다른 온라인 밋업 주소 결제 전에는 공개되지 않습니다</span>
             </label>
             <label>한국어 참여 안내 (선택)
-              <FormControl><input name="onlineInstructions" maxLength={1000} defaultValue={event?.onlineInstructions ?? ""} placeholder="입장 코드가 있으면 적어 주세요." /></FormControl>
+              <FormControl><input name="onlineInstructions" maxLength={1000} defaultValue={event?.onlineInstructions ?? ""} placeholder="입장 코드가 있으면 적어 주세요" /></FormControl>
             </label>
             <label>영어 참여 안내 (선택)
               <FormControl><input name="onlineInstructionsEn" maxLength={1000} defaultValue={event?.onlineInstructionsEn ?? ""} /></FormControl>

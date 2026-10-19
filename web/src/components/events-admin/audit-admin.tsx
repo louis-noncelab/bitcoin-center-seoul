@@ -64,7 +64,7 @@ export function AuditAdmin() {
 
   return <div className="events-admin-workspace">
     <CommerceAdminNav current="/admin/logs" disabled={pending} />
-    <p className="muted">상품, 주문, 설정, 개인정보 파기 같은 관리자 작업의 최근 100건입니다. 고객 연락처는 여기에 남기지 않습니다.</p>
+    <p className="muted">상품, 주문, 설정, 개인정보 파기 같은 관리자 작업의 최근 100건입니다 고객 연락처는 여기에 남기지 않습니다</p>
     {error && <p className="events-error" role="alert">{error}</p>}
     <ul className="events-admin-list">
       {logs.map((row) => <li key={row.id}>
@@ -74,7 +74,7 @@ export function AuditAdmin() {
           <details className="admin-audit-detail"><summary>기록 ID 보기</summary><code>{row.action}, {row.targetType} {row.targetId}, {row.actorId ?? "시스템"}</code></details>
         </div>
       </li>)}
-      {!logs.length && !error && <li>{pending ? "불러오는 중…" : "기록이 없습니다."}</li>}
+      {!logs.length && !error && <li>{pending ? "불러오는 중…" : "기록이 없습니다"}</li>}
     </ul>
     <Button variant="secondary" disabled={pending} onClick={() => void load()}>다시 불러오기</Button>
   </div>;

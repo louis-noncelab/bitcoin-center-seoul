@@ -103,7 +103,7 @@ export function DomesticAddressSearch({ locale, onComplete, onFocusDetail }: {
       {state === "loading" ? (ko ? "주소 검색 준비 중…" : "Loading address search…") : state === "searching" ? (ko ? "주소 검색 중…" : "Searching…") : state === "ready" ? (ko ? "주소 검색" : "Find address") : (ko ? "주소 검색 다시 시도" : "Retry address search")}
     </button>
     <p id="shipping-address-search-status" className="field-hint" role="status">
-      {state === "failed" ? (ko ? "주소 검색을 열 수 없습니다. 버튼으로 다시 시도하거나 주소를 직접 입력해 주세요." : "Address search is unavailable. Retry or enter the address manually.") : (ko ? "국내 배송 주소만 검색할 수 있습니다. 직접 입력할 수도 있습니다." : "Only Korean addresses can be searched. You can also type the address.")}
+      {state === "failed" ? (ko ? "주소 검색을 열 수 없습니다 버튼으로 다시 시도하거나 주소를 직접 입력해 주세요" : "Address search is unavailable Retry or enter the address manually") : (ko ? "국내 배송 주소만 검색할 수 있습니다 직접 입력할 수도 있습니다" : "Only Korean addresses can be searched You can also type the address")}
     </p>
   </div>;
 }

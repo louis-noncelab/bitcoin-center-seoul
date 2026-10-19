@@ -62,7 +62,7 @@ export function EventsAdmin({ locale }: { readonly locale: Locale }) {
   }, [dirty]);
   async function canLeave() {
     if (busy.current || editorBusyRef.current) return false;
-    const accepted = !dirty || await confirm({ title: ko ? "변경사항을 버릴까요?" : "Discard changes?", description: ko ? "저장하지 않은 변경사항은 사라집니다." : "Your unsaved changes will be lost.", confirmLabel: ko ? "버리기" : "Discard", cancelLabel: ko ? "취소" : "Cancel" });
+    const accepted = !dirty || await confirm({ title: ko ? "변경사항을 버릴까요?" : "Discard changes?", description: ko ? "저장하지 않은 변경사항은 사라집니다" : "Your unsaved changes will be lost", confirmLabel: ko ? "버리기" : "Discard", cancelLabel: ko ? "취소" : "Cancel" });
     return accepted && !busy.current && !editorBusyRef.current;
   }
   useRegisterLeave(canLeave);
@@ -74,10 +74,10 @@ export function EventsAdmin({ locale }: { readonly locale: Locale }) {
   }
   async function remove(record: ContentRecord) {
     if (busy.current || editorBusyRef.current) return;
-    const accepted = await confirm({ title: ko ? "항목 삭제" : "Delete content", description: ko ? `“${record.title}” 항목을 삭제할까요? 삭제한 내용은 복구할 수 없습니다.` : `Delete “${record.titleEn}”? This cannot be undone.`, confirmLabel: ko ? "삭제" : "Delete", cancelLabel: ko ? "취소" : "Cancel" });
+    const accepted = await confirm({ title: ko ? "항목 삭제" : "Delete content", description: ko ? `“${record.title}” 항목을 삭제할까요? 삭제한 내용은 복구할 수 없습니다` : `Delete “${record.titleEn}”? This cannot be undone`, confirmLabel: ko ? "삭제" : "Delete", cancelLabel: ko ? "취소" : "Cancel" });
     if (!accepted || busy.current || editorBusyRef.current) return;
     busy.current = true; setPending(true); setError("");
-    try { await adminRequest(`/api/admin/${kind}/${record.id}`, z.unknown(), { method: "DELETE", headers: revisionHeaders(record.revision) }); setNotice(ko ? "삭제했습니다." : "Deleted."); refresh(); }
+    try { await adminRequest(`/api/admin/${kind}/${record.id}`, z.unknown(), { method: "DELETE", headers: revisionHeaders(record.revision) }); setNotice(ko ? "삭제했습니다" : "Deleted"); refresh(); }
     catch (caught) { setError(errorText(caught, locale)); if (caught instanceof AdminRequestError && caught.status === 401) setExpired(true); }
     finally { busy.current = false; setPending(false); }
   }
@@ -88,7 +88,7 @@ export function EventsAdmin({ locale }: { readonly locale: Locale }) {
     try {
       const saved = await adminRequest(`/api/admin/events/${id}`, eventRecordSchema, jsonBody({ registrationClosed: !record.registrationClosed }, "PATCH", version));
       setRecords((items) => items.map((item) => item.id === saved.id ? saved : item));
-      setNotice(saved.registrationClosed ? "참여 접수를 마감했습니다." : "참여 접수를 다시 열었습니다.");
+      setNotice(saved.registrationClosed ? "참여 접수를 마감했습니다" : "참여 접수를 다시 열었습니다");
     } catch (caught) {
       setError(errorText(caught, locale));
       if (caught instanceof AdminRequestError && caught.status === 401) setExpired(true);
@@ -104,15 +104,15 @@ export function EventsAdmin({ locale }: { readonly locale: Locale }) {
           <Link href="/news" locale="ko" prefetch={false} className="button" data-variant="quiet" onNavigate={(event) => { event.preventDefault(); void canLeave().then((accepted) => { if (accepted) router.push("/news", { locale: "ko" }); }); }}>{ko ? "공개 소식 보기" : "View public news"}</Link>
         </AdminTabs>
       </div>
-      {kind === "highlights" && <p className="news-admin-guide">공개한 하이라이트는 소식의 ‘현장 스케치’에 반영됩니다. 첫 번째 사진은 ‘사진과 영상’의 대표 이미지로 사용됩니다. 최근 소식과 사진 일부는 홈에도 표시됩니다. 비공개 항목은 제외됩니다.</p>}
-      {expired && <aside className="events-reauth"><p role="alert">{ko ? "세션이 만료되었습니다. 작성한 내용은 유지됩니다. 다시 로그인한 뒤 저장해 주세요." : "Your session expired. Your draft is preserved. Sign in again to save."}</p><LoginForm locale={locale} onLogin={() => { setExpired(false); setError(""); refresh(); }} /></aside>}
+      {kind === "highlights" && <p className="news-admin-guide">공개한 하이라이트는 소식의 ‘현장 스케치’에 반영됩니다 첫 번째 사진은 ‘사진과 영상’의 대표 이미지로 사용됩니다 최근 소식과 사진 일부는 홈에도 표시됩니다 비공개 항목은 제외됩니다</p>}
+      {expired && <aside className="events-reauth"><p role="alert">{ko ? "세션이 만료되었습니다 작성한 내용은 유지됩니다 다시 로그인한 뒤 저장해 주세요" : "Your session expired Your draft is preserved Sign in again to save"}</p><LoginForm locale={locale} onLogin={() => { setExpired(false); setError(""); refresh(); }} /></aside>}
       {error && <p className="events-error" role="alert">{error}</p>}
       <p role="status">{notice}</p>
       {!editing && <CenterStatusAdmin disabled={pending || expired} onExpired={() => setExpired(true)} onBusy={(value) => { editorBusyRef.current = value; setEditorBusy(value); }} />}
       {editing ? <RecordEditor key={`${kind}-${selected?.id ?? "new"}`} locale={locale} kind={kind} record={selected}
         onDirty={() => setDirty(true)} onExpired={() => setExpired(true)} onBusy={(value) => { editorBusyRef.current = value; setEditorBusy(value); }}
         onCancel={() => { void canLeave().then((accepted) => { if (accepted) { setEditing(false); setDirty(false); refresh(); } }); }}
-        onSaved={() => { setEditing(false); setDirty(false); setNotice(ko ? "저장했습니다." : "Saved."); refresh(); }} /> : (
+        onSaved={() => { setEditing(false); setDirty(false); setNotice(ko ? "저장했습니다" : "Saved"); refresh(); }} /> : (
         <>
           <div className="events-admin-toolbar">
             <h2>{kind === "events" ? (ko ? "행사 목록" : "Events") : (ko ? "하이라이트 목록" : "Highlights")}</h2>
@@ -123,7 +123,7 @@ export function EventsAdmin({ locale }: { readonly locale: Locale }) {
               <div><h3>{ko ? record.title : record.titleEn}</h3><p className="muted">{record.date || ("startDate" in record ? `${record.startDate} – ${record.endDate}` : "")}{"is_active" in record && !record.is_active ? (ko ? ", 비공개" : ", Unpublished") : ""}</p></div>
               <div className="button-row">{"registrationClosed" in record && <Button variant="secondary" role="switch" aria-busy={pending} aria-checked={record.registrationClosed} aria-label={`${record.title} 참여 마감`} disabled={loading || pending || expired || editorBusy} onClick={() => void toggleRegistration(record)}><span className="events-switch-track" aria-hidden="true" />참여 마감</Button>}<Link href={`/${kind === "events" ? "programs" : "journal"}/${record.slug || record.id}`} locale={locale} className="button" data-variant="quiet">{ko ? "보기" : "View"}</Link><Button variant="secondary" disabled={pending || expired || editorBusy} onClick={() => { setSelected(record); setEditing(true); setNotice(""); }}>{ko ? "수정" : "Edit"}</Button><Button variant="quiet" disabled={pending || expired || editorBusy} onClick={() => void remove(record)}>{ko ? "삭제" : "Delete"}</Button></div>
             </li>)}
-            {!records.length && <li>{ko ? "등록된 항목이 없습니다." : "No content yet."}</li>}
+            {!records.length && <li>{ko ? "등록된 항목이 없습니다" : "No content yet"}</li>}
           </ul>}
         </>
       )}

@@ -41,7 +41,7 @@ async function reserveAttempt(key: string, now: number): Promise<void> {
     WHERE "admin_login_attempts"."blocked_until" <= ${BigInt(now)}
     RETURNING "failures"
   `;
-  if (!rows[0]) throw new ApiError(429, "RATE_LIMITED", "잠시 후 다시 시도해주세요.");
+  if (!rows[0]) throw new ApiError(429, "RATE_LIMITED", "잠시 후 다시 시도해주세요");
   await prisma.adminLoginAttempt.deleteMany({
     where: { windowStarted: { lt: BigInt(now - loginWindowMs) }, blockedUntil: { lt: BigInt(now) } },
   });
@@ -54,21 +54,21 @@ export function loginClientKey(request: NextRequest): string {
     throw configurationError("BCS_TRUST_PROXY");
   }
   const address = request.headers.get("x-bcs-client-ip");
-  if (!address || !isIP(address)) throw new ApiError(403, "PROXY_REQUIRED", "요청 경로를 확인할 수 없습니다.");
+  if (!address || !isIP(address)) throw new ApiError(403, "PROXY_REQUIRED", "요청 경로를 확인할 수 없습니다");
   return hash(address);
 }
 
 export function requireSameOrigin(request: NextRequest): void {
   const supplied = request.headers.get("origin");
-  if (!supplied) throw new ApiError(403, "ORIGIN_REJECTED", "요청 출처를 확인할 수 없습니다.");
+  if (!supplied) throw new ApiError(403, "ORIGIN_REJECTED", "요청 출처를 확인할 수 없습니다");
   try {
     if (new URL(supplied).origin !== configuredOrigin().origin) {
-      throw new ApiError(403, "ORIGIN_REJECTED", "허용되지 않은 요청 출처입니다.");
+      throw new ApiError(403, "ORIGIN_REJECTED", "허용되지 않은 요청 출처입니다");
     }
   } catch (error) {
     if (error instanceof ApiError) throw error;
     if (error instanceof TypeError) {
-      throw new ApiError(403, "ORIGIN_REJECTED", "요청 출처가 올바르지 않습니다.");
+      throw new ApiError(403, "ORIGIN_REJECTED", "요청 출처가 올바르지 않습니다");
     }
     throw error;
   }
@@ -77,14 +77,14 @@ export function requireSameOrigin(request: NextRequest): void {
 export async function login(candidate: string, clientKey: string): Promise<string> {
   const encoded = passwordHash();
   const now = Date.now();
-  if (pendingClients.has(clientKey) || pendingClients.size >= 8) throw new ApiError(429, "RATE_LIMITED", "잠시 후 다시 시도해주세요.");
+  if (pendingClients.has(clientKey) || pendingClients.size >= 8) throw new ApiError(429, "RATE_LIMITED", "잠시 후 다시 시도해주세요");
   // Synchronous admission bounds queued KDF work before any database await.
   pendingClients.add(clientKey);
   try {
     await reserveAttempt(clientKey, now);
     const verification = verificationTail.then(() => verifyPassword(candidate, encoded));
     verificationTail = verification.then(() => undefined, () => undefined);
-    if (!await verification) throw new ApiError(401, "INVALID_CREDENTIALS", "암호가 올바르지 않습니다.");
+    if (!await verification) throw new ApiError(401, "INVALID_CREDENTIALS", "암호가 올바르지 않습니다");
     const token = randomBytes(32).toString("base64url");
     const credentialVersion = hash(encoded);
     await prisma.$transaction([
@@ -119,7 +119,7 @@ export async function isAuthenticated(request: NextRequest): Promise<boolean> {
 }
 
 export async function requireAdmin(request: NextRequest): Promise<void> {
-  if (!await isAuthenticated(request)) throw new ApiError(401, "UNAUTHORIZED", "관리자 인증이 필요합니다.");
+  if (!await isAuthenticated(request)) throw new ApiError(401, "UNAUTHORIZED", "관리자 인증이 필요합니다");
 }
 
 export async function currentSessionExpiry(request: NextRequest): Promise<number | null> {

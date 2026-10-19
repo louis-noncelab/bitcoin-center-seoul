@@ -38,7 +38,7 @@ export function ProductVariantsEditor({ variants, onChange }: {
   }
   return <>
     <h3>옵션</h3>
-    <p className="muted">SKU는 저장 뒤 바꿀 수 없습니다. 판매를 멈추려면 옵션을 삭제하지 말고 공개를 해제해 주세요. 결제 대기 중인 수량보다 재고를 적게 줄일 수 없습니다.</p>
+    <p className="muted">SKU는 저장 뒤 바꿀 수 없습니다 판매를 멈추려면 옵션을 삭제하지 말고 공개를 해제해 주세요 결제 대기 중인 수량보다 재고를 적게 줄일 수 없습니다</p>
     {variants.map((variant) => <fieldset className="events-editor-fields" key={variant.key}>
       <div className="events-field-grid">
         <label>SKU<FormControl><input value={variant.sku} required maxLength={100} pattern="[A-Za-z0-9_-]+" readOnly={Boolean(variant.id)} onChange={(event) => patchVariant(variant.key, { sku: event.target.value })} /></FormControl></label>

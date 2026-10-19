@@ -31,12 +31,12 @@ export function PaymentInvoice({ invoice, checkoutUrl, locale }: { readonly invo
   }, [bolt11]);
   return <div className="form-stack commerce-invoice">
     {bolt11 && <>
-      <figure className="commerce-qr">{qr ? <Image src={qr} width={360} height={360} unoptimized alt={ko ? "라이트닝 결제 요청 QR 코드" : "Lightning payment request QR code"} /> : <div className="commerce-qr-loading">{qrError ? (ko ? "QR을 표시하지 못했습니다. 결제 요청을 복사해 주세요." : "QR unavailable. Copy the payment request below.") : (ko ? "결제 QR 생성 중…" : "Preparing payment QR…")}</div>}<figcaption>{ko ? "라이트닝 지갑으로 스캔하세요." : "Scan with a Lightning wallet."}</figcaption></figure>
+      <figure className="commerce-qr">{qr ? <Image src={qr} width={360} height={360} unoptimized alt={ko ? "라이트닝 결제 요청 QR 코드" : "Lightning payment request QR code"} /> : <div className="commerce-qr-loading">{qrError ? (ko ? "QR을 표시하지 못했습니다 결제 요청을 복사해 주세요" : "QR unavailable Copy the payment request below") : (ko ? "결제 QR 생성 중…" : "Preparing payment QR…")}</div>}<figcaption>{ko ? "라이트닝 지갑으로 스캔하세요" : "Scan with a Lightning wallet"}</figcaption></figure>
       <div className="form-actions">
         <ActionLink href={`lightning:${bolt11}`}><ExternalLink className="icon" aria-hidden="true" />{ko ? "지갑에서 열기" : "Open wallet"}</ActionLink>
         <Button variant="secondary" onClick={async () => { try { await navigator.clipboard.writeText(bolt11); setCopy("copied"); } catch { setCopy("failed"); } }}><Copy className="icon" aria-hidden="true" />{ko ? "결제 요청 복사" : "Copy payment request"}</Button>
       </div>
-      {copy !== "idle" && <FormNotice kind={copy === "copied" ? "success" : "error"}>{copy === "copied" ? (ko ? "결제 요청을 복사했습니다." : "Payment request copied.") : (ko ? "복사하지 못했습니다. 아래 결제 요청을 직접 선택해 복사해 주세요." : "Copy failed. Select and copy the payment request below.")}</FormNotice>}
+      {copy !== "idle" && <FormNotice kind={copy === "copied" ? "success" : "error"}>{copy === "copied" ? (ko ? "결제 요청을 복사했습니다" : "Payment request copied") : (ko ? "복사하지 못했습니다 아래 결제 요청을 직접 선택해 복사해 주세요" : "Copy failed Select and copy the payment request below")}</FormNotice>}
       <div className="commerce-disclosure">
         <button type="button" className="commerce-disclosure-toggle" aria-expanded={requestOpen} onClick={() => setRequestOpen((value) => !value)}>
           {ko ? "결제 요청 보기" : "View payment request"}

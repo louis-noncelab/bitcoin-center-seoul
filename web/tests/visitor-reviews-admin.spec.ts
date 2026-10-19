@@ -113,7 +113,7 @@ test("admin uploads, publishes, selects, edits and hides a review without rebuil
     await page.getByLabel("표시 순서", { exact: true }).fill("-999");
     await page.getByLabel("공개", { exact: true }).check();
     await page.getByRole("button", { name: "저장", exact: true }).click();
-    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("저장했습니다", { exact: true })).toBeVisible();
     const record = (await state(page.request)).records.find(item => item.title === title);
     if (!record) throw new Error("Review not saved");
     id = record.id;
@@ -121,7 +121,7 @@ test("admin uploads, publishes, selects, edits and hides a review without rebuil
     await chooseReview(page, "후기 페이지 대표", title);
     await chooseReview(page, "홈 후기 1", title);
     await page.getByRole("button", { name: "선택 저장", exact: true }).click();
-    await expect(page.getByText("후기 선택을 저장했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("후기 선택을 저장했습니다", { exact: true })).toBeVisible();
     await page.goto("/en/reviews");
     await expect(page.locator(".review-card").first().getByRole("heading")).toHaveText(title);
     await expect(page.locator("#review-feature-title")).toHaveText("센터에서 보낸 오후");
@@ -134,7 +134,7 @@ test("admin uploads, publishes, selects, edits and hides a review without rebuil
     await row.getByRole("button", { name: "수정", exact: true }).click();
     await page.getByLabel("공개", { exact: true }).uncheck();
     await page.getByRole("button", { name: "저장", exact: true }).click();
-    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("저장했습니다", { exact: true })).toBeVisible();
     await expect(page.locator("label").filter({ hasText: "후기 페이지 대표" }).getByRole("combobox").locator("option:checked")).toContainText("비공개");
     expect((await request.get(record.image)).status()).toBe(404);
     expect((await page.request.get(record.image)).status()).toBe(200);
@@ -191,7 +191,7 @@ test("article editor publishes inline photos, SEO, redirects and hides the detai
     await expect(page.locator('[name="description"]')).toHaveValue(/second.*\.webp/);
     await page.getByLabel("공개", { exact: true }).check();
     await page.getByRole("button", { name: "저장", exact: true }).click();
-    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("저장했습니다", { exact: true })).toBeVisible();
     const record = (await state(page.request)).records.find(item => item.slug === slug);
     if (!record) throw new Error("Saved article missing");
     id = record.id;

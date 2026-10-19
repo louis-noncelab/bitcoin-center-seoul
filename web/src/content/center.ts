@@ -104,55 +104,55 @@ export const centerContent = {
       eyebrow: "BITCOIN CENTER SEOUL",
       title: "비트코인 센터 서울",
       introduction:
-        "서울 마포구, 홍대입구역 가까이에 있는 비트코인 공간입니다. 강의와 밋업에 참여하고, 도서와 작품을 둘러보고, 하드웨어 지갑을 체험할 수 있습니다.",
+        "서울 마포구, 홍대입구역 가까이에 있는 비트코인 공간입니다 강의와 밋업에 참여하고, 도서와 작품을 둘러보고, 하드웨어 지갑을 체험할 수 있습니다",
       secondaryLink: { label: "프로그램 보기", href: "#programs" },
     },
     about: {
       eyebrow: "ABOUT",
       title: "비트코인 센터 서울",
       introduction:
-        "비트코인을 읽고, 만나고, 직접 써 보는 서울의 문화 공간입니다. 홍대입구역 근처에 라운지와 비트코인 서재, 작품 전시, 강의와 밋업이 열리는 홀을 갖추고 있습니다.",
+        "비트코인을 읽고, 만나고, 직접 써 보는 서울의 문화 공간입니다 홍대입구역 근처에 라운지와 비트코인 서재, 작품 전시, 강의와 밋업이 열리는 홀을 갖추고 있습니다",
       galleryTitle: "센터의 공간",
       spaces: [
-        { photo: "gallery", title: "작품", description: "비트코인을 주제로 한 그림과 판화입니다." },
-        { photo: "retail", title: "굿즈", description: "비트코인 굿즈와 다양한 소품을 전시합니다." },
-        { photo: "experience", title: "하드웨어 지갑 체험존", description: "테스트 비트코인으로 지갑을 체험합니다." },
-        { photo: "exhibition", title: "서재", description: "비트코인 관련 도서를 비치했습니다." },
-        { photo: "lounge", title: "라운지", description: "창가 좌석과 소파가 있는 휴식 공간입니다." },
-        { photo: "community", title: "홀", description: "비트코인 강의와 밋업이 열리는 공간입니다." },
+        { photo: "gallery", title: "작품", description: "비트코인을 주제로 한 그림과 판화입니다" },
+        { photo: "retail", title: "굿즈", description: "비트코인 굿즈와 다양한 소품을 전시합니다" },
+        { photo: "experience", title: "하드웨어 지갑 체험존", description: "테스트 비트코인으로 지갑을 체험합니다" },
+        { photo: "exhibition", title: "서재", description: "비트코인 관련 도서를 비치했습니다" },
+        { photo: "lounge", title: "라운지", description: "창가 좌석과 소파가 있는 휴식 공간입니다" },
+        { photo: "community", title: "홀", description: "비트코인 강의와 밋업이 열리는 공간입니다" },
       ],
     },
     programs: {
       eyebrow: "PROGRAMS",
       title: "강의와 밋업",
       introduction:
-        "비트코인 입문 강의, 개발자 밋업, 워크숍과 영화 모임을 엽니다. 서울에서 열리는 행사와 온라인 모임의 날짜, 장소, 참가비와 신청 방법을 확인할 수 있습니다.",
+        "비트코인 입문 강의, 개발자 밋업, 워크숍과 영화 모임을 엽니다 서울에서 열리는 행사와 온라인 모임의 날짜, 장소, 참가비와 신청 방법을 확인할 수 있습니다",
       description:
-        "비트코인 입문, 백서와 프로토콜, 셀프 커스터디, 개발 강의를 엽니다. 개발자 밋업과 월간 모임, 영화 상영도 함께 진행합니다.",
+        "비트코인 입문, 백서와 프로토콜, 셀프 커스터디, 개발 강의를 엽니다 개발자 밋업과 월간 모임, 영화 상영도 함께 진행합니다",
     },
     experience: {
       eyebrow: "EXPERIENCE",
       title: "전시와 체험",
       introduction:
-        "비트코인 도서와 작품을 둘러보고, 테스트 비트코인으로 하드웨어 지갑을 체험합니다. 센터에 비치된 보드게임도 즐길 수 있습니다.",
+        "비트코인 도서와 작품을 둘러보고, 테스트 비트코인으로 하드웨어 지갑을 체험합니다 센터에 비치된 보드게임도 즐길 수 있습니다",
       areas: [
         {
           id: "exhibition",
           title: "도서와 작품",
           description:
-            "비트코인 백서와 관련 도서, 비트코인을 주제로 한 작품을 전시합니다.",
+            "비트코인 백서와 관련 도서, 비트코인을 주제로 한 작품을 전시합니다",
         },
         {
           id: "boardgame",
           title: "보드게임",
           description:
-            "센터에 비치된 보드게임을 즐길 수 있습니다.",
+            "센터에 비치된 보드게임을 즐길 수 있습니다",
         },
         {
           id: "wallet",
           title: "하드웨어 지갑 체험",
           description:
-            "체험존에 여러 하드웨어 지갑과 테스트용 안내가 있습니다.",
+            "체험존에 여러 하드웨어 지갑과 테스트용 안내가 있습니다",
         },
       ],
       walletExperienceLink: {
@@ -168,17 +168,17 @@ export const centerContent = {
       eyebrow: "HIGHLIGHTS",
       title: "현장 스케치",
       introduction:
-        "서울에서 열린 비트코인 강의와 개발자 밋업, 워크숍과 모임을 사진과 글로 기록합니다. 지난 행사의 모습과 사람들이 나눈 이야기를 살펴보세요.",
+        "서울에서 열린 비트코인 강의와 개발자 밋업, 워크숍과 모임을 사진과 글로 기록합니다 지난 행사의 모습과 사람들이 나눈 이야기를 살펴보세요",
     },
     visit: {
       eyebrow: "VISIT",
       title: "비트코인 센터 서울 방문 안내",
       introduction:
-        "서울 마포구 신촌로2안길 30, 2층에 있습니다. 홍대입구역 6번 출구에서 도보 3분입니다. 운영시간, 입장료와 예약 안내를 확인하세요. 대관 중에는 공간을 이용할 수 없습니다.",
+        "서울 마포구 신촌로2안길 30, 2층에 있습니다 홍대입구역 6번 출구에서 도보 3분입니다 운영시간, 입장료와 예약 안내를 확인하세요 대관 중에는 공간을 이용할 수 없습니다",
       firstVisit: [
-        { question: "예약이 필요한가요?", answer: "일반 방문은 예약 없이 오시면 됩니다. 강의 및 밋업 참여는 행사별 안내를 확인해주세요." },
-        { question: "입장료가 있나요?", answer: "입장료는 3,000 sats입니다." },
-        { question: "지갑 체험은 언제 할 수 있나요?", answer: "입장 후 언제든 하드웨어 지갑 체험존을 이용할 수 있습니다." },
+        { question: "예약이 필요한가요?", answer: "일반 방문은 예약 없이 오시면 됩니다 강의 및 밋업 참여는 행사별 안내를 확인해주세요" },
+        { question: "입장료가 있나요?", answer: "입장료는 3,000 sats입니다" },
+        { question: "지갑 체험은 언제 할 수 있나요?", answer: "입장 후 언제든 하드웨어 지갑 체험존을 이용할 수 있습니다" },
       ],
       address: {
         label: "주소",
@@ -217,55 +217,55 @@ export const centerContent = {
       eyebrow: "BITCOIN CENTER SEOUL",
       title: "Bitcoin Center Seoul",
       introduction:
-        "A Bitcoin community space in Hongdae, Mapo, Seoul. Join classes and meetups, browse Bitcoin books and art, and try hardware wallets with test bitcoin.",
+        "A Bitcoin community space in Hongdae, Mapo, Seoul Join classes and meetups, browse Bitcoin books and art, and try hardware wallets with test bitcoin",
       secondaryLink: { label: "View programs", href: "#programs" },
     },
     about: {
       eyebrow: "ABOUT",
       title: "Bitcoin Center Seoul",
       introduction:
-        "Explore Bitcoin culture in Seoul, near Hongik University Station. The center has a lounge, a Bitcoin library, art displays, a hardware wallet demo area and a hall for classes and meetups.",
+        "Explore Bitcoin culture in Seoul, near Hongik University Station The center has a lounge, a Bitcoin library, art displays, a hardware wallet demo area and a hall for classes and meetups",
       galleryTitle: "Spaces at the center",
       spaces: [
-        { photo: "gallery", title: "Art", description: "Discover paintings and prints inspired by Bitcoin." },
-        { photo: "retail", title: "Merchandise", description: "Browse Bitcoin merchandise and a variety of small objects." },
-        { photo: "experience", title: "Hardware wallet area", description: "Try hardware wallets using test bitcoin." },
-        { photo: "exhibition", title: "Library", description: "Browse books about Bitcoin." },
-        { photo: "lounge", title: "Lounge", description: "Relax and share a conversation on the sofa or by the windows." },
-        { photo: "community", title: "Hall", description: "The hall hosts Bitcoin classes, meetups and community gatherings." },
+        { photo: "gallery", title: "Art", description: "Discover paintings and prints inspired by Bitcoin" },
+        { photo: "retail", title: "Merchandise", description: "Browse Bitcoin merchandise and a variety of small objects" },
+        { photo: "experience", title: "Hardware wallet area", description: "Try hardware wallets using test bitcoin" },
+        { photo: "exhibition", title: "Library", description: "Browse books about Bitcoin" },
+        { photo: "lounge", title: "Lounge", description: "Relax and share a conversation on the sofa or by the windows" },
+        { photo: "community", title: "Hall", description: "The hall hosts Bitcoin classes, meetups and community gatherings" },
       ],
     },
     programs: {
       eyebrow: "PROGRAMS",
       title: "Classes and meetups",
       introduction:
-        "Find Bitcoin classes, developer meetups, workshops and film gatherings in Seoul, along with online events. Each listing has the date, venue, fee and registration details.",
+        "Find Bitcoin classes, developer meetups, workshops and film gatherings in Seoul, along with online events Each listing has the date, venue, fee and registration details",
       description:
-        "Classes cover Bitcoin fundamentals, the whitepaper and protocol, self-custody and development. The center also hosts developer meetups, monthly gatherings and film screenings.",
+        "Classes cover Bitcoin fundamentals, the whitepaper and protocol, self-custody and development The center also hosts developer meetups, monthly gatherings and film screenings",
     },
     experience: {
       eyebrow: "EXPERIENCE",
       title: "Exhibitions and experiences",
       introduction:
-        "Browse Bitcoin books and art, try hardware wallets with test bitcoin, and play the board games kept at Bitcoin Center Seoul.",
+        "Browse Bitcoin books and art, try hardware wallets with test bitcoin, and play the board games kept at Bitcoin Center Seoul",
       areas: [
         {
           id: "exhibition",
           title: "Books and art",
           description:
-            "Bitcoin books, a whitepaper display and Bitcoin-themed art.",
+            "Bitcoin books, a whitepaper display and Bitcoin-themed art",
         },
         {
           id: "boardgame",
           title: "Board games",
           description:
-            "Board games are kept at the center.",
+            "Board games are kept at the center",
         },
         {
           id: "wallet",
           title: "Hardware wallet experience",
           description:
-            "The demo area has several hardware wallets and instructions for testing them.",
+            "The demo area has several hardware wallets and instructions for testing them",
         },
       ],
       walletExperienceLink: {
@@ -280,17 +280,17 @@ export const centerContent = {
     journal: {
       eyebrow: "HIGHLIGHTS",
       title: "Highlights",
-      introduction: "Photos and stories from Bitcoin classes, developer meetups, workshops and community gatherings in Seoul. See what happened at past events.",
+      introduction: "Photos and stories from Bitcoin classes, developer meetups, workshops and community gatherings in Seoul See what happened at past events",
     },
     visit: {
       eyebrow: "VISIT",
       title: "Visit Bitcoin Center Seoul",
       introduction:
-        "Find opening hours, admission and directions to Bitcoin Center Seoul at 2F, 30 Sinchon-ro 2an-gil, Mapo-gu. It is a three-minute walk from Hongik University Station Exit 6. Unavailable during private rentals.",
+        "Find opening hours, admission and directions to Bitcoin Center Seoul at 2F, 30 Sinchon-ro 2an-gil, Mapo-gu It is a three-minute walk from Hongik University Station Exit 6 Unavailable during private rentals",
       firstVisit: [
-        { question: "Do I need a reservation?", answer: "No reservation is needed for a regular visit. For classes and meetups, check the individual event details." },
-        { question: "Is there an admission fee?", answer: "Admission is 3,000 sats." },
-        { question: "When can I try the wallets?", answer: "You can use the hardware wallet demo area at any time after admission." },
+        { question: "Do I need a reservation?", answer: "No reservation is needed for a regular visit For classes and meetups, check the individual event details" },
+        { question: "Is there an admission fee?", answer: "Admission is 3,000 sats" },
+        { question: "When can I try the wallets?", answer: "You can use the hardware wallet demo area at any time after admission" },
       ],
       address: {
         label: "Address",

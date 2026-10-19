@@ -14,9 +14,9 @@ export async function fulfillOrder(id: string, input: z.infer<typeof fulfillment
     await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${id} FOR UPDATE`;
     const order = await tx.order.findUnique({ where: { id }, include: { items: { select: { sku: true } } } });
     if (!order) throw new HttpError(404, "NOT_FOUND", "Order not found.");
-    if (order.privacyRedactedAt) throw new HttpError(409, "ORDER_REDACTED", "개인정보가 파기된 주문은 변경할 수 없습니다.");
+    if (order.privacyRedactedAt) throw new HttpError(409, "ORDER_REDACTED", "개인정보가 파기된 주문은 변경할 수 없습니다");
     if (order.status !== "PAID") throw new HttpError(409, "PAYMENT_REQUIRED", "Fulfillment requires confirmed payment.");
-    if (purchaseKind(order.items) === "meetup") throw new HttpError(409, "MEETUP_FULFILLMENT", "밋업은 참석자 관리에서 체크인해 주세요. / Check in event attendees through meetup management.");
+    if (purchaseKind(order.items) === "meetup") throw new HttpError(409, "MEETUP_FULFILLMENT", "밋업은 참석자 관리에서 체크인해 주세요 / Check in event attendees through meetup management");
     const expected = order.fulfillment === "PICKUP" ? { READY: "UNFULFILLED", COLLECTED: "READY", SHIPPED: null, DELIVERED: null } : { READY: null, COLLECTED: null, SHIPPED: "UNFULFILLED", DELIVERED: "SHIPPED" };
     if (expected[input.status] !== order.fulfillmentStatus) throw new HttpError(409, "INVALID_STATE", "This fulfillment transition is not allowed.");
     if (Boolean(input.carrier) !== Boolean(input.trackingNumber)) throw new HttpError(400, "TRACKING_REQUIRED", "Carrier and tracking number must be provided together.");
@@ -41,12 +41,12 @@ export async function correctOrderTracking(id: string, input: z.infer<typeof tra
     await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${id} FOR UPDATE`;
     const order = await tx.order.findUnique({ where: { id } });
     if (!order) throw new HttpError(404, "NOT_FOUND", "Order not found.");
-    if (order.privacyRedactedAt) throw new HttpError(409, "ORDER_REDACTED", "개인정보가 파기된 주문은 변경할 수 없습니다.");
+    if (order.privacyRedactedAt) throw new HttpError(409, "ORDER_REDACTED", "개인정보가 파기된 주문은 변경할 수 없습니다");
     if (order.status !== "PAID" || order.refundStatus !== "NONE" || order.fulfillment === "PICKUP" || !["SHIPPED", "DELIVERED"].includes(order.fulfillmentStatus)) {
-      throw new HttpError(409, "INVALID_STATE", "발송한 결제 완료 주문만 송장을 수정할 수 있습니다.");
+      throw new HttpError(409, "INVALID_STATE", "발송한 결제 완료 주문만 송장을 수정할 수 있습니다");
     }
     if (order.carrier !== input.expectedCarrier || order.trackingNumber !== input.expectedTrackingNumber) {
-      throw new HttpError(409, "STALE_ORDER", "송장 정보가 변경되었습니다. 새로고침 후 다시 확인해 주세요.");
+      throw new HttpError(409, "STALE_ORDER", "송장 정보가 변경되었습니다 새로고침 후 다시 확인해 주세요");
     }
     const updated = await tx.order.update({ where: { id }, data: { carrier: input.carrier, trackingNumber: input.trackingNumber }, include: orderIncludes });
     await tx.auditLog.create({ data: { actorId, action: "order.tracking", targetType: "Order", targetId: id,

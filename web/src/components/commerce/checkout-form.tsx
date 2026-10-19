@@ -140,20 +140,20 @@ export function CheckoutForm({ locale, policyVersions, items, countries, fromCar
         <ContactFields error={error} locale={locale} meetup={reservation} shipping={!reservation && fulfillment !== "PICKUP"} />
         {reservation ? null : <fieldset className="commerce-fieldset form-stack">
           <legend>{ko ? "수령 방법" : "Delivery method"}</legend>
-          {!allowed.length && <FormNotice>{ko ? "선택한 상품을 함께 받을 수 있는 수령 방법이 없습니다. 장바구니에서 상품을 나눠 주문해 주세요." : "These items cannot share a delivery method. Remove items from the cart and order them separately."}</FormNotice>}
+          {!allowed.length && <FormNotice>{ko ? "선택한 상품을 함께 받을 수 있는 수령 방법이 없습니다 장바구니에서 상품을 나눠 주문해 주세요" : "These items cannot share a delivery method Remove items from the cart and order them separately"}</FormNotice>}
           <div className="commerce-choices">{(["PICKUP", "DOMESTIC", "INTERNATIONAL"] as const).map((value) => <label key={value} className="commerce-choice" data-selected={fulfillment === value}>
             <ChoiceControl type="radio" name="fulfillment" value={value} checked={fulfillment === value} disabled={!allowed.includes(value)} onChange={() => { setFulfillment(value); invalidateQuote(); }} />
             <span>{fulfillmentLabels[locale][value]}{!allowed.includes(value) && <small>{ko ? "이 주문은 이용 불가" : "Unavailable for this order"}</small>}</span>
           </label>)}</div>
         </fieldset>}
-        {reservation ? <><MeetupDetails locale={locale} meetups={items.flatMap((item) => item.product.meetup ? [item.product.meetup] : [])} /><p className="muted">{freeRegistration ? (ko ? "무료 신청은 결제 없이 바로 확정됩니다." : "Free registration is confirmed immediately without payment.") : (ko ? "참가비는 신청 인원에 따라 계산됩니다. 결제가 확인되면 자리가 확정됩니다." : "The fee is calculated for your attendee count. Seats are confirmed when payment is verified.")}</p></> : fulfillment === "PICKUP" && <p className="commerce-pickup">{centerContent[locale].visit.address.value}</p>}
+        {reservation ? <><MeetupDetails locale={locale} meetups={items.flatMap((item) => item.product.meetup ? [item.product.meetup] : [])} /><p className="muted">{freeRegistration ? (ko ? "무료 신청은 결제 없이 바로 확정됩니다" : "Free registration is confirmed immediately without payment") : (ko ? "참가비는 신청 인원에 따라 계산됩니다 결제가 확인되면 자리가 확정됩니다" : "The fee is calculated for your attendee count Seats are confirmed when payment is verified")}</p></> : fulfillment === "PICKUP" && <p className="commerce-pickup">{centerContent[locale].visit.address.value}</p>}
         <SlideRegion open={!reservation && fulfillment !== "PICKUP"}>
           <ShippingFields key={fulfillment} error={error} locale={locale} fulfillment={fulfillment} country={country} countries={countries} onCountry={(value) => { setInternationalCountry(value); invalidateQuote(); }} />
         </SlideRegion>
         {reservation ? null : <FormField id="coupon-code" label={ko ? "쿠폰 코드" : "Coupon code"}>
           <input id="coupon-code" name="couponCode" value={couponCode} maxLength={40} autoComplete="off" onChange={(event) => { setCouponCode(event.target.value); invalidateQuote(); }} />
         </FormField>}
-        <FormField id="order-notes" label={reservation ? (ko ? "전달 사항 (선택)" : "Note (optional)") : (ko ? "요청 사항 (선택)" : "Order notes (optional)")} hint={reservation ? (ko ? "입장에 필요한 말을 500자까지 남길 수 있습니다." : "Optional note for the host, up to 500 characters.") : (ko ? "배송과 수령 관련 요청을 500자까지 남길 수 있습니다. 견적 금액은 바뀌지 않습니다." : "Optional delivery or pickup notes, up to 500 characters. Notes do not change the quoted total.")}>
+        <FormField id="order-notes" label={reservation ? (ko ? "전달 사항 (선택)" : "Note (optional)") : (ko ? "요청 사항 (선택)" : "Order notes (optional)")} hint={reservation ? (ko ? "입장에 필요한 말을 500자까지 남길 수 있습니다" : "Optional note for the host, up to 500 characters") : (ko ? "배송과 수령 관련 요청을 500자까지 남길 수 있습니다 견적 금액은 바뀌지 않습니다" : "Optional delivery or pickup notes, up to 500 characters Notes do not change the quoted total")}>
           <textarea id="order-notes" name="notes" maxLength={500} rows={3} autoComplete="off" aria-invalid={Boolean(notesError)} aria-describedby={`order-notes-hint${notesError ? " order-notes-error" : ""}`} />
           <FieldError id="order-notes" error={notesError} />
         </FormField>
@@ -170,9 +170,9 @@ export function CheckoutForm({ locale, policyVersions, items, countries, fromCar
       </nav>
       <label className="commerce-choice">
         <ChoiceControl key={policyKind} id="checkout-acceptance" type="checkbox" name="acceptance" required aria-invalid={error instanceof ApiError && Boolean(error.fields.acceptance)} aria-describedby={error instanceof ApiError && error.fields.acceptance ? "checkout-acceptance-error" : undefined} />
-        <span>{ko ? `${reservation ? "밋업 신청 이용약관" : "이용약관"}과 ${refundsTitle} 내용을 확인하고 동의합니다. (필수)` : `I have reviewed and agree to the ${reservation ? "Event Registration Terms" : "Terms of Service"} and ${refundsTitle}. (Required)`}</span>
+        <span>{ko ? `${reservation ? "밋업 신청 이용약관" : "이용약관"}과 ${refundsTitle} 내용을 확인하고 동의합니다 (필수)` : `I have reviewed and agree to the ${reservation ? "Event Registration Terms" : "Terms of Service"} and ${refundsTitle} (Required)`}</span>
       </label>
-      {error instanceof ApiError && error.fields.acceptance && <p id="checkout-acceptance-error" className="commerce-field-error">{ko ? `약관과 ${refundsTitle}에 동의해 주세요.` : `Agree to the terms and ${refundsTitle}.`}</p>}
+      {error instanceof ApiError && error.fields.acceptance && <p id="checkout-acceptance-error" className="commerce-field-error">{ko ? `약관과 ${refundsTitle}에 동의해 주세요` : `Agree to the terms and ${refundsTitle}`}</p>}
       {error instanceof ApiError && error.code === "POLICY_STALE" && <Button onClick={() => window.location.reload()}>{ko ? "변경된 정책 다시 확인" : "Review updated policies"}</Button>}
       <div className="form-actions">
         <Button type="submit" className="commerce-pay" disabled={pending || quoting || !quote || !allowed.length || !shippingAvailable}>{freeRegistration ? pending ? (ko ? "신청 확정 중…" : "Confirming registration…") : (ko ? "무료 신청 확정" : "Confirm free registration") : pending ? (ko ? "결제 화면으로 이동 중…" : "Opening payment…") : (ko ? "결제하기" : "Pay")}</Button>

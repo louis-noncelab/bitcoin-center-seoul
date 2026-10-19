@@ -61,11 +61,11 @@ test("records sidebar opens an authenticated Korean audit log", async ({ page, b
   await login(page, origin);
   await page.goto(`${origin}/ko/admin/mail`);
   // When the records entry is selected.
-  await page.getByRole("navigation", { name: "관리자 메뉴" }).getByRole("link", { name: "기록", exact: true }).click();
+  await page.getByRole("navigation", { name: "관리자 메뉴" }).getByRole("link", { name: "작업 기록", exact: true }).click();
   // Then the route and authenticated audit API both resolve.
   await expect(page).toHaveURL(`${origin}/ko/admin/logs`);
   await expect(page.getByRole("heading", { name: "관리 기록" })).toBeVisible();
-  await expect(page.getByText("상품, 주문, 설정, 개인정보 파기 같은 관리자 작업의 최근 100건입니다.", { exact: false })).toBeVisible();
+  await expect(page.getByText("상품, 주문, 설정, 개인정보 파기 같은 관리자 작업의 최근 100건입니다", { exact: false })).toBeVisible();
   expect((await page.request.get(`${origin}/api/admin/audit-logs`)).status()).toBe(200);
 });
 

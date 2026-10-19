@@ -11,7 +11,7 @@ import { metadataSchema, type Invoice, type Observation } from "./types";
 export async function lockPayment(tx: Tx, id: string): Promise<Payment> {
   await tx.$queryRaw`SELECT id FROM "Payment" WHERE id = ${id} FOR UPDATE`;
   const payment = await tx.payment.findUnique({ where: { id } });
-  if (!payment) throw new HttpError(404, "PAYMENT_NOT_FOUND", "결제를 찾을 수 없습니다. / Payment not found.");
+  if (!payment) throw new HttpError(404, "PAYMENT_NOT_FOUND", "결제를 찾을 수 없습니다 / Payment not found");
   return payment;
 }
 export async function persistInvoice(id: string, invoice: Invoice): Promise<Payment> {

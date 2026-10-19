@@ -31,38 +31,38 @@ export type ExchangeRate = {
 
 export function krwToSats(krw: bigint, rate: string): bigint {
   if (krw < 0n || krw > maxInteger || !ratePattern.test(rate)) {
-    throw new HttpError(422, "INVALID_MONEY", "금액 또는 환율이 올바르지 않습니다.");
+    throw new HttpError(422, "INVALID_MONEY", "금액 또는 환율이 올바르지 않습니다");
   }
   const fraction = rate.split(".")[1] ?? "";
   const denominator = BigInt(rate.replace(".", ""));
   const numerator = krw * 100_000_000n * 10n ** BigInt(fraction.length);
   const sats = (numerator + denominator - 1n) / denominator;
-  if (sats > maxSats) throw new HttpError(422, "AMOUNT_TOO_LARGE", "결제 금액이 허용 범위를 초과합니다.");
+  if (sats > maxSats) throw new HttpError(422, "AMOUNT_TOO_LARGE", "결제 금액이 허용 범위를 초과합니다");
   return sats;
 }
 
 export function satsToKrw(sats: bigint, rate: string): bigint {
   if (sats < 0n || sats > maxSats || !ratePattern.test(rate)) {
-    throw new HttpError(422, "INVALID_MONEY", "금액 또는 환율이 올바르지 않습니다.");
+    throw new HttpError(422, "INVALID_MONEY", "금액 또는 환율이 올바르지 않습니다");
   }
   const fraction = rate.split(".")[1] ?? "";
   const scaled = BigInt(rate.replace(".", ""));
   const krw = (sats * scaled) / (100_000_000n * 10n ** BigInt(fraction.length));
-  if (krw > maxInteger) throw new HttpError(422, "AMOUNT_TOO_LARGE", "결제 금액이 허용 범위를 초과합니다.");
+  if (krw > maxInteger) throw new HttpError(422, "AMOUNT_TOO_LARGE", "결제 금액이 허용 범위를 초과합니다");
   return krw;
 }
 
 export function priceToSats(kind: PriceKind, amount: bigint, rate: string | null): bigint {
-  if (amount < 0n || amount > maxInteger) throw new HttpError(422, "INVALID_MONEY", "금액이 올바르지 않습니다.");
+  if (amount < 0n || amount > maxInteger) throw new HttpError(422, "INVALID_MONEY", "금액이 올바르지 않습니다");
   switch (kind) {
     case "FREE":
-      if (amount !== 0n) throw new HttpError(422, "INVALID_MONEY", "무료 가격은 0이어야 합니다.");
+      if (amount !== 0n) throw new HttpError(422, "INVALID_MONEY", "무료 가격은 0이어야 합니다");
       return 0n;
     case "BTC_FIXED":
-      if (amount > maxSats) throw new HttpError(422, "AMOUNT_TOO_LARGE", "결제 금액이 허용 범위를 초과합니다.");
+      if (amount > maxSats) throw new HttpError(422, "AMOUNT_TOO_LARGE", "결제 금액이 허용 범위를 초과합니다");
       return amount;
     case "KRW_FIXED":
-      if (rate === null) throw new HttpError(503, "RATE_UNAVAILABLE", "환율을 확인한 뒤 다시 시도해 주세요.");
+      if (rate === null) throw new HttpError(503, "RATE_UNAVAILABLE", "환율을 확인한 뒤 다시 시도해 주세요");
       return krwToSats(amount, rate);
     default: {
       const exhaustive: never = kind;
@@ -80,7 +80,7 @@ export function parseUpbitRate(payload: unknown, now = Date.now()): ExchangeRate
   const parsed = tickerSchema.safeParse(payload);
   const tick = parsed.success ? parsed.data[0] : undefined;
   if (!tick || !fresh(tick.trade_timestamp, now) || !fresh(tick.timestamp, now)) {
-    throw new HttpError(503, "RATE_UNAVAILABLE", "최신 환율을 확인할 수 없습니다. 잠시 후 다시 시도해 주세요.");
+    throw new HttpError(503, "RATE_UNAVAILABLE", "최신 환율을 확인할 수 없습니다 잠시 후 다시 시도해 주세요");
   }
   return { krwPerBtc: String(tick.trade_price), source: "upbit:KRW-BTC", timestamp: new Date(tick.trade_timestamp) };
 }
@@ -88,13 +88,13 @@ export function parseUpbitRate(payload: unknown, now = Date.now()): ExchangeRate
 // Bithumb public ticker: https://api.bithumb.com/public/ticker/BTC_KRW
 export function parseBithumbRate(payload: unknown, now = Date.now()): ExchangeRate {
   const parsed = bithumbSchema.safeParse(payload);
-  if (!parsed.success) throw new HttpError(503, "RATE_UNAVAILABLE", "최신 환율을 확인할 수 없습니다. 잠시 후 다시 시도해 주세요.");
+  if (!parsed.success) throw new HttpError(503, "RATE_UNAVAILABLE", "최신 환율을 확인할 수 없습니다 잠시 후 다시 시도해 주세요");
   const time = Number(parsed.data.data.date);
   if (!Number.isSafeInteger(time) || !fresh(time, now)) {
-    throw new HttpError(503, "RATE_UNAVAILABLE", "최신 환율을 확인할 수 없습니다. 잠시 후 다시 시도해 주세요.");
+    throw new HttpError(503, "RATE_UNAVAILABLE", "최신 환율을 확인할 수 없습니다 잠시 후 다시 시도해 주세요");
   }
   const krwPerBtc = parsed.data.data.closing_price.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
-  if (!ratePattern.test(krwPerBtc)) throw new HttpError(503, "RATE_UNAVAILABLE", "최신 환율을 확인할 수 없습니다. 잠시 후 다시 시도해 주세요.");
+  if (!ratePattern.test(krwPerBtc)) throw new HttpError(503, "RATE_UNAVAILABLE", "최신 환율을 확인할 수 없습니다 잠시 후 다시 시도해 주세요");
   return { krwPerBtc, source: "bithumb:BTC_KRW", timestamp: new Date(time) };
 }
 
@@ -102,7 +102,7 @@ async function fetchJson(url: string): Promise<unknown> {
   const response = await fetch(url, {
     signal: AbortSignal.timeout(5000), redirect: "error", cache: "no-store", headers: { Accept: "application/json" },
   });
-  if (!response.ok) throw new HttpError(503, "RATE_UNAVAILABLE", "환율 제공자에 연결할 수 없습니다.");
+  if (!response.ok) throw new HttpError(503, "RATE_UNAVAILABLE", "환율 제공자에 연결할 수 없습니다");
   return response.json();
 }
 
@@ -128,7 +128,7 @@ export function rateFromSources(live: ExchangeRate | null, cached: ExchangeRate 
       timestamp: cached.timestamp,
     };
   }
-  throw new HttpError(503, "RATE_UNAVAILABLE", "최신 환율을 확인할 수 없습니다. 잠시 후 다시 시도해 주세요. / A recent exchange rate is unavailable.");
+  throw new HttpError(503, "RATE_UNAVAILABLE", "최신 환율을 확인할 수 없습니다 잠시 후 다시 시도해 주세요 / A recent exchange rate is unavailable");
 }
 
 async function readCachedRate(): Promise<ExchangeRate | null> {
@@ -160,7 +160,7 @@ async function liveExchangeRate(): Promise<ExchangeRate> {
   const settings = await getCommerceSettings();
   if (settings.btcPriceSource === "FIXED") {
     if (!settings.fixedKrwPerBtc || !ratePattern.test(settings.fixedKrwPerBtc)) {
-      throw new HttpError(503, "RATE_UNAVAILABLE", "고정 환율이 설정되어 있지 않습니다. / A fixed bitcoin rate is not configured.");
+      throw new HttpError(503, "RATE_UNAVAILABLE", "고정 환율이 설정되어 있지 않습니다 / A fixed bitcoin rate is not configured");
     }
     return { krwPerBtc: settings.fixedKrwPerBtc, source: "fixed", timestamp: new Date() };
   }
@@ -183,7 +183,7 @@ export async function getExchangeRate(): Promise<ExchangeRate> {
   const config = getServerConfig();
   if (config.paymentMode === "review") {
     if (!config.reviewKrwPerBtc || !ratePattern.test(config.reviewKrwPerBtc)) {
-      throw new HttpError(503, "REVIEW_RATE_REQUIRED", "검토용 환율이 설정되지 않았습니다.");
+      throw new HttpError(503, "REVIEW_RATE_REQUIRED", "검토용 환율이 설정되지 않았습니다");
     }
     return { krwPerBtc: config.reviewKrwPerBtc, source: "review:fixture", timestamp: new Date() };
   }
@@ -194,7 +194,7 @@ export async function getExchangeRate(): Promise<ExchangeRate> {
   } catch (error) {
     if (error instanceof HttpError) throw error;
     if (error instanceof TypeError || error instanceof SyntaxError || error instanceof DOMException) {
-      throw new HttpError(503, "RATE_UNAVAILABLE", "환율 제공자에 연결할 수 없습니다.");
+      throw new HttpError(503, "RATE_UNAVAILABLE", "환율 제공자에 연결할 수 없습니다");
     }
     throw error;
   }

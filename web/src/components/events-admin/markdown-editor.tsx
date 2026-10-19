@@ -59,7 +59,7 @@ export function MarkdownEditor({ name, label, defaultValue, rows = 8, required =
       if (abort.signal.aborted || !mounted.current || !field) return;
       const insertion = `\n\n${attachmentMarkdown(selection.files, selection.images)}\n\n`;
       if (field.value.length + insertion.length > field.maxLength) {
-        setError("사진을 넣으면 본문 20,000자를 초과합니다. 글을 줄인 뒤 다시 시도해 주세요. 올린 사진은 유지됩니다.");
+        setError("사진을 넣으면 본문 20,000자를 초과합니다 글을 줄인 뒤 다시 시도해 주세요 올린 사진은 유지됩니다");
         setRetry(true); return;
       }
       const position = Math.min(selection.position, field.value.length);
@@ -67,7 +67,7 @@ export function MarkdownEditor({ name, label, defaultValue, rows = 8, required =
       field.setRangeText(insertion, position, position, atInsertion ? "end" : "preserve");
       previous.current = { value: field.value, selectionStart: field.selectionStart };
       batch.current = null; onDirty();
-      setMessage(`${selection.images.length}장 첨부했습니다. [사진 설명]을 수정할 수 있습니다.`);
+      setMessage(`${selection.images.length}장 첨부했습니다 [사진 설명]을 수정할 수 있습니다`);
       if (document.activeElement === trigger.current) field.focus({ preventScroll: true });
     } catch (caught) {
       if (abort.signal.aborted || !mounted.current) return;
@@ -107,10 +107,10 @@ export function MarkdownEditor({ name, label, defaultValue, rows = 8, required =
       <div className="markdown-editor-toolbar" role="group" aria-label={`${label} 편집 도구`}>
         <Button ref={trigger} variant="secondary" disabled={pending} aria-label={`${label} 사진 첨부`} onClick={() => picker.current?.click()}><ImagePlus className="icon" aria-hidden="true" />사진 첨부</Button>
         <input ref={picker} type="file" hidden multiple accept={imageUploadAccept} aria-label={`${label} 사진 파일 선택`} onChange={(event) => { const files = Array.from(event.currentTarget.files ?? []); event.currentTarget.value = ""; select(files); }} />
-        <span className="muted caption">사진을 본문에 끌어놓아도 됩니다.</span>
+        <span className="muted caption">사진을 본문에 끌어놓아도 됩니다</span>
       </div>
       <FormControl><textarea ref={textarea} id={id} name={name} defaultValue={defaultValue} rows={rows} required={required} maxLength={20000} aria-describedby={helpId} onChange={change} onDragOver={dragOver} onDragLeave={() => setDragging(false)} onDrop={drop} /></FormControl>
-      <p className="markdown-editor-status muted" role="status">{pending ? "사진 업로드 중… 글을 계속 작성할 수 있습니다." : message}</p>
+      <p className="markdown-editor-status muted" role="status">{pending ? "사진 업로드 중… 글을 계속 작성할 수 있습니다" : message}</p>
       {error && <p className="events-error" role="alert">{error}</p>}
       {retry && <Button className="markdown-editor-retry" variant="secondary" disabled={pending} onClick={() => { if (batch.current) void attach(batch.current); }}>사진 첨부 다시 시도</Button>}
     </div>

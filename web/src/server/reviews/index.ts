@@ -44,7 +44,7 @@ export async function reviewBySlug(slug: string): Promise<ReviewRecord | null> {
 
 export async function getReviewSelection() {
   const row = await prisma.reviewSelection.findUnique({ where: { id: 1 } });
-  if (!row) throw new ApiError(500, "SELECTION_UNAVAILABLE", "후기 노출 설정을 불러오지 못했습니다.");
+  if (!row) throw new ApiError(500, "SELECTION_UNAVAILABLE", "후기 노출 설정을 불러오지 못했습니다");
   return reviewSelectionSchema.parse({ featured_id: row.featuredId, home_ids: JSON.parse(row.homeIds), revision: row.revision });
 }
 
@@ -71,7 +71,7 @@ export async function saveReview(input: ReviewInput, id?: number, revision?: num
     if (id !== undefined) await reserveRevision(tx, "visit_reviews", id, revision);
     if (input.slug) {
       const owner = await tx.reviewSlug.findUnique({ where: { slug: input.slug } });
-      if (owner && owner.reviewId !== id) throw new ApiError(409, "SLUG_CONFLICT", "이미 사용 중인 URL 슬러그입니다.");
+      if (owner && owner.reviewId !== id) throw new ApiError(409, "SLUG_CONFLICT", "이미 사용 중인 URL 슬러그입니다");
     }
     const data = {
       kind: input.kind, url: input.url, author: input.author, date: input.date, title: input.title, titleEn: input.titleEn,
@@ -83,7 +83,7 @@ export async function saveReview(input: ReviewInput, id?: number, revision?: num
     return reviewId;
   });
   const saved = await getReview(savedId);
-  if (!saved) throw new ApiError(500, "SAVE_FAILED", "후기를 저장하지 못했습니다.");
+  if (!saved) throw new ApiError(500, "SAVE_FAILED", "후기를 저장하지 못했습니다");
   const kept = new Set(collectImagePaths(image, description, descriptionEn));
   await deleteUnusedImages(collectImagePaths(previous?.image, previous?.description, previous?.descriptionEn).filter((item) => !kept.has(item)));
   return saved;
@@ -108,8 +108,8 @@ export async function saveReviewSelection(input: ReviewSelectionInput, revision:
     const selected = new Set([...input.home_ids, ...(input.featured_id === null ? [] : [input.featured_id])]);
     for (const id of selected) {
       const review = await tx.visitReview.findUnique({ where: { id } });
-      if (!review || review.isActive !== 1) throw new ApiError(400, "REVIEW_UNAVAILABLE", "공개된 후기를 선택해 주세요. 삭제되거나 비공개된 항목이 포함되어 있습니다.");
-      if (id === input.featured_id && !review.image) throw new ApiError(400, "COVER_REQUIRED", "대표 후기는 썸네일이 필요합니다.");
+      if (!review || review.isActive !== 1) throw new ApiError(400, "REVIEW_UNAVAILABLE", "공개된 후기를 선택해 주세요 삭제되거나 비공개된 항목이 포함되어 있습니다");
+      if (id === input.featured_id && !review.image) throw new ApiError(400, "COVER_REQUIRED", "대표 후기는 썸네일이 필요합니다");
     }
     const saved = await tx.reviewSelection.update({ where: { id: 1 }, data: { featuredId: input.featured_id, homeIds: JSON.stringify(input.home_ids) } });
     return reviewSelectionSchema.parse({ featured_id: saved.featuredId, home_ids: JSON.parse(saved.homeIds), revision: saved.revision });

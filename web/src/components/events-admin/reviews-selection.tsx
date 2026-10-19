@@ -20,7 +20,7 @@ export function ReviewsSelection({ records, value, disabled, dirty, onChange, on
   const invalid = (value.featured_id !== null && !publicRecords.some((record) => record.id === value.featured_id && record.image)) || value.home_ids.some((id) => !publicRecords.some((record) => record.id === id));
   return <form className="events-form" onSubmit={(event) => { event.preventDefault(); onSave(); }}>
     <h2>대표와 홈 후기 선택</h2>
-    <p className="muted">공개 후기만 선택할 수 있습니다. 대표 후기는 사진이 있는 1개, 홈 후기는 표시 순서대로 최대 3개입니다. 선택을 해제하면 뒤의 후기가 앞으로 이동합니다.</p>
+    <p className="muted">공개 후기만 선택할 수 있습니다 대표 후기는 사진이 있는 1개, 홈 후기는 표시 순서대로 최대 3개입니다 선택을 해제하면 뒤의 후기가 앞으로 이동합니다</p>
     <fieldset className="events-editor-fields events-field-grid" disabled={disabled}>
       <label>후기 페이지 대표<FormControl><MenuSelect value={value.featured_id ?? ""} onChange={(event) => onChange({ ...value, featured_id: event.target.value ? Number(event.target.value) : null })}>{options(value.featured_id, true)}</MenuSelect></FormControl></label>
       {[0, 1, 2].map((index) => <label key={index}>홈 후기 {index + 1}<FormControl><MenuSelect disabled={index > value.home_ids.length} value={value.home_ids[index] ?? ""} onChange={(event) => {
@@ -29,7 +29,7 @@ export function ReviewsSelection({ records, value, disabled, dirty, onChange, on
         onChange({ ...value, home_ids: slots.filter((id): id is number => id !== null) });
       }}>{options(value.home_ids[index] ?? null, false)}</MenuSelect></FormControl></label>)}
     </fieldset>
-    {invalid && <p className="events-error" role="alert">비공개 또는 삭제된 후기, 사진이 없는 대표 후기는 공개되지 않습니다. 해당 선택을 해제하거나 다른 후기로 바꾼 뒤 저장해 주세요.</p>}
+    {invalid && <p className="events-error" role="alert">비공개 또는 삭제된 후기, 사진이 없는 대표 후기는 공개되지 않습니다 해당 선택을 해제하거나 다른 후기로 바꾼 뒤 저장해 주세요</p>}
     <div className="button-row"><Button type="submit" disabled={disabled || !dirty || invalid}>선택 저장</Button></div>
   </form>;
 }

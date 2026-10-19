@@ -12,7 +12,7 @@ export async function ensureInvoice(paymentId: string) {
     if (payment.status !== "NEW") return { payment, claimed: false };
     if (payment.orderId) await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${payment.orderId} FOR UPDATE`;
     const parent = payment.orderId ? await tx.order.findUnique({ where: { id: payment.orderId } }) : null;
-    if (!parent || parent.status !== "PENDING_PAYMENT" || !parent.holdExpiresAt || parent.holdExpiresAt <= new Date() || payment.expiresAt <= new Date()) throw new HttpError(409, "PAYMENT_HOLD_EXPIRED", "신청 또는 주문의 결제 기한을 확인해 주세요. / The payment reservation has expired.");
+    if (!parent || parent.status !== "PENDING_PAYMENT" || !parent.holdExpiresAt || parent.holdExpiresAt <= new Date() || payment.expiresAt <= new Date()) throw new HttpError(409, "PAYMENT_HOLD_EXPIRED", "신청 또는 주문의 결제 기한을 확인해 주세요 / The payment reservation has expired");
     const metadata = metadataSchema.parse(payment.metadata);
     const updated = await tx.payment.update({ where: { id: paymentId }, data: { status: "CREATING", metadata: { ...metadata, locale: parent.locale === "en" ? "en" : "ko", receiverSnapshot: await receiverFor(payment) } } });
     return { payment: updated, claimed: true };
@@ -30,7 +30,7 @@ export async function ensureInvoice(paymentId: string) {
 }
 export async function reconcilePayment(paymentId: string, eventKey?: string) {
   let payment = await prisma.payment.findUnique({ where: { id: paymentId } });
-  if (!payment) throw new HttpError(404, "PAYMENT_NOT_FOUND", "결제를 찾을 수 없습니다. / Payment not found.");
+  if (!payment) throw new HttpError(404, "PAYMENT_NOT_FOUND", "결제를 찾을 수 없습니다 / Payment not found");
   if (payment.status === "NEW") {
     if (payment.expiresAt <= new Date()) return applyObservation(paymentId, { status: "EXPIRED", reason: "NO_INVOICE_ISSUED" });
     return payment;
@@ -52,7 +52,7 @@ export async function reconcilePayment(paymentId: string, eventKey?: string) {
     }
     return applyObservation(paymentId, await observeInvoice(context), eventKey);
   } catch (error) {
-    if (error instanceof TransportError) throw new HttpError(503, error.code, "결제 제공자 확인이 지연됩니다. / Payment provider verification is unavailable.");
+    if (error instanceof TransportError) throw new HttpError(503, error.code, "결제 제공자 확인이 지연됩니다 / Payment provider verification is unavailable");
     if (error instanceof PaymentError || error instanceof z.ZodError) return applyObservation(paymentId, { status: "REVIEW", reason: error instanceof PaymentError ? error.code : "INVALID_PROVIDER_RESPONSE" }, eventKey);
     throw error;
   }

@@ -40,7 +40,7 @@ export async function saveGuestbook(input: GuestbookInput, id?: number, revision
     return { saved: await tx.guestbookEntry.update({ where: { id }, data }), previous };
   }).catch((error: unknown) => {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      throw new ApiError(409, "GUESTBOOK_NUMBER_CONFLICT", "이미 사용 중인 고유번호입니다. 다른 번호를 입력해 주세요.");
+      throw new ApiError(409, "GUESTBOOK_NUMBER_CONFLICT", "이미 사용 중인 고유번호입니다 다른 번호를 입력해 주세요");
     }
     throw error;
   });

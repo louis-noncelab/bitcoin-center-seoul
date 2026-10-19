@@ -20,7 +20,7 @@ export function useResource<T>(path: string, schema: z.ZodType<T>) {
     async function load() {
       try {
         if (token.current) {
-          if (!/^[A-Za-z0-9_-]{43}$/.test(token.current)) throw new ApiError("INVALID_ACCESS", "조회 링크가 올바르지 않습니다. / This access link is invalid.", 401);
+          if (!/^[A-Za-z0-9_-]{43}$/.test(token.current)) throw new ApiError("INVALID_ACCESS", "조회 링크가 올바르지 않습니다 / This access link is invalid", 401);
           await apiRequest(`${path}/access`, createdSchema, { ...jsonRequest({ token: token.current }), signal: controller.signal });
           token.current = null;
         }

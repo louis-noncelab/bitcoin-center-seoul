@@ -34,7 +34,7 @@ async function restoreCouponUsage(tx: Tx, order: OrderDetails) {
   const count = await tx.couponUsage.count({ where: { couponId: coupon.id } });
   const mine = order.accountId ? await tx.couponUsage.count({ where: { couponId: coupon.id, accountId: order.accountId } }) : 0;
   if ((coupon.usageLimit !== null && count >= coupon.usageLimit) || (order.accountId && mine >= coupon.perUserLimit)) {
-    throw new HttpError(409, "COUPON_CAPACITY", "쿠폰 사용 한도가 다른 주문에 배정되었습니다. 한도를 확인해 주세요.");
+    throw new HttpError(409, "COUPON_CAPACITY", "쿠폰 사용 한도가 다른 주문에 배정되었습니다 한도를 확인해 주세요");
   }
   await tx.couponUsage.create({ data: { orderId: order.id, couponId: coupon.id, accountId: order.accountId, discountSats: BigInt(original.discountSats) } });
 }
@@ -46,10 +46,10 @@ async function updateInventory(tx: Tx, order: OrderDetails, paid: boolean) {
     await tx.$queryRaw`SELECT id FROM "ProductVariant" WHERE id = ${item.variantId} FOR UPDATE`;
     const variant = await tx.productVariant.findUniqueOrThrow({ where: { id: item.variantId } });
     if (retained && variant.reservedStock < item.quantity) {
-      throw new HttpError(409, "INVENTORY_CONFLICT", "예약 재고가 주문 수량과 맞지 않습니다. 재고를 확인해 주세요.");
+      throw new HttpError(409, "INVENTORY_CONFLICT", "예약 재고가 주문 수량과 맞지 않습니다 재고를 확인해 주세요");
     }
     if (paid && (variant.stockOnHand < variant.reservedStock || (!retained && variant.stockOnHand - variant.reservedStock < item.quantity))) {
-      throw new HttpError(409, "OUT_OF_STOCK", "다른 주문의 예약분을 제외한 재고가 부족합니다.");
+      throw new HttpError(409, "OUT_OF_STOCK", "다른 주문의 예약분을 제외한 재고가 부족합니다");
     }
     await tx.productVariant.update({ where: { id: item.variantId }, data: {
       ...(retained ? { reservedStock: { decrement: item.quantity } } : {}),
@@ -62,12 +62,12 @@ export async function resolveManualPayment(orderId: string, input: ManualPayment
   let deliver = false;
   const view = await prisma.$transaction(async (tx) => {
     const payment = await lockPayment(tx, input.paymentId);
-    if (payment.orderId !== orderId) throw new HttpError(404, "NOT_FOUND", "주문의 결제를 찾을 수 없습니다.");
+    if (payment.orderId !== orderId) throw new HttpError(404, "NOT_FOUND", "주문의 결제를 찾을 수 없습니다");
     await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${orderId} FOR UPDATE`;
     const order = await tx.order.findUniqueOrThrow({ where: { id: orderId }, include: orderIncludes });
-    if (order.privacyRedactedAt) throw new HttpError(409, "ORDER_REDACTED", "개인정보가 파기된 주문은 변경할 수 없습니다.");
-    if (order.payments.length !== 1) throw new HttpError(409, "PAYMENT_CONFLICT", "여러 결제가 연결된 주문은 수동 처리할 수 없습니다.");
-    if (order.refundStatus !== "NONE") throw new HttpError(409, "REFUND_IN_PROGRESS", "환불 처리 중이거나 완료된 주문의 입금 상태를 변경할 수 없습니다.");
+    if (order.privacyRedactedAt) throw new HttpError(409, "ORDER_REDACTED", "개인정보가 파기된 주문은 변경할 수 없습니다");
+    if (order.payments.length !== 1) throw new HttpError(409, "PAYMENT_CONFLICT", "여러 결제가 연결된 주문은 수동 처리할 수 없습니다");
+    if (order.refundStatus !== "NONE") throw new HttpError(409, "REFUND_IN_PROGRESS", "환불 처리 중이거나 완료된 주문의 입금 상태를 변경할 수 없습니다");
     const paid = input.decision === "PAID";
     const achieved = order.status === input.decision && payment.status === (paid ? "PAID" : "FAILED");
     if (payment.updatedAt.getTime() !== new Date(input.expectedPaymentUpdatedAt).getTime()) {
@@ -81,13 +81,13 @@ export async function resolveManualPayment(orderId: string, input: ManualPayment
         ],
       } });
       if (retry) return orderView(order);
-      throw new HttpError(409, "PAYMENT_STALE", "결제 상태가 변경되었습니다. 새로고침 후 다시 확인해 주세요.");
+      throw new HttpError(409, "PAYMENT_STALE", "결제 상태가 변경되었습니다 새로고침 후 다시 확인해 주세요");
     }
     if (achieved) return orderView(order);
-    if (payment.status === "CREATING" || payment.creationUnknown) throw new HttpError(409, "PAYMENT_IN_FLIGHT", "결제 생성 결과가 확인되지 않았습니다. 제공자 확인을 먼저 완료해 주세요.");
-    if (order.fulfillmentStatus !== "UNFULFILLED") throw new HttpError(409, "FULFILLMENT_STARTED", "이미 수령 또는 배송 처리된 주문입니다.");
+    if (payment.status === "CREATING" || payment.creationUnknown) throw new HttpError(409, "PAYMENT_IN_FLIGHT", "결제 생성 결과가 확인되지 않았습니다 제공자 확인을 먼저 완료해 주세요");
+    if (order.fulfillmentStatus !== "UNFULFILLED") throw new HttpError(409, "FULFILLMENT_STARTED", "이미 수령 또는 배송 처리된 주문입니다");
     if (order.status === "PAID" || payment.status === "PAID" || (!paid && (payment.paidAt !== null || payment.status === "PROCESSING"))) {
-      throw new HttpError(409, "PAYMENT_RECEIVED", "입금 완료 또는 처리 중인 결제를 미입금 취소할 수 없습니다.");
+      throw new HttpError(409, "PAYMENT_RECEIVED", "입금 완료 또는 처리 중인 결제를 미입금 취소할 수 없습니다");
     }
     if (!paid) assertLnurlUnpaidResolution(payment, Boolean(input.unpaidEvidence));
     await updateInventory(tx, order, paid);

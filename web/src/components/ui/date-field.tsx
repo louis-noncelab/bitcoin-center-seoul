@@ -19,7 +19,7 @@ export function DateField({ name, label, defaultValue = "", required = false, on
   const [today, setToday] = useState("");
   const [calendarSession, setCalendarSession] = useState(0);
   const [open, setOpen] = useState(false);
-  const message = "날짜를 연도-월-일 형식으로 입력해 주세요. 예: 2026-09-10";
+  const message = "날짜를 연도-월-일 형식으로 입력해 주세요 예: 2026-09-10";
 
   function validate(next: string, show: boolean) {
     const invalid = next !== "" && !isCalendarDate(next);
@@ -40,7 +40,7 @@ export function DateField({ name, label, defaultValue = "", required = false, on
       <FormControl><input ref={input} id={id} name={name} type="text" inputMode="numeric" value={value} required={required} maxLength={10} pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}" placeholder="YYYY-MM-DD" autoComplete="off" aria-describedby={error ? `${id}-error` : undefined} aria-invalid={error ? true : undefined}
         onChange={(event) => { setValue(event.currentTarget.value); validate(event.currentTarget.value, Boolean(error)); }}
         onBlur={() => validate(value, true)}
-        onInvalid={(event) => { event.preventDefault(); setError(value ? message : "날짜를 입력해 주세요."); input.current?.focus(); }} /></FormControl>
+        onInvalid={(event) => { event.preventDefault(); setError(value ? message : "날짜를 입력해 주세요"); input.current?.focus(); }} /></FormControl>
       <Button variant="quiet" className="date-field-trigger" aria-label={`${label} 달력 열기`} aria-haspopup="dialog" aria-expanded={open} onClick={() => { setToday(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())); setCalendarSession(session => session + 1); setOpen(true); }}><CalendarDays className="icon" aria-hidden="true" /></Button>
     </div>
     {error && <p id={`${id}-error`} className="date-field-error" role="alert">{error}</p>}

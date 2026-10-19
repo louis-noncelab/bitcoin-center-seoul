@@ -11,7 +11,7 @@ export async function publicNotices() { return route(async () => dataResponse(aw
 export async function publicNotice(_request: NextRequest, context: { readonly params: Promise<{ readonly slug: string }> }) {
   return route(async () => {
     const notice = await noticeBySlug((await context.params).slug);
-    if (!notice) throw new ApiError(404, "NOT_FOUND", "공지를 찾을 수 없습니다.");
+    if (!notice) throw new ApiError(404, "NOT_FOUND", "공지를 찾을 수 없습니다");
     return dataResponse(notice);
   });
 }

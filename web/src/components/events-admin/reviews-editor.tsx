@@ -49,16 +49,16 @@ export function ReviewsEditor({ record, disabled, uploading, onUpload, onExpired
       <label>제목<FormControl><input name="title" required maxLength={200} defaultValue={record?.title ?? ""} /></FormControl></label>
       <label>소개<FormControl><textarea name="summary" required maxLength={2000} rows={5} defaultValue={record?.summary ?? ""} /></FormControl></label>
       <fieldset className="events-gallery-field" disabled={imagePending}>
-        <legend>썸네일 (선택)</legend><p className="muted">사진 1장, 최대 10MB. 대표 후기에는 사진이 필요합니다.</p>
+        <legend>썸네일 (선택)</legend><p className="muted">사진 1장, 최대 10MB 대표 후기에는 사진이 필요합니다</p>
         <input type="hidden" name="image" value={image} />
         <div className="events-upload"><Button variant="secondary" onClick={() => picker.current?.click()}>{image ? "사진 교체" : "사진 선택"}</Button><input ref={picker} hidden type="file" aria-label="썸네일 사진 선택" accept={imageUploadAccept} onChange={(event) => void upload(event.currentTarget)} /></div>
         {imagePending && <p role="status">사진 업로드 중…</p>}{error && <p className="events-error" role="alert">{error}</p>}
         {image && <ol className="events-gallery-editor"><li><Image src={image} alt="후기 썸네일" width={320} height={180} unoptimized /><div className="events-image-actions"><Button variant="quiet" onClick={() => { setImage(""); onDirty(); }}>사진 제거</Button></div></li></ol>}
       </fieldset>
       <label>URL 슬러그 (본문 작성 시 필수)<FormControl><input name="slug" defaultValue={record?.slug ?? ""} maxLength={100} pattern="(?=.*[a-z])[a-z0-9]+(-[a-z0-9]+)*" autoCapitalize="none" spellCheck={false} aria-describedby="review-slug-help" /></FormControl></label>
-      <p id="review-slug-help" className="muted">/ko/reviews/ 뒤에 붙는 주소입니다. 영어 두세 단어를 하이픈으로 이어 작성하세요. 예: coffee-and-reading.</p>
+      <p id="review-slug-help" className="muted">/ko/reviews/ 뒤에 붙는 주소입니다 영어 두세 단어를 하이픈으로 이어 작성하세요 예: coffee-and-reading</p>
       <MarkdownEditor name="description" label="후기 본문 (선택)" defaultValue={record?.description ?? ""} rows={12} helpId="review-markdown-help" onPending={(pending) => uploadPending("description", pending)} onDirty={onDirty} onExpired={onExpired} />
-      <p className="muted">본문을 작성하면 카드에서 후기 상세 페이지로 이동합니다. 본문을 비우면 기존처럼 원문으로 연결됩니다.</p>
+      <p className="muted">본문을 작성하면 카드에서 후기 상세 페이지로 이동합니다 본문을 비우면 기존처럼 원문으로 연결됩니다</p>
       <MarkdownHelp id="review-markdown-help" />
       <div className="events-field-grid">
         <label>영어 제목 (선택)<FormControl><input name="titleEn" maxLength={200} defaultValue={record?.titleEn ?? ""} /></FormControl></label>
@@ -67,9 +67,9 @@ export function ReviewsEditor({ record, disabled, uploading, onUpload, onExpired
       <label>영어 소개 (선택)<FormControl><textarea name="summaryEn" maxLength={2000} rows={4} defaultValue={record?.summaryEn ?? ""} /></FormControl></label>
       <MarkdownEditor name="descriptionEn" label="영어 후기 본문 (선택)" defaultValue={record?.descriptionEn ?? ""} rows={8} helpId="review-markdown-help" onPending={(pending) => uploadPending("descriptionEn", pending)} onDirty={onDirty} onExpired={onExpired} />
       <label>영어 대표 후기 제목 (선택)<FormControl><input name="feature_titleEn" maxLength={200} defaultValue={record?.feature_titleEn ?? ""} /></FormControl></label>
-      <p className="muted">영어를 비우면 한국어가 표시됩니다. 대표 후기 제목을 비우면 일반 제목이 표시됩니다.</p>
+      <p className="muted">영어를 비우면 한국어가 표시됩니다 대표 후기 제목을 비우면 일반 제목이 표시됩니다</p>
       <label>표시 순서<FormControl><input name="sort_order" type="number" required min={-100000} max={100000} step={1} defaultValue={record?.sort_order ?? 0} /></FormControl></label>
-      <p className="muted">숫자가 작을수록 먼저 표시됩니다.</p>
+      <p className="muted">숫자가 작을수록 먼저 표시됩니다</p>
       <label className="events-checkbox"><ChoiceControl type="checkbox" name="is_active" defaultChecked={record?.is_active === 1} />공개</label>
     </fieldset>
     <div className="button-row"><Button type="submit" disabled={disabled || uploading}>저장</Button><Button variant="secondary" disabled={disabled || uploading} onClick={onCancel}>취소</Button></div>

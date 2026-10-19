@@ -43,7 +43,7 @@ for (const kind of ["book", "goods"] as const) {
       await expect(page.locator(".events-gallery-editor img")).toHaveCount(1);
       await page.getByLabel("공개", { exact: true }).check();
       await page.getByRole("button", { name: "저장", exact: true }).click();
-      await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+      await expect(page.getByText("저장했습니다", { exact: true })).toBeVisible();
       const item = recordsSchema.parse(await (await page.request.get("/api/admin/collection")).json()).data.find(record => record.slug === slug);
       if (!item) throw new Error("Saved item missing.");
       id = item.id;
