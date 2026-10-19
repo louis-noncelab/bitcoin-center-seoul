@@ -32,7 +32,7 @@ export function RecordEditor({ locale, kind, record, onSaved, onCancel, onDirty,
     const form = new FormData(event.currentTarget);
     const text = (name: string) => String(form.get(name) ?? "");
     const tags = contentTagsSchema.safeParse(splitContentTags(text("tags")));
-    if (!tags.success) { setError(tags.error.issues[0]?.message ?? "해시태그를 확인해 주세요."); return; }
+    if (!tags.success) { setError(tags.error.issues[0]?.message ?? "해시태그를 확인해 주세요"); return; }
     const common = { slug: text("slug"), tags: tags.data, title: text("title"), titleEn: text("titleEn"), description: text("description"), descriptionEn: text("descriptionEn"), date: text("date"), image: images[0] ?? "", images, link: text("link") };
     const body = kind === "events"
       ? { ...common, registrationClosed: form.has("registrationClosed"), externalPayment: form.has("externalPayment"), isOnline: form.has("isOnline"), onlineUrl: text("onlineUrl"), onlineInstructions: text("onlineInstructions"), onlineInstructionsEn: text("onlineInstructionsEn"), time: text("time"), venueType: text("venueType"), location: text("location"), locationEn: text("locationEn"), ticketPriceKrw: text("ticketPriceKrw"), ticketPriceSats: text("ticketPriceSats"), ticketCapacity: Number(text("ticketCapacity") || 0) }

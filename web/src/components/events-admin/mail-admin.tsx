@@ -79,9 +79,9 @@ function when(value: string): string {
 
 function mailError(error: unknown): string {
   if (error instanceof AdminRequestError) {
-    if (error.code === "EMAIL_CAPTURE_MODE") return "지금은 기록 모드라 메일을 보내지 않습니다. 서버에서 EMAIL_MODE=smtp 와 메일 비밀번호를 넣은 뒤 다시 시작해야 합니다.";
-    if (error.code === "EMAIL_NOT_FAILED") return "실패한 메일만 다시 보낼 수 있습니다. 목록을 다시 확인해 주세요.";
-    if (error.code === "NO_RECIPIENTS") return "결제 완료된 예약이 없습니다.";
+    if (error.code === "EMAIL_CAPTURE_MODE") return "지금은 기록 모드라 메일을 보내지 않습니다 서버에서 EMAIL_MODE=smtp 와 메일 비밀번호를 넣은 뒤 다시 시작해야 합니다";
+    if (error.code === "EMAIL_NOT_FAILED") return "실패한 메일만 다시 보낼 수 있습니다 목록을 다시 확인해 주세요";
+    if (error.code === "NO_RECIPIENTS") return "결제 완료된 예약이 없습니다";
   }
   return errorText(error, "ko");
 }
@@ -150,8 +150,8 @@ export function MailAdmin() {
     const accepted = await confirm({
       title: "밋업 안내 메일을 보낼까요?",
       description: smtp
-        ? `결제한 ${meetup.recipients}명에게 보냅니다. 같은 내용은 한 번만 나갑니다.${meetup.online ? " 온라인 참여 링크가 메일 아래에 붙습니다." : ""}`
-        : `지금은 기록 모드입니다. ${meetup.recipients}명의 메일이 발송함에만 남고 손님에게 나가지 않습니다.`,
+        ? `결제한 ${meetup.recipients}명에게 보냅니다 같은 내용은 한 번만 나갑니다${meetup.online ? " 온라인 참여 링크가 메일 아래에 붙습니다" : ""}`
+        : `지금은 기록 모드입니다 ${meetup.recipients}명의 메일이 발송함에만 남고 손님에게 나가지 않습니다`,
       confirmLabel: "보내기",
     });
     if (!accepted) return;
@@ -160,7 +160,7 @@ export function MailAdmin() {
     setBroadcastNote("");
     try {
       const result = await adminRequest("/api/admin/email/meetups", broadcastSchema, jsonBody({ eventId: meetup.id, subject, message }));
-      setBroadcastNote(result.queued > 0 ? `${result.queued}명에게 넣었습니다. 같은 내용으로 이미 보낸 ${result.skipped}명은 건너뛰었습니다.` : "같은 내용으로 이미 보낸 주소만 있어 새로 넣지 않았습니다.");
+      setBroadcastNote(result.queued > 0 ? `${result.queued}명에게 넣었습니다 같은 내용으로 이미 보낸 ${result.skipped}명은 건너뛰었습니다` : "같은 내용으로 이미 보낸 주소만 있어 새로 넣지 않았습니다");
       setReport(await adminRequest("/api/admin/email", reportSchema, {}));
     } catch (caught) {
       setError(mailError(caught));
@@ -172,7 +172,7 @@ export function MailAdmin() {
   async function release() {
     const accepted = await confirm({
       title: "기록된 메일을 보낼까요?",
-      description: "지금까지 기록만 해 둔 메일을 발송 대기로 옮기고, 메일 서버로 보냅니다. 고객과 관리자에게 나갑니다.",
+      description: "지금까지 기록만 해 둔 메일을 발송 대기로 옮기고, 메일 서버로 보냅니다 고객과 관리자에게 나갑니다",
       confirmLabel: "보내기",
     });
     if (!accepted) return;
@@ -190,10 +190,10 @@ export function MailAdmin() {
   return <div className="events-admin-workspace">
     {dialog}
     <CommerceAdminNav current="/admin/mail" disabled={pending} />
-    <p className="muted">주문 및 밋업 메일과 관리자 알림이 메일 서버에 접수됐는지 확인합니다. 서버 접수는 우리 메일 서버가 메시지를 받았다는 뜻입니다. 상대 받은편지함까지의 전달은 그 서버가 이어서 처리합니다.</p>
+    <p className="muted">주문 및 밋업 메일과 관리자 알림이 메일 서버에 접수됐는지 확인합니다 서버 접수는 우리 메일 서버가 메시지를 받았다는 뜻입니다 상대 받은편지함까지의 전달은 그 서버가 이어서 처리합니다</p>
     <form className="events-form" onSubmit={(event) => void broadcast(event)}>
       <h2>밋업 안내 메일</h2>
-      <p className="muted">결제를 마친 예약만 받습니다. 같은 주소가 여러 장이면 한 통만 갑니다. 온라인 밋업이면 참여 링크가 본문 아래에 붙습니다.</p>
+      <p className="muted">결제를 마친 예약만 받습니다 같은 주소가 여러 장이면 한 통만 갑니다 온라인 밋업이면 참여 링크가 본문 아래에 붙습니다</p>
       <label>밋업<FormControl><MenuSelect aria-label="밋업" value={eventId} onChange={(event) => setEventId(event.target.value)} required disabled={pending || meetups.length === 0}>
         <option value="">밋업 선택</option>
         {meetups.map((meetup) => <option key={meetup.id} value={String(meetup.id)}>{[meetup.date, meetup.title].filter(Boolean).join(" ")}, {meetup.recipients}명{meetup.online ? ", 온라인" : ""}</option>)}
@@ -202,7 +202,7 @@ export function MailAdmin() {
       <label>내용<FormControl><textarea value={message} onChange={(event) => setMessage(event.target.value)} required rows={6} maxLength={4000} disabled={pending} /></FormControl></label>
       <div className="button-row"><Button type="submit" disabled={pending || !eventId}>안내 메일 보내기</Button></div>
       {broadcastNote && <p role="status">{broadcastNote}</p>}
-      {!meetups.length && report && <p className="muted">결제 완료된 밋업 예약이 없습니다.</p>}
+      {!meetups.length && report && <p className="muted">결제 완료된 밋업 예약이 없습니다</p>}
     </form>
     {error && <p className="events-error" role="alert">{error}</p>}
     {!report && !error && <p role="status">불러오는 중…</p>}
@@ -220,15 +220,15 @@ export function MailAdmin() {
             <h3>{row.subject ?? kindLabel[row.kind] ?? row.kind}</h3>
             <p className="muted">{kindLabel[row.kind] ?? row.kind}, {statusLabel[row.status]}{row.stale ? ", 멈춤" : ""}, {row.recipient ?? "받는 사람을 열 수 없음"}, {row.sentAt ? `접수 ${when(row.sentAt)}` : when(row.createdAt)}{row.attempts > 0 ? `, 시도 ${row.attempts}회` : ""}{row.orderId ? `, 주문 ${row.orderId}` : ""}</p>
             {row.lastError && <p className="muted">{row.lastError}</p>}
-            {!row.readable && <p className="muted">이 메일의 내용이나 받는 사람을 열 수 없습니다.</p>}
+            {!row.readable && <p className="muted">이 메일의 내용이나 받는 사람을 열 수 없습니다</p>}
           </div>
           {row.status === "FAILED" && <div className="button-row">
             <Button variant="secondary" disabled={pending || !smtp} onClick={() => void act({ action: "retry", id: row.id })}>다시 보내기</Button>
           </div>}
         </li>)}
-        {!rows.length && <li>{pending ? "불러오는 중…" : "메일이 없습니다."}</li>}
+        {!rows.length && <li>{pending ? "불러오는 중…" : "메일이 없습니다"}</li>}
       </ul>
-      {report.truncated && <p className="muted">최근 100통과 실패 100통을 보여 줍니다. 위의 숫자는 전체입니다.</p>}
+      {report.truncated && <p className="muted">최근 100통과 실패 100통을 보여 줍니다 위의 숫자는 전체입니다</p>}
     </>}
   </div>;
 }

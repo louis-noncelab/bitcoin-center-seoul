@@ -98,7 +98,7 @@ export function HomeEventCalendar({ events, locale, today }: Props) {
           </button>
         </div>
       </div>
-      <p className="caption muted">{locale === "ko" ? `행사 일정은 ${eventTimeZoneLabel(locale)} 기준입니다.` : `Event times are shown in ${eventTimeZoneLabel(locale)}.`}</p>
+      <p className="caption muted">{locale === "ko" ? `행사 일정은 ${eventTimeZoneLabel(locale)} 기준입니다` : `Event times are shown in ${eventTimeZoneLabel(locale)}`}</p>
       <div className="home-calendar-layout" data-view={view} key={view}>
         <div className="home-calendar-month">
           <Calendar
@@ -185,11 +185,11 @@ export function HomeEventCalendar({ events, locale, today }: Props) {
               <p className="home-calendar-empty muted">
                 {view === "list"
                   ? locale === "ko"
-                    ? "이번 달은 등록된 행사가 없어요."
-                    : "No events are scheduled for this month."
+                    ? "이번 달은 등록된 행사가 없어요"
+                    : "No events are scheduled for this month"
                   : locale === "ko"
-                    ? "이날은 등록된 행사가 없어요."
-                    : "No events are scheduled for this date."}
+                    ? "이날은 등록된 행사가 없어요"
+                    : "No events are scheduled for this date"}
               </p>
             )}
           </div>

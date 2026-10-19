@@ -9,7 +9,7 @@ export async function generateMetadata({ params }: Props) {
   return commerceMetadata(locale, {
     path: "/shop",
     title: locale === "ko" ? "센터 상점" : "Center shop",
-    description: locale === "ko" ? "비트코인으로 결제하는 센터 상점입니다." : "The center shop, paid in bitcoin.",
+    description: locale === "ko" ? "비트코인으로 결제하는 센터 상점입니다" : "The center shop, paid in bitcoin",
   });
 }
 
@@ -21,8 +21,8 @@ export default async function ShopPage({ params }: Props) {
     locale={locale}
     title={ko ? "센터 상점" : "Center shop"}
     introduction={ko
-      ? "원화로 표시된 가격은 주문 시점의 시세로 사토시로 환산해 비트코인으로 결제합니다."
-      : "Prices shown in KRW are converted to satoshis at the exchange rate quoted when you order."}
+      ? "원화로 표시된 가격은 주문 시점의 시세로 사토시로 환산해 비트코인으로 결제합니다"
+      : "Prices shown in KRW are converted to satoshis at the exchange rate quoted when you order"}
     backTo="/"
     backLabel={ko ? "홈으로" : "Back to home"}
   >

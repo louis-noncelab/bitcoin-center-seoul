@@ -37,13 +37,13 @@ for (const kind of ["events", "highlights", "notices", "book", "artwork", "board
       await first.getByLabel(titleLabel, { exact: true }).fill(`${title} A`);
       await stale.getByLabel(titleLabel, { exact: true }).fill(`${title} B`);
       await first.getByRole("button", { name: "저장", exact: true }).click();
-      await expect(first.getByText("저장했습니다.", { exact: true })).toBeVisible();
+      await expect(first.getByText("저장했습니다", { exact: true })).toBeVisible();
       await stale.getByRole("button", { name: "저장", exact: true }).click();
-      await expect(stale.getByRole("alert").filter({ hasText: "다른 사람이 먼저 수정했습니다." })).toContainText("다른 사람이 먼저 수정했습니다.");
+      await expect(stale.getByRole("alert").filter({ hasText: "다른 사람이 먼저 수정했습니다" })).toContainText("다른 사람이 먼저 수정했습니다");
       await expect(stale.getByLabel(titleLabel, { exact: true })).toHaveValue(`${title} B`);
       if (kind === "events") {
         await stale.setViewportSize({ width: 390, height: 844 });
-        await stale.getByRole("alert").filter({ hasText: "다른 사람이 먼저 수정했습니다." }).scrollIntoViewIfNeeded();
+        await stale.getByRole("alert").filter({ hasText: "다른 사람이 먼저 수정했습니다" }).scrollIntoViewIfNeeded();
         await stale.screenshot({ path: ".local/concurrency-mobile.png" });
         expect(await stale.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       }
@@ -53,7 +53,7 @@ for (const kind of ["events", "highlights", "notices", "book", "artwork", "board
       await expect(stale.getByLabel(titleLabel, { exact: true })).toHaveValue(`${title} A`);
       await stale.getByLabel(titleLabel, { exact: true }).fill(`${title} merged`);
       await stale.getByRole("button", { name: "저장", exact: true }).click();
-      await expect(stale.getByText("저장했습니다.", { exact: true })).toBeVisible();
+      await expect(stale.getByText("저장했습니다", { exact: true })).toBeVisible();
       expect(errors).toEqual([]);
     } finally {
       if (id !== undefined) {

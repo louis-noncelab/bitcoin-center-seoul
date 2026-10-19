@@ -213,7 +213,7 @@ test("keeps tracking drafts with their own order and cannot ship another order w
   // When attempting to ship the other order.
   await second.getByRole("button", { name: "발송됨로 변경", exact: true }).click();
   // Then no write happens; the other order asks for its own tracking details.
-  await expect(page.getByRole("alert").filter({ hasText: "발송으로 변경하려면 택배사와 송장 번호를 입력해 주세요." })).toBeVisible();
+  await expect(page.getByRole("alert").filter({ hasText: "발송으로 변경하려면 택배사와 송장 번호를 입력해 주세요" })).toBeVisible();
   await expect(second.getByLabel("택배사", { exact: true })).toHaveValue("");
   await expect(second.getByLabel("송장 번호", { exact: true })).toHaveValue("");
   expect(writes).toEqual([]);

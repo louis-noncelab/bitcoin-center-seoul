@@ -91,7 +91,7 @@ test("본문 사진 버튼과 드래그 업로드가 입력 위치 및 작성 �
     expect(body.endsWith("뒤 문단")).toBe(true);
     expect((body.match(/!\[/g) ?? [])).toHaveLength(2);
     await save.click();
-    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("저장했습니다", { exact: true })).toBeVisible();
     const record = z.object({ data: z.array(eventRecordSchema) }).parse(await (await page.request.get("/api/events")).json()).data.find((item) => item.slug === slug);
     if (!record) throw new Error("Inline photo review event missing");
     id = record.id;
@@ -156,7 +156,7 @@ test("본문 글자 제한과 세션 만료 후 사진 재시도가 글을 보�
     expect(await body.inputValue()).toContain(preserved);
     await page.getByLabel("공개", { exact: true }).check();
     await page.getByRole("button", { name: "저장", exact: true }).click();
-    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("저장했습니다", { exact: true })).toBeVisible();
     const record = z.object({ data: z.array(noticeRecordSchema) }).parse(await (await page.request.get("/api/admin/notices")).json()).data.find((item) => item.slug === slug);
     if (!record) throw new Error("Inline photo review notice missing");
     id = record.id;

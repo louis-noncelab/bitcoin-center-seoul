@@ -19,7 +19,7 @@ export const POST = (request: Request) => handleApi(async () => {
     ...(input.organization ? { company: input.organization } : {}),
     message: input.message,
   }));
-  if (created !== 1) throw new HttpError(503, "SUBMISSION_UNAVAILABLE", "제안을 접수하지 못했습니다. 다시 시도해 주세요. / We could not receive your proposal. Please try again.");
+  if (created !== 1) throw new HttpError(503, "SUBMISSION_UNAVAILABLE", "제안을 접수하지 못했습니다 다시 시도해 주세요 / We could not receive your proposal Please try again");
   scheduleEmailDelivery();
   return json({ received: true }, 201);
 });

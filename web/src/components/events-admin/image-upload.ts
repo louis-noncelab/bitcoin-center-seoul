@@ -24,8 +24,8 @@ export async function uploadImages(files: readonly File[], signal?: AbortSignal)
 
 export function imageUploadErrorText(error: unknown, locale: Locale) {
   const messages = {
-    limits: { ko: "한 번에 사진 12장, 각 10MB, 총 30MB까지 첨부할 수 있습니다.", en: "Attach up to 12 images, 10MB each and 30MB in total." },
-    type: { ko: "JPG, PNG, WebP, GIF, AVIF 사진을 선택해 주세요.", en: "Choose JPG, PNG, WebP, GIF or AVIF images." },
+    limits: { ko: "한 번에 사진 12장, 각 10MB, 총 30MB까지 첨부할 수 있습니다", en: "Attach up to 12 images, 10MB each and 30MB in total" },
+    type: { ko: "JPG, PNG, WebP, GIF, AVIF 사진을 선택해 주세요", en: "Choose JPG, PNG, WebP, GIF or AVIF images" },
   } as const;
   return error instanceof ImageSelectionError ? messages[error.kind][locale] : errorText(error, locale);
 }

@@ -27,7 +27,7 @@ export function EventsCalendar({ dates, locale, today }: Props) {
     <aside className="events-calendar" aria-label={locale === "ko" ? "행사 달력" : "Event calendar"}>
       <h2>{locale === "ko" ? "날짜로 찾아보기" : "Browse by date"}</h2>
       <Calendar locale={locale} today={today} selected={selectedDate} onSelect={selectDate} markedDates={dates} minMonth={months[0] ?? currentMonth} maxMonth={months.at(-1) ?? currentMonth} />
-      <p className="events-calendar-note muted">{locale === "ko" ? "행사가 있는 날짜를 누르면 목록으로 이동합니다." : "Select a marked date to view its events."}</p>
+      <p className="events-calendar-note muted">{locale === "ko" ? "행사가 있는 날짜를 누르면 목록으로 이동합니다" : "Select a marked date to view its events"}</p>
     </aside>
   );
 }

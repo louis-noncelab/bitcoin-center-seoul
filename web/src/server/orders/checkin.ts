@@ -38,7 +38,7 @@ export async function listMeetupCheckins() {
 export async function setMeetupCheckin(input: { code?: string | undefined; orderId?: string | undefined; undo?: boolean | undefined }, actorId: string) {
   const code = input.code ? confirmationCodeFrom(input.code) : null;
   const orderId = input.orderId ?? (input.code && !code ? input.code.trim() : "");
-  if (!code && !orderId) throw new HttpError(400, "INVALID_INPUT", "확인 코드 또는 주문 번호가 필요합니다.");
+  if (!code && !orderId) throw new HttpError(400, "INVALID_INPUT", "확인 코드 또는 주문 번호가 필요합니다");
   return prisma.$transaction(async (tx) => {
     if (code) await tx.$queryRaw`SELECT id FROM "Order" WHERE "confirmationCode" = ${code} FOR UPDATE`;
     else await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${orderId} FOR UPDATE`;
@@ -46,10 +46,10 @@ export async function setMeetupCheckin(input: { code?: string | undefined; order
       where: code ? { confirmationCode: code } : { id: orderId },
       include: { items: { select: { sku: true, titleKo: true, quantity: true } } },
     });
-    if (!order) throw new HttpError(404, "NOT_FOUND", "예약을 찾을 수 없습니다.");
-    if (order.privacyRedactedAt) throw new HttpError(409, "ORDER_REDACTED", "개인정보가 파기된 주문은 변경할 수 없습니다.");
-    if (!order.items.some((item) => ticketEventId(item.sku) !== null)) throw new HttpError(400, "NOT_MEETUP", "밋업 신청이 아닙니다.");
-    if (order.status !== "PAID") throw new HttpError(400, "NOT_PAID", "결제가 확인된 예약만 체크인할 수 있습니다.");
+    if (!order) throw new HttpError(404, "NOT_FOUND", "예약을 찾을 수 없습니다");
+    if (order.privacyRedactedAt) throw new HttpError(409, "ORDER_REDACTED", "개인정보가 파기된 주문은 변경할 수 없습니다");
+    if (!order.items.some((item) => ticketEventId(item.sku) !== null)) throw new HttpError(400, "NOT_MEETUP", "밋업 신청이 아닙니다");
+    if (order.status !== "PAID") throw new HttpError(400, "NOT_PAID", "결제가 확인된 예약만 체크인할 수 있습니다");
     if (order.checkedInAt && !input.undo) return { status: "already_checked_in" as const, booking: view(order) };
     const checkedInAt = input.undo ? null : new Date();
     const updated = await tx.order.update({ where: { id: order.id }, data: { checkedInAt }, include: { items: { select: { sku: true, titleKo: true, quantity: true } } } });

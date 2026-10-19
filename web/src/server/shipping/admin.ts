@@ -63,9 +63,9 @@ export async function mutateShipping(actorId: string, mutation: ShippingMutation
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2002") throw new HttpError(409, "SHIPPING_DUPLICATE", "이미 등록된 국가 또는 무게 구간입니다.");
-      if (error.code === "P2003") throw new HttpError(409, "SHIPPING_REFERENCE", "배송 지역을 확인하거나 연결된 국가와 요금을 먼저 삭제해 주세요.");
-      if (error.code === "P2025") throw new HttpError(404, "SHIPPING_NOT_FOUND", "배송 설정을 찾을 수 없습니다.");
+      if (error.code === "P2002") throw new HttpError(409, "SHIPPING_DUPLICATE", "이미 등록된 국가 또는 무게 구간입니다");
+      if (error.code === "P2003") throw new HttpError(409, "SHIPPING_REFERENCE", "배송 지역을 확인하거나 연결된 국가와 요금을 먼저 삭제해 주세요");
+      if (error.code === "P2025") throw new HttpError(404, "SHIPPING_NOT_FOUND", "배송 설정을 찾을 수 없습니다");
     }
     throw error;
   }

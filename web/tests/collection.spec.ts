@@ -66,7 +66,7 @@ test("admin uploads, publishes, browses, edits and deletes a collection item", a
     await page.getByRole("button", { name: "사진 2 앞으로", exact: true }).click();
     await page.getByLabel("표시 순서", { exact: true }).fill("-10");
     await page.getByRole("button", { name: "저장", exact: true }).click();
-    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("저장했습니다", { exact: true })).toBeVisible();
     const item = listSchema.parse(await (await page.request.get("/api/admin/collection")).json()).data.find((record) => record.title === title);
     if (!item) throw new Error("Saved collection item missing.");
     id = item.id;
@@ -107,12 +107,12 @@ test("admin uploads, publishes, browses, edits and deletes a collection item", a
     await page.getByRole("button", { name: "로그인", exact: true }).click();
     await expect(page.locator(".events-reauth")).toHaveCount(0);
     await page.getByRole("button", { name: "저장", exact: true }).click();
-    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("저장했습니다", { exact: true })).toBeVisible();
     expect((await page.request.get(`/en/collection/${id}`)).status()).toBe(404);
     expect(await (await page.request.get("/sitemap.xml")).text()).not.toContain(`/collection/${id}</loc>`);
     await row.getByRole("button", { name: "삭제", exact: true }).click();
     await page.getByRole("dialog", { name: "항목 삭제", exact: true }).getByRole("button", { name: "삭제", exact: true }).click();
-    await expect(page.getByText("삭제했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("삭제했습니다", { exact: true })).toBeVisible();
     expect((await page.request.get(`/api/collection/${id}`)).status()).toBe(404);
     id = undefined;
   } finally {
@@ -234,7 +234,7 @@ test("관리자가 보드게임을 등록하면 컬렉션 필터와 보드게임
     await expect(page.locator(".events-gallery-editor img")).toHaveCount(1);
     await page.getByLabel("공개", { exact: true }).check();
     await page.getByRole("button", { name: "저장", exact: true }).click();
-    await expect(page.getByText("저장했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("저장했습니다", { exact: true })).toBeVisible();
     const item = listSchema.parse(await (await page.request.get("/api/admin/collection")).json()).data.find((record) => record.title === title);
     if (!item) throw new Error("Saved collection item missing.");
     id = item.id;
@@ -255,7 +255,7 @@ test("관리자가 보드게임을 등록하면 컬렉션 필터와 보드게임
     const row = page.locator(".events-admin-list > li").filter({ hasText: title });
     await row.getByRole("button", { name: "삭제", exact: true }).click();
     await page.getByRole("dialog", { name: "항목 삭제", exact: true }).getByRole("button", { name: "삭제", exact: true }).click();
-    await expect(page.getByText("삭제했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("삭제했습니다", { exact: true })).toBeVisible();
     id = undefined;
   } finally {
     if (id) await deleteContentFixture(page.request, `/api/admin/collection/${id}`, baseURL ?? "");

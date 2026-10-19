@@ -34,7 +34,7 @@ export function CartPageClient({ locale }: { readonly locale: Locale }) {
   }, [revision]);
   if (!hydrated) return <div className="commerce-loading" role="status">{ko ? "장바구니를 불러오는 중…" : "Loading your cart…"}</div>;
   if (error) return <div className="form-stack"><RequestError error={error} locale={locale} returnTo={`/${locale}/cart`} /><Button onClick={() => { setError(null); setRevision((value) => value + 1); }}>{ko ? "다시 불러오기" : "Try again"}</Button></div>;
-  if (!items.length) return <div className="form-stack"><FormNotice kind="info">{ko ? "담긴 상품이 없습니다. 상점에서 상품을 담아 주세요." : "Your cart is empty. Add an item from the shop."}</FormNotice><ActionLink href={`/${locale}/shop`}>{ko ? "상품 보기" : "Browse goods"}</ActionLink></div>;
+  if (!items.length) return <div className="form-stack"><FormNotice kind="info">{ko ? "담긴 상품이 없습니다 상점에서 상품을 담아 주세요" : "Your cart is empty Add an item from the shop"}</FormNotice><ActionLink href={`/${locale}/shop`}>{ko ? "상품 보기" : "Browse goods"}</ActionLink></div>;
   if (!products) return <div className="commerce-loading" role="status">{ko ? "상품 정보를 확인하는 중…" : "Checking item details…"}</div>;
   const resolved = resolveCartLines(items, products);
   const ready = resolved.lines.filter((line) => line.available);
@@ -49,8 +49,8 @@ export function CartPageClient({ locale }: { readonly locale: Locale }) {
     <aside className="commerce-panel commerce-summary" aria-labelledby="cart-summary-title">
       <h2 id="cart-summary-title">{ko ? "주문 미리보기" : "Cart summary"}</h2>
       <p>{ko ? `상품 ${resolved.lines.length}종, ${quantityLabel(ready.reduce((sum, line) => sum + line.quantity, 0), locale)}` : `${resolved.lines.length} options, ${quantityLabel(ready.reduce((sum, line) => sum + line.quantity, 0), locale)}`}</p>
-      <p className="caption muted">{ko ? "표시 가격은 참고용입니다. 배송비와 비트코인 결제 총액은 주문 화면에서 서버 견적으로 확정합니다." : "Catalog prices are a preview. Shipping and the Bitcoin total are confirmed by the server quote at checkout."}</p>
-      {blocked && <FormNotice>{ko ? "주문할 수 없는 옵션을 삭제하거나 수량을 조정해 주세요." : "Remove unavailable options or adjust quantities before checkout."}</FormNotice>}
+      <p className="caption muted">{ko ? "표시 가격은 참고용입니다 배송비와 비트코인 결제 총액은 주문 화면에서 서버 견적으로 확정합니다" : "Catalog prices are a preview Shipping and the Bitcoin total are confirmed by the server quote at checkout"}</p>
+      {blocked && <FormNotice>{ko ? "주문할 수 없는 옵션을 삭제하거나 수량을 조정해 주세요" : "Remove unavailable options or adjust quantities before checkout"}</FormNotice>}
       <div className="form-actions">
         {blocked || !ready.length
           ? <Button disabled>{ko ? "주문하기" : "Checkout"}</Button>

@@ -16,18 +16,18 @@ type SubmissionResult = { readonly kind: "success" } | { readonly kind: "error";
 
 const copy = {
   ko: {
-    trigger: "협업 제안", title: "협업 제안", description: "비트코인센터 서울과 함께할 아이디어를 알려 주세요.",
+    trigger: "협업 제안", title: "협업 제안", description: "비트코인센터 서울과 함께할 아이디어를 알려 주세요",
     type: "제안 유형", choose: "선택해 주세요", event: "행사 및 밋업", content: "콘텐츠", community: "커뮤니티 협업", other: "기타",
     name: "이름", email: "이메일", organization: "소속 및 단체 (선택)", message: "제안 내용",
-    consent: "이름, 이메일, 소속(선택), 제안 유형과 내용을 검토와 답변에 사용하는 데 동의합니다. 수집일부터 최대 1년 보유하며, 목적을 달성하거나 동의를 철회하면 지체 없이 파기합니다(법정 보존 제외). 동의를 거부할 수 있으나 이 제안 양식은 이용할 수 없습니다.", privacy: "개인정보 처리방침",
-    send: "제안 보내기", sending: "접수 중…", close: "닫기", success: "제안이 접수되었습니다. 남겨 주신 이메일로 연락드리겠습니다.",
+    consent: "이름, 이메일, 소속(선택), 제안 유형과 내용을 검토와 답변에 사용하는 데 동의합니다 수집일부터 최대 1년 보유하며, 목적을 달성하거나 동의를 철회하면 지체 없이 파기합니다(법정 보존 제외) 동의를 거부할 수 있으나 이 제안 양식은 이용할 수 없습니다", privacy: "개인정보 처리방침",
+    send: "제안 보내기", sending: "접수 중…", close: "닫기", success: "제안이 접수되었습니다 남겨 주신 이메일로 연락드리겠습니다",
   },
   en: {
-    trigger: "Propose a collaboration", title: "Propose a collaboration", description: "Share an idea to work with Bitcoin Center Seoul.",
+    trigger: "Propose a collaboration", title: "Propose a collaboration", description: "Share an idea to work with Bitcoin Center Seoul",
     type: "Proposal type", choose: "Choose a type", event: "Events and meetups", content: "Content", community: "Community partnership", other: "Other",
     name: "Name", email: "Email", organization: "Organization (optional)", message: "Proposal",
-    consent: "I consent to using my name, email, optional organization, proposal type and message to review and respond. Retained for up to one year from collection; erased without delay when the purpose ends or consent is withdrawn, except legally required records. I may decline, but cannot use this form without consent.", privacy: "Privacy policy",
-    send: "Send proposal", sending: "Submitting…", close: "Close", success: "Your proposal was received. We will contact you by email.",
+    consent: "I consent to using my name, email, optional organization, proposal type and message to review and respond Retained for up to one year from collection; erased without delay when the purpose ends or consent is withdrawn, except legally required records I may decline, but cannot use this form without consent", privacy: "Privacy policy",
+    send: "Send proposal", sending: "Submitting…", close: "Close", success: "Your proposal was received We will contact you by email",
   },
 } as const;
 

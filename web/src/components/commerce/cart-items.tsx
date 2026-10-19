@@ -20,7 +20,7 @@ export function CartItemRows({ locale, lines, missing = [], compact = false }: {
   const rate = useDisplayRate();
   return <ul className={compact ? "commerce-cart-lines commerce-cart-lines--compact" : "commerce-cart-lines"}>
     {missing.map((variantId) => <li key={variantId} className="commerce-cart-line">
-      <div className="commerce-cart-line-copy"><strong>{ko ? "판매하지 않는 옵션" : "Unavailable option"}</strong><p className="commerce-cart-unavailable">{ko ? "이 옵션은 더 이상 주문할 수 없습니다. 삭제한 뒤 주문해 주세요." : "This option is no longer available. Remove it before checkout."}</p></div>
+      <div className="commerce-cart-line-copy"><strong>{ko ? "판매하지 않는 옵션" : "Unavailable option"}</strong><p className="commerce-cart-unavailable">{ko ? "이 옵션은 더 이상 주문할 수 없습니다 삭제한 뒤 주문해 주세요" : "This option is no longer available Remove it before checkout"}</p></div>
       <Button variant="quiet" onClick={() => removeCartItem(variantId)}>{ko ? "삭제" : "Remove"}</Button>
     </li>)}
     {lines.map((line) => {
@@ -33,8 +33,8 @@ export function CartItemRows({ locale, lines, missing = [], compact = false }: {
           <Link href={`/shop/${line.product.slug}`} locale={locale}><strong>{title}</strong></Link>
           <p className="muted caption">{option}, {quantityLabel(line.quantity, locale)}</p>
           <p className="caption">{price(line.product, locale, unit, rate)} / {ko ? "1개" : "item"}</p>
-          {!line.available && <p className="commerce-cart-unavailable">{ko ? "주문할 수 없는 옵션이거나 재고보다 수량이 많습니다. 수량을 줄이거나 삭제해 주세요." : "This option is unavailable or exceeds stock. Reduce its quantity or remove it."}</p>}
-          {line.available && line.quantity >= line.variant.availableStock && <p className="caption muted">{ko ? "주문 가능한 최대 수량입니다." : "Maximum available quantity."}</p>}
+          {!line.available && <p className="commerce-cart-unavailable">{ko ? "주문할 수 없는 옵션이거나 재고보다 수량이 많습니다 수량을 줄이거나 삭제해 주세요" : "This option is unavailable or exceeds stock Reduce its quantity or remove it"}</p>}
+          {line.available && line.quantity >= line.variant.availableStock && <p className="caption muted">{ko ? "주문 가능한 최대 수량입니다" : "Maximum available quantity"}</p>}
         </div>
         <div className="commerce-cart-line-actions">
           <div className="commerce-qty">

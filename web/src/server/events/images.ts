@@ -26,7 +26,7 @@ export function resolveImageFile(publicPath: string): string {
   const root = imageRoot();
   const candidate = path.resolve(root, publicPath.slice("/images/".length));
   if (!candidate.startsWith(`${root}${path.sep}`)) {
-    throw new ApiError(400, "INVALID_IMAGE_PATH", "이미지 경로가 올바르지 않습니다.");
+    throw new ApiError(400, "INVALID_IMAGE_PATH", "이미지 경로가 올바르지 않습니다");
   }
   return candidate;
 }
@@ -53,7 +53,7 @@ async function undoMoves(moved: readonly { readonly from: string; readonly to: s
 export async function placeImagesInSlugFolder(folder: ImageFolder, slug: string, images: readonly string[], used?: ReadonlySet<string>): Promise<{ readonly images: readonly string[]; restore: () => Promise<void> }> {
   if (slug === "") return { images, restore: async () => {} };
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || !/[a-z]/.test(slug)) {
-    throw new ApiError(400, "INVALID_IMAGE_PATH", "이미지 경로가 올바르지 않습니다.");
+    throw new ApiError(400, "INVALID_IMAGE_PATH", "이미지 경로가 올바르지 않습니다");
   }
   const root = imageRoot();
   const moved: { from: string; to: string; copied: boolean }[] = [];
@@ -85,11 +85,11 @@ export async function placeImagesInSlugFolder(folder: ImageFolder, slug: string,
         throw error;
       }
       if (!source.startsWith(`${root}${path.sep}`) || !fs.statSync(source).isFile()) {
-        throw new ApiError(400, "INVALID_IMAGE_PATH", "이미지 경로가 올바르지 않습니다.");
+        throw new ApiError(400, "INVALID_IMAGE_PATH", "이미지 경로가 올바르지 않습니다");
       }
       let filename = path.basename(source);
       if (!/^[A-Za-z0-9_-]+\.(?:avif|gif|jpe?g|png|webp)$/i.test(filename)) {
-        throw new ApiError(400, "INVALID_IMAGE_PATH", "이미지 경로가 올바르지 않습니다.");
+        throw new ApiError(400, "INVALID_IMAGE_PATH", "이미지 경로가 올바르지 않습니다");
       }
       const directory = path.join(root, "uploads", folder, slug);
       fs.mkdirSync(directory, { recursive: true });
@@ -178,24 +178,24 @@ export function requireExistingImages(images: readonly string[]): void {
       resolved = fs.realpathSync(candidate);
     } catch (error) {
       if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-        throw new ApiError(400, "IMAGE_NOT_FOUND", "선택한 이미지 파일을 찾을 수 없습니다.");
+        throw new ApiError(400, "IMAGE_NOT_FOUND", "선택한 이미지 파일을 찾을 수 없습니다");
       }
       throw error;
     }
     if (!resolved.startsWith(`${root}${path.sep}`) || !fs.statSync(resolved).isFile()) {
-      throw new ApiError(400, "INVALID_IMAGE_PATH", "이미지 경로가 올바르지 않습니다.");
+      throw new ApiError(400, "INVALID_IMAGE_PATH", "이미지 경로가 올바르지 않습니다");
     }
   }
 }
 
 export async function storeUploadedImages(files: readonly File[]): Promise<string[]> {
-  if (files.length === 0) throw new ApiError(400, "NO_IMAGES", "업로드할 이미지가 없습니다.");
-  if (files.length > 12) throw new ApiError(413, "TOO_MANY_IMAGES", "이미지는 한 번에 12개까지 업로드할 수 있습니다.");
+  if (files.length === 0) throw new ApiError(400, "NO_IMAGES", "업로드할 이미지가 없습니다");
+  if (files.length > 12) throw new ApiError(413, "TOO_MANY_IMAGES", "이미지는 한 번에 12개까지 업로드할 수 있습니다");
   const total = files.reduce((sum, file) => sum + file.size, 0);
-  if (total > maximumTotalBytes) throw new ApiError(413, "UPLOAD_TOO_LARGE", "전체 이미지 용량은 30MB 이하여야 합니다.");
+  if (total > maximumTotalBytes) throw new ApiError(413, "UPLOAD_TOO_LARGE", "전체 이미지 용량은 30MB 이하여야 합니다");
   for (const file of files) {
-    if (file.size > maximumFileBytes) throw new ApiError(413, "IMAGE_TOO_LARGE", "각 이미지는 10MB 이하여야 합니다.");
-    if (!allowedMimeTypes.has(file.type)) throw new ApiError(400, "INVALID_IMAGE", "지원하지 않는 이미지 형식입니다.");
+    if (file.size > maximumFileBytes) throw new ApiError(413, "IMAGE_TOO_LARGE", "각 이미지는 10MB 이하여야 합니다");
+    if (!allowedMimeTypes.has(file.type)) throw new ApiError(400, "INVALID_IMAGE", "지원하지 않는 이미지 형식입니다");
   }
 
   const outputs: Buffer[] = [];
@@ -205,11 +205,11 @@ export async function storeUploadedImages(files: readonly File[]): Promise<strin
     try {
       metadata = await source.metadata();
     } catch (error) {
-      if (error instanceof Error) throw new ApiError(400, "INVALID_IMAGE", "손상되었거나 지원하지 않는 이미지입니다.");
+      if (error instanceof Error) throw new ApiError(400, "INVALID_IMAGE", "손상되었거나 지원하지 않는 이미지입니다");
       throw error;
     }
     if (!metadata.format || !metadata.width || !metadata.height || !allowedFormats.has(metadata.format)) {
-      throw new ApiError(400, "INVALID_IMAGE", "손상되었거나 지원하지 않는 이미지입니다.");
+      throw new ApiError(400, "INVALID_IMAGE", "손상되었거나 지원하지 않는 이미지입니다");
     }
     try {
       outputs.push(await source
@@ -218,7 +218,7 @@ export async function storeUploadedImages(files: readonly File[]): Promise<strin
         .webp({ quality: 82 })
         .toBuffer());
     } catch (error) {
-      if (error instanceof Error) throw new ApiError(400, "INVALID_IMAGE", "이미지를 처리할 수 없습니다.");
+      if (error instanceof Error) throw new ApiError(400, "INVALID_IMAGE", "이미지를 처리할 수 없습니다");
       throw error;
     }
   }

@@ -60,7 +60,7 @@ export function collectionHref(record: CollectionRecord): string {
 async function assertSlugAvailable(slug: string, id?: number): Promise<void> {
   if (!slug) return;
   const owner = await prisma.collectionItem.findFirst({ where: { slug } });
-  if (owner && owner.id !== id) throw new ApiError(409, "SLUG_CONFLICT", "다른 항목에서 사용 중인 주소입니다. 다른 주소를 입력해 주세요.");
+  if (owner && owner.id !== id) throw new ApiError(409, "SLUG_CONFLICT", "다른 항목에서 사용 중인 주소입니다 다른 주소를 입력해 주세요");
 }
 
 export async function saveCollectionItem(input: CollectionInput, id?: number, revision?: number): Promise<CollectionRecord> {
@@ -82,7 +82,7 @@ export async function saveCollectionItem(input: CollectionInput, id?: number, re
     return saved.id;
   });
   const saved = await getCollectionItem(savedId, true);
-  if (!saved) throw new ApiError(500, "SAVE_FAILED", "항목을 저장하지 못했습니다.");
+  if (!saved) throw new ApiError(500, "SAVE_FAILED", "항목을 저장하지 못했습니다");
   const kept = new Set(collectImagePaths(placed.images, description, descriptionEn));
   await deleteUnusedImages(collectImagePaths(previous?.images, previous?.description, previous?.descriptionEn).filter((image) => !kept.has(image)));
   return saved;
@@ -104,8 +104,8 @@ export async function deleteCollectionItem(id: number, revision: number): Promis
 export async function setCollectionSoldOut(id: number, _soldOut: boolean, revision: number): Promise<never> {
   await prisma.$transaction(async (tx) => {
     await reserveRevision(tx, "collection_items", id, revision);
-    if (!await tx.collectionItem.findUnique({ where: { id } })) throw new ApiError(404, "NOT_FOUND", "항목을 찾을 수 없습니다.");
-    throw new ApiError(400, "UNSUPPORTED_COLLECTION_KIND", "품절은 상점 재고로 관리합니다. 보드게임과 작품은 구매하지 않습니다.");
+    if (!await tx.collectionItem.findUnique({ where: { id } })) throw new ApiError(404, "NOT_FOUND", "항목을 찾을 수 없습니다");
+    throw new ApiError(400, "UNSUPPORTED_COLLECTION_KIND", "품절은 상점 재고로 관리합니다 보드게임과 작품은 구매하지 않습니다");
   });
-  throw new ApiError(400, "UNSUPPORTED_COLLECTION_KIND", "품절은 상점 재고로 관리합니다. 보드게임과 작품은 구매하지 않습니다.");
+  throw new ApiError(400, "UNSUPPORTED_COLLECTION_KIND", "품절은 상점 재고로 관리합니다 보드게임과 작품은 구매하지 않습니다");
 }

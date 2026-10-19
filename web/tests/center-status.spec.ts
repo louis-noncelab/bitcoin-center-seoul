@@ -48,7 +48,7 @@ test("automatic status and daily exceptions keep authentication, live updates an
       expect((await page.request.put("/api/admin/center-status", { headers, data: invalid })).status()).toBe(400);
     }
     await controls.getByRole("button", { name: "임시 휴무", exact: true }).click();
-    await expect(page.getByText("오늘의 운영 설정을 저장했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("오늘의 운영 설정을 저장했습니다", { exact: true })).toBeVisible();
     const response = await request.get("/api/center-status");
     expect(response.headers()["cache-control"]).toBe("no-store");
     expect((await response.json()).data).toMatchObject({ status: "closed", override: "closed", date: seoulDate() });
@@ -87,7 +87,7 @@ test("automatic status and daily exceptions keep authentication, live updates an
     await page.getByRole("button", { name: "로그인", exact: true }).click();
     await expect(page.locator(".events-reauth")).toHaveCount(0);
     await controls.getByRole("button", { name: "자동", exact: true }).click();
-    await expect(page.getByText("오늘의 운영 설정을 저장했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("오늘의 운영 설정을 저장했습니다", { exact: true })).toBeVisible();
   } finally {
     await page.request.post("/api/admin/login", { headers, data: { password } });
     if (eventId) await deleteContentFixture(page.request, `/api/admin/events/${eventId}`, baseURL ?? "");

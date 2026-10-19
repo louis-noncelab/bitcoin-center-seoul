@@ -21,6 +21,6 @@ export const POST = (request: Request) => handleApi(async () => {
   assertSameOrigin(request);
   const actor = await requireAccount(request);
   const body = await readBody(request, bodySchema);
-  if (!body.code && !body.orderId) throw new HttpError(400, "INVALID_INPUT", "확인 코드 또는 주문 번호가 필요합니다.");
+  if (!body.code && !body.orderId) throw new HttpError(400, "INVALID_INPUT", "확인 코드 또는 주문 번호가 필요합니다");
   return json(await setMeetupCheckin(body, actor.id));
 });

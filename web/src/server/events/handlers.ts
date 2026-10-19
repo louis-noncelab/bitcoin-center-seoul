@@ -51,7 +51,7 @@ export async function publicEvents(): Promise<Response> {
 export async function publicEvent(_request: NextRequest, context: ItemContext): Promise<Response> {
   return route(async () => {
     const event = await getEvent(await itemId(context));
-    if (!event) throw new ApiError(404, "NOT_FOUND", "행사를 찾을 수 없습니다.");
+    if (!event) throw new ApiError(404, "NOT_FOUND", "행사를 찾을 수 없습니다");
     return dataResponse(withoutJoinLink(event));
   });
 }
@@ -63,7 +63,7 @@ export async function publicHighlights(): Promise<Response> {
 export async function publicHighlight(_request: NextRequest, context: ItemContext): Promise<Response> {
   return route(async () => {
     const highlight = await getHighlight(await itemId(context));
-    if (!highlight) throw new ApiError(404, "NOT_FOUND", "하이라이트를 찾을 수 없습니다.");
+    if (!highlight) throw new ApiError(404, "NOT_FOUND", "하이라이트를 찾을 수 없습니다");
     return dataResponse(highlight);
   });
 }
@@ -88,7 +88,7 @@ export async function adminEventGet(request: NextRequest, context: ItemContext):
   return route(async () => {
     await requireAdmin(request);
     const event = await getEvent(await itemId(context));
-    if (!event) throw new ApiError(404, "NOT_FOUND", "행사를 찾을 수 없습니다.");
+    if (!event) throw new ApiError(404, "NOT_FOUND", "행사를 찾을 수 없습니다");
     return dataResponse(event);
   });
 }
@@ -145,7 +145,7 @@ export async function adminHighlightGet(request: NextRequest, context: ItemConte
   return route(async () => {
     await requireAdmin(request);
     const highlight = await getHighlight(await itemId(context), { includeInactive: true });
-    if (!highlight) throw new ApiError(404, "NOT_FOUND", "하이라이트를 찾을 수 없습니다.");
+    if (!highlight) throw new ApiError(404, "NOT_FOUND", "하이라이트를 찾을 수 없습니다");
     return dataResponse(highlight);
   });
 }
@@ -214,19 +214,19 @@ export async function publicImage(request: NextRequest, context: ImageContext): 
     // ponytail: scan current references for immediate revocation; index them if the collection grows substantially.
     if (!await isAuthenticated(request) && !(await referencedImagePaths(true)).includes(publicPath)
       && !await isPublishedProductImage(publicPath)) {
-      throw new ApiError(404, "NOT_FOUND", "이미지를 찾을 수 없습니다.");
+      throw new ApiError(404, "NOT_FOUND", "이미지를 찾을 수 없습니다");
     }
     requireExistingImages([publicPath]);
     const file = resolveImageFile(publicPath);
     const size = fs.statSync(file).size;
-    if (size > 30 * 1024 * 1024) throw new ApiError(413, "IMAGE_TOO_LARGE", "이미지 파일이 너무 큽니다.");
+    if (size > 30 * 1024 * 1024) throw new ApiError(413, "IMAGE_TOO_LARGE", "이미지 파일이 너무 큽니다");
     const extension = path.extname(file).toLowerCase();
     const contentTypes: Readonly<Record<string, string>> = {
       ".avif": "image/avif", ".gif": "image/gif", ".jpeg": "image/jpeg", ".jpg": "image/jpeg",
       ".png": "image/png", ".webp": "image/webp",
     };
     const contentType = contentTypes[extension];
-    if (!contentType) throw new ApiError(404, "NOT_FOUND", "이미지를 찾을 수 없습니다.");
+    if (!contentType) throw new ApiError(404, "NOT_FOUND", "이미지를 찾을 수 없습니다");
     return new NextResponse(await fs.promises.readFile(file), {
       headers: {
         "cache-control": "private, no-store",

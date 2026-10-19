@@ -47,7 +47,7 @@ export function CartDrawer({ locale }: { readonly locale: Locale }) {
       })
       .catch((failure: unknown) => {
         if (controller.signal.aborted) return;
-        setError(failure instanceof ApiError ? apiErrorMessage(failure, locale) : (ko ? "상품 정보를 불러오지 못했습니다. 다시 시도해 주세요." : "Item details could not be loaded. Please try again."));
+        setError(failure instanceof ApiError ? apiErrorMessage(failure, locale) : (ko ? "상품 정보를 불러오지 못했습니다 다시 시도해 주세요" : "Item details could not be loaded Please try again"));
       });
     return () => controller.abort();
   }, [open, revision, locale, ko]);
@@ -63,15 +63,15 @@ export function CartDrawer({ locale }: { readonly locale: Locale }) {
       <Button variant="quiet" onClick={closeCartDrawer}>{ko ? "닫기" : "Close"}</Button>
     </div>
     {!items.length ? <div className="commerce-cart-empty">
-      <p className="muted">{ko ? "담긴 상품이 없습니다." : "Your cart is empty."}</p>
+      <p className="muted">{ko ? "담긴 상품이 없습니다" : "Your cart is empty"}</p>
       <Button variant="secondary" onClick={closeCartDrawer}>{ko ? "계속 둘러보기" : "Continue browsing"}</Button>
     </div> : <>
       <div className="commerce-cart-drawer-body">
         {error ? <div className="form-stack"><FormNotice>{error}</FormNotice><Button variant="secondary" onClick={() => { setError(null); setRevision((value) => value + 1); }}>{ko ? "다시 불러오기" : "Try again"}</Button></div> : resolved ? <CartItemRows locale={locale} lines={resolved.lines} missing={resolved.missing} compact /> : <p className="commerce-loading" role="status">{ko ? "상품 정보를 확인하는 중…" : "Checking item details…"}</p>}
       </div>
       <div className="commerce-cart-drawer-footer">
-        <p className="caption muted">{ko ? `${quantityLabel(ready.reduce((sum, line) => sum + line.quantity, 0), locale)}, 결제 금액은 주문 시 견적으로 확정합니다.` : `${quantityLabel(ready.reduce((sum, line) => sum + line.quantity, 0), locale)}, Bitcoin totals are confirmed in the checkout quote.`}</p>
-        {blocked && <p className="commerce-cart-unavailable">{ko ? "주문할 수 없는 상품을 삭제하거나 수량을 조정해 주세요." : "Remove unavailable items or adjust their quantities before checkout."}</p>}
+        <p className="caption muted">{ko ? `${quantityLabel(ready.reduce((sum, line) => sum + line.quantity, 0), locale)}, 결제 금액은 주문 시 견적으로 확정합니다` : `${quantityLabel(ready.reduce((sum, line) => sum + line.quantity, 0), locale)}, Bitcoin totals are confirmed in the checkout quote`}</p>
+        {blocked && <p className="commerce-cart-unavailable">{ko ? "주문할 수 없는 상품을 삭제하거나 수량을 조정해 주세요" : "Remove unavailable items or adjust their quantities before checkout"}</p>}
         <Link href="/checkout" locale={locale} className="button" data-variant="primary" aria-disabled={blocked || !ready.length || undefined} onClick={(event) => { if (blocked || !ready.length) event.preventDefault(); else closeCartDrawer(); }}>{ko ? "주문하기" : "Checkout"}</Link>
         <ActionLink href={`/${locale}/cart`} variant="secondary" onClick={closeCartDrawer}>{ko ? "장바구니 보기" : "View cart"}</ActionLink>
       </div>

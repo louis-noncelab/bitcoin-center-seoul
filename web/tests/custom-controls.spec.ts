@@ -24,7 +24,7 @@ for (const theme of ["light", "dark"]) {
     await input.blur();
     await expect(input).toHaveAttribute("aria-invalid", "true");
     expect(await input.evaluate((element: HTMLInputElement) => element.checkValidity())).toBe(false);
-    await expect(page.getByText("날짜를 연도-월-일 형식으로 입력해 주세요. 예: 2026-09-10", { exact: true })).toBeVisible();
+    await expect(page.getByText("날짜를 연도-월-일 형식으로 입력해 주세요 예: 2026-09-10", { exact: true })).toBeVisible();
     await input.fill("2025-02-28");
     expect(await input.evaluate((element: HTMLInputElement) => element.checkValidity())).toBe(true);
     await trigger.click();

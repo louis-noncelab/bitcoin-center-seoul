@@ -11,5 +11,5 @@ export class ApiError extends Error {
 }
 
 export function configurationError(name: string): ApiError {
-  return new ApiError(503, "CONFIGURATION_ERROR", `${name} 설정이 필요합니다.`);
+  return new ApiError(503, "CONFIGURATION_ERROR", `${name} 설정이 필요합니다`);
 }

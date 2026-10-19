@@ -26,7 +26,7 @@ async function reserveBucket(
       "expiresAt" = CASE WHEN "RateLimitBucket"."expiresAt" <= ${now} THEN ${expiresAt} ELSE "RateLimitBucket"."expiresAt" END
     RETURNING "count"
   `;
-  if (!rows[0] || rows[0].count > limit) throw new HttpError(429, "RATE_LIMITED", "잠시 후 다시 시도해 주세요. / Please try again shortly.");
+  if (!rows[0] || rows[0].count > limit) throw new HttpError(429, "RATE_LIMITED", "잠시 후 다시 시도해 주세요 / Please try again shortly");
 }
 
 export async function rateLimit(scope: string, subject: string, limit: number, windowSeconds = 900): Promise<void> {

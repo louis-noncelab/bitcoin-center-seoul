@@ -32,8 +32,8 @@ export async function generateMetadata({ params }: Props) {
   const count = year - 2025;
   const title = locale === "ko" ? `센터 개관 ${count}주년` : `${count} ${count === 1 ? "year" : "years"} since opening`;
   const description = locale === "ko"
-    ? "비트코인 센터 서울에서 공개한 현장 사진과 다음 모임을 살펴보세요."
-    : "See published photos from Bitcoin Center Seoul and find the next event.";
+    ? "비트코인 센터 서울에서 공개한 현장 사진과 다음 모임을 살펴보세요"
+    : "See published photos from Bitcoin Center Seoul and find the next event";
   const path = `/anniversary/${year}`;
   const base = pageMetadata(locale);
   return {
@@ -66,11 +66,11 @@ export default async function AnniversaryPage({ params }: Props) {
         <Link href="/news" locale={locale} className="anniversary-back"><ArrowLeft aria-hidden="true" />{ko ? "소식으로" : "Back to news"}</Link>
         <p className="anniversary-eyebrow">{ko ? `개관 ${count}주년` : `${count} ${count === 1 ? "year" : "years"} since opening`}</p>
         <h1>{before
-          ? ko ? `10월 21일, 센터가 문을 연 지 ${count}년이 됩니다.` : `On October 21, it will be ${count} ${count === 1 ? "year" : "years"} since we opened.`
-          : ko ? `센터가 문을 연 지 ${count}년이 됐습니다.` : `${count} ${count === 1 ? "year" : "years"} since we opened.`}</h1>
+          ? ko ? `10월 21일, 센터가 문을 연 지 ${count}년이 됩니다` : `On October 21, it will be ${count} ${count === 1 ? "year" : "years"} since we opened`
+          : ko ? `센터가 문을 연 지 ${count}년이 됐습니다` : `${count} ${count === 1 ? "year" : "years"} since we opened`}</h1>
         <p className="anniversary-intro">{ko
-          ? "지난 1년간 센터에서 공개한 사진을 모았습니다. 다음 일정과 방문 안내도 아래에서 볼 수 있습니다."
-          : "Photos published over the past year. You can also find current events and visiting information below."}</p>
+          ? "지난 1년간 센터에서 공개한 사진을 모았습니다 다음 일정과 방문 안내도 아래에서 볼 수 있습니다"
+          : "Photos published over the past year You can also find current events and visiting information below"}</p>
         <p className="anniversary-period"><time dateTime={first}>{displayDate(first)}</time><span aria-hidden="true">~</span><time dateTime={last}>{displayDate(last)}</time></p>
       </header>
 
@@ -85,7 +85,7 @@ export default async function AnniversaryPage({ params }: Props) {
               <span className="anniversary-photo-caption"><time dateTime={date}>{displayDate(date)}</time><strong lang={!ko && !record.titleEn ? "ko" : locale}>{title}</strong><ArrowRight aria-hidden="true" /></span>
             </Link>
           </article>;
-        })}</div> : <p className="anniversary-empty">{ko ? "이 기간에 공개된 사진 기록은 아직 없습니다." : "No photos have been published for this period yet."}</p>}
+        })}</div> : <p className="anniversary-empty">{ko ? "이 기간에 공개된 사진 기록은 아직 없습니다" : "No photos have been published for this period yet"}</p>}
         <Link href="/journal" locale={locale} className="anniversary-all-link">{ko ? "전체 현장 스케치 보기" : "See all highlights"}<ArrowRight aria-hidden="true" /></Link>
         {years.length > 1 && <nav className="anniversary-years" aria-label={ko ? "개관 기념 기록" : "Anniversary archives"}>
           {years.map((archiveYear) => <Link key={archiveYear} href={`/anniversary/${archiveYear}`} locale={locale} aria-current={archiveYear === year ? "page" : undefined}>{archiveYear}</Link>)}

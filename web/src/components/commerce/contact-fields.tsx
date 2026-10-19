@@ -15,11 +15,11 @@ export function ContactFields({ locale, shipping = false, phoneRequired = false,
       <input id="customer-name" name="name" autoComplete="name" required maxLength={100} aria-invalid={Boolean(nameError)} aria-describedby={nameError ? "customer-name-error" : undefined} />
       <FieldError id="customer-name" error={nameError} />
     </FormField>
-    <FormField id="customer-email" label={ko ? "이메일" : "Email"} hint={meetup ? (ko ? "신청 확인과 행사 안내를 받을 주소입니다." : "An address for registration confirmation and event notices.") : (ko ? "주문 관련 연락을 받을 주소입니다." : "An address where the center can contact you about your order.")}>
+    <FormField id="customer-email" label={ko ? "이메일" : "Email"} hint={meetup ? (ko ? "신청 확인과 행사 안내를 받을 주소입니다" : "An address for registration confirmation and event notices") : (ko ? "주문 관련 연락을 받을 주소입니다" : "An address where the center can contact you about your order")}>
       <input id="customer-email" name="email" type="email" autoComplete="email" aria-describedby={`customer-email-hint${emailError ? " customer-email-error" : ""}`} aria-invalid={Boolean(emailError)} required maxLength={254} />
       <FieldError id="customer-email" error={emailError} />
     </FormField>
-    <FormField id="customer-phone" label={ko ? `전화번호${needPhone ? "" : " (선택)"}` : `Phone number${needPhone ? "" : " (optional)"}`} hint={ko ? "국가번호를 선택하고 전화번호를 입력해 주세요." : "Choose a country code, then enter your phone number."}>
+    <FormField id="customer-phone" label={ko ? `전화번호${needPhone ? "" : " (선택)"}` : `Phone number${needPhone ? "" : " (optional)"}`} hint={ko ? "국가번호를 선택하고 전화번호를 입력해 주세요" : "Choose a country code, then enter your phone number"}>
       <IntlPhoneInput locale={locale} required={needPhone} invalid={Boolean(phoneError)} describedBy={`customer-phone-hint${phoneError ? " customer-phone-error" : ""}`} />
       <FieldError id="customer-phone" error={phoneError} />
     </FormField>

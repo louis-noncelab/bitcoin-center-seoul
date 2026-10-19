@@ -64,7 +64,7 @@ export function OrdersAdmin() {
   useEffect(() => {
     const pop = async () => {
       const previous = navigation.current;
-      const accepted = !previous.pending && (!previous.dirty || await previous.confirm({ title: "변경사항을 버릴까요?", description: "저장하지 않은 주문 변경사항은 사라집니다.", confirmLabel: "버리기" }));
+      const accepted = !previous.pending && (!previous.dirty || await previous.confirm({ title: "변경사항을 버릴까요?", description: "저장하지 않은 주문 변경사항은 사라집니다", confirmLabel: "버리기" }));
       if (!accepted) { window.history.pushState(null, "", `${window.location.pathname}?${previous.query ?? ""}`); return; }
       setShipping({}); setPaymentDirty({}); setOpenId(null); setQuery(window.location.search.slice(1));
     };
@@ -74,7 +74,7 @@ export function OrdersAdmin() {
 
   async function changeQuery(patch: Record<string, string>, paginate = false) {
     if (blocked) return;
-    if (dirty && !await confirm({ title: "변경사항을 버릴까요?", description: "저장하지 않은 주문 변경사항은 사라집니다.", confirmLabel: "버리기" })) return;
+    if (dirty && !await confirm({ title: "변경사항을 버릴까요?", description: "저장하지 않은 주문 변경사항은 사라집니다", confirmLabel: "버리기" })) return;
     const next = new URLSearchParams(query ?? "");
     if (!paginate) next.delete("page");
     for (const [key, value] of Object.entries(patch)) { if (value && value !== "all") next.set(key, value); else next.delete(key); }
@@ -116,14 +116,14 @@ export function OrdersAdmin() {
     // The server refuses SHIPPED without both values, so ask for them in place first.
     if (status === "SHIPPED" && (!carrier || !trackingNumber)) {
       setOpenId(order.id);
-      setError("발송으로 변경하려면 택배사와 송장 번호를 입력해 주세요.");
+      setError("발송으로 변경하려면 택배사와 송장 번호를 입력해 주세요");
       return;
     }
     busy.current = true; setPending(true); setError(""); setMessage("");
     try {
       await adminRequest(`/api/admin/orders/${order.id}/fulfillment`, adminOrderRecord,
         jsonBody({ status, ...(status === "SHIPPED" ? { carrier, trackingNumber } : {}) }, "POST"));
-      setMessage(`${fulfillmentStatusLabels[status]}(으)로 변경했습니다.`);
+      setMessage(`${fulfillmentStatusLabels[status]}(으)로 변경했습니다`);
       setShipping((current) => { const next = { ...current }; delete next[order.id]; return next; });
       setRevision((value) => value + 1);
     } catch (caught) { handleError(caught); }
@@ -133,12 +133,12 @@ export function OrdersAdmin() {
   async function saveTracking(order: AdminOrderRecord) {
     if (busy.current || expired || loading) return;
     const draft = shipping[order.id];
-    if (!draft?.carrier.trim() || !draft.trackingNumber.trim()) { setError("택배사와 송장 번호를 입력해 주세요."); return; }
+    if (!draft?.carrier.trim() || !draft.trackingNumber.trim()) { setError("택배사와 송장 번호를 입력해 주세요"); return; }
     busy.current = true; setPending(true); setError(""); setMessage("");
     try {
       await adminRequest(`/api/admin/orders/${order.id}/tracking`, adminOrderRecord, jsonBody(draft, "POST"));
       setShipping((current) => { const next = { ...current }; delete next[order.id]; return next; });
-      setMessage("송장 정보를 수정했습니다."); setRevision((value) => value + 1);
+      setMessage("송장 정보를 수정했습니다"); setRevision((value) => value + 1);
     } catch (caught) { handleError(caught); }
     finally { busy.current = false; setPending(false); }
   }
@@ -153,7 +153,7 @@ export function OrdersAdmin() {
   return <div className="events-admin-workspace">
     {dialog}
     <CommerceAdminNav current="/admin/orders" disabled={pending} dirty={dirty} />
-    {expired && <aside className="events-reauth"><p role="alert">세션이 만료되었습니다. 다시 로그인한 뒤 계속해 주세요.</p><LoginForm locale="ko" onLogin={() => { setExpired(false); setError(""); setRevision((value) => value + 1); }} /></aside>}
+    {expired && <aside className="events-reauth"><p role="alert">세션이 만료되었습니다 다시 로그인한 뒤 계속해 주세요</p><LoginForm locale="ko" onLogin={() => { setExpired(false); setError(""); setRevision((value) => value + 1); }} /></aside>}
     {error && <p className="events-error" role="alert">{error}</p>}<p role="status">{message}</p>
     <div className="events-admin-toolbar">
       <h2>신청과 주문<span className="muted">, {total}건</span></h2>
@@ -178,7 +178,7 @@ export function OrdersAdmin() {
             </p>
             <SlideRegion open={open}><div className="events-editor-fields">
               <p className="muted">{meetup ? "신청 번호" : "주문 번호"} {order.id}</p>
-              {order.privacyRedactedAt ? <p className="muted">{stamp(order.privacyRedactedAt)} 연락처와 배송지 등 일반 개인정보를 파기했습니다. 법정 보존 기록은 별도로 관리합니다.</p> : <p>{order.customerEmail}{order.customerPhone && `, ${order.customerPhone}`}</p>}
+              {order.privacyRedactedAt ? <p className="muted">{stamp(order.privacyRedactedAt)} 연락처와 배송지 등 일반 개인정보를 파기했습니다 법정 보존 기록은 별도로 관리합니다</p> : <p>{order.customerEmail}{order.customerPhone && `, ${order.customerPhone}`}</p>}
               {!order.privacyRedactedAt && order.address && <p className="muted">{addressText(order.address)}</p>}
               <ul>{order.items.map((item) => <li key={item.id}>{item.titleKo}, {ticketEventId(item.sku) !== null ? `${item.quantity}명` : `${item.optionLabelKo || item.sku} × ${item.quantity}개`}, {item.amountSats === "0" && ticketEventId(item.sku) !== null ? "무료" : sats(item.amountSats)}</li>)}</ul>
               {!meetup && <p className="muted">배송비 {sats(order.shippingAmountSats)}{order.amountKrw ? `, 주문 시점 ₩${new Intl.NumberFormat("ko").format(BigInt(order.amountKrw))}` : ""}</p>}
@@ -201,7 +201,7 @@ export function OrdersAdmin() {
           </div>
         </li>;
       })}
-      {!orders.length && <li>{filter === "all" ? "주문이 없습니다." : "해당 상태의 주문이 없습니다."}</li>}
+      {!orders.length && <li>{filter === "all" ? "주문이 없습니다" : "해당 상태의 주문이 없습니다"}</li>}
     </ul>
     <nav className="button-row" aria-label="주문 페이지">
       <Button variant="secondary" disabled={blocked || page <= 1} onClick={() => void changeQuery({ page: String(page - 1) }, true)}>이전 페이지</Button>

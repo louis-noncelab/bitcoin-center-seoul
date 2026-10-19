@@ -4,7 +4,7 @@ import type { LegalDocument } from "./legal-types";
 export const businessInformation: Record<Locale, LegalDocument> = {
   ko: {
     title: "사업자정보",
-    description: "비트코인 센터 서울의 운영 주체와 연락처를 안내합니다.",
+    description: "비트코인 센터 서울의 운영 주체와 연락처를 안내합니다",
     details: [
       { label: "운영 주체", value: "논스랩 주식회사" },
       { label: "대표자", value: "고덕윤" },
@@ -19,7 +19,7 @@ export const businessInformation: Record<Locale, LegalDocument> = {
   },
   en: {
     title: "Business information",
-    description: "The operator and contact details for Bitcoin Center Seoul.",
+    description: "The operator and contact details for Bitcoin Center Seoul",
     details: [
       { label: "Operator", value: "Nonce Lab Inc. (논스랩 주식회사)" },
       { label: "Chief executive officer", value: "Deokyoon Ko (고덕윤)" },

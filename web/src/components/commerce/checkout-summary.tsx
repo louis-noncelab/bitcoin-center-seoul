@@ -44,8 +44,8 @@ export function CheckoutSummary({ locale, items, quote, quoting, reservation, fu
       <div className="commerce-total"><dt>{reservation && quote?.amountSats === "0" && ko ? "총 참가비" : ko ? "결제 금액" : "Total"}</dt><dd>{total}</dd></div>
       {quote?.amountKrw && quote.amountSats !== "0" ? <div><dt>{ko ? "결제 시점 원화" : "KRW at quote"}</dt><dd>{krw(quote.amountKrw, locale)}</dd></div> : null}
     </dl>
-    <p className="caption">{quote ? `${ko ? "이 금액은" : "This total is valid until"} ${dateTime(quote.expiresAt, locale)}${ko ? "까지 유효합니다." : "."}` : (quoting ? (ko ? "서버 견적을 맞추는 중입니다." : "Checking this total with the server.") : (ko ? "표시 금액으로 결제합니다." : "You pay the amount shown."))}</p>
-    <p className="caption">{quote?.amountSats === "0" && reservation ? (ko ? "결제 없이 신청이 확정됩니다." : "Your registration is confirmed without payment.") : (ko ? "비트코인으로 결제합니다." : "Payment is in Bitcoin.")}</p>
-    {quote?.snapshot.rate?.source.startsWith("cache:") ? <p className="caption">{ko ? "거래소에 연결하지 못해, 마지막으로 받은 시세로 계산했습니다." : "The exchanges were unreachable, so this quote uses the last rate we received."}</p> : null}
+    <p className="caption">{quote ? `${ko ? "이 금액은" : "This total is valid until"} ${dateTime(quote.expiresAt, locale)}${ko ? "까지 유효합니다" : ""}` : (quoting ? (ko ? "서버 견적을 맞추는 중입니다" : "Checking this total with the server") : (ko ? "표시 금액으로 결제합니다" : "You pay the amount shown"))}</p>
+    <p className="caption">{quote?.amountSats === "0" && reservation ? (ko ? "결제 없이 신청이 확정됩니다" : "Your registration is confirmed without payment") : (ko ? "비트코인으로 결제합니다" : "Payment is in Bitcoin")}</p>
+    {quote?.snapshot.rate?.source.startsWith("cache:") ? <p className="caption">{ko ? "거래소에 연결하지 못해, 마지막으로 받은 시세로 계산했습니다" : "The exchanges were unreachable, so this quote uses the last rate we received"}</p> : null}
   </aside>;
 }

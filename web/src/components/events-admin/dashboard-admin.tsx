@@ -75,12 +75,12 @@ export function DashboardAdmin() {
         <li><Link className="admin-stat-link" href="/admin/orders" locale="ko"><h3>주문</h3><p className="muted">결제 대기 {data.orders.pending}, 확정 {data.orders.paid}, 검토 {data.orders.review}</p></Link></li>
         <li><Link className="admin-stat-link" href="/admin" locale="ko"><h3>행사</h3><p className="muted">등록 {data.events}개</p></Link></li>
         <li><div><h3>세션</h3><p className="muted">유효한 관리자 세션 {data.sessions}개</p></div></li>
-        <li><Link className="admin-stat-link" href="/admin/mail" locale="ko"><h3>메일 발송</h3><p className="muted">서버 접수 {sent}, 실패 {failed}, 대기 {waiting}, 기록 {captured}. {data.emailMode === "smtp" ? "메일 서버가 접수한 건을 발송으로 셉니다." : "지금은 기록 모드라 고객에게 나가지 않습니다."}</p></Link></li>
+        <li><Link className="admin-stat-link" href="/admin/mail" locale="ko"><h3>메일 발송</h3><p className="muted">서버 접수 {sent}, 실패 {failed}, 대기 {waiting}, 기록 {captured} {data.emailMode === "smtp" ? "메일 서버가 접수한 건을 발송으로 셉니다" : "지금은 기록 모드라 고객에게 나가지 않습니다"}</p></Link></li>
       </ul>
       <h2>최근 기록</h2>
       <ul className="events-admin-list">
         {data.audits.map((row) => <li key={row.id}><div><h3>{auditActionLabel(row.action)}</h3><p className="muted">{auditTargetLabel(row.targetType)}, {new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", dateStyle: "medium", timeStyle: "short" }).format(new Date(row.createdAt))}</p></div></li>)}
-        {!data.audits.length && <li>기록이 없습니다.</li>}
+        {!data.audits.length && <li>기록이 없습니다</li>}
       </ul>
       <Button variant="secondary" disabled={pending} onClick={() => void load()}>다시 불러오기</Button>
     </>}

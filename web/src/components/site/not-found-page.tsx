@@ -16,7 +16,7 @@ export function NotFoundPage({ locale }: { readonly locale: Locale }) {
         <h1>{ko ? "이 주소에는 페이지가 없습니다" : "This page is not here"}</h1>
       </div>
       <div className="event-detail">
-        <p className="event-description">{ko ? "주소가 바뀌었거나, 없는 페이지입니다." : "The address may have changed, or there is no page here."}</p>
+        <p className="event-description">{ko ? "주소가 바뀌었거나, 없는 페이지입니다" : "The address may have changed, or there is no page here"}</p>
         <ContentLink href="/" locale={locale} className="button" data-variant="primary">{ko ? "홈으로" : "Back home"}</ContentLink>
       </div>
       <PageMotion pageKey={`${locale}-not-found`} />

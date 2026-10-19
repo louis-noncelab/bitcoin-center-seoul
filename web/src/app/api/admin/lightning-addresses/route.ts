@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     const actor = await requireAccount(request);
     const input = await readBody(request, inputSchema);
     const origin = lightningAddressOrigin(input.address);
-    if (!origin) throw new HttpError(400, "INVALID_RECEIVER", "라이트닝 주소 형식을 확인해 주세요.");
+    if (!origin) throw new HttpError(400, "INVALID_RECEIVER", "라이트닝 주소 형식을 확인해 주세요");
     const created = await prisma.lightningAddress.create({ data: { label: input.label, address: input.address, allowedOrigins: origin } });
     await prisma.auditLog.create({ data: { actorId: actor.id, action: "lightning-address.created", targetType: "LightningAddress", targetId: created.id, summary: { address: created.address } } });
     return json({ id: created.id }, 201);

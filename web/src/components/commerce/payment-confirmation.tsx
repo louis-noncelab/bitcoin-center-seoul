@@ -43,7 +43,7 @@ export function PaymentConfirmation({ code, locale }: { readonly code: string; r
     const controller = new AbortController();
     apiRequest(`/api/orders/confirm/${code}`, schema, { signal: controller.signal })
       .then((result) => setData(result))
-      .catch(() => { if (!controller.signal.aborted) setError(ko ? "확인 정보를 불러오지 못했습니다." : "Could not load this confirmation."); });
+      .catch(() => { if (!controller.signal.aborted) setError(ko ? "확인 정보를 불러오지 못했습니다" : "Could not load this confirmation"); });
     return () => controller.abort();
   }, [code, ko]);
 
@@ -68,16 +68,16 @@ export function PaymentConfirmation({ code, locale }: { readonly code: string; r
       <p className="commerce-payment-amount">{freeRegistration ? (ko ? "무료" : "Free") : bitcoin(data.amountSats, locale, unit, rate)}</p>
       <p className="muted">{data.customerName}</p>
     </div>
-    {data.status === "PENDING_PAYMENT" && <p className="commerce-payment-wait" role="status"><ButtonSpinner />{ko ? "입금을 확인하는 중입니다." : "Waiting for the payment."}</p>}
+    {data.status === "PENDING_PAYMENT" && <p className="commerce-payment-wait" role="status"><ButtonSpinner />{ko ? "입금을 확인하는 중입니다" : "Waiting for the payment"}</p>}
     {data.status === "PAID" && <figure className="commerce-qr">
       {qr ? <Image src={qr} width={320} height={320} unoptimized alt={meetup ? (ko ? "신청 확인 QR 코드" : "Registration confirmation QR code") : (ko ? "결제 확인 QR 코드" : "Payment confirmation QR code")} /> : <div className="commerce-qr-loading">{ko ? "확인 QR을 만드는 중…" : "Preparing confirmation QR…"}</div>}
-      <figcaption className="muted">{ko ? "이 QR은 확인 페이지로 연결됩니다." : "This QR opens the confirmation page."}</figcaption>
+      <figcaption className="muted">{ko ? "이 QR은 확인 페이지로 연결됩니다" : "This QR opens the confirmation page"}</figcaption>
     </figure>}
     <ul className="commerce-items">
       {data.items.map((item) => <li key={`${item.sku}-${item.titleKo}`}><div><strong>{ko ? item.titleKo : item.titleEn}</strong><span className="muted">{ticketEventId(item.sku) !== null ? (ko ? `${item.quantity}명` : `${item.quantity} attendee${item.quantity === 1 ? "" : "s"}`) : (ko ? `${item.quantity}개` : `Qty ${item.quantity}`)}</span></div><span>{ticketEventId(item.sku) !== null && item.amountSats === "0" ? (ko ? "무료" : "Free") : bitcoin(item.amountSats, locale, unit, rate)}</span></li>)}
     </ul>
     {kind !== "goods" && <MeetupDetails locale={locale} meetups={data.meetups} confirmed={data.status === "PAID"} />}
-    {!meetup && <p>{data.fulfillment === "PICKUP" ? (ko ? "센터에서 수령합니다." : "Pickup at the center.") : (ko ? "배송" : "Delivery")}{data.addressText ? `, ${data.addressText}` : ""}</p>}
+    {!meetup && <p>{data.fulfillment === "PICKUP" ? (ko ? "센터에서 수령합니다" : "Pickup at the center") : (ko ? "배송" : "Delivery")}{data.addressText ? `, ${data.addressText}` : ""}</p>}
     {data.status === "PAID" && data.sessions.map((session) => <div key={session.url} className="form-stack">
       <a className="button" href={session.url} target="_blank" rel="noopener noreferrer">{ko ? "온라인 참여" : "Join online"}</a>
       {(ko ? session.note : session.noteEn || session.note) && <p className="muted">{ko ? session.note : session.noteEn || session.note}</p>}

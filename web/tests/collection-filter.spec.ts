@@ -120,8 +120,8 @@ test("kind filters limit purchasing to books and goods and follow saved kind cha
       await expect(page.getByRole("radio", { name: labels[record.kind], exact: true })).toBeChecked();
       await expect(page.getByLabel("구매하기 링크 (선택)", { exact: true })).toHaveCount(0);
       await expect(page.locator('input[name="soldOut"]')).toHaveCount(0);
-      if (record.kind === "book" || record.kind === "goods") await expect(page.getByText("상점 상품에서 관리합니다.")).toBeVisible();
-      else await expect(page.getByText("구매하지 않습니다.")).toBeVisible();
+      if (record.kind === "book" || record.kind === "goods") await expect(page.getByText("상점 상품에서 관리합니다")).toBeVisible();
+      else await expect(page.getByText("구매하지 않습니다")).toBeVisible();
       for (const width of [375, 1280]) {
         await page.setViewportSize({ width, height: 900 });
         for (const theme of ["light", "dark"]) {
@@ -137,7 +137,7 @@ test("kind filters limit purchasing to books and goods and follow saved kind cha
     await filters.getByRole("button", { name: "도서", exact: true }).click();
     await page.locator(".events-admin-list > li").filter({ hasText: book.title }).getByRole("button", { name: "수정", exact: true }).click();
     await page.getByRole("radio", { name: "작품", exact: true }).check();
-    await expect(page.getByText("구매하지 않습니다.")).toBeVisible();
+    await expect(page.getByText("구매하지 않습니다")).toBeVisible();
     await page.getByRole("button", { name: "저장", exact: true }).click();
     await expect(filters.getByRole("button", { name: "작품", exact: true })).toHaveAttribute("aria-pressed", "true");
     const saved = rowsSchema.parse(await (await page.request.get("/api/admin/collection")).json()).data.find(record => record.id === book.id);

@@ -73,7 +73,7 @@ export function ProductsAdmin() {
   function uploadPending(value: boolean) { uploads.current += value ? 1 : -1; setUploading(uploads.current > 0); }
   async function leave() {
     if (busy.current || uploads.current > 0) return false;
-    const accepted = !dirty || await confirm({ title: "변경사항을 버릴까요?", description: "저장하지 않은 변경사항은 사라집니다.", confirmLabel: "버리기" });
+    const accepted = !dirty || await confirm({ title: "변경사항을 버릴까요?", description: "저장하지 않은 변경사항은 사라집니다", confirmLabel: "버리기" });
     return accepted && !busy.current && uploads.current === 0;
   }
   function edit(product: AdminProductRecord | null) {
@@ -108,7 +108,7 @@ export function ProductsAdmin() {
     try {
       await adminRequest(`/api/admin/products${selected ? `/${selected.id}` : ""}`, z.unknown(),
         jsonBody(input, selected ? "PATCH" : "POST"));
-      setEditing(false); setDirty(false); setMessage("저장했습니다."); setRevision((value) => value + 1);
+      setEditing(false); setDirty(false); setMessage("저장했습니다"); setRevision((value) => value + 1);
     } catch (caught) { handleError(caught); }
     finally { busy.current = false; setPending(false); }
   }
@@ -128,7 +128,7 @@ export function ProductsAdmin() {
         active: category?.active ?? true,
       }, category ? "PATCH" : "POST"));
       setCategory(null); setDirty(false);
-      setMessage(category ? "분류를 수정했습니다." : "분류를 추가했습니다."); setRevision((value) => value + 1);
+      setMessage(category ? "분류를 수정했습니다" : "분류를 추가했습니다"); setRevision((value) => value + 1);
     } catch (caught) { handleError(caught); }
     finally { busy.current = false; setPending(false); }
   }
@@ -137,7 +137,7 @@ export function ProductsAdmin() {
     if (busy.current) return;
     const accepted = await confirm({
       title: "분류 끄기",
-      description: `“${item.nameKo}” 분류를 끌까요? 상품은 삭제되지 않고 분류만 목록에서 빠집니다.`,
+      description: `“${item.nameKo}” 분류를 끌까요? 상품은 삭제되지 않고 분류만 목록에서 빠집니다`,
       confirmLabel: "끄기",
     });
     if (!accepted || busy.current) return;
@@ -145,7 +145,7 @@ export function ProductsAdmin() {
     try {
       await adminRequest(`/api/admin/categories/${item.id}`, z.unknown(), { method: "DELETE" });
       if (category?.id === item.id) setCategory(null);
-      setMessage("분류를 껐습니다."); setRevision((value) => value + 1);
+      setMessage("분류를 껐습니다"); setRevision((value) => value + 1);
     } catch (caught) { handleError(caught); }
     finally { busy.current = false; setPending(false); }
   }
@@ -154,14 +154,14 @@ export function ProductsAdmin() {
     if (busy.current || uploads.current > 0) return;
     const accepted = await confirm({
       title: "상품 비공개",
-      description: `“${product.titleKo}”을(를) 비공개로 돌릴까요? 주문 기록이 남아 있어 삭제하지 않고 판매만 중단합니다.`,
+      description: `“${product.titleKo}”을(를) 비공개로 돌릴까요? 주문 기록이 남아 있어 삭제하지 않고 판매만 중단합니다`,
       confirmLabel: "비공개로 전환",
     });
     if (!accepted || busy.current) return;
     busy.current = true; setPending(true); setError("");
     try {
       await adminRequest(`/api/admin/products/${product.id}`, z.unknown(), { method: "DELETE" });
-      setMessage("비공개로 전환했습니다."); setRevision((value) => value + 1);
+      setMessage("비공개로 전환했습니다"); setRevision((value) => value + 1);
     } catch (caught) { handleError(caught); }
     finally { busy.current = false; setPending(false); }
   }
@@ -176,7 +176,7 @@ export function ProductsAdmin() {
   return <div className="events-admin-workspace">
     {dialog}
     <CommerceAdminNav current="/admin/products" disabled={pending || uploading} onLeave={leave} />
-    {expired && <aside className="events-reauth"><p role="alert">세션이 만료되었습니다. 작성한 내용은 유지됩니다. 다시 로그인한 뒤 저장해 주세요.</p><LoginForm locale="ko" onLogin={() => { setExpired(false); setError(""); setRevision((value) => value + 1); }} /></aside>}
+    {expired && <aside className="events-reauth"><p role="alert">세션이 만료되었습니다 작성한 내용은 유지됩니다 다시 로그인한 뒤 저장해 주세요</p><LoginForm locale="ko" onLogin={() => { setExpired(false); setError(""); setRevision((value) => value + 1); }} /></aside>}
     {error && <p className="events-error" role="alert">{error}</p>}<p role="status">{message}</p>
 
     {editing ? <form className="events-form" key={selected?.id ?? "new"} onSubmit={(event) => void save(event)} onChange={() => setDirty(true)}>
@@ -189,7 +189,7 @@ export function ProductsAdmin() {
           <label>영어 상품명<FormControl><input name="titleEn" required maxLength={200} defaultValue={selected?.titleEn ?? ""} /></FormControl></label>
         </div>
         <label>URL 슬러그<FormControl><input name="slug" required defaultValue={selected?.slug ?? ""} maxLength={100} pattern="[a-z0-9]+(-[a-z0-9]+)*" autoCapitalize="none" spellCheck={false} placeholder="bitcoin-standard" aria-describedby="product-slug-help" /></FormControl></label>
-        <p id="product-slug-help" className="muted">/shop/ 뒤에 붙는 주소입니다. 영문 소문자, 숫자, 하이픈을 사용해 주세요.</p>
+        <p id="product-slug-help" className="muted">/shop/ 뒤에 붙는 주소입니다 영문 소문자, 숫자, 하이픈을 사용해 주세요</p>
         <label>분류 (선택)<FormControl>
           <MenuSelect name="categoryId" defaultValue={selected?.categoryId ?? ""}>
             <option value="">분류 없음</option>
@@ -209,9 +209,9 @@ export function ProductsAdmin() {
             </MenuSelect>
           </FormControl></label>
         </div>
-        <p id="product-price-help" className="muted">원화로 지정하면 주문할 때마다 그 시점 시세로 사토시가 정해집니다. 사토시로 지정하면 시세와 상관없이 그 사토시를 받습니다.</p>
+        <p id="product-price-help" className="muted">원화로 지정하면 주문할 때마다 그 시점 시세로 사토시가 정해집니다 사토시로 지정하면 시세와 상관없이 그 사토시를 받습니다</p>
         <label>정가 (선택)<FormControl><input name="listPriceAmount" inputMode="numeric" pattern="[1-9][0-9]*" defaultValue={selected?.listPriceAmount ?? ""} aria-describedby="product-list-help" /></FormControl></label>
-        <p id="product-list-help" className="muted">판매가보다 큰 값을 넣으면 할인 전 가격으로 함께 표시됩니다. 비워 두면 표시하지 않습니다.</p>
+        <p id="product-list-help" className="muted">판매가보다 큰 값을 넣으면 할인 전 가격으로 함께 표시됩니다 비워 두면 표시하지 않습니다</p>
         </section>
 
         <section className="admin-editor-section">
@@ -225,10 +225,10 @@ export function ProductsAdmin() {
             {fulfillmentLabels[mode]}
           </label>)}
         </div></fieldset>
-        <p className="muted">택배를 선택하면 옵션마다 포장 무게를 1g 이상 입력해야 합니다. 배송비는 무게 구간으로 계산합니다.</p>
+        <p className="muted">택배를 선택하면 옵션마다 포장 무게를 1g 이상 입력해야 합니다 배송비는 무게 구간으로 계산합니다</p>
 
         <GalleryField locale="ko" images={images} onChange={(next) => { setImages(next.slice(0, 12)); setDirty(true); }} onPending={uploadPending} onExpired={() => setExpired(true)} />
-        <p className="muted">첫 번째 사진만 상품 대표 이미지로 사용합니다.</p>
+        <p className="muted">첫 번째 사진만 상품 대표 이미지로 사용합니다</p>
         </section>
 
         <section className="admin-editor-section">
@@ -267,7 +267,7 @@ export function ProductsAdmin() {
             {product.published && <Button variant="quiet" disabled={pending || expired} onClick={() => void archive(product)}>비공개</Button>}
           </div>
         </li>)}
-        {!products.length && <li>등록된 상품이 없습니다.</li>}
+        {!products.length && <li>등록된 상품이 없습니다</li>}
       </ul>
 
       <details className="admin-management-disclosure">
@@ -282,7 +282,7 @@ export function ProductsAdmin() {
               {item.active && <Button type="button" variant="quiet" disabled={pending || expired} onClick={() => void deactivateCategory(item)}>끄기</Button>}
             </div>
           </li>)}
-          {!categories.length && <li>등록된 분류가 없습니다. 분류 없이도 상품을 판매할 수 있습니다.</li>}
+          {!categories.length && <li>등록된 분류가 없습니다 분류 없이도 상품을 판매할 수 있습니다</li>}
         </ul>
         <fieldset className="events-editor-fields" disabled={pending}>
           <div className="events-field-grid">

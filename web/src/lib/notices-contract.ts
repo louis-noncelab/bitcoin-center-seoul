@@ -3,7 +3,7 @@ import { contentSlugSchema } from "@/lib/events-contract";
 import { contentTagsSchema } from "@/lib/content-tags";
 
 export const noticeInputSchema = z.object({
-  slug: contentSlugSchema.refine((value) => value.length > 0, "URL 슬러그를 입력해 주세요."),
+  slug: contentSlugSchema.refine((value) => value.length > 0, "URL 슬러그를 입력해 주세요"),
   tags: contentTagsSchema,
   title: z.string().trim().min(1).max(200),
   titleEn: z.string().trim().max(200).default(""),

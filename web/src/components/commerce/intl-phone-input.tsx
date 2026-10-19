@@ -39,7 +39,7 @@ export function IntlPhoneInput({ locale, required, invalid, describedBy }: {
   }, [open, matches, active, listId]);
 
   useEffect(() => {
-    number.current?.setCustomValidity(unrecognizedCode ? (ko ? "국가번호를 확인해 주세요." : "Check the country calling code.") : "");
+    number.current?.setCustomValidity(unrecognizedCode ? (ko ? "국가번호를 확인해 주세요" : "Check the country calling code") : "");
   }, [unrecognizedCode, ko]);
 
   const choose = (code: string) => {
@@ -65,7 +65,7 @@ export function IntlPhoneInput({ locale, required, invalid, describedBy }: {
       }}>
         <input ref={search} type="search" autoComplete="off" aria-label={ko ? "국가 또는 국가번호 검색" : "Search country or calling code"} role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls={listId} aria-activedescendant={matches[active] ? `${listId}-${matches[active].code}` : undefined} value={query} onChange={(event) => { setQuery(event.target.value); setActive(0); }} />
         <div id={listId} role="listbox" aria-label={ko ? "전화 국가번호" : "Phone country codes"}>
-          {matches.length ? matches.map((item, index) => <button key={item.code} type="button" tabIndex={-1} id={`${listId}-${item.code}`} role="option" aria-selected={index === active} onMouseEnter={() => setActive(index)} onClick={() => choose(item.code)}>{item.name}<span>{item.dial}</span></button>) : <p>{ko ? "일치하는 국가가 없습니다." : "No matching country."}</p>}
+          {matches.length ? matches.map((item, index) => <button key={item.code} type="button" tabIndex={-1} id={`${listId}-${item.code}`} role="option" aria-selected={index === active} onMouseEnter={() => setActive(index)} onClick={() => choose(item.code)}>{item.name}<span>{item.dial}</span></button>) : <p>{ko ? "일치하는 국가가 없습니다" : "No matching country"}</p>}
         </div>
       </div>}
     </div>
@@ -74,6 +74,6 @@ export function IntlPhoneInput({ locale, required, invalid, describedBy }: {
       setCountry(next.country);
       setNational(next.national);
     }} aria-invalid={invalid || unrecognizedCode} aria-describedby={[describedBy, unrecognizedCode ? "customer-phone-prefix-error" : ""].filter(Boolean).join(" ")} placeholder={ko ? "국가번호 제외한 전화번호" : "Number without country code"} />
-    {unrecognizedCode && <p id="customer-phone-prefix-error" className="commerce-field-error">{ko ? "국가번호를 찾지 못했습니다. 국가를 선택하거나 번호를 확인해 주세요." : "Calling code not found. Choose a country or check the number."}</p>}
+    {unrecognizedCode && <p id="customer-phone-prefix-error" className="commerce-field-error">{ko ? "국가번호를 찾지 못했습니다 국가를 선택하거나 번호를 확인해 주세요" : "Calling code not found Choose a country or check the number"}</p>}
   </div>;
 }

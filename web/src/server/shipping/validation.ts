@@ -10,7 +10,7 @@ const countries = new Set((
   "TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW"
 ).split(" "));
 
-export const countryCodeSchema = z.string().trim().toUpperCase().refine((code) => countries.has(code), "등록된 ISO 국가 코드가 필요합니다.");
+export const countryCodeSchema = z.string().trim().toUpperCase().refine((code) => countries.has(code), "등록된 ISO 국가 코드가 필요합니다");
 export const idSchema = z.string().trim().min(1).max(100);
 export const weightSchema = z.number().int().min(1).max(1_000_000);
 export const zoneSchema = z.strictObject({

@@ -30,7 +30,7 @@ export async function assertProviderConfigured(provider: PaymentProvider, config
     if (await prisma.lightningAddress.count()) return;
   }
   const ready = configuredPaymentProviders(config)[provider];
-  if (!ready) throw new HttpError(503, `${provider}_NOT_CONFIGURED`, "선택한 결제 제공자가 설정되어 있지 않습니다. / The selected payment provider is not configured.");
+  if (!ready) throw new HttpError(503, `${provider}_NOT_CONFIGURED`, "선택한 결제 제공자가 설정되어 있지 않습니다 / The selected payment provider is not configured");
 }
 
 function rowSettings(row: {
@@ -79,7 +79,7 @@ export const commerceSettingsSchema = z.object({
   notificationEmail: z.string().trim().email().max(200),
 }).strict().superRefine((value, ctx) => {
   if (value.btcPriceSource === "FIXED" && !value.fixedKrwPerBtc) {
-    ctx.addIssue({ code: "custom", message: "고정 환율을 입력해 주세요. / Enter a fixed rate.", path: ["fixedKrwPerBtc"] });
+    ctx.addIssue({ code: "custom", message: "고정 환율을 입력해 주세요 / Enter a fixed rate", path: ["fixedKrwPerBtc"] });
   }
 });
 export type CommerceSettingsInput = z.infer<typeof commerceSettingsSchema>;
@@ -133,15 +133,15 @@ export async function updateCommerceSettings(input: CommerceSettingsInput, actor
     const current = settings[0];
     if (!current) throw new Error("Site settings missing after createMany");
     if (input.expectedUpdatedAt !== (created.count ? null : current.updatedAt.toISOString())) {
-      throw new HttpError(409, "SETTINGS_CHANGED", "다른 관리자가 설정을 먼저 저장했습니다. 현재 입력 내용을 확인한 뒤 화면을 새로고침해 주세요.");
+      throw new HttpError(409, "SETTINGS_CHANGED", "다른 관리자가 설정을 먼저 저장했습니다 현재 입력 내용을 확인한 뒤 화면을 새로고침해 주세요");
     }
     const selectedAddressId = input.lightningAddressId === undefined ? current.lightningAddressId : input.lightningAddressId;
     if (input.paymentProvider === "LNURL" && config.paymentMode === "live" && !config.lnurl && !selectedAddressId) {
-      throw new HttpError(400, "LIGHTNING_ADDRESS_REQUIRED", "라이트닝 주소를 등록하고 결제 수신 주소로 선택해 주세요.");
+      throw new HttpError(400, "LIGHTNING_ADDRESS_REQUIRED", "라이트닝 주소를 등록하고 결제 수신 주소로 선택해 주세요");
     }
     if (input.lightningAddressId) {
       const found = await tx.lightningAddress.findUnique({ where: { id: input.lightningAddressId }, select: { id: true } });
-      if (!found) throw new HttpError(409, "LIGHTNING_ADDRESS_NOT_FOUND", "선택한 라이트닝 주소가 삭제되었습니다. 최신 주소 목록을 확인한 뒤 다시 선택해 주세요.");
+      if (!found) throw new HttpError(409, "LIGHTNING_ADDRESS_NOT_FOUND", "선택한 라이트닝 주소가 삭제되었습니다 최신 주소 목록을 확인한 뒤 다시 선택해 주세요");
     }
     await tx.siteSetting.update({ where: { id: "site" }, data: { ...data, updatedAt: new Date(Math.max(Date.now(), current.updatedAt.getTime() + 1)) } });
     await tx.auditLog.create({ data: {

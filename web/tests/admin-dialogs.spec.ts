@@ -116,7 +116,7 @@ test("공지 초안과 삭제는 취소 및 Escape 및 바깥 클릭으로 유�
     // Then only the explicit affirmative action can issue a deletion, even if repeated.
     await trigger.click();
     await dialog.getByRole("button", { name: "삭제", exact: true }).evaluate((button: HTMLButtonElement) => { button.click(); button.click(); });
-    await expect(page.getByText("삭제했습니다.", { exact: true })).toBeVisible();
+    await expect(page.getByText("삭제했습니다", { exact: true })).toBeVisible();
     removed = true;
     await expect(row).toHaveCount(0);
     expect(deletionRequests).toBe(1);

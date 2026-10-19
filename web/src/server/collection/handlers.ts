@@ -12,7 +12,7 @@ export async function publicCollection() { return route(async () => dataResponse
 export async function publicCollectionItem(_request: NextRequest, context: ItemContext) {
   return route(async () => {
     const item = await getCollectionItem(await itemId(context));
-    if (!item) throw new ApiError(404, "NOT_FOUND", "항목을 찾을 수 없습니다.");
+    if (!item) throw new ApiError(404, "NOT_FOUND", "항목을 찾을 수 없습니다");
     return dataResponse(item);
   });
 }

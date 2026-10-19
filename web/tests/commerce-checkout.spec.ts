@@ -88,7 +88,7 @@ test("checkout requires explicit policy acceptance before creating an order", as
   await page.route("**/api/orders", (route) => { submitted += 1; submittedBody = route.request().postDataJSON(); return route.fulfill({ json: { data: { id: "created-order" } } }); });
   await expect(page.getByRole("button", { name: "Pay" })).toBeEnabled();
   await page.getByRole("button", { name: "Pay" }).click();
-  await expect(page.getByText("Agree to the terms and refund policy.")).toBeVisible();
+  await expect(page.locator("#checkout-acceptance-error")).toHaveText("Agree to the terms and Refund and return policy");
   expect(submitted).toBe(0);
   await page.locator("#checkout-acceptance").check();
   await page.getByRole("button", { name: "Pay" }).click();
@@ -102,7 +102,7 @@ test("changed policies require a reload and fresh acceptance", async ({ page }) 
   await page.locator("#checkout-acceptance").check();
   await page.route("**/api/orders", (route) => route.fulfill({ status: 409, json: { error: { code: "POLICY_STALE", message: "Checkout terms changed." } } }));
   await page.getByRole("button", { name: "Pay" }).click();
-  await expect(page.getByText("The terms or refund policy changed.", { exact: false })).toBeVisible();
+  await expect(page.getByText("The terms or refund policy changed", { exact: false })).toBeVisible();
   await page.getByRole("button", { name: "Review updated policies" }).click();
   await expect(page.locator("#checkout-acceptance")).not.toBeChecked();
 });

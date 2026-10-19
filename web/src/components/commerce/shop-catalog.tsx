@@ -49,7 +49,7 @@ export function ShopCatalog({ products, locale }: {
       && (!inStock || product.variants.some((variant) => variant.availableStock > 0));
   });
   if (products.length === 0) {
-    return <p className="body-copy muted">{ko ? "판매 중인 상품이 없습니다." : "No products are on sale yet."}</p>;
+    return <p className="body-copy muted">{ko ? "판매 중인 상품이 없습니다" : "No products are on sale yet"}</p>;
   }
   return <div className="form-stack">
     <div className="form-stack" role="search" aria-label={ko ? "상점 상품 찾기" : "Find shop products"}>
@@ -71,7 +71,7 @@ export function ShopCatalog({ products, locale }: {
       </div>
     </div>
     <div className="collection-results" key={`${term}:${category}:${inStock}`}>
-    {filtered.length === 0 ? <p className="body-copy muted">{ko ? "조건에 맞는 상품이 없습니다." : "No products match your filters."}</p> : <div className="review-grid highlights-grid">{filtered.map((product) => {
+    {filtered.length === 0 ? <p className="body-copy muted">{ko ? "조건에 맞는 상품이 없습니다" : "No products match your filters"}</p> : <div className="review-grid highlights-grid">{filtered.map((product) => {
           const title = ko ? product.titleKo : product.titleEn;
           const summary = ko ? product.descriptionKo : product.descriptionEn;
           const soldOut = product.variants.every((variant) => variant.availableStock <= 0);

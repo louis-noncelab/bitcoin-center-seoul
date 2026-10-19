@@ -97,7 +97,7 @@ async function setSlug(tx: Db, kind: ContentKind, contentId: number, slug: strin
   if (slug) {
     const owner = await tx.contentSlug.findUnique({ where: { kind_slug: { kind, slug } } });
     if (owner && owner.contentId !== contentId) {
-      throw new ApiError(409, "SLUG_CONFLICT", "다른 게시물에서 사용 중이거나 이전에 사용한 주소입니다. 다른 주소를 입력해주세요.");
+      throw new ApiError(409, "SLUG_CONFLICT", "다른 게시물에서 사용 중이거나 이전에 사용한 주소입니다 다른 주소를 입력해주세요");
     }
   }
   await tx.contentSlug.updateMany({ where: { kind, contentId, isCurrent: true }, data: { isCurrent: false } });
@@ -208,7 +208,7 @@ export async function createEvent(input: EventInput): Promise<EventRecord> {
     return created.id;
   });
   const event = await getEvent(id);
-  if (!event) throw new ApiError(500, "WRITE_FAILED", "행사 저장에 실패했습니다.");
+  if (!event) throw new ApiError(500, "WRITE_FAILED", "행사 저장에 실패했습니다");
   return event;
   } catch (error) {
     await placed.restore();
@@ -223,7 +223,7 @@ export async function setEventRegistration(id: number, registrationClosed: boole
     await syncEventTicketInTransaction(tx, event);
   });
   const event = await getEvent(id);
-  if (!event) throw new ApiError(404, "NOT_FOUND", "행사를 찾을 수 없습니다.");
+  if (!event) throw new ApiError(404, "NOT_FOUND", "행사를 찾을 수 없습니다");
   return event;
 }
 
@@ -237,7 +237,7 @@ export async function updateEvent(id: number, input: EventInput, revision: numbe
   await prisma.$transaction(async (tx) => {
     await reserveRevision(tx, "events", id, revision);
     const current = await tx.centerEvent.findUnique({ where: { id } });
-    if (!current) throw new ApiError(404, "NOT_FOUND", "행사를 찾을 수 없습니다.");
+    if (!current) throw new ApiError(404, "NOT_FOUND", "행사를 찾을 수 없습니다");
     const updated = await tx.centerEvent.update({
       where: { id },
       data: {
@@ -254,7 +254,7 @@ export async function updateEvent(id: number, input: EventInput, revision: numbe
     await setSlug(tx, "event", id, input.slug);
   });
   const event = await getEvent(id);
-  if (!event) throw new ApiError(500, "WRITE_FAILED", "행사 저장에 실패했습니다.");
+  if (!event) throw new ApiError(500, "WRITE_FAILED", "행사 저장에 실패했습니다");
   const kept = new Set(collectImagePaths(placed.images, description, descriptionEn));
   await deleteUnusedImages(collectImagePaths(previous?.images, previous?.description, previous?.descriptionEn).filter((image) => !kept.has(image)));
   return event;
@@ -318,7 +318,7 @@ export async function createHighlight(input: HighlightInput): Promise<HighlightR
     return created.id;
   });
   const highlight = await getHighlight(id, { includeInactive: true });
-  if (!highlight) throw new ApiError(500, "WRITE_FAILED", "하이라이트 저장에 실패했습니다.");
+  if (!highlight) throw new ApiError(500, "WRITE_FAILED", "하이라이트 저장에 실패했습니다");
   return highlight;
   } catch (error) {
     await placed.restore();
@@ -348,7 +348,7 @@ export async function updateHighlight(id: number, input: HighlightInput, revisio
     await setSlug(tx, "highlight", id, input.slug);
   });
   const highlight = await getHighlight(id, { includeInactive: true });
-  if (!highlight) throw new ApiError(500, "WRITE_FAILED", "하이라이트 저장에 실패했습니다.");
+  if (!highlight) throw new ApiError(500, "WRITE_FAILED", "하이라이트 저장에 실패했습니다");
   const kept = new Set(collectImagePaths(placed.images, description, descriptionEn));
   await deleteUnusedImages(collectImagePaths(previous?.images, previous?.description, previous?.descriptionEn).filter((image) => !kept.has(image)));
   return highlight;

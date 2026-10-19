@@ -22,8 +22,8 @@ export function GoodsContent({ locale, records }: { readonly locale: Locale; rea
           <h1>{ko ? "비센서 굿즈" : "Center goods"}</h1>
           <p className="body-copy muted">
             {ko
-              ? "비트코인을 일상 가까이. 센터 굿즈와 구매 안내."
-              : "Keep Bitcoin close in everyday life. Center goods and purchasing information."}
+              ? "비트코인을 일상 가까이 센터 굿즈와 구매 안내"
+              : "Keep Bitcoin close in everyday life Center goods and purchasing information"}
           </p>
         </div>
         {records.length > 0 && <section className="goods-catalog" aria-label={ko ? "굿즈 목록" : "Goods catalog"}><CollectionGrid records={records} locale={locale} /></section>}
@@ -33,8 +33,8 @@ export function GoodsContent({ locale, records }: { readonly locale: Locale; rea
             <h2>{ko ? "굿즈 구매 안내" : "Where to buy"}</h2>
             <p>
               {ko
-                ? "판매 중인 도서와 굿즈는 센터 상점에서 비트코인으로 결제합니다. 가격과 재고도 상점에서 확인합니다."
-                : "Books and goods on sale are paid in bitcoin in the center shop, where prices and stock are shown."}
+                ? "판매 중인 도서와 굿즈는 센터 상점에서 비트코인으로 결제합니다 가격과 재고도 상점에서 확인합니다"
+                : "Books and goods on sale are paid in bitcoin in the center shop, where prices and stock are shown"}
             </p>
             <Link className="button" href="/shop" locale={locale}>
               {ko ? "상점에서 구매" : "Buy in the shop"}

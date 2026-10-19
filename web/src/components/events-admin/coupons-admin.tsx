@@ -69,7 +69,7 @@ export function CouponsAdmin() {
         active: true,
       }));
       form.reset(); setDirty(false);
-      setMessage("쿠폰을 만들었습니다."); setRevision((value) => value + 1);
+      setMessage("쿠폰을 만들었습니다"); setRevision((value) => value + 1);
     } catch (caught) { handleError(caught); }
     finally { busy.current = false; setPending(false); }
   }
@@ -78,14 +78,14 @@ export function CouponsAdmin() {
     if (busy.current || expired) return;
     const accepted = await confirm({
       title: "쿠폰 중지",
-      description: `${coupon.code} 쿠폰을 중지할까요? 이미 적용된 주문은 그대로 유지됩니다.`,
+      description: `${coupon.code} 쿠폰을 중지할까요? 이미 적용된 주문은 그대로 유지됩니다`,
       confirmLabel: "중지",
     });
     if (!accepted || busy.current) return;
     busy.current = true; setPending(true); setError(""); setMessage("");
     try {
       await adminRequest(`/api/admin/coupons/${coupon.id}`, z.unknown(), { method: "DELETE" });
-      setMessage("중지했습니다."); setRevision((value) => value + 1);
+      setMessage("중지했습니다"); setRevision((value) => value + 1);
     } catch (caught) { handleError(caught); }
     finally { busy.current = false; setPending(false); }
   }
@@ -100,7 +100,7 @@ export function CouponsAdmin() {
   return <div className="events-admin-workspace">
     {dialog}
     <CommerceAdminNav current="/admin/coupons" disabled={pending} dirty={dirty} />
-    {expired && <aside className="events-reauth"><p role="alert">세션이 만료되었습니다. 다시 로그인한 뒤 계속해 주세요.</p><LoginForm locale="ko" onLogin={() => { setExpired(false); setError(""); setRevision((value) => value + 1); }} /></aside>}
+    {expired && <aside className="events-reauth"><p role="alert">세션이 만료되었습니다 다시 로그인한 뒤 계속해 주세요</p><LoginForm locale="ko" onLogin={() => { setExpired(false); setError(""); setRevision((value) => value + 1); }} /></aside>}
     {error && <p className="events-error" role="alert">{error}</p>}<p role="status">{message}</p>
 
     <div className="events-admin-toolbar"><h2>쿠폰</h2></div>
@@ -120,7 +120,7 @@ export function CouponsAdmin() {
           {coupon.active && <Button variant="quiet" disabled={pending || expired} onClick={() => void deactivate(coupon)}>중지</Button>}
         </div>
       </li>)}
-      {!coupons.length && <li>등록된 쿠폰이 없습니다.</li>}
+      {!coupons.length && <li>등록된 쿠폰이 없습니다</li>}
     </ul>
 
     <form className="events-form" onChange={() => setDirty(true)} onSubmit={(event) => void create(event)}>
@@ -148,13 +148,13 @@ export function CouponsAdmin() {
           <label>총 사용 횟수 (선택)<FormControl><input name="usageLimit" type="number" min={1} max={1000000} step={1} /></FormControl></label>
         </div>
         <label>1인당 사용 횟수<FormControl><input name="perUserLimit" type="number" required min={1} max={100} step={1} defaultValue={1} /></FormControl></label>
-        <p className="muted">비회원 주문에서는 1인당 횟수를 주문 요청 단위로만 셀 수 있습니다. 총 사용 횟수를 함께 정해 주세요.</p>
+        <p className="muted">비회원 주문에서는 1인당 횟수를 주문 요청 단위로만 셀 수 있습니다 총 사용 횟수를 함께 정해 주세요</p>
 
         <div className="events-field-grid">
           <label>시작<FormControl><input name="validFrom" type="datetime-local" required /></FormControl></label>
           <label>종료<FormControl><input name="validUntil" type="datetime-local" required /></FormControl></label>
         </div>
-        <p className="muted">시각은 한국 표준시로 저장됩니다.</p>
+        <p className="muted">시각은 한국 표준시로 저장됩니다</p>
       </fieldset>
       <div className="button-row"><Button type="submit" disabled={pending || expired}>쿠폰 만들기</Button></div>
     </form>

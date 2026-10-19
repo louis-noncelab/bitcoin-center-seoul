@@ -45,8 +45,8 @@ export function HomeDiscovery({
         </div>
         <p className="home-section-intro">
           {ko
-            ? "센터에서 만나는 책과 게임, 매거진과 작품."
-            : "Books, games, magazines and artworks at the center."}
+            ? "센터에서 만나는 책과 게임, 매거진과 작품"
+            : "Books, games, magazines and artworks at the center"}
         </p>
         <div className="home-collection-list">
           {kinds.map(({ kind, label, photo }) => {
@@ -113,13 +113,13 @@ export function HomeDiscovery({
           <div>
             <p>
               {ko
-                ? "비트코인을 일상 가까이."
-                : "Keep Bitcoin close in everyday life."}
+                ? "비트코인을 일상 가까이"
+                : "Keep Bitcoin close in everyday life"}
             </p>
             <p className="muted">
               {ko
-                ? "센터 굿즈 소개와 판매처 안내."
-                : "Discover center goods and where to find them."}
+                ? "센터 굿즈 소개와 판매처 안내"
+                : "Discover center goods and where to find them"}
             </p>
             <Link href="/goods" locale={locale} className="section-link">
               {ko ? "굿즈 둘러보기" : "Explore center goods"}

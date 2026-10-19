@@ -28,12 +28,12 @@ function CancelUnpaid({ path, locale, onDone, meetup }: { readonly path: string;
   const { confirm, dialog } = useConfirmation();
   return <div className="form-stack">
     <RequestError error={error} locale={locale} returnTo={path.replace("/api", "")} />
-    {done && <FormNotice kind="success">{ko ? "취소했습니다." : "Cancelled."}</FormNotice>}
+    {done && <FormNotice kind="success">{ko ? "취소했습니다" : "Cancelled"}</FormNotice>}
     <Button variant="secondary" disabled={busy} onClick={() => {
       if (busy) return;
       void confirm({
         title: ko ? "결제 전 취소" : "Cancel unpaid",
-        description: meetup ? (ko ? "결제 전 신청을 취소할까요? 확보된 자리는 다시 열립니다." : "Cancel this unpaid registration? Reserved seats will be released.") : (ko ? "결제 전 주문을 취소할까요? 확보된 재고는 다시 열립니다." : "Cancel this unpaid order? Reserved stock will be released."),
+        description: meetup ? (ko ? "결제 전 신청을 취소할까요? 확보된 자리는 다시 열립니다" : "Cancel this unpaid registration? Reserved seats will be released") : (ko ? "결제 전 주문을 취소할까요? 확보된 재고는 다시 열립니다" : "Cancel this unpaid order? Reserved stock will be released"),
         confirmLabel: meetup ? (ko ? "신청 취소" : "Cancel registration") : (ko ? "주문 취소" : "Cancel order"),
         cancelLabel: ko ? "돌아가기" : meetup ? "Keep registration" : "Keep order",
       }).then((ok) => {
@@ -52,7 +52,7 @@ function CancelUnpaid({ path, locale, onDone, meetup }: { readonly path: string;
 function ResourceError({ error, locale, path, refresh }: { readonly error: unknown; readonly locale: Locale; readonly path: string; readonly refresh: () => void }) {
   return <div className="form-stack">
     <RequestError error={error} locale={locale} returnTo={`/${locale}${path}`} />
-    <p className="muted">{locale === "ko" ? "신청이나 주문을 진행한 브라우저에서 다시 열어 주세요. 확인이 어려우면 센터에 문의해 주세요." : "Open this page in the browser you used to register or order. Contact the center if you need help."}</p>
+    <p className="muted">{locale === "ko" ? "신청이나 주문을 진행한 브라우저에서 다시 열어 주세요 확인이 어려우면 센터에 문의해 주세요" : "Open this page in the browser you used to register or order Contact the center if you need help"}</p>
     <Button variant="secondary" onClick={refresh}>{locale === "ko" ? "다시 조회" : "Check again"}</Button>
   </div>;
 }
@@ -71,9 +71,9 @@ export function OrderDetails({ id, locale }: { readonly id: string; readonly loc
   return <div className="commerce-resource form-stack">
     <div className="commerce-status-heading"><span className="caption">{meetup ? (ko ? "밋업 신청" : "Event registration") : (ko ? "주문 상태" : "Order status")}</span><h2 aria-live="polite" aria-atomic="true">{label}</h2><p className="caption commerce-reference">{meetup ? (ko ? "신청 번호" : "Registration reference") : (ko ? "주문 번호" : "Order reference")} {order.id}</p></div>
     {Boolean(error) && <ResourceError error={error} locale={locale} path={`/orders/${id}`} refresh={refresh} />}
-    {order.status === "REVIEW" && <FormNotice kind="info">{ko ? `운영자가 결제와 ${meetup ? "신청" : "주문"} 내역을 확인하고 있습니다. 추가 송금 전에 센터로 문의해 주세요.` : "The center is checking your payment and details. Please contact us before sending another payment."}</FormNotice>}
-    {order.refundStatus === "PENDING" && <FormNotice kind="info">{ko ? `${meetup ? "신청" : "주문"}이 취소되어 환불을 준비하고 있습니다. 환불 진행 상황은 센터로 문의해 주세요.` : `Your ${meetup ? "registration" : "order"} has been cancelled and a refund is pending. Contact the center for an update.`}</FormNotice>}
-    {order.refundStatus === "COMPLETED" && <FormNotice kind="info">{ko ? "센터에서 환불 완료를 확인했습니다." : "The center has recorded your refund as completed."}{order.refundedAt ? `, ${dateTime(order.refundedAt, locale)}` : ""}</FormNotice>}
+    {order.status === "REVIEW" && <FormNotice kind="info">{ko ? `운영자가 결제와 ${meetup ? "신청" : "주문"} 내역을 확인하고 있습니다 추가 송금 전에 센터로 문의해 주세요` : "The center is checking your payment and details Please contact us before sending another payment"}</FormNotice>}
+    {order.refundStatus === "PENDING" && <FormNotice kind="info">{ko ? `${meetup ? "신청" : "주문"}이 취소되어 환불을 준비하고 있습니다 환불 진행 상황은 센터로 문의해 주세요` : `Your ${meetup ? "registration" : "order"} has been cancelled and a refund is pending Contact the center for an update`}</FormNotice>}
+    {order.refundStatus === "COMPLETED" && <FormNotice kind="info">{ko ? "센터에서 환불 완료를 확인했습니다" : "The center has recorded your refund as completed"}{order.refundedAt ? `, ${dateTime(order.refundedAt, locale)}` : ""}</FormNotice>}
     <div className="commerce-resource-grid">
       <section className="commerce-panel form-stack"><h2>{meetup ? (ko ? "신청 내용" : "Registration details") : (ko ? "주문 내역" : "Order details")}</h2><ul className="commerce-items">{order.items.map((item, index) => <li key={index}><div><strong>{ko ? item.titleKo : item.titleEn}</strong><span className="muted">{ticketEventId(item.sku) !== null ? `${item.quantity}${ko ? "명" : item.quantity === 1 ? " attendee" : " attendees"}` : `${ko ? item.optionLabelKo : item.optionLabelEn}, ${item.quantity}${ko ? "개" : item.quantity === 1 ? " item" : " items"}`}</span></div><span>{ticketEventId(item.sku) !== null && item.amountSats === "0" ? (ko ? "무료" : "Free") : bitcoin(item.amountSats, locale, unit, rate)}</span></li>)}</ul>
         <dl className="commerce-facts">{!meetup && <div><dt>{ko ? "배송비" : "Shipping"}</dt><dd>{bitcoin(order.shippingAmountSats, locale, unit, rate)}</dd></div>}<div className="commerce-total"><dt>{meetup ? (ko ? "참가비 합계" : "Registration total") : (ko ? "총액" : "Total")}</dt><dd>{freeRegistration ? (ko ? "무료" : "Free") : bitcoin(order.amountSats, locale, unit, rate)}</dd></div>{order.amountKrw && !freeRegistration ? <div><dt>{ko ? "견적 기준 원화" : "KRW at quote"}</dt><dd>{krw(order.amountKrw, locale)}</dd></div> : null}</dl>

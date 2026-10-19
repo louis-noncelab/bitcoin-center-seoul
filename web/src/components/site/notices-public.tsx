@@ -20,7 +20,7 @@ export function noticeText(locale: Locale, notice: NoticeRecord) {
 }
 export function noticesMetadata(locale: Locale, notice?: NoticeRecord): Metadata {
   const title = withoutWordJoiners(notice ? noticeText(locale, notice).title : locale === "ko" ? "공지사항" : "Notices");
-  const description = notice ? markdownExcerpt(noticeText(locale, notice).description) : locale === "ko" ? "비트코인 센터 서울의 운영 소식과 안내입니다." : "News and updates from Bitcoin Center Seoul.";
+  const description = notice ? markdownExcerpt(noticeText(locale, notice).description) : locale === "ko" ? "비트코인 센터 서울의 운영 소식과 안내입니다" : "News and updates from Bitcoin Center Seoul";
   const path = `/notices${notice ? `/${notice.slug}` : ""}`;
   const base = pageMetadata(locale);
   return { ...base, title: `${title} | Bitcoin Center Seoul`, description,

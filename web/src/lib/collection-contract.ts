@@ -10,7 +10,7 @@ const collectionFields = z.object({
   slug: contentSlugSchema,
   purchaseUrl: externalLink.default(""),
   soldOut: z.boolean().optional(),
-  title: z.string().trim().min(1, "제목을 입력해 주세요.").max(200),
+  title: z.string().trim().min(1, "제목을 입력해 주세요").max(200),
   titleEn: z.string().trim().max(200).default(""),
   creator: z.string().trim().max(200).default(""),
   creatorEn: z.string().trim().max(200).default(""),
@@ -23,11 +23,11 @@ const collectionFields = z.object({
 
 const hasPublicCover = (value: z.infer<typeof collectionFields>) => value.is_active === 0 || value.images.length > 0;
 const hasPublicSlug = (value: z.infer<typeof collectionFields>) => value.kind !== "boardgame" || value.is_active === 0 || value.slug.length > 0;
-const coverError = { message: "공개하려면 대표 이미지를 한 장 이상 등록해 주세요.", path: ["images"] };
+const coverError = { message: "공개하려면 대표 이미지를 한 장 이상 등록해 주세요", path: ["images"] };
 export const collectionInputSchema = collectionFields
-  .refine((value) => !value.purchaseUrl && !value.soldOut, { message: "구매 링크와 품절은 사용하지 않습니다. 도서 및 굿즈 판매는 상점에서 등록해 주세요.", path: ["purchaseUrl"] })
+  .refine((value) => !value.purchaseUrl && !value.soldOut, { message: "구매 링크와 품절은 사용하지 않습니다 도서 및 굿즈 판매는 상점에서 등록해 주세요", path: ["purchaseUrl"] })
   .refine(hasPublicCover, coverError)
-  .refine(hasPublicSlug, { message: "공개 보드게임은 URL 슬러그를 입력해 주세요.", path: ["slug"] });
+  .refine(hasPublicSlug, { message: "공개 보드게임은 URL 슬러그를 입력해 주세요", path: ["slug"] });
 export const collectionRecordSchema = collectionFields.extend({
   soldOut: z.boolean().default(false),
   id: z.number().int().positive(),

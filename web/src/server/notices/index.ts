@@ -44,17 +44,17 @@ export async function saveNotice(input: NoticeInput, id?: number, revision?: num
   const savedId = await prisma.$transaction(async (tx) => {
     if (id !== undefined) {
       await reserveRevision(tx, "notices", id, revision);
-      if (!await tx.notice.findUnique({ where: { id } })) throw new ApiError(404, "NOT_FOUND", "공지를 찾을 수 없습니다.");
+      if (!await tx.notice.findUnique({ where: { id } })) throw new ApiError(404, "NOT_FOUND", "공지를 찾을 수 없습니다");
     }
     const owner = await tx.noticeSlug.findUnique({ where: { slug: input.slug } });
-    if (owner && owner.noticeId !== id) throw new ApiError(409, "SLUG_CONFLICT", "이미 사용 중인 URL 슬러그입니다.");
+    if (owner && owner.noticeId !== id) throw new ApiError(409, "SLUG_CONFLICT", "이미 사용 중인 URL 슬러그입니다");
     const data = { slug: input.slug, title: input.title, titleEn: input.titleEn, description: input.description, descriptionEn: input.descriptionEn, isActive: input.is_active, tags: JSON.stringify(input.tags) };
     const noticeId = id === undefined ? (await tx.notice.create({ data })).id : (await tx.notice.update({ where: { id }, data })).id;
     await tx.noticeSlug.upsert({ where: { slug: input.slug }, create: { slug: input.slug, noticeId }, update: { noticeId } });
     return noticeId;
   });
   const saved = await getNotice(savedId, true);
-  if (!saved) throw new ApiError(500, "SAVE_FAILED", "공지를 저장하지 못했습니다.");
+  if (!saved) throw new ApiError(500, "SAVE_FAILED", "공지를 저장하지 못했습니다");
   const kept = new Set(collectImagePaths(input.description, input.descriptionEn));
   await deleteUnusedImages(collectImagePaths(previous?.description, previous?.descriptionEn).filter((image) => !kept.has(image)));
   return saved;

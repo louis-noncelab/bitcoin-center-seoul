@@ -41,7 +41,7 @@ export async function saveCategory(input: ProductCategoryInput, actorId: string,
     if (id && !current) throw new HttpError(404, "NOT_FOUND", "Category not found.");
     await lockSlug(tx, input.slug);
     const clash = await tx.productCategory.findUnique({ where: { slug: input.slug } });
-    if (clash && clash.id !== current?.id) throw new HttpError(409, "SLUG_EXISTS", "이미 사용 중인 주소입니다. / Slug is already in use.");
+    if (clash && clash.id !== current?.id) throw new HttpError(409, "SLUG_EXISTS", "이미 사용 중인 주소입니다 / Slug is already in use");
     const category = current
       ? await tx.productCategory.update({ where: { id: current.id }, data: input })
       : await tx.productCategory.create({ data: input });
@@ -75,6 +75,6 @@ export async function resolveCategoryId(tx: Tx, categoryId: string | null | unde
   const id = categoryId?.trim() || null;
   if (!id) return null;
   const category = await tx.productCategory.findUnique({ where: { id }, select: { id: true } });
-  if (!category) throw new HttpError(400, "INVALID_CATEGORY", "카테고리를 다시 선택해 주세요. / Choose a valid category.");
+  if (!category) throw new HttpError(400, "INVALID_CATEGORY", "카테고리를 다시 선택해 주세요 / Choose a valid category");
   return category.id;
 }

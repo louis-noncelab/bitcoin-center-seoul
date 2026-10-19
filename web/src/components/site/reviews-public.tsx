@@ -43,7 +43,7 @@ export function ReviewsCatalog({ locale, filter, reviews }: { readonly locale: L
       </Link>)}
     </nav>
     <div className="review-results" key={filter}>
-      {!records.length && <p className="catalog-empty muted">{locale === "ko" ? "아직 등록된 후기가 없습니다." : "No visitor stories yet."}</p>}
+      {!records.length && <p className="catalog-empty muted">{locale === "ko" ? "아직 등록된 후기가 없습니다" : "No visitor stories yet"}</p>}
       <ReviewGrid records={records.slice(0, 12)} locale={locale} />
       {records.length > 12 && <SlidingDetails className="review-more" summary={<><span className="review-more-closed">{t.more}<span>{records.length - 12}</span><Plus className="icon" aria-hidden="true" /></span><span className="review-more-open">{t.less}<Minus className="icon" aria-hidden="true" /></span></>}>
         <ReviewGrid records={records.slice(12)} locale={locale} />
