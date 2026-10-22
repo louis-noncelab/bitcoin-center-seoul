@@ -8,12 +8,20 @@
 - [로컬 검증](web/README.md): 실행 방법과 검사 명령입니다.
 - [PM2 템플릿](web/deploy/ecosystem.config.cjs), [nginx 템플릿](web/deploy/nginx.conf.example): 호스트명, 인증서, Node 실행 경로, 데이터 경로를 실제 서버에 맞춰 검토해야 합니다.
 
+## Node.js 보안 패치
+
+2026-10-22 확인 기준으로 24.x의 최신 공식 보안 릴리스는 [24.22.1](https://nodejs.org/en/blog/release/v24.22.1)입니다. `web/.nvmrc`는 이 버전을 고정하고 `web/package.json`과 잠금 파일의 `engines`는 `>=24.22.1 <25`를 요구합니다. nvm은 셸의 실행 파일을 선택하며 `engines`는 설치 시 요구사항이므로, 이 설정을 바꾸는 것만으로 이미 실행 중인 서비스가 업데이트되지는 않습니다. 저장소에 Dockerfile/Compose나 활성 CI는 없고 GitHub Actions는 계속 비활성 상태입니다.
+
+승인된 수동 배포 때 빌드 호스트와 서비스 호스트의 Node를 `.nvmrc` 버전으로 맞춥니다. 셸의 `node --version` 외에도 PM2 템플릿의 두 `interpreter`(`/usr/bin/node`) 또는 실제 systemd unit의 `ExecStart`에 지정된 실행 파일을 직접 `--version`으로 확인합니다. nvm 설치 경로를 사용한다면 해당 서비스 설정도 검토한 절대 경로로 맞춥니다. 대상 OS와 아키텍처에서 `npm ci`, 검사, 테스트, 빌드를 통과한 릴리스를 준비합니다. 이 절차는 Node 24를 사용하는 `web/` 대상입니다. 다른 메이저의 레거시 서비스는 실행 버전부터 확인하며, 지원 종료 버전이라면 네이티브 모듈과 라이브러리의 지원 범위, 테스트와 빌드로 호환성을 확인한 뒤 메이저를 전환합니다.
+
+Node만 패치하는 이 변경에는 DB 마이그레이션이나 데이터 이관이 필요하지 않습니다. 릴리스를 반영한 뒤 이미 운영 중인 웹과 결제 워커를 함께 재시작합니다. PM2에서는 `bitcoin-center-seoul-web`, `bitcoin-center-seoul-payments`, systemd에서는 실제 대응 unit이 대상이며, PM2 데몬도 이전 Node를 사용 중이면 해당 데몬과 부팅 시 실행 경로를 갱신합니다. 재시작 뒤 Linux의 `/proc/<PID>/exe --version`으로 각 프로세스가 실제 사용하는 바이너리 버전을 확인하고, 공개 페이지, 관리자 인증, 워커 상태를 점검합니다. 운영 서버 업데이트와 재시작은 별도 승인된 배포 작업입니다.
+
 ## 전환 순서
 
 1. 릴리스 커밋과 서버 설정을 확정합니다. 기존 서비스와 데이터 경로를 확인하고, 기존 환경변수 파일을 열거나 비밀값을 출력하지 않습니다.
 2. PostgreSQL 호스트, 지원 버전, TLS, 접근 역할, 백업을 확정합니다. 콘텐츠, 관리자 세션, 상거래 데이터의 현재 저장소는 PostgreSQL입니다. 이전 SQLite는 이관 원본으로만 보관합니다. 작은 EC2의 여유 디스크, 메모리를 확인하기 전 같은 호스트에 PostgreSQL을 설치하거나 빌드하지 않습니다. 빌드는 별도의 호환 Linux 환경에서 할 수 있습니다.
 3. 운영 절차에 따라 PostgreSQL `pg_dump`와 **전체 공용 업로드**를 같은 배치 ID로 보관합니다. 업로드 `restore-check`와 별도 PostgreSQL DB의 `pg_restore` 복구 연습을 모두 통과해야 합니다. 이전 SQLite 콘텐츠 이관이 필요한 경우 읽기 전용 SQLite 스냅샷도 별도로 보관합니다. 최종 백업, 마이그레이션, 전환 동안 관리자와 주문 쓰기, 웹훅 처리 및 결제 워커를 정지합니다. 로컬 `review -- import`는 운영 데이터 이전에 사용하지 않습니다.
-4. 배포 호스트와 같은 OS, 아키텍처에서 Node 24와 잠금 파일로 `npm ci`, `__NEXT_PROCESSED_ENV=true npm run check`, `__NEXT_PROCESSED_ENV=true npm run build`를 수행합니다. 설치, 타입 검사, 빌드 전 Prisma client가 자동 생성됩니다. DB 접속이나 환경 파일은 생성에 필요하지 않습니다. Sharp 및 이관 도구의 SQLite 네이티브 모듈을 포함한 macOS 산출물을 Linux에 그대로 배포하지 않습니다.
+4. 배포 호스트와 같은 OS, 아키텍처에서 `web/.nvmrc`의 Node 24.22.1과 잠금 파일로 `npm ci`, `__NEXT_PROCESSED_ENV=true npm run check`, `__NEXT_PROCESSED_ENV=true npm run build`를 수행합니다. 설치, 타입 검사, 빌드 전 Prisma client가 자동 생성됩니다. DB 접속이나 환경 파일은 생성에 필요하지 않습니다. Sharp 및 이관 도구의 SQLite 네이티브 모듈을 포함한 macOS 산출물을 Linux에 그대로 배포하지 않습니다.
 5. 보호된 `commerce.env`와 별도 관리자 검증값 파일을 준비합니다. 운영 절차의 명시적 Node `--env-file` 명령으로 `db:deploy`에 해당하는 `prisma migrate deploy`를 실행하고 migration 상태를 확인합니다. 이전 SQLite 콘텐츠가 아직 PostgreSQL에 없다면 검증된 사본으로 `content:backfill` dry-run, apply, verify를 여기서 완료하고 관리자 재로그인을 준비합니다. 이미 PostgreSQL 콘텐츠가 있으면 자동 이관을 건너뛰고 현재 행을 보존합니다. `db:migrate`, `db:seed`, `db push`는 운영 릴리스 명령이 아닙니다. 데모 seed는 재고를 초기화하므로 운영에서 실행하지 않습니다.
 6. standalone 서버, `public`, `.next/static`과 함께 **워커/백업 스크립트, `src/server`, 생성한 `src/generated/prisma`, `tsconfig.json`, `prisma.config.ts`, `prisma/`, 잠금 파일과 전체 검증 의존성(`tsx`, Prisma CLI 포함)**을 릴리스에 넣습니다. 전체 `web/` 소스와 호환 `node_modules`를 비공개 릴리스 경로에 보관하는 방식이 기준이며 비밀 파일, 로컬 DB, 검토 자료는 제외합니다. 웹은 루프백 단일 프로세스, 결제 워커는 PM2의 별도 단일 프로세스입니다.
 7. `nginx -t`, HTTPS, 두 신뢰 프록시 설정과 `X-BCS-Client-IP`, 관리자 로그인, 로그아웃, 업로드, 비로그인 상품 이미지와 비공개 이미지 차단을 확인합니다. 웹훅 토큰 경로가 access/error 로그에 남지 않는지 등록 전에 확인합니다. 정식 공개 시 `BCS_PUBLIC_INDEXING=true`와 robots.txt, 메타데이터를 확인합니다. 실제 결제나 이메일 발송을 검증에 포함하지 않습니다.

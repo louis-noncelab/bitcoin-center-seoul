@@ -23,7 +23,7 @@ npm run admin:password -- --output /absolute/private/new-admin-password.env
 
 ## 로컬 검토
 
-Node 24.21.0(`.nvmrc`)과 npm을 사용합니다. 기존 `.env`/`.env.local`을 열지 않습니다. 메이저 버전 전환 후에는 잠금 파일로 새로 설치합니다. 일반 검사, 빌드는 자동 환경 파일 로드를 막는 `__NEXT_PROCESSED_ENV=true`를 지정합니다.
+Node 24.22.1(`.nvmrc`)과 npm을 사용합니다. `package.json`의 `engines`도 보안 패치가 포함된 `>=24.22.1 <25`를 요구합니다. 기존 `.env`/`.env.local`을 열지 않습니다. 메이저 버전 전환 후에는 잠금 파일로 새로 설치합니다. 일반 검사, 빌드는 자동 환경 파일 로드를 막는 `__NEXT_PROCESSED_ENV=true`를 지정합니다.
 
 ```sh
 node --version

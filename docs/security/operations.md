@@ -73,7 +73,7 @@ node --env-file=/etc/bitcoin-center-seoul/commerce.env --conditions=react-server
 
 ## ingress 및 프로세스 템플릿
 
-검토 대상은 [`nginx.conf.example`](../../web/deploy/nginx.conf.example)과 [`ecosystem.config.cjs`](../../web/deploy/ecosystem.config.cjs)이다. 기존 루트 배포 파일과는 별개다. 호스트명, 인증서, Node 24 실행 파일, 서비스 계정, 경로는 실제 호스트에 맞게 검토한다. PM2의 `interpreter`가 가리키는 실행 파일도 Node 24인지 확인한다.
+검토 대상은 [`nginx.conf.example`](../../web/deploy/nginx.conf.example)과 [`ecosystem.config.cjs`](../../web/deploy/ecosystem.config.cjs)이다. 기존 루트 배포 파일과는 별개다. 호스트명, 인증서, Node 실행 파일, 서비스 계정, 경로는 실제 호스트에 맞게 검토한다. Node는 24.22.1 이상 24.x를 사용하며 빌드와 실행 모두 [`.nvmrc`](../../web/.nvmrc)의 버전으로 맞춘다. PM2의 `interpreter` 또는 systemd의 `ExecStart`가 가리키는 실행 파일도 직접 `--version`으로 확인한다. 업데이트와 재시작 절차는 [수동 배포 안내](../../DEPLOY.md#nodejs-보안-패치)를 따른다.
 
 - 외부는 TLS가 설정된 nginx의 80/443만 접속한다. 앱은 `127.0.0.1:3100`에 바인딩한다. 방화벽과 보안 그룹에서도 앱 포트를 외부에 열지 않는다.
 - `APP_ORIGIN`은 실제 정규 HTTPS 출처와 정확히 일치해야 한다. HTTP는 루프백 검토 환경에서만 허용한다.

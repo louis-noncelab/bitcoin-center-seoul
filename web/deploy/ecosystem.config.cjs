@@ -1,4 +1,4 @@
-// Review-only template. Use a dedicated unprivileged service account and Node 24.
+// Review-only template. Use a dedicated unprivileged service account and Node >=24.22.1 <25.
 // Resolve these paths on the target host only during an approved manual release.
 module.exports = {
   apps: [{
